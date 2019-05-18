@@ -1,13 +1,13 @@
 package link.stuf.exceptions.core;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import link.stuf.exceptions.core.clearing.MeteringClearingHouse;
-import link.stuf.exceptions.api.ThrowablesClearingHouse;
+import link.stuf.exceptions.core.clearing.MeteringHandler;
+import link.stuf.exceptions.api.ThrowablesHandler;
 
 public final class ClearingHouseFactory {
 
-    public static ThrowablesClearingHouse forMeter(MeterRegistry meterRegistry) {
-        return new MeteringClearingHouse(meterRegistry);
+    public static ThrowablesHandler forMeter(MeterRegistry meterRegistry) {
+        return new MeteringHandler(meterRegistry);
     }
 
     private ClearingHouseFactory() {

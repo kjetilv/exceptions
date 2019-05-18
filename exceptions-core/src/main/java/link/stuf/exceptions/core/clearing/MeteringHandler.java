@@ -3,7 +3,7 @@ package link.stuf.exceptions.core.clearing;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
-import link.stuf.exceptions.api.ThrowablesClearingHouse;
+import link.stuf.exceptions.api.ThrowablesHandler;
 import link.stuf.exceptions.core.digest.Packages;
 import link.stuf.exceptions.core.digest.ThrowableMessages;
 import link.stuf.exceptions.core.digest.ThrowableReducer;
@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class MeteringClearingHouse implements ThrowablesClearingHouse {
+public class MeteringHandler implements ThrowablesHandler {
 
     private static final String UUID = "uuid";
 
@@ -28,7 +28,7 @@ public class MeteringClearingHouse implements ThrowablesClearingHouse {
 
     private final ThrowableReducer throwableReducer;
 
-    public MeteringClearingHouse(MeterRegistry metrics) {
+    public MeteringHandler(MeterRegistry metrics) {
         this.metrics = metrics;
         throwableReducer = new ThrowableReducer(
             Packages.all(),

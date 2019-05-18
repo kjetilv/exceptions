@@ -1,11 +1,11 @@
 package link.stuf.exceptions.core.clearing;
 
-import link.stuf.exceptions.api.HandlingPolicy;
+import link.stuf.exceptions.api.Handling;
 import link.stuf.exceptions.core.digest.ThrowablesDigest;
 
-class SimpleHandlingPolicy implements HandlingPolicy {
+class SimpleHandlingPolicy implements Handling {
 
-    private MeteringClearingHouse meteringClearingHouse;
+    private MeteringHandler meteringClearingHouse;
 
     private final ThrowablesDigest digest;
 
