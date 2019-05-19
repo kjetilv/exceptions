@@ -4,10 +4,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import link.stuf.exceptions.api.ThrowablesHandler;
-import link.stuf.exceptions.core.digest.Packages;
-import link.stuf.exceptions.core.digest.ThrowableMessages;
-import link.stuf.exceptions.core.digest.ThrowableReducer;
-import link.stuf.exceptions.core.digest.ThrowablesDigest;
+import link.stuf.exceptions.core.digest.*;
 import link.stuf.exceptions.core.hashing.Hashed;
 
 import java.util.Arrays;
@@ -28,12 +25,9 @@ public class MeteringHandler implements ThrowablesHandler {
 
     private final ThrowableReducer throwableReducer;
 
-    public MeteringHandler(MeterRegistry metrics) {
+    public MeteringHandler(MeterRegistry metrics, ThrowableReducer throwableReducer) {
         this.metrics = metrics;
-        throwableReducer = new ThrowableReducer(
-            Packages.all(),
-            Packages.none(),
-            Packages.none());
+        this.throwableReducer = throwableReducer;
     }
 
     @Override
@@ -45,7 +39,7 @@ public class MeteringHandler implements ThrowablesHandler {
         count(digest, messages);
         boolean isNew = record(digest);
 
-        return new SimpleHandlingPolicy(digest, digest.map(throwableReducer), throwable, isNew);
+        return new SimpleHandlingPolicy(digest, digest.map(throwableReducer::reduce), throwable, isNew);
     }
 
     private boolean record(ThrowablesDigest digest) {
