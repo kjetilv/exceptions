@@ -8,7 +8,7 @@ fun main() {
 
     val server = WiredExceptionsServer(9000)
 
-    val request = Request(Method.GET, "http://localhost:9000/submit").query("name", "John Doe")
+    val request = Request(Method.GET, "http://localhost:9000/lookup").query("name", "John Doe")
 
     val client = ApacheClient()
 
