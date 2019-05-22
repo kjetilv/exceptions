@@ -5,34 +5,35 @@ import java.util.stream.Stream;
 
 public class ParsedStackTraceElement {
 
-    private final StackTraceElementParser parser;
+    private final StackTraceElementType parser;
 
-    private final String[] matches;
+    private final String[] parts;
 
-    public ParsedStackTraceElement(StackTraceElementParser parser, String[] matches) {
+    public ParsedStackTraceElement(StackTraceElementType parser, String[] parts) {
         this.parser = parser;
-        this.matches = matches;
+        this.parts = parts;
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() +
-            "[" + parser + " => " + (matches == null ? null : Arrays.asList(matches)) + "]";
+            "[" + parser + " => " + (parts == null ? null : Arrays.asList(parts)) + "]";
     }
 
     Stream<StackTraceElement> reconstruct() {
-        if (parser == StackTraceElementParser.MORE){
+        if (parser == StackTraceElementType.MORE){
             return Stream.empty();
         }
         try {
-            Integer lineNumber = parser.lineNo(matches);
+            Integer lineNumber = parser.lineNo(parts);
+            String file = parser.file(parts);
             return Stream.of(new StackTraceElement(
                 null,
-                parser.module(matches),
-                parser.moduleVersion(matches),
-                parser.className(matches),
-                parser.method(matches),
-                parser.file(matches),
+                parser.module(parts),
+                parser.moduleVersion(parts),
+                parser.className(parts),
+                parser.method(parts),
+                file == null ? parser.otherSource(parts): file,
                 lineNumber == null ? -1 : lineNumber
             ));
         } catch (Exception e) {

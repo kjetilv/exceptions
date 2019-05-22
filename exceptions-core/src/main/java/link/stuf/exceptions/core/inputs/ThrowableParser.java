@@ -44,16 +44,16 @@ public class ThrowableParser {
 
     private static StackTraceElement[] parsed(List<String> lines, int startIndex, int endIndex) {
         return lines.subList(startIndex, endIndex).stream().flatMap(line ->
-            Stream.of(StackTraceElementParser.values()).flatMap(pattern ->
+            Stream.of(StackTraceElementType.values()).flatMap(pattern ->
                 reconstructed(line, pattern)))
             .toArray(StackTraceElement[]::new);
     }
 
-    private static Stream<StackTraceElement> reconstructed(String line, StackTraceElementParser pattern) {
-        String[] matches = pattern.matches(line);
-        return matches.length > 0
-            ? new ParsedStackTraceElement(pattern, matches).reconstruct()
-            : Stream.empty();
+    private static Stream<StackTraceElement> reconstructed(String line, StackTraceElementType pattern) {
+        String[] matches = pattern.parts(line);
+        return matches.length == 0
+            ? Stream.empty()
+            : new ParsedStackTraceElement(pattern, matches).reconstruct();
     }
 
     private static boolean whitespaceAtStart(String line) {
