@@ -5,6 +5,36 @@ import java.util.stream.IntStream;
 
 enum StackTraceElementType implements StackTraceElementPicker {
 
+    NATIVE_METHOD_WITH_VERSIONED_MODULE(
+        Pattern.compile("^\\s*at\\s([\\w.]*)@([\\w\\d.]*)/([\\w.]*)\\(([\\w\\s]*)\\)$"), 4
+    ) {
+
+        @Override
+        public String module(String... parts) {
+            return parts[0];
+        }
+
+        @Override
+        public String moduleVersion(String... parts) {
+            return parts[1];
+        }
+
+        @Override
+        public String className(String... parts) {
+            return StackTraceElementType.getClassName(parts[2]);
+        }
+
+        @Override
+        public String method(String... parts) {
+            return StackTraceElementType.getMethodName(parts[2]);
+        }
+
+        @Override
+        public String otherSource(String... parts) {
+            return parts[3];
+        }
+    },
+
     NATIVE_METHOD_WITH_MODULE(Pattern.compile("^\\s*at\\s([\\w.]*)/([\\w.]*)\\(([\\w\\s]*)\\)$"), 3) {
 
         @Override
@@ -46,7 +76,44 @@ enum StackTraceElementType implements StackTraceElementPicker {
         }
     },
 
-    WITH_MODULE(Pattern.compile("^\\s*at\\s([$\\w.]*)/([$\\w.]*)\\(([$\\w.]*):(\\d*)\\)$"), 4) {
+    WITH_VERSIONED_MODULE(
+        Pattern.compile("^\\s*at\\s([\\w.]*)@([\\w\\d.]*)/([$\\w.]*)\\(([$\\w.]*):(\\d*)\\)$"), 4
+    ) {
+
+        @Override
+        public String module(String... parts) {
+            return parts[0];
+        }
+
+        @Override
+        public String moduleVersion(String... parts) {
+            return parts[1];
+        }
+
+        @Override
+        public String className(String... parts) {
+            return StackTraceElementType.getClassName(parts[2]);
+        }
+
+        @Override
+        public String method(String... parts) {
+            return StackTraceElementType.getMethodName(parts[2]);
+        }
+
+        @Override
+        public String file(String... parts) {
+            return parts[3];
+        }
+
+        @Override
+        public Integer lineNo(String... parts) {
+            return Integer.parseInt(parts[4]);
+        }
+    },
+
+    WITH_MODULE(
+        Pattern.compile("^\\s*at\\s([\\w.]*)/([$\\w.]*)\\(([$\\w.]*):(\\d*)\\)$"), 4
+    ) {
 
         @Override
         public String module(String... parts) {
