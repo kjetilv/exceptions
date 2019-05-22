@@ -4,9 +4,11 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
-import java.util.List;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class ThrowableParserTest {
 
@@ -29,7 +31,9 @@ public class ThrowableParserTest {
         try (PrintWriter pw = new PrintWriter(out)) {
             e.printStackTrace(pw);
         }
-        return new String(out.toByteArray());
+        return Arrays.stream(new String(out.toByteArray()).split("\n"))
+            .filter(line -> StackTraceElementType.MORE.parts(line).length == 0)
+            .collect(Collectors.joining("\n"));
     }
 
     private void andFail() {
