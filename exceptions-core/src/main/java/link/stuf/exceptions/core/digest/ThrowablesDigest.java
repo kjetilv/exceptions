@@ -1,7 +1,5 @@
 package link.stuf.exceptions.core.digest;
 
-import link.stuf.exceptions.core.hashing.AbstractHashed;
-
 import java.util.*;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
@@ -10,10 +8,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class ThrowablesDigest extends AbstractHashed implements Iterable<ThrowableDigest> {
-
-    private static final BinaryOperator<Throwable> NO_COMBINE = (throwable, throwable2) -> {
-        throw new IllegalStateException("No combine");
-    };
 
     public static ThrowablesDigest of(Throwable throwable) {
         LinkedList<ThrowableDigest> ts = new LinkedList<>();
@@ -51,6 +45,10 @@ public class ThrowablesDigest extends AbstractHashed implements Iterable<Throwab
         return reversed.stream().reduce(null, (exception, digest) -> digest.toException(exception), NO_COMBINE);
     }
 
+    private static final BinaryOperator<Throwable> NO_COMBINE = (throwable, throwable2) -> {
+        throw new IllegalStateException("No combine");
+    };
+
     @Override
     public Iterator<ThrowableDigest> iterator() {
         return digests.iterator();
@@ -68,11 +66,6 @@ public class ThrowablesDigest extends AbstractHashed implements Iterable<Throwab
                     Objects.equals(digests.get(0), td.digests.get(0)));
         }
         return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return getId().hashCode();
     }
 
     List<ThrowableDigest> reverse() {

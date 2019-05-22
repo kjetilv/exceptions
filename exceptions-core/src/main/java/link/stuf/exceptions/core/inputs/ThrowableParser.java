@@ -3,6 +3,7 @@ package link.stuf.exceptions.core.inputs;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -13,11 +14,27 @@ public class ThrowableParser {
 
     private static final String CAUSED_BY = "Caused by: ";
 
-    public String toString(String input) {
+    public static String echo(ByteBuffer buffer) {
+        return echo(buffer.array());
+    }
+
+    public static String echo(byte[] array) {
+        return echo(new String(array, StandardCharsets.UTF_8));
+    }
+
+    public static String echo(String input) {
         return print(parse(input));
     }
 
-    public ChameleonException parse(String in) {
+    public static Throwable parse(ByteBuffer buffer) {
+        return parse(buffer.array());
+    }
+
+    public static Throwable parse(byte[] array) {
+        return parse(new String(array, StandardCharsets.UTF_8));
+    }
+
+    public static Throwable parse(String in) {
         List<String> lines = Arrays.stream(in.split("\n"))
             .filter(Objects::nonNull)
             .filter(line -> !line.isBlank())
@@ -40,7 +57,7 @@ public class ThrowableParser {
             return new ParsedThrowable(s, parsed);
         }).collect(Collectors.toCollection(ArrayList::new));
         Collections.reverse(parsedThrowables);
-        ChameleonException cause = null;
+        Throwable cause = null;
         for (ParsedThrowable parsedThrowable : parsedThrowables) {
             cause = parsedThrowable.reconstruct(cause);
         }
@@ -57,7 +74,7 @@ public class ThrowableParser {
             .collect(Collectors.joining("\n"));
     }
 
-    private String exceptionHeading(List<String> lines, List<Integer> causeIndices, int causeIndex) {
+    private static String exceptionHeading(List<String> lines, List<Integer> causeIndices, int causeIndex) {
         String line = lines.get(causeIndices.get(causeIndex));
         return line.startsWith(CAUSED_BY) ? line.substring(CAUSED_BY.length()) : line;
     }

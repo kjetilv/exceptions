@@ -1,7 +1,5 @@
 package link.stuf.exceptions.core.digest;
 
-import link.stuf.exceptions.core.hashing.AbstractHashed;
-
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;

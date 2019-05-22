@@ -1,6 +1,6 @@
 package link.stuf.exceptions.core.digest;
 
-import link.stuf.exceptions.core.hashing.AbstractHashed;
+import link.stuf.exceptions.core.inputs.ChameleonException;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
@@ -24,12 +24,12 @@ public class ThrowableDigest extends AbstractHashed {
     private final Instant time;
 
     ThrowableDigest(Throwable throwable, ThrowableDigest cause) {
-        this(throwable, cause, null);
+        this(Objects.requireNonNull(throwable, "throwable"), cause, null);
     }
 
     private ThrowableDigest(Throwable throwable, ThrowableDigest cause, Clock clock) {
         this(
-            throwable.getClass().getName(),
+            className(throwable),
             throwable.getMessage(),
             copy(throwable.getStackTrace()),
             cause,
@@ -54,25 +54,16 @@ public class ThrowableDigest extends AbstractHashed {
             : time;
     }
 
-    private static List<StackTraceElement> copy(StackTraceElement[] stackTrace) {
-        return Arrays.stream(stackTrace).map(element ->
-            new StackTraceElement(
-                element.getClassLoaderName(),
-                element.getModuleName(),
-                element.getModuleVersion(),
-                element.getClassName(),
-                element.getMethodName(),
-                element.getFileName(),
-                element.getLineNumber()
-            )).collect(Collectors.toUnmodifiableList());
-    }
-
     private String getMessage() {
         return message;
     }
 
     public ThrowableDigest getCause() {
         return cause;
+    }
+
+    public Instant getTime() {
+        return time;
     }
 
     List<StackTraceElement> getStackTrace() {
@@ -83,10 +74,6 @@ public class ThrowableDigest extends AbstractHashed {
         Throwable exception = new Throwable(getClassName() + ": " + getMessage(), cause);
         exception.setStackTrace(getStackTrace().toArray(StackTraceElement[]::new));
         return exception;
-    }
-
-    public Instant getTime() {
-        return time;
     }
 
     ThrowableDigest withStacktrace(List<StackTraceElement> stackTrace) {
@@ -103,16 +90,31 @@ public class ThrowableDigest extends AbstractHashed {
         return className;
     }
 
+    private static List<StackTraceElement> copy(StackTraceElement[] stackTrace) {
+        return Arrays.stream(stackTrace).map(element ->
+            new StackTraceElement(
+                element.getClassLoaderName(),
+                element.getModuleName(),
+                element.getModuleVersion(),
+                element.getClassName(),
+                element.getMethodName(),
+                element.getFileName(),
+                element.getLineNumber()
+            )).collect(Collectors.toUnmodifiableList());
+    }
+
+    private static String className(Throwable throwable) {
+        if (throwable instanceof ChameleonException) {
+            return ((ChameleonException)throwable).getProxiedClassName();
+        }
+        return throwable.getClass().getName();
+    }
+
     @Override
     public boolean equals(Object o) {
         return this == o || o instanceof ThrowableDigest &&
             Objects.equals(className, ((ThrowableDigest) o).className) &&
             Objects.equals(stackTrace, ((ThrowableDigest) o).stackTrace);
-    }
-
-    @Override
-    public int hashCode() {
-        return getId().hashCode();
     }
 
     @Override
