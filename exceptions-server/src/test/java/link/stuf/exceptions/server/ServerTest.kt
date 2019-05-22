@@ -1,12 +1,18 @@
 package link.stuf.exceptions.server
 
+import link.stuf.exceptions.server.api.WiredException
 import org.http4k.client.ApacheClient
+import org.http4k.core.Body
 import org.http4k.core.Method
 import org.http4k.core.Request
+import org.http4k.format.Jackson
+import org.http4k.format.Jackson.auto
 
 fun main() {
 
     val server = WiredExceptionsServer(9000)
+
+    val lens = Body.auto<WiredException>().toLens()
 
     val input = "java.lang.IllegalStateException: Errr\n" +
             "\tat link.stuf.exceptions.core.inputs.ThrowableParserTest.andFail(ThrowableParserTest.java:43)\n" +
@@ -64,8 +70,15 @@ fun main() {
 
     val client = ApacheClient()
 
-    println(client(Request(Method.POST, "http://localhost:9000/submit").body(input)))
-    println(client(Request(Method.POST, "http://localhost:9000/verify").body(input)))
+    val uuid = client(Request(Method.POST, "http://localhost:9000/submit").body(input))
+
+    println(uuid.bodyString())
+    println(client(Request(Method.POST, "http://localhost:9000/echo").body(input)).bodyString())
+
+    val target = client(Request(Method.GET, "http://localhost:9000/lookup/" + uuid.bodyString()))
+    val input1 = lens.extract(target)
+
+    println(Jackson.prettify(Jackson.asJsonString(input1)))
 
     server.stop()
 }

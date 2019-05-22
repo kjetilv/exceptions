@@ -2,7 +2,7 @@ package link.stuf.exceptions.server.api
 
 data class WiredStackTraceElement(
 
-        val classLoaderName: String,
+        val classLoaderName: String?,
 
         val moduleName: String?,
 
@@ -14,5 +14,5 @@ data class WiredStackTraceElement(
 
         val fileName: String?,
 
-        val lineNumber: Int
+        val lineNumber: Int?
 )

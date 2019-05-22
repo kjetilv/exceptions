@@ -4,13 +4,12 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import link.stuf.exceptions.api.ThrowablesHandler;
-import link.stuf.exceptions.core.digest.*;
+import link.stuf.exceptions.core.digest.ThrowableMessages;
+import link.stuf.exceptions.core.digest.ThrowableReducer;
+import link.stuf.exceptions.core.digest.ThrowablesDigest;
 import link.stuf.exceptions.core.hashing.Hashed;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MeteringHandler implements ThrowablesHandler {
@@ -37,9 +36,21 @@ public class MeteringHandler implements ThrowablesHandler {
 
         count(digest);
         count(digest, messages);
-        boolean isNew = record(digest);
 
-        return new SimpleHandlingPolicy(digest, digest.map(throwableReducer::reduce), throwable, isNew);
+        boolean isNew = record(digest);
+        return new SimpleHandlingPolicy(
+            digest,
+            digest.map(throwableReducer::reduce),
+            throwable,
+            isNew);
+    }
+
+    @Override
+    public Throwable lookup(java.util.UUID uuid) {
+        return Optional.ofNullable(exceptions.get(uuid))
+            .map(ThrowablesDigest::toThrowable)
+            .orElseThrow(() ->
+                new IllegalArgumentException(uuid.toString()));
     }
 
     private boolean record(ThrowablesDigest digest) {
@@ -60,7 +71,7 @@ public class MeteringHandler implements ThrowablesHandler {
     }
 
     private Counter messageCounter(Hashed exc, Hashed messages) {
-        return metrics.counter("exceptions", Arrays.asList(uuidTag(exc), messageTag(messages)));
+        return metrics.counter("exceptions-" + uuidTag(exc), Arrays.asList(uuidTag(exc), messageTag(messages)));
     }
 
     private Tag uuidTag(Hashed exc) {

@@ -13,8 +13,9 @@ dependencies {
 
     compile("org.http4k:http4k-client-apache:3.143.1")
     compile ("org.http4k:http4k-client-websocket:3.143.1")
-    
+
     compile("io.swagger.core.v3:swagger-core:2.0.8")
+    compile("io.micrometer:micrometer-registry-prometheus:1.1.4")
 
     runtime("org.webjars:swagger-ui:3.22.1")
 

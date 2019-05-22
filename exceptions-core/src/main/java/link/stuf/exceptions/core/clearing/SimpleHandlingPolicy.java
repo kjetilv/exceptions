@@ -5,8 +5,6 @@ import link.stuf.exceptions.core.digest.ThrowablesDigest;
 
 class SimpleHandlingPolicy implements Handling {
 
-    private MeteringHandler meteringClearingHouse;
-
     private final ThrowablesDigest digest;
 
     private final ThrowablesDigest reduced;

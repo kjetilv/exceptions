@@ -1,10 +1,6 @@
 package link.stuf.exceptions.server.api
 
-import java.util.*
-
 data class WiredException(
-
-        val uuid: UUID,
 
         val className: String,
 
@@ -12,7 +8,7 @@ data class WiredException(
 
         val stacktrace: Array<WiredStackTraceElement>?,
 
-        val cause: WiredException) {
+        val cause: WiredException?) {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) {
@@ -24,9 +20,6 @@ data class WiredException(
 
         other as WiredException
 
-        if (uuid != other.uuid) {
-            return false
-        }
         if (className != other.className) {
             return false
         }
@@ -48,8 +41,7 @@ data class WiredException(
     }
 
     override fun hashCode(): Int {
-        var result = uuid.hashCode()
-        result = 31 * result + className.hashCode()
+        var result = className.hashCode()
         result = 31 * result + (message?.hashCode() ?: 0)
         result = 31 * result + (stacktrace?.contentHashCode() ?: 0)
         result = 31 * result + cause.hashCode()
