@@ -3,13 +3,13 @@ package link.stuf.exceptions.core.inputs;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-public class ParsedStackTraceElement {
+class ParsedStackTraceElement {
 
     private final StackTraceElementType parser;
 
     private final String[] parts;
 
-    public ParsedStackTraceElement(StackTraceElementType parser, String[] parts) {
+    ParsedStackTraceElement(StackTraceElementType parser, String[] parts) {
         this.parser = parser;
         this.parts = parts;
     }
@@ -21,7 +21,7 @@ public class ParsedStackTraceElement {
     }
 
     Stream<StackTraceElement> reconstruct() {
-        if (parser == StackTraceElementType.MORE){
+        if (parser == StackTraceElementType.MORE) {
             return Stream.empty();
         }
         try {
@@ -33,7 +33,7 @@ public class ParsedStackTraceElement {
                 parser.moduleVersion(parts),
                 parser.className(parts),
                 parser.method(parts),
-                file == null ? parser.otherSource(parts): file,
+                file == null ? parser.otherSource(parts) : file,
                 lineNumber == null ? -1 : lineNumber
             ));
         } catch (Exception e) {

@@ -8,7 +8,6 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-@SuppressWarnings("ThrowableNotThrown")
 public class ThrowableParserTest {
 
     @Test

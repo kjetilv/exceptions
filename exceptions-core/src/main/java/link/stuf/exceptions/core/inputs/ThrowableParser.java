@@ -22,19 +22,22 @@ public class ThrowableParser {
                 .boxed().collect(Collectors.toList());
 
         List<ParsedThrowable> parsedThrowables = IntStream.range(0, causeIndices.size()).mapToObj(causeIndex -> {
+            int endIndex = causeIndex >= causeIndices.size() - 1
+                ? lines.size()
+                : causeIndices.get(causeIndex + 1);
             StackTraceElement[] parsed = parsed(
                 lines,
                 causeIndices.get(causeIndex) + 1,
-                causeIndex == causeIndices.size() - 1 ? lines.size() : causeIndices.get(causeIndex + 1));
+                endIndex);
             String s = exceptionHeading(lines, causeIndices, causeIndex);
             return new ParsedThrowable(s, parsed);
         }).collect(Collectors.toCollection(ArrayList::new));
         Collections.reverse(parsedThrowables);
-        ChameleonException walker = null;
+        ChameleonException cause = null;
         for (ParsedThrowable parsedThrowable : parsedThrowables) {
-            walker = parsedThrowable.chain(walker);
+            cause = parsedThrowable.reconstruct(cause);
         }
-        return walker;
+        return cause;
     }
 
     private String exceptionHeading(List<String> lines, List<Integer> causeIndices, int causeIndex) {
