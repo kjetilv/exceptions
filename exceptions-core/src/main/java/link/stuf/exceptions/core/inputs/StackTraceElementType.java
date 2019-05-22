@@ -77,7 +77,7 @@ enum StackTraceElementType implements StackTraceElementPicker {
     },
 
     WITH_VERSIONED_MODULE(
-        Pattern.compile("^\\s*at\\s([\\w.]*)@([\\w\\d.]*)/([$\\w.]*)\\(([$\\w.]*):(\\d*)\\)$"), 4
+        Pattern.compile("^\\s*at\\s([\\w.]*)@([\\w\\d.]*)/([$\\w.]*)\\(([$\\w.]*):(\\d*)\\)$"), 5
     ) {
 
         @Override
@@ -186,8 +186,9 @@ enum StackTraceElementType implements StackTraceElementPicker {
     String[] parts(String line) {
         java.util.regex.Matcher matcher = pattern.matcher(line);
         if (matcher.matches()) {
-            return IntStream.range(0, groups)
-                .mapToObj(group -> matcher.group(group + 1))
+            return IntStream.range(0, matcher.groupCount())
+                .map(i -> i + 1)
+                .mapToObj(matcher::group)
                 .toArray(String[]::new);
         }
         return NONE;
