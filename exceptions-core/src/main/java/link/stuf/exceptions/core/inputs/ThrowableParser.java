@@ -1,5 +1,8 @@
 package link.stuf.exceptions.core.inputs;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -10,8 +13,12 @@ public class ThrowableParser {
 
     private static final String CAUSED_BY = "Caused by: ";
 
-    public ChameleonException parse(String output) {
-        List<String> lines = Arrays.stream(output.split("\n"))
+    public String toString(String input) {
+        return print(parse(input));
+    }
+
+    public ChameleonException parse(String in) {
+        List<String> lines = Arrays.stream(in.split("\n"))
             .filter(Objects::nonNull)
             .filter(line -> !line.isBlank())
             .collect(Collectors.toList());
@@ -38,6 +45,16 @@ public class ThrowableParser {
             cause = parsedThrowable.reconstruct(cause);
         }
         return cause;
+    }
+
+    private static String print(Throwable e) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (PrintWriter pw = new PrintWriter(out)) {
+            e.printStackTrace(pw);
+        }
+        return Arrays.stream(new String(out.toByteArray()).split("\n"))
+            .filter(line -> StackTraceElementType.MORE.parts(line).length == 0)
+            .collect(Collectors.joining("\n"));
     }
 
     private String exceptionHeading(List<String> lines, List<Integer> causeIndices, int causeIndex) {

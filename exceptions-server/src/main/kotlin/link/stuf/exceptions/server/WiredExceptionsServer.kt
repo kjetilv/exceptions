@@ -1,13 +1,14 @@
 package link.stuf.exceptions.server
 
-import org.http4k.core.Method
-import org.http4k.core.Request
-import org.http4k.core.Response
-import org.http4k.core.Status
+import link.stuf.exceptions.core.inputs.ThrowableParser
+import org.http4k.core.*
+import org.http4k.lens.ContentNegotiation
+import org.http4k.lens.string
 import org.http4k.routing.bind
 import org.http4k.routing.routes
 import org.http4k.server.Netty
 import org.http4k.server.asServer
+import java.nio.ByteBuffer
 
 class WiredExceptionsServer(val port: Int) {
 
@@ -17,8 +18,13 @@ class WiredExceptionsServer(val port: Int) {
             },
             "lookup" bind Method.GET to { req: Request ->
                 getThrowable(req)
+            },
+            "verify" bind Method.POST to { req: Request ->
+                Response(Status.OK).body(process(req.body.payload))
             }
     )
+
+    private fun process(payload: ByteBuffer): String = ThrowableParser().toString(String(payload.array()))
 
     private val server = app.asServer(Netty(9000)).start()
 
