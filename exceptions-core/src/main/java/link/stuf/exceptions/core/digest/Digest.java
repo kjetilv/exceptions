@@ -7,35 +7,36 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class ThrowablesDigest extends AbstractHashed implements Iterable<ThrowableDigest> {
+public class Digest extends AbstractHashed
+    implements Iterable<ThrowableDigest> {
 
-    public static ThrowablesDigest of(Throwable throwable) {
+    public static Digest create(Throwable mainThrowable) {
         LinkedList<ThrowableDigest> ts = new LinkedList<>();
         List<ThrowableDigest> rs = new LinkedList<>();
         List<Throwable> reversed = new LinkedList<>();
 
-        Throwables.stream(throwable).forEach(reversed::add);
-        reversed.forEach(t -> {
+        Throwables.stream(mainThrowable).forEach(reversed::add);
+        reversed.forEach(throwable -> {
             ThrowableDigest cause = ts.isEmpty() ? null : ts.getFirst();
-            ThrowableDigest digest = new ThrowableDigest(t, cause);
+            ThrowableDigest digest = new ThrowableDigest(throwable, cause);
             ts.add(0, digest);
             rs.add(digest);
         });
 
-        return new ThrowablesDigest(ts, rs);
+        return new Digest(ts, rs);
     }
 
     private final List<ThrowableDigest> digests;
 
     private final List<ThrowableDigest> reversed;
 
-    private ThrowablesDigest(List<ThrowableDigest> digests, List<ThrowableDigest> reversed) {
+    private Digest(List<ThrowableDigest> digests, List<ThrowableDigest> reversed) {
         this.digests = Collections.unmodifiableList(digests);
         this.reversed = Collections.unmodifiableList(reversed);
     }
 
-    public ThrowablesDigest map(UnaryOperator<ThrowableDigest> mapper) {
-        return new ThrowablesDigest(
+    public Digest map(UnaryOperator<ThrowableDigest> mapper) {
+        return new Digest(
             digests.stream().map(mapper).collect(Collectors.toList()),
             reversed.stream().map(mapper).collect(Collectors.toList())
         );
@@ -59,17 +60,13 @@ public class ThrowablesDigest extends AbstractHashed implements Iterable<Throwab
         if (o == this) {
             return true;
         }
-        if (o instanceof ThrowablesDigest) {
-            ThrowablesDigest td = (ThrowablesDigest) o;
+        if (o instanceof Digest) {
+            Digest td = (Digest) o;
             return digests.size() == td.digests.size() && IntStream.range(0, digests.size())
                 .allMatch(i ->
                     Objects.equals(digests.get(0), td.digests.get(0)));
         }
         return false;
-    }
-
-    List<ThrowableDigest> reverse() {
-        return reversed;
     }
 
     @Override

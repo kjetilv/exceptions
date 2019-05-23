@@ -1,15 +1,15 @@
-package link.stuf.exceptions.core.hashing;
+package link.stuf.exceptions.core.utils;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-final class Memoizer {
+public final class Memoizer {
 
     private Memoizer() {
     }
 
-    static <O> Supplier<O> get(Supplier<O> supplier) {
+    public static <O> Supplier<O> get(Supplier<O> supplier) {
         return supplier == null || supplier instanceof SuppMemoizer<?> ? supplier : new SuppMemoizer<>(supplier);
     }
 

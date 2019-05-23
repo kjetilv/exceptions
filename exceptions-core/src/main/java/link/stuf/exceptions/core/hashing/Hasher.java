@@ -1,10 +1,14 @@
 package link.stuf.exceptions.core.hashing;
 
+import link.stuf.exceptions.core.utils.Memoizer;
+
 import java.security.MessageDigest;
 import java.util.UUID;
 import java.util.function.Supplier;
 
 public final class Hasher {
+
+    private static final String HASH = "MD5";
 
     public static Supplier<UUID> uuid(Hashed hashed) {
         return Memoizer.get(() -> {
@@ -16,9 +20,9 @@ public final class Hasher {
 
     private static MessageDigest md5() {
         try {
-            return MessageDigest.getInstance("MD5");
+            return MessageDigest.getInstance(HASH);
         } catch (Exception e) {
-            throw new IllegalStateException("Expected MD5 implementation", e);
+            throw new IllegalStateException("Expected " + HASH + " implementation", e);
         }
     }
 

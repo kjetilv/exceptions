@@ -3,8 +3,6 @@ package link.stuf.exceptions.core.digest;
 import link.stuf.exceptions.core.inputs.ChameleonException;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Clock;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -21,37 +19,25 @@ public class ThrowableDigest extends AbstractHashed {
 
     private final ThrowableDigest cause;
 
-    private final Instant time;
-
     ThrowableDigest(Throwable throwable, ThrowableDigest cause) {
-        this(Objects.requireNonNull(throwable, "throwable"), cause, null);
-    }
-
-    private ThrowableDigest(Throwable throwable, ThrowableDigest cause, Clock clock) {
         this(
             className(throwable),
             throwable.getMessage(),
             copy(throwable.getStackTrace()),
-            cause,
-            clock,
-            null);
+            cause
+        );
     }
 
     private ThrowableDigest(
         String className,
         String message,
         List<StackTraceElement> stackTrace,
-        ThrowableDigest cause,
-        Clock clock,
-        Instant time
+        ThrowableDigest cause
     ) {
         this.className = className;
         this.message = message;
         this.stackTrace = stackTrace;
         this.cause = cause;
-        this.time = time == null
-            ? Instant.now(clock == null ? Clock.systemUTC() : clock)
-            : time;
     }
 
     private String getMessage() {
@@ -60,10 +46,6 @@ public class ThrowableDigest extends AbstractHashed {
 
     public ThrowableDigest getCause() {
         return cause;
-    }
-
-    public Instant getTime() {
-        return time;
     }
 
     List<StackTraceElement> getStackTrace() {
@@ -77,13 +59,7 @@ public class ThrowableDigest extends AbstractHashed {
     }
 
     ThrowableDigest withStacktrace(List<StackTraceElement> stackTrace) {
-        return new ThrowableDigest(
-            className,
-            message,
-            stackTrace,
-            cause,
-            null,
-            time);
+        return new ThrowableDigest(className, message, stackTrace, cause);
     }
 
     private String getClassName() {

@@ -8,14 +8,14 @@ import java.util.stream.StreamSupport;
 final class Throwables {
 
     static Stream<Throwable> stream(Throwable throwable) {
-        return StreamSupport.stream(new ThrowableChainSpliterator(throwable), false);
+        return StreamSupport.stream(new DigestSpliterator(throwable), false);
     }
 
-    private static class ThrowableChainSpliterator extends Spliterators.AbstractSpliterator<Throwable> {
+    private static class DigestSpliterator extends Spliterators.AbstractSpliterator<Throwable> {
 
         private Throwable throwable;
 
-        ThrowableChainSpliterator(Throwable throwable) {
+        DigestSpliterator(Throwable throwable) {
             super(Long.MAX_VALUE, IMMUTABLE | ORDERED);
             this.throwable = throwable;
         }

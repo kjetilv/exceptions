@@ -3,7 +3,10 @@ package link.stuf.exceptions.server
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import link.stuf.exceptions.api.ThrowablesHandler
-import link.stuf.exceptions.core.ThrowablesHandlerFactory
+import link.stuf.exceptions.core.MeteringHandlerListener
+import link.stuf.exceptions.core.clearing.DefaultThrowablesHandler
+import link.stuf.exceptions.core.digest.Packages
+import link.stuf.exceptions.core.digest.SimpleThrowableReducer
 import link.stuf.exceptions.core.inputs.ThrowableParser
 import link.stuf.exceptions.server.api.WiredException
 import link.stuf.exceptions.server.api.WiredStackTraceElement
@@ -36,8 +39,11 @@ class WiredExceptionsServer(port: Int) {
             }
     )
 
-    private val handler: ThrowablesHandler = ThrowablesHandlerFactory.forMeter(
-            PrometheusMeterRegistry(PrometheusConfig.DEFAULT))
+    private val handlerListener = MeteringHandlerListener(PrometheusMeterRegistry(PrometheusConfig.DEFAULT))
+
+    private val handler: ThrowablesHandler = DefaultThrowablesHandler(
+                SimpleThrowableReducer(Packages.all(), Packages.none(), Packages.none()),
+                handlerListener)
 
     private val server = app.asServer(Netty(port)).start()
 
