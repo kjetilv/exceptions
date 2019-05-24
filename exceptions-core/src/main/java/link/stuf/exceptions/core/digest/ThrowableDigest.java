@@ -1,103 +1,62 @@
 package link.stuf.exceptions.core.digest;
 
-import link.stuf.exceptions.core.inputs.ChameleonException;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-public class ThrowableDigest extends AbstractHashed {
+public class ThrowableDigest extends AbstractHashed{
 
-    private final String message;
+    public static ThrowableDigest create(Throwable mainThrowable) {
+        LinkedList<ShadowThrowable> ts = new LinkedList<>();
+        List<Throwable> reversed = new LinkedList<>();
 
-    private final String className;
+        Throwables.stream(mainThrowable).forEach(reversed::add);
+        reversed.forEach(throwable ->
+            ts.add(0, ShadowThrowable.create(throwable)));
 
-    private final List<StackTraceElement> stackTrace;
-
-    private final ThrowableDigest cause;
-
-    ThrowableDigest(Throwable throwable, ThrowableDigest cause) {
-        this(
-            className(throwable),
-            throwable.getMessage(),
-            copy(throwable.getStackTrace()),
-            cause
-        );
+        return new ThrowableDigest(ts);
     }
 
-    private ThrowableDigest(
-        String className,
-        String message,
-        List<StackTraceElement> stackTrace,
-        ThrowableDigest cause
-    ) {
-        this.className = className;
-        this.message = message;
-        this.stackTrace = stackTrace;
-        this.cause = cause;
+    private final List<ShadowThrowable> digests;
+
+    private ThrowableDigest(List<ShadowThrowable> digests) {
+        this.digests = Collections.unmodifiableList(digests);
     }
 
-    private String getMessage() {
-        return message;
+    public ThrowableDigest map(UnaryOperator<ShadowThrowable> mapper) {
+        return new ThrowableDigest(digests.stream().map(mapper).collect(Collectors.toList()));
     }
 
-    public ThrowableDigest getCause() {
-        return cause;
+    public Throwable toThrowable() {
+        List<ShadowThrowable> copy = new ArrayList<>(digests);
+        Collections.reverse(copy);
+        return copy.stream().reduce(null, (exception, digest) -> digest.toException(exception), NO_COMBINE);
     }
 
-    List<StackTraceElement> getStackTrace() {
-        return stackTrace;
-    }
-
-    Throwable toException(Throwable cause) {
-        Throwable exception = new Throwable(getClassName() + ": " + getMessage(), cause);
-        exception.setStackTrace(getStackTrace().toArray(StackTraceElement[]::new));
-        return exception;
-    }
-
-    ThrowableDigest withStacktrace(List<StackTraceElement> stackTrace) {
-        return new ThrowableDigest(className, message, stackTrace, cause);
-    }
-
-    private String getClassName() {
-        return className;
-    }
-
-    private static List<StackTraceElement> copy(StackTraceElement[] stackTrace) {
-        return Arrays.stream(stackTrace).map(element ->
-            new StackTraceElement(
-                element.getClassLoaderName(),
-                element.getModuleName(),
-                element.getModuleVersion(),
-                element.getClassName(),
-                element.getMethodName(),
-                element.getFileName(),
-                element.getLineNumber()
-            )).collect(Collectors.toUnmodifiableList());
-    }
-
-    private static String className(Throwable throwable) {
-        if (throwable instanceof ChameleonException) {
-            return ((ChameleonException)throwable).getProxiedClassName();
-        }
-        return throwable.getClass().getName();
-    }
+    private static final BinaryOperator<Throwable> NO_COMBINE = (throwable, throwable2) -> {
+        throw new IllegalStateException("No combine");
+    };
 
     @Override
     public boolean equals(Object o) {
-        return this == o || o instanceof ThrowableDigest &&
-            Objects.equals(className, ((ThrowableDigest) o).className) &&
-            Objects.equals(stackTrace, ((ThrowableDigest) o).stackTrace);
+        if (o == this) {
+            return true;
+        }
+        if (o instanceof ThrowableDigest) {
+            ThrowableDigest td = (ThrowableDigest) o;
+            return digests.size() == td.digests.size() && IntStream.range(0, digests.size())
+                .allMatch(i ->
+                    Objects.equals(digests.get(0), td.digests.get(0)));
+        }
+        return false;
     }
 
     @Override
     public void hashTo(Consumer<byte[]> hash) {
-        hash.accept(this.className.getBytes(StandardCharsets.UTF_8));
-        for (StackTraceElement el : this.stackTrace) {
-            hash.accept(el.toString().getBytes(StandardCharsets.UTF_8));
-        }
+        digests.forEach(digest ->
+            digest.hashTo(hash));
     }
 }

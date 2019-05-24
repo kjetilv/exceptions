@@ -4,8 +4,8 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import link.stuf.exceptions.core.clearing.HandlerListener;
-import link.stuf.exceptions.core.digest.Digest;
-import link.stuf.exceptions.core.digest.Occurrence;
+import link.stuf.exceptions.core.digest.ThrowableDigest;
+import link.stuf.exceptions.core.digest.ThrowableOccurrence;
 import link.stuf.exceptions.core.hashing.Hashed;
 
 import java.util.Arrays;
@@ -20,16 +20,16 @@ public class MeteringHandlerListener implements HandlerListener {
     }
 
     @Override
-    public void handled(Digest digest, Occurrence occurrence, Throwable source) {
+    public void handled(ThrowableDigest digest, ThrowableOccurrence occurrence, Throwable source) {
         count(digest);
         count(digest, occurrence);
     }
 
-    private void count(Digest digest) {
+    private void count(ThrowableDigest digest) {
         counter(digest).count();
     }
 
-    private void count(Digest digest, Occurrence messages) {
+    private void count(ThrowableDigest digest, ThrowableOccurrence messages) {
         messageCounter(digest, messages).count();
     }
 

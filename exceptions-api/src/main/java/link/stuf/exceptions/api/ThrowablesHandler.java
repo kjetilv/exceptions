@@ -4,7 +4,7 @@ import java.util.UUID;
 
 public interface ThrowablesHandler {
 
-    Handling onException(Throwable throwable);
+    Handling handle(Throwable throwable);
 
     Throwable lookup(UUID uuid);
 }

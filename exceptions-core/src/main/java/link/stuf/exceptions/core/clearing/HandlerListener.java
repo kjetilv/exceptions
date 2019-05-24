@@ -1,9 +1,9 @@
 package link.stuf.exceptions.core.clearing;
 
-import link.stuf.exceptions.core.digest.Digest;
-import link.stuf.exceptions.core.digest.Occurrence;
+import link.stuf.exceptions.core.digest.ThrowableDigest;
+import link.stuf.exceptions.core.digest.ThrowableOccurrence;
 
 public interface HandlerListener {
 
-    void handled(Digest chain, Occurrence occurrence, Throwable source);
+    void handled(ThrowableDigest chain, ThrowableOccurrence occurrence, Throwable source);
 }

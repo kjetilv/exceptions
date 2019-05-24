@@ -1,21 +1,21 @@
 package link.stuf.exceptions.core.clearing;
 
 import link.stuf.exceptions.api.Handling;
-import link.stuf.exceptions.core.digest.Digest;
+import link.stuf.exceptions.core.digest.ThrowableDigest;
 
 class SimpleHandlingPolicy implements Handling {
 
-    private final Digest digest;
+    private final ThrowableDigest digest;
 
-    private final Digest reduced;
+    private final ThrowableDigest reduced;
 
     private final Throwable throwable;
 
     private final boolean isNew;
 
     SimpleHandlingPolicy(
-        Digest digest,
-        Digest reduced,
+        ThrowableDigest digest,
+        ThrowableDigest reduced,
         Throwable source,
         boolean isNew
     ) {

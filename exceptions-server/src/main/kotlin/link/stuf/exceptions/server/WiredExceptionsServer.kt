@@ -5,6 +5,7 @@ import io.micrometer.prometheus.PrometheusMeterRegistry
 import link.stuf.exceptions.api.ThrowablesHandler
 import link.stuf.exceptions.core.MeteringHandlerListener
 import link.stuf.exceptions.core.clearing.DefaultThrowablesHandler
+import link.stuf.exceptions.core.clearing.InMemoryThrowablesStorage
 import link.stuf.exceptions.core.digest.Packages
 import link.stuf.exceptions.core.digest.SimpleThrowableReducer
 import link.stuf.exceptions.core.inputs.ThrowableParser
@@ -42,17 +43,17 @@ class WiredExceptionsServer(port: Int) {
     private val handlerListener = MeteringHandlerListener(PrometheusMeterRegistry(PrometheusConfig.DEFAULT))
 
     private val handler: ThrowablesHandler = DefaultThrowablesHandler(
-                SimpleThrowableReducer(Packages.all(), Packages.none(), Packages.none()),
-                handlerListener)
+            InMemoryThrowablesStorage(),
+            SimpleThrowableReducer(Packages.all(), Packages.none(), Packages.none()),
+            handlerListener)
 
     private val server = app.asServer(Netty(port)).start()
 
-    private fun verify(payload: ByteBuffer): String =
-            ThrowableParser.echo(String(payload.array()))
+    private fun verify(payload: ByteBuffer): String = ThrowableParser.echo(String(payload.array()))
 
     private fun uuid(payload: ByteBuffer): UUID {
         val parsed = ThrowableParser.parse(payload)
-        val handling = handler.onException(parsed)
+        val handling = handler.handle(parsed)
         return handling.id
     }
 
@@ -60,25 +61,23 @@ class WiredExceptionsServer(port: Int) {
         WiredException(
                 className = t.javaClass.name,
                 message = t.message,
-                stacktrace = t.stackTrace?.let { st: Array<StackTraceElement> -> wiredStackTrace(st) },
-                cause = t.cause?.let { c: Throwable -> wiredEx(c) }
+                stacktrace = t.stackTrace?.let(this::wiredStackTrace),
+                cause = t.cause?.let(this::wiredEx)
         )
     }
 
     private fun wiredStackTrace(stackTrace: Array<StackTraceElement>?): Array<WiredStackTraceElement>? =
-            stackTrace?.let { elements: Array<StackTraceElement> ->
-                elements.map { element: StackTraceElement ->
-                    WiredStackTraceElement(
-                            classLoaderName = element.classLoaderName,
-                            moduleName = element.moduleName,
-                            moduleVersion = element.moduleVersion,
-                            declaringClass = element.className,
-                            methodName = element.methodName,
-                            fileName = element.fileName,
-                            lineNumber = element.lineNumber
-                    )
-                }.toTypedArray()
-            }
+            stackTrace?.map { element ->
+                WiredStackTraceElement(
+                        classLoaderName = element.classLoaderName,
+                        moduleName = element.moduleName,
+                        moduleVersion = element.moduleVersion,
+                        declaringClass = element.className,
+                        methodName = element.methodName,
+                        fileName = element.fileName,
+                        lineNumber = element.lineNumber
+                )
+            }?.toTypedArray()
 
     fun stop() {
         server.stop()

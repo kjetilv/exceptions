@@ -1,62 +1,57 @@
 package link.stuf.exceptions.core.clearing;
 
 import link.stuf.exceptions.api.ThrowablesHandler;
-import link.stuf.exceptions.core.digest.Digest;
-import link.stuf.exceptions.core.digest.Occurrence;
-import link.stuf.exceptions.core.digest.ThrowableReducer;
+import link.stuf.exceptions.core.digest.ThrowableDigest;
+import link.stuf.exceptions.core.digest.ThrowableOccurrence;
+import link.stuf.exceptions.core.digest.ThrowablesReducer;
 
 import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Arrays;
+import java.util.List;
 
 public class DefaultThrowablesHandler implements ThrowablesHandler {
 
-    private final Map<UUID, Digest> exceptions = new ConcurrentHashMap<>();
+    private final ThrowablesStorage throwablesStorage;
 
-    private final Map<UUID, Map<Instant, Occurrence>> execptionInstances = new ConcurrentHashMap<>();
-
-    private final ThrowableReducer throwableReducer;
+    private final ThrowablesReducer throwablesReducer;
 
     private final List<HandlerListener> listeners;
 
-    public DefaultThrowablesHandler(ThrowableReducer throwableReducer,
-                                    HandlerListener... listeners) {
-        this.throwableReducer = throwableReducer;
+    public DefaultThrowablesHandler(
+        ThrowablesStorage throwablesStorage,
+        ThrowablesReducer throwableReducer,
+        HandlerListener... listeners
+    ) {
+        this.throwablesStorage = throwablesStorage;
+        this.throwablesReducer = throwableReducer;
         this.listeners = Arrays.asList(listeners.clone());
     }
 
     @Override
-    public SimpleHandlingPolicy onException(Throwable throwable) {
-        Digest digest = Digest.create(throwable);
-        Occurrence occurrence = Occurrence.create(throwable, digest, Instant.now());
+    public SimpleHandlingPolicy handle(Throwable throwable) {
+        ThrowableDigest digest = ThrowableDigest.create(throwable);
+        ThrowableOccurrence occurrence = ThrowableOccurrence.create(throwable, digest, Instant.now());
 
-        Digest existingDigest = recorded(digest, occurrence);
-        Digest canonicalDigest = existingDigest == null ? digest : existingDigest;
+        ThrowableDigest existingDigest = throwablesStorage.store(digest, occurrence);
+        ThrowableDigest canonicalDigest = existingDigest == null ? digest : existingDigest;
 
-        listeners.forEach(listener -> listener.handled(digest, occurrence, throwable));
+        throwablesStorage.store(canonicalDigest, occurrence);
+
+        listeners.forEach(listener ->
+            listener.handled(digest, occurrence, throwable));
 
         return new SimpleHandlingPolicy(
             canonicalDigest,
-            canonicalDigest.map(throwableReducer::reduce),
+            canonicalDigest.map(throwablesReducer::reduce),
             throwable,
             existingDigest == null);
     }
 
     @Override
     public Throwable lookup(java.util.UUID uuid) {
-        return Optional.ofNullable(exceptions.get(uuid))
-            .map(Digest::toThrowable)
+        return throwablesStorage.getDigest(uuid)
+            .map(ThrowableDigest::toThrowable)
             .orElseThrow(() ->
                 new IllegalArgumentException(uuid.toString()));
     }
-
-    private Digest recorded(Digest chain, Occurrence messages) {
-        Digest existing = exceptions.putIfAbsent(chain.getId(), chain);
-        execptionInstances.computeIfAbsent(
-            chain.getId(),
-            id -> new ConcurrentHashMap<>()
-        ).put(messages.getTime(), messages);
-        return existing;
-    }
-
 }

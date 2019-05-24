@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class SimpleThrowableReducer implements ThrowableReducer {
+public class SimpleThrowableReducer implements ThrowablesReducer {
 
     private final Packages display;
 
@@ -20,11 +20,11 @@ public class SimpleThrowableReducer implements ThrowableReducer {
     }
 
     @Override
-    public ThrowableDigest reduce(ThrowableDigest digest) {
+    public ShadowThrowable reduce(ShadowThrowable digest) {
         return digest.withStacktrace(reducedStackTrace(digest));
     }
 
-    private List<StackTraceElement> reducedStackTrace(ThrowableDigest current) {
+    private List<StackTraceElement> reducedStackTrace(ShadowThrowable current) {
         List<StackTraceElement> stack = List.copyOf(current.getStackTrace());
         List<StackTraceElement> reducedStack = new ArrayList<>(stack.size());
         List<StackTraceElement> aggregated = new ArrayList<>();

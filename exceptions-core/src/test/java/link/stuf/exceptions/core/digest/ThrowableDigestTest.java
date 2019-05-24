@@ -10,7 +10,7 @@ public class ThrowableDigestTest {
 
     @Test
     public void can_hash() {
-        ThrowableDigest digest = new ThrowableDigest(new Exception(), null);
+        ShadowThrowable digest = new ShadowThrowable(new Exception(), null);
 
         UUID hash = digest.getId();
 
