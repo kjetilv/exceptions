@@ -12,9 +12,9 @@ public class ThrowableDigestTest {
     public void can_hash() {
         ShadowThrowable digest = new ShadowThrowable(new Exception(), null);
 
-        UUID hash = digest.getId();
+        UUID hash = digest.getHash();
 
-        assertEquals(hash, digest.getId());
+        assertEquals(hash, digest.getHash());
     }
 
 }

@@ -8,8 +8,6 @@ public interface Handling {
 
     Throwable getSource();
 
-    Throwable getReduced();
-
     boolean isLoggable();
 
     boolean isNew();

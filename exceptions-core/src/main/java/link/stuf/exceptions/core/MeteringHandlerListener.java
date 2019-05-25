@@ -3,9 +3,8 @@ package link.stuf.exceptions.core;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
-import link.stuf.exceptions.core.clearing.HandlerListener;
-import link.stuf.exceptions.core.digest.ThrowableDigest;
-import link.stuf.exceptions.core.digest.ThrowableOccurrence;
+import link.stuf.exceptions.core.digest.ThrowableSpecies;
+import link.stuf.exceptions.core.digest.ThrowableSpecimen;
 import link.stuf.exceptions.core.hashing.Hashed;
 
 import java.util.Arrays;
@@ -20,16 +19,16 @@ public class MeteringHandlerListener implements HandlerListener {
     }
 
     @Override
-    public void handled(ThrowableDigest digest, ThrowableOccurrence occurrence, Throwable source) {
+    public void handled(ThrowableSpecies digest, ThrowableSpecimen occurrence, Throwable source) {
         count(digest);
         count(digest, occurrence);
     }
 
-    private void count(ThrowableDigest digest) {
+    private void count(ThrowableSpecies digest) {
         counter(digest).count();
     }
 
-    private void count(ThrowableDigest digest, ThrowableOccurrence messages) {
+    private void count(ThrowableSpecies digest, ThrowableSpecimen messages) {
         messageCounter(digest, messages).count();
     }
 
@@ -38,15 +37,15 @@ public class MeteringHandlerListener implements HandlerListener {
     }
 
     private Counter messageCounter(Hashed exc, Hashed messages) {
-        return metrics.counter("exceptions-" + exc.getId(), Arrays.asList(hashTag(exc), messageTag(messages)));
+        return metrics.counter("exceptions-" + exc.getHash(), Arrays.asList(hashTag(exc), messageTag(messages)));
     }
 
     private Tag hashTag(Hashed exc) {
-        return Tag.of(UUID, exc.getId().toString());
+        return Tag.of(UUID, exc.getHash().toString());
     }
 
     private Tag messageTag(Hashed messages) {
-        return Tag.of(MESSAGES, messages.getId().toString());
+        return Tag.of(MESSAGES, messages.getHash().toString());
     }
 
     private static final String UUID = "uuid";

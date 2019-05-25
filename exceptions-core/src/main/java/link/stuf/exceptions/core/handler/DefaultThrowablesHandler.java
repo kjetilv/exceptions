@@ -1,9 +1,11 @@
-package link.stuf.exceptions.core.clearing;
+package link.stuf.exceptions.core.handler;
 
+import link.stuf.exceptions.core.ThrowablesStorage;
 import link.stuf.exceptions.api.ThrowablesHandler;
-import link.stuf.exceptions.core.digest.ThrowableDigest;
-import link.stuf.exceptions.core.digest.ThrowableOccurrence;
-import link.stuf.exceptions.core.digest.ThrowablesReducer;
+import link.stuf.exceptions.core.HandlerListener;
+import link.stuf.exceptions.core.digest.ThrowableSpecies;
+import link.stuf.exceptions.core.digest.ThrowableSpecimen;
+import link.stuf.exceptions.core.ThrowablesReducer;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -29,11 +31,11 @@ public class DefaultThrowablesHandler implements ThrowablesHandler {
 
     @Override
     public SimpleHandlingPolicy handle(Throwable throwable) {
-        ThrowableDigest digest = ThrowableDigest.create(throwable);
-        ThrowableOccurrence occurrence = ThrowableOccurrence.create(throwable, digest, Instant.now());
+        ThrowableSpecies digest = ThrowableSpecies.create(throwable);
+        ThrowableSpecimen occurrence = ThrowableSpecimen.create(throwable, digest, Instant.now());
 
-        ThrowableDigest existingDigest = throwablesStorage.store(digest, occurrence);
-        ThrowableDigest canonicalDigest = existingDigest == null ? digest : existingDigest;
+        ThrowableSpecies existingDigest = throwablesStorage.store(digest, occurrence);
+        ThrowableSpecies canonicalDigest = existingDigest == null ? digest : existingDigest;
 
         throwablesStorage.store(canonicalDigest, occurrence);
 
@@ -42,7 +44,6 @@ public class DefaultThrowablesHandler implements ThrowablesHandler {
 
         return new SimpleHandlingPolicy(
             canonicalDigest,
-            canonicalDigest.map(throwablesReducer::reduce),
             throwable,
             existingDigest == null);
     }
@@ -50,7 +51,7 @@ public class DefaultThrowablesHandler implements ThrowablesHandler {
     @Override
     public Throwable lookup(java.util.UUID uuid) {
         return throwablesStorage.getDigest(uuid)
-            .map(ThrowableDigest::toThrowable)
+            .map(ThrowableSpecies::toThrowable)
             .orElseThrow(() ->
                 new IllegalArgumentException(uuid.toString()));
     }

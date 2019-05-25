@@ -1,43 +1,36 @@
-package link.stuf.exceptions.core.clearing;
+package link.stuf.exceptions.core.handler;
 
 import link.stuf.exceptions.api.Handling;
-import link.stuf.exceptions.core.digest.ThrowableDigest;
+import link.stuf.exceptions.core.digest.ThrowableSpecies;
+
+import java.util.UUID;
 
 class SimpleHandlingPolicy implements Handling {
 
-    private final ThrowableDigest digest;
-
-    private final ThrowableDigest reduced;
+    private final ThrowableSpecies species;
 
     private final Throwable throwable;
 
     private final boolean isNew;
 
     SimpleHandlingPolicy(
-        ThrowableDigest digest,
-        ThrowableDigest reduced,
+        ThrowableSpecies species,
         Throwable source,
         boolean isNew
     ) {
-        this.digest = digest;
-        this.reduced = reduced;
+        this.species = species;
         this.throwable = source;
         this.isNew = isNew;
     }
 
     @Override
-    public java.util.UUID getId() {
-        return digest.getId();
+    public UUID getId() {
+        return species.getHash();
     }
 
     @Override
     public Throwable getSource() {
         return throwable;
-    }
-
-    @Override
-    public Throwable getReduced() {
-        return reduced.toThrowable();
     }
 
     @Override

@@ -1,6 +1,6 @@
 package link.stuf.exceptions.core.inputs;
 
-public interface StackTraceElementPicker {
+interface StackTraceElementPicker {
 
     default String module(String... parts) {
         return null;

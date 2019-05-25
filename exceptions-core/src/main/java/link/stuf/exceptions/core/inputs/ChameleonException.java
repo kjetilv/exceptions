@@ -2,13 +2,12 @@ package link.stuf.exceptions.core.inputs;
 
 import java.util.Objects;
 
-@SuppressWarnings("ExtendsThrowable")
-public class ChameleonException extends Throwable {
+public class ChameleonException extends Exception {
 
     private final String proxiedClassName;
 
     ChameleonException(String proxiedClassName, String message, Throwable cause) {
-        super(message, cause);
+        super(message, cause, false, true);
         this.proxiedClassName = Objects.requireNonNull(proxiedClassName, "proxiedClassName");
     }
 

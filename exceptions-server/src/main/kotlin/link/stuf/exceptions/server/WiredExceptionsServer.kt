@@ -4,10 +4,10 @@ import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import link.stuf.exceptions.api.ThrowablesHandler
 import link.stuf.exceptions.core.MeteringHandlerListener
-import link.stuf.exceptions.core.clearing.DefaultThrowablesHandler
-import link.stuf.exceptions.core.clearing.InMemoryThrowablesStorage
-import link.stuf.exceptions.core.digest.Packages
-import link.stuf.exceptions.core.digest.SimpleThrowableReducer
+import link.stuf.exceptions.core.handler.DefaultThrowablesHandler
+import link.stuf.exceptions.core.storage.InMemoryThrowablesStorage
+import link.stuf.exceptions.core.reduce.Packages
+import link.stuf.exceptions.core.reduce.SimpleThrowableReducer
 import link.stuf.exceptions.core.inputs.ThrowableParser
 import link.stuf.exceptions.server.api.WiredException
 import link.stuf.exceptions.server.api.WiredStackTraceElement

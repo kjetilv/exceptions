@@ -70,7 +70,7 @@ public class ThrowableParser {
             e.printStackTrace(pw);
         }
         return Arrays.stream(new String(out.toByteArray()).split("\n"))
-            .filter(line -> StackTraceElementType.MORE.parts(line).length == 0)
+            .filter(line -> StackTraceEntry.MORE.parts(line).length == 0)
             .collect(Collectors.joining("\n"));
     }
 
@@ -81,16 +81,16 @@ public class ThrowableParser {
 
     private static StackTraceElement[] parsed(List<String> lines, int startIndex, int endIndex) {
         return lines.subList(startIndex, endIndex).stream().flatMap(line ->
-            Stream.of(StackTraceElementType.values()).flatMap(pattern ->
-                reconstructed(line, pattern)))
+            Stream.of(StackTraceEntry.values()).flatMap(type ->
+                reconstructed(type, line)))
             .toArray(StackTraceElement[]::new);
     }
 
-    private static Stream<StackTraceElement> reconstructed(String line, StackTraceElementType pattern) {
+    private static Stream<StackTraceElement> reconstructed(StackTraceEntry pattern, String line) {
         String[] matches = pattern.parts(line);
         return matches.length == 0
             ? Stream.empty()
-            : new ParsedStackTraceElement(pattern, matches).reconstruct();
+            : new StackTraceParts(pattern, matches).reconstruct();
     }
 
     private static boolean whitespaceAtStart(String line) {

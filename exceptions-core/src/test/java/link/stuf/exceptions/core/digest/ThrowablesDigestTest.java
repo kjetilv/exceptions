@@ -11,16 +11,16 @@ public class ThrowablesDigestTest {
 
     @Test
     public void hash() {
-        ThrowableDigest digest1 = ThrowableDigest.create(new Throwable(new Throwable(new Throwable())));
-        ThrowableDigest digest2 = ThrowableDigest.create(new Throwable(new Throwable(new Throwable())));
-        assertEquals(digest1.getId(), digest2.getId());
+        ThrowableSpecies digest1 = ThrowableSpecies.create(new Throwable(new Throwable(new Throwable())));
+        ThrowableSpecies digest2 = ThrowableSpecies.create(new Throwable(new Throwable(new Throwable())));
+        assertEquals(digest1.getHash(), digest2.getHash());
     }
 
     @Test
     public void hash2() {
-        ThrowableDigest digest1 = ThrowableDigest.create(new Throwable(new Throwable(new Throwable())));
-        ThrowableDigest digest2 = ThrowableDigest.create(new Throwable(new Throwable(new Throwable())));
-        assertNotEquals(digest1.getId(), digest2.getId());
+        ThrowableSpecies digest1 = ThrowableSpecies.create(new Throwable(new Throwable(new Throwable())));
+        ThrowableSpecies digest2 = ThrowableSpecies.create(new Throwable(new Throwable(new Throwable())));
+        assertNotEquals(digest1.getHash(), digest2.getHash());
     }
 
     @Test

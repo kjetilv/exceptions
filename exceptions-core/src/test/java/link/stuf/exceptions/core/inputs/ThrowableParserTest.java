@@ -32,7 +32,7 @@ public class ThrowableParserTest {
             e.printStackTrace(pw);
         }
         return Arrays.stream(new String(out.toByteArray()).split("\n"))
-            .filter(line -> StackTraceElementType.MORE.parts(line).length == 0)
+            .filter(line -> StackTraceEntry.MORE.parts(line).length == 0)
             .collect(Collectors.joining("\n"));
     }
 

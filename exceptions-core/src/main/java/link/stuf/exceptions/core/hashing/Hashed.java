@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 
 public interface Hashed {
 
-    UUID getId();
+    UUID getHash();
 
     void hashTo(Consumer<byte[]> hash);
 }

@@ -1,5 +1,6 @@
 package link.stuf.exceptions.core.digest;
 
+import link.stuf.exceptions.core.hashing.AbstractHashed;
 import link.stuf.exceptions.core.inputs.ChameleonException;
 
 import java.nio.charset.StandardCharsets;
@@ -27,7 +28,7 @@ public class ShadowThrowable extends AbstractHashed {
         this.stackTrace = stackTrace;
     }
 
-    List<StackTraceElement> getStackTrace() {
+    public List<StackTraceElement> getStackTrace() {
         return stackTrace;
     }
 
@@ -37,7 +38,7 @@ public class ShadowThrowable extends AbstractHashed {
         return exception;
     }
 
-    ShadowThrowable withStacktrace(List<StackTraceElement> stackTrace) {
+    public ShadowThrowable withStacktrace(List<StackTraceElement> stackTrace) {
         return new ShadowThrowable(className, message, stackTrace);
     }
 
