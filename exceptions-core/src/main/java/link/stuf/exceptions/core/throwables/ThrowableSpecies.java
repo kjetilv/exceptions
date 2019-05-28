@@ -1,4 +1,4 @@
-package link.stuf.exceptions.core.digest;
+package link.stuf.exceptions.core.throwables;
 
 import link.stuf.exceptions.core.hashing.AbstractHashed;
 import link.stuf.exceptions.core.utils.Streams;
@@ -23,18 +23,18 @@ public class ThrowableSpecies extends AbstractHashed {
         return new ThrowableSpecies(causes);
     }
 
-    private final List<ShadowThrowable> shadows;
+    private final List<ShadowThrowable> chain;
 
-    private ThrowableSpecies(List<ShadowThrowable> shadows) {
-        this.shadows = Collections.unmodifiableList(shadows);
+    private ThrowableSpecies(List<ShadowThrowable> chain) {
+        this.chain = Collections.unmodifiableList(chain);
     }
 
     public ThrowableSpecies map(UnaryOperator<ShadowThrowable> mapper) {
-        return new ThrowableSpecies(shadows.stream().map(mapper).collect(Collectors.toList()));
+        return new ThrowableSpecies(chain.stream().map(mapper).collect(Collectors.toList()));
     }
 
     public Throwable toThrowable() {
-        return Streams.reverse(shadows).reduce(
+        return Streams.reverse(chain).reduce(
             null,
             (exception, digest) ->
                 digest.toException(exception),
@@ -52,15 +52,15 @@ public class ThrowableSpecies extends AbstractHashed {
         }
         if (o instanceof ThrowableSpecies) {
             ThrowableSpecies td = (ThrowableSpecies) o;
-            return shadows.size() == td.shadows.size() && IntStream.range(0, shadows.size())
+            return chain.size() == td.chain.size() && IntStream.range(0, chain.size())
                 .allMatch(i ->
-                    Objects.equals(shadows.get(0), td.shadows.get(0)));
+                    Objects.equals(chain.get(0), td.chain.get(0)));
         }
         return false;
     }
 
     @Override
     public void hashTo(Consumer<byte[]> hash) {
-        shadows.forEach(shadow -> shadow.hashTo(hash));
+        chain.forEach(shadow -> shadow.hashTo(hash));
     }
 }

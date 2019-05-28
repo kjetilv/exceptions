@@ -1,7 +1,7 @@
 package link.stuf.exceptions.core;
 
-import link.stuf.exceptions.core.digest.ThrowableSpecies;
-import link.stuf.exceptions.core.digest.ThrowableSpecimen;
+import link.stuf.exceptions.core.throwables.ThrowableSpecies;
+import link.stuf.exceptions.core.throwables.ThrowableSpecimen;
 
 import java.util.Collection;
 import java.util.Optional;

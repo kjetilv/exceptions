@@ -1,7 +1,7 @@
 package link.stuf.exceptions.core.reduce;
 
 import link.stuf.exceptions.core.ThrowablesReducer;
-import link.stuf.exceptions.core.digest.ShadowThrowable;
+import link.stuf.exceptions.core.throwables.ShadowThrowable;
 
 import java.util.ArrayList;
 import java.util.Collection;

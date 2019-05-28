@@ -6,9 +6,6 @@ import java.util.function.Supplier;
 
 public final class Memoizer {
 
-    private Memoizer() {
-    }
-
     public static <O> Supplier<O> get(Supplier<O> supplier) {
         return supplier == null || supplier instanceof SuppMemoizer<?> ? supplier : new SuppMemoizer<>(supplier);
     }
@@ -27,5 +24,8 @@ public final class Memoizer {
         public T get() {
             return value.updateAndGet(v -> v == null ? supplier.get() : v);
         }
+    }
+
+    private Memoizer() {
     }
 }

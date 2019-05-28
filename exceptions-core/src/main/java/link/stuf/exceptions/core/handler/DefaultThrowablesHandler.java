@@ -1,32 +1,30 @@
 package link.stuf.exceptions.core.handler;
 
-import link.stuf.exceptions.core.ThrowablesStorage;
 import link.stuf.exceptions.api.ThrowablesHandler;
-import link.stuf.exceptions.core.HandlerListener;
-import link.stuf.exceptions.core.digest.ThrowableSpecies;
-import link.stuf.exceptions.core.digest.ThrowableSpecimen;
-import link.stuf.exceptions.core.ThrowablesReducer;
+import link.stuf.exceptions.core.ThrowablesSensor;
+import link.stuf.exceptions.core.ThrowablesStats;
+import link.stuf.exceptions.core.ThrowablesStorage;
+import link.stuf.exceptions.core.throwables.ThrowableSpecies;
+import link.stuf.exceptions.core.throwables.ThrowableSpecimen;
 
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
 
 public class DefaultThrowablesHandler implements ThrowablesHandler {
 
-    private final ThrowablesStorage throwablesStorage;
+    private final ThrowablesStorage storage;
 
-    private final ThrowablesReducer throwablesReducer;
+    private final ThrowablesSensor sensor;
 
-    private final List<HandlerListener> listeners;
+    private final ThrowablesStats stats;
 
     public DefaultThrowablesHandler(
-        ThrowablesStorage throwablesStorage,
-        ThrowablesReducer throwableReducer,
-        HandlerListener... listeners
+        ThrowablesStorage storage,
+        ThrowablesSensor sensor,
+        ThrowablesStats stats
     ) {
-        this.throwablesStorage = throwablesStorage;
-        this.throwablesReducer = throwableReducer;
-        this.listeners = Arrays.asList(listeners.clone());
+        this.storage = storage;
+        this.sensor = sensor;
+        this.stats = stats;
     }
 
     @Override
@@ -34,23 +32,17 @@ public class DefaultThrowablesHandler implements ThrowablesHandler {
         ThrowableSpecies digest = ThrowableSpecies.create(throwable);
         ThrowableSpecimen occurrence = ThrowableSpecimen.create(throwable, digest, Instant.now());
 
-        ThrowableSpecies existingDigest = throwablesStorage.store(digest, occurrence);
+        ThrowableSpecies existingDigest = storage.store(digest, occurrence);
         ThrowableSpecies canonicalDigest = existingDigest == null ? digest : existingDigest;
 
-        throwablesStorage.store(canonicalDigest, occurrence);
+        sensor.registered(canonicalDigest, occurrence);
 
-        listeners.forEach(listener ->
-            listener.handled(digest, occurrence, throwable));
-
-        return new SimpleHandlingPolicy(
-            canonicalDigest,
-            throwable,
-            existingDigest == null);
+        return new SimpleHandlingPolicy(canonicalDigest, throwable, existingDigest == null);
     }
 
     @Override
     public Throwable lookup(java.util.UUID uuid) {
-        return throwablesStorage.getDigest(uuid)
+        return storage.getDigest(uuid)
             .map(ThrowableSpecies::toThrowable)
             .orElseThrow(() ->
                 new IllegalArgumentException(uuid.toString()));

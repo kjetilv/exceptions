@@ -1,4 +1,4 @@
-package link.stuf.exceptions.core.digest;
+package link.stuf.exceptions.core.throwables;
 
 import link.stuf.exceptions.core.hashing.AbstractHashed;
 import link.stuf.exceptions.core.inputs.ChameleonException;

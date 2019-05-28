@@ -16,12 +16,6 @@ public final class Streams {
         return StreamSupport.stream(new ReverseSpliterator<T>(s), false);
     }
 
-    public static <T> List<T> reverseList(List<T> s) {
-        ArrayList<T> ss = new ArrayList<>(s);
-        Collections.reverse(ss);
-        return Collections.unmodifiableList(ss);
-    }
-
     public static Stream<Throwable> causes(Throwable throwable) {
         return StreamSupport.stream(new CauseSpliterator(throwable), false);
     }
@@ -37,13 +31,15 @@ public final class Streams {
 
         @Override
         public boolean tryAdvance(Consumer<? super Throwable> action) {
-            action.accept(throwable);
-            Throwable cause = throwable.getCause();
-            if (cause == null || cause == throwable) {
+            if (throwable == null) {
                 return false;
             }
-            throwable = cause;
-            return true;
+            try {
+                action.accept(throwable);
+                return true;
+            } finally {
+                throwable = throwable.getCause();
+            }
         }
     }
 

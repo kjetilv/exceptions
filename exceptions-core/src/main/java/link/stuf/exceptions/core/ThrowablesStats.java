@@ -1,14 +1,15 @@
 package link.stuf.exceptions.core;
 
-import link.stuf.exceptions.core.digest.ThrowableSpecimen;
+import link.stuf.exceptions.core.throwables.ThrowableSpecimen;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 public interface ThrowablesStats {
 
-    ThrowableSpecimen lastOccurrence(ThrowableSpeciesId id);
+    Optional<ThrowableSpecimen> lastOccurrence(ThrowableSpeciesId id);
 
     default long occurrenceCount(ThrowableSpeciesId id) {
         return occurrenceCount(id, null);

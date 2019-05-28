@@ -1,4 +1,4 @@
-package link.stuf.exceptions.core.digest;
+package link.stuf.exceptions.core.throwables;
 
 import org.junit.Test;
 
