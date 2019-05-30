@@ -7,12 +7,11 @@ import java.io.IOException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
-public class ThrowablesDigestTest {
+public class ThrowablesSpeciesTest {
 
     @Test
     public void hash() {
-        ThrowableSpecies digest1 = ThrowableSpecies.create(new Throwable(new Throwable(new Throwable())));
-        ThrowableSpecies digest2 = ThrowableSpecies.create(new Throwable(new Throwable(new Throwable())));
+        ThrowableSpecies digest1 = ThrowableSpecies.create(new Throwable(new Throwable()));ThrowableSpecies digest2 = ThrowableSpecies.create(new Throwable(new Throwable()));
         assertEquals(digest1.getHash(), digest2.getHash());
     }
 

@@ -76,9 +76,10 @@ fun main() {
     println(client(Request(Method.POST, "http://localhost:9000/echo").body(input)).bodyString())
 
     val target = client(Request(Method.GET, "http://localhost:9000/lookup/" + uuid.bodyString()))
-    val input1 = lens.extract(target)
 
-    println(Jackson.prettify(Jackson.asJsonString(input1)))
+    val exc = lens.extract(target)
+
+    println(Jackson.prettify(Jackson.asJsonString(exc)))
 
     server.stop()
 }

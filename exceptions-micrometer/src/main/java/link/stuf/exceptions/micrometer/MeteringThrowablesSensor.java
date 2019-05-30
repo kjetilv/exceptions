@@ -3,7 +3,7 @@ package link.stuf.exceptions.micrometer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
-import link.stuf.exceptions.core.ThrowableSpeciesId;
+import link.stuf.exceptions.core.id.ThrowableSpeciesId;
 import link.stuf.exceptions.core.ThrowablesSensor;
 import link.stuf.exceptions.core.throwables.ThrowableSpecies;
 import link.stuf.exceptions.core.throwables.ThrowableSpecimen;

@@ -1,8 +1,10 @@
 package link.stuf.exceptions.core.inputs;
 
+import link.stuf.exceptions.api.NamedException;
+
 import java.util.Objects;
 
-public class ChameleonException extends Exception {
+public class ChameleonException extends Exception implements NamedException {
 
     private final String proxiedClassName;
 
@@ -11,6 +13,7 @@ public class ChameleonException extends Exception {
         this.proxiedClassName = Objects.requireNonNull(proxiedClassName, "proxiedClassName");
     }
 
+    @Override
     public String getProxiedClassName() {
         return proxiedClassName;
     }

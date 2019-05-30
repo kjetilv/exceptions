@@ -1,19 +1,21 @@
 package link.stuf.exceptions.core.throwables;
 
 import link.stuf.exceptions.core.hashing.AbstractHashed;
+import link.stuf.exceptions.core.id.Identified;
+import link.stuf.exceptions.core.id.ThrowableSpeciesId;
 import link.stuf.exceptions.core.utils.Streams;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class ThrowableSpecies extends AbstractHashed {
+public class ThrowableSpecies
+    extends AbstractHashed
+    implements Identified<ThrowableSpeciesId> {
 
     public static ThrowableSpecies create(Throwable throwable) {
         Stream<ShadowThrowable> shadows =
@@ -25,25 +27,33 @@ public class ThrowableSpecies extends AbstractHashed {
 
     private final List<ShadowThrowable> chain;
 
+    private final ThrowableSpeciesId id;
+
     private ThrowableSpecies(List<ShadowThrowable> chain) {
         this.chain = Collections.unmodifiableList(chain);
+        this.id = new ThrowableSpeciesId(getHash());
     }
 
-    public ThrowableSpecies map(UnaryOperator<ShadowThrowable> mapper) {
-        return new ThrowableSpecies(chain.stream().map(mapper).collect(Collectors.toList()));
+    List<ShadowThrowable> chain() {
+        return chain;
     }
 
-    public Throwable toThrowable() {
-        return Streams.reverse(chain).reduce(
-            null,
-            (exception, digest) ->
-                digest.toException(exception),
-            NO_COMBINE);
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + id + " <" +
+            chain.stream().map(Objects::toString).collect(Collectors.joining(" ")) +
+            ">]";
     }
 
-    private static final BinaryOperator<Throwable> NO_COMBINE = (t1, t2) -> {
-        throw new IllegalStateException("No combine: " + t1 + " <> " + t2);
-    };
+    @Override
+    public void hashTo(Consumer<byte[]> hash) {
+        chain.forEach(shadow -> shadow.hashTo(hash));
+    }
+
+    @Override
+    public ThrowableSpeciesId getId() {
+        return id;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -57,10 +67,5 @@ public class ThrowableSpecies extends AbstractHashed {
                     Objects.equals(chain.get(0), td.chain.get(0)));
         }
         return false;
-    }
-
-    @Override
-    public void hashTo(Consumer<byte[]> hash) {
-        chain.forEach(shadow -> shadow.hashTo(hash));
     }
 }

@@ -6,15 +6,14 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 
-public class ThrowableDigestTest {
+public class ShadowThrowableTest {
 
     @Test
     public void can_hash() {
-        ShadowThrowable digest = new ShadowThrowable(new Exception(), null);
+        ShadowThrowable digest = ShadowThrowable.create(new Exception());
 
         UUID hash = digest.getHash();
 
         assertEquals(hash, digest.getHash());
     }
-
 }

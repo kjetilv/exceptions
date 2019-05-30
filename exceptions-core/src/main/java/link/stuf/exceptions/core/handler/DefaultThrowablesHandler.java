@@ -4,9 +4,11 @@ import link.stuf.exceptions.api.ThrowablesHandler;
 import link.stuf.exceptions.core.ThrowablesSensor;
 import link.stuf.exceptions.core.ThrowablesStats;
 import link.stuf.exceptions.core.ThrowablesStorage;
+import link.stuf.exceptions.core.id.ThrowableSpecimenId;
 import link.stuf.exceptions.core.throwables.ThrowableSpecies;
 import link.stuf.exceptions.core.throwables.ThrowableSpecimen;
 
+import java.time.Clock;
 import java.time.Instant;
 
 public class DefaultThrowablesHandler implements ThrowablesHandler {
@@ -17,34 +19,46 @@ public class DefaultThrowablesHandler implements ThrowablesHandler {
 
     private final ThrowablesStats stats;
 
+    private final Clock clock;
+
     public DefaultThrowablesHandler(
         ThrowablesStorage storage,
         ThrowablesSensor sensor,
         ThrowablesStats stats
     ) {
+        this(storage, sensor, stats, null);
+    }
+
+    public DefaultThrowablesHandler(
+        ThrowablesStorage storage,
+        ThrowablesSensor sensor,
+        ThrowablesStats stats,
+        Clock clock
+    ) {
         this.storage = storage;
         this.sensor = sensor;
         this.stats = stats;
+        this.clock = clock == null ? Clock.systemUTC() : clock;
     }
 
     @Override
     public SimpleHandlingPolicy handle(Throwable throwable) {
-        ThrowableSpecies digest = ThrowableSpecies.create(throwable);
-        ThrowableSpecimen occurrence = ThrowableSpecimen.create(throwable, digest, Instant.now());
+        ThrowableSpecimen specimen = ThrowableSpecimen.create(
+            throwable,
+            ThrowableSpecies.create(throwable),
+            Instant.now(clock));
 
-        ThrowableSpecies existingDigest = storage.store(digest, occurrence);
-        ThrowableSpecies canonicalDigest = existingDigest == null ? digest : existingDigest;
+        ThrowableSpecies species = storage.store(specimen);
+        sensor.registered(species, specimen);
 
-        sensor.registered(canonicalDigest, occurrence);
-
-        return new SimpleHandlingPolicy(canonicalDigest, throwable, existingDigest == null);
+        return new SimpleHandlingPolicy(specimen, throwable, false);
     }
 
     @Override
-    public Throwable lookup(java.util.UUID uuid) {
-        return storage.getDigest(uuid)
-            .map(ThrowableSpecies::toThrowable)
+    public Throwable lookup(java.util.UUID id) {
+        return storage.getSpecimen(new ThrowableSpecimenId(id))
+            .map(ThrowableSpecimen::toThrowable)
             .orElseThrow(() ->
-                new IllegalArgumentException(uuid.toString()));
+                new IllegalArgumentException(id.toString()));
     }
 }

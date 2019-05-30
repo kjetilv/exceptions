@@ -1,4 +1,4 @@
-package link.stuf.exceptions.core;
+package link.stuf.exceptions.core.id;
 
 import java.util.UUID;
 

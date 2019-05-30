@@ -3,6 +3,7 @@ package link.stuf.exceptions.core.utils;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -18,6 +19,10 @@ public final class Streams {
 
     public static Stream<Throwable> causes(Throwable throwable) {
         return StreamSupport.stream(new CauseSpliterator(throwable), false);
+    }
+
+    public static IntStream reverseRange(int start, int end) {
+        return IntStream.range(start, end).map(i -> end - i - 1);
     }
 
     private static class CauseSpliterator extends Spliterators.AbstractSpliterator<Throwable> {

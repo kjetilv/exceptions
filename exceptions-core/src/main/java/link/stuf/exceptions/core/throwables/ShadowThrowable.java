@@ -13,18 +13,15 @@ import java.util.stream.Collectors;
 public class ShadowThrowable extends AbstractHashed {
 
     static ShadowThrowable create(Throwable throwable) {
-        return new ShadowThrowable(className(throwable), throwable.getMessage(), copy(throwable.getStackTrace()));
+        return new ShadowThrowable(className(throwable), copy(throwable.getStackTrace()));
     }
-
-    private final String message;
 
     private final String className;
 
     private final List<StackTraceElement> stackTrace;
 
-    private ShadowThrowable(String className, String message, List<StackTraceElement> stackTrace) {
+    private ShadowThrowable(String className, List<StackTraceElement> stackTrace) {
         this.className = className;
-        this.message = message;
         this.stackTrace = stackTrace;
     }
 
@@ -32,18 +29,14 @@ public class ShadowThrowable extends AbstractHashed {
         return stackTrace;
     }
 
-    Throwable toException(Throwable cause) {
-        Throwable exception = new Throwable(getClassName() + ": " + getMessage(), cause);
+    Throwable toException(String message, Throwable cause) {
+        Throwable exception = new Throwable(getClassName() + ": " + message, cause);
         exception.setStackTrace(getStackTrace().toArray(StackTraceElement[]::new));
         return exception;
     }
 
     public ShadowThrowable withStacktrace(List<StackTraceElement> stackTrace) {
-        return new ShadowThrowable(className, message, stackTrace);
-    }
-
-    private String getMessage() {
-        return message;
+        return new ShadowThrowable(className, stackTrace);
     }
 
     private String getClassName() {
@@ -69,6 +62,14 @@ public class ShadowThrowable extends AbstractHashed {
             return ((ChameleonException) throwable).getProxiedClassName();
         }
         return throwable.getClass().getName();
+    }
+
+    @Override
+    public String toString() {
+        int dotIndex = className.lastIndexOf(".");
+        return getClass().getSimpleName() + "[" +
+            (dotIndex >= 0 ? className.substring(dotIndex + 1) : className) + " <" + stackTrace.size() + ">" +
+            "]";
     }
 
     @Override
