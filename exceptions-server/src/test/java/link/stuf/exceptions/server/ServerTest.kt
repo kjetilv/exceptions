@@ -1,7 +1,9 @@
 package link.stuf.exceptions.server
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import link.stuf.exceptions.core.storage.InMemoryThrowablesStorage
+import link.stuf.exceptions.micrometer.MeteringThrowablesSensor
 import link.stuf.exceptions.server.api.Submission
-import link.stuf.exceptions.server.api.WiredException
 import link.stuf.exceptions.server.api.WiredExceptions
 import org.http4k.client.ApacheClient
 import org.http4k.core.Body
@@ -12,7 +14,11 @@ import org.http4k.format.Jackson.auto
 
 fun main() {
 
-    val server = WiredExceptionsServer(9000)
+    val storage = InMemoryThrowablesStorage()
+
+    val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
+
+    val server = WiredExceptionsServer(WiredExceptionsController(storage, storage, storage, sensor))
 
     val lookupLens = Body.auto<WiredExceptions>().toLens()
 
@@ -85,7 +91,7 @@ fun main() {
 
     if (target.status.successful) {
         val exc = lookupLens.extract(target)
-        println(Jackson.prettify(Jackson.asJsonString(exc)))
+        println(Json.prettify(Json.asJsonString(exc)))
     } else {
         println(target.toMessage())
     }

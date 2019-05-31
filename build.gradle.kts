@@ -12,6 +12,7 @@ allprojects {
     group = "link.stuf.exceptions"
     version = "0.1.0-SNAPSHOT"
 
+
     repositories {
         mavenCentral()
     }

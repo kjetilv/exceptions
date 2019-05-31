@@ -1,5 +1,10 @@
 plugins {
     kotlin("jvm") version "1.3.31"
+    application
+}
+
+application {
+    mainClassName = "link/stuf/exceptions/server/MainKt"
 }
 
 dependencies {
@@ -16,6 +21,10 @@ dependencies {
 
     compile("io.swagger.core.v3:swagger-core:2.0.8")
     compile("io.micrometer:micrometer-registry-jmx:1.1.4")
+
+    compile("com.fasterxml.jackson.module:jackson-module-parameter-names:2.9.8")
+    compile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.8")
+    compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.8")
 
     runtime("org.webjars:swagger-ui:3.22.1")
     runtime("ch.qos.logback:logback-classic:1.3.0-alpha4")

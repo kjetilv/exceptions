@@ -1,16 +1,9 @@
 package link.stuf.exceptions.server
 
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import link.stuf.exceptions.core.NamedException
-import link.stuf.exceptions.core.ThrowablesHandler
-import link.stuf.exceptions.core.handler.DefaultThrowablesHandler
 import link.stuf.exceptions.core.parser.ThrowableParser
-import link.stuf.exceptions.core.storage.InMemoryThrowablesStorage
-import link.stuf.exceptions.core.throwables.ThrowableSpecies
 import link.stuf.exceptions.core.throwables.ThrowableSpeciesId
-import link.stuf.exceptions.core.throwables.ThrowableSpecimen
-import link.stuf.exceptions.micrometer.MeteringThrowablesSensor
-import link.stuf.exceptions.server.api.*
+import link.stuf.exceptions.server.api.Submission
+import link.stuf.exceptions.server.api.WiredExceptions
 import org.http4k.core.*
 import org.http4k.format.Jackson.auto
 import org.http4k.lens.BiDiBodyLens
@@ -23,7 +16,10 @@ import org.http4k.server.asServer
 import org.slf4j.LoggerFactory
 import java.util.*
 
-class WiredExceptionsServer(port: Int) {
+class WiredExceptionsServer(
+        controller: WiredExceptionsController,
+        val port: Int = 8080
+) {
 
     private val submissionLens: BiDiBodyLens<Submission> =
             Body.auto<Submission>(contentNegotiation = ContentNegotiation.None).toLens()
@@ -33,30 +29,20 @@ class WiredExceptionsServer(port: Int) {
 
     private val logger = LoggerFactory.getLogger(WiredExceptionsServer::class.java)
 
-    private val storage = InMemoryThrowablesStorage()
-
-    private val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
-
-    private val handler: ThrowablesHandler = DefaultThrowablesHandler(storage, storage, sensor, storage)
-
     private val app = routes(
             "submit" bind Method.POST to {
-
                 applicationJson(submissionLens) {
-                    submission(throwableInBody(it))
+                    controller.handle(throwableInBody(it)).let {
+                        Submission(it.speciesId.hash, it.specimenId.hash)
+                    }
                 }
             },
             "lookup/{uuid}" bind Method.GET to {
-
                 applicationJson(wiredLens) {
-                    lookup(ThrowableSpeciesId(pathUuid(it)))
+                    controller.lookup(ThrowableSpeciesId(pathUuid(it)))
                 }
             })
 
-    private fun submission(throwableInBody: Throwable?): Submission {
-        val handle = handler.handle(throwableInBody)
-        return Submission(handle.speciesId.hash, handle.specimenId.hash)
-    }
 
     private val server = app.asServer(Netty(port))
 
@@ -68,7 +54,7 @@ class WiredExceptionsServer(port: Int) {
         server.stop()
     }
 
-    private fun throwableInBody(it: Request) = ThrowableParser.parse(it.body.payload)
+    private fun throwableInBody(it: Request) = ThrowableParser.parse(it.body.payload)!!
 
     private fun pathUuid(req: Request): UUID = req.path("uuid")?.let(UUID::fromString)!!
 
@@ -83,34 +69,4 @@ class WiredExceptionsServer(port: Int) {
     }
 
     private fun ok() = Response(Status.OK)
-
-    private fun lookup(id: ThrowableSpeciesId): WiredExceptions {
-        val species: ThrowableSpecies = storage.getSpecies(id)
-        val specimen: List<ThrowableSpecimen> = storage.getSpecimen(id).toList()
-        return WiredExceptions(species.id.hash,
-                specimen.toList().map {
-                    Occurrence(it.id.hash, it.sequence, it.time, this.wiredEx(it.toThrowable()))
-                })
-    }
-
-    private fun wiredEx(specimen: Throwable): WiredException = WiredException(
-            className = (if (specimen is NamedException)
-                (specimen as NamedException).proxiedClassName
-            else
-                specimen.javaClass.name),
-            message = specimen.message,
-            stacktrace = specimen.stackTrace.let(this::wiredStackTrace),
-            cause = specimen.cause?.let(this::wiredEx))
-
-    private fun wiredStackTrace(stackTrace: Array<StackTraceElement>): List<WiredStackTraceElement>? =
-            stackTrace.map { element ->
-                WiredStackTraceElement(
-                        classLoaderName = element.classLoaderName,
-                        moduleName = element.moduleName,
-                        moduleVersion = element.moduleVersion,
-                        declaringClass = element.className,
-                        methodName = element.methodName,
-                        fileName = element.fileName,
-                        lineNumber = element.lineNumber)
-            }.toList()
 }
