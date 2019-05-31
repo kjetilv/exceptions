@@ -3,11 +3,11 @@ package link.stuf.exceptions.core.throwables;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-public abstract class AbstractHashed implements Hashed {
+abstract class AbstractHashed implements Hashed {
 
     private final Supplier<UUID> supplier;
 
-    protected AbstractHashed() {
+    AbstractHashed() {
         supplier = Hasher.uuid(this);
     }
 

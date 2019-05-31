@@ -1,36 +1,29 @@
 package link.stuf.exceptions.core.handler;
 
 import link.stuf.exceptions.core.Handling;
+import link.stuf.exceptions.core.throwables.ThrowableSpeciesId;
 import link.stuf.exceptions.core.throwables.ThrowableSpecimen;
-
-import java.util.UUID;
+import link.stuf.exceptions.core.throwables.ThrowableSpecimenId;
 
 class SimpleHandlingPolicy implements Handling {
 
     private final ThrowableSpecimen specimen;
 
-    private final Throwable throwable;
-
     private final boolean isNew;
 
-    SimpleHandlingPolicy(
-        ThrowableSpecimen specimen,
-        Throwable source,
-        boolean isNew
-    ) {
+    SimpleHandlingPolicy(ThrowableSpecimen specimen, boolean isNew) {
         this.specimen = specimen;
-        this.throwable = source;
         this.isNew = isNew;
     }
 
     @Override
-    public UUID getId() {
-        return specimen.getHash();
+    public ThrowableSpeciesId getSpeciesId() {
+        return specimen.getSpecies().getId();
     }
 
     @Override
-    public Throwable getSource() {
-        return throwable;
+    public ThrowableSpecimenId getSpecimenId() {
+        return specimen.getId();
     }
 
     @Override

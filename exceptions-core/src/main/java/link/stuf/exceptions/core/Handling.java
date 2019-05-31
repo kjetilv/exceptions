@@ -1,12 +1,13 @@
 package link.stuf.exceptions.core;
 
-import java.util.UUID;
+import link.stuf.exceptions.core.throwables.ThrowableSpeciesId;
+import link.stuf.exceptions.core.throwables.ThrowableSpecimenId;
 
 public interface Handling {
 
-    UUID getId();
+    ThrowableSpeciesId getSpeciesId();
 
-    Throwable getSource();
+    ThrowableSpecimenId getSpecimenId();
 
     boolean isLoggable();
 

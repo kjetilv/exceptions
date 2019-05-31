@@ -1,7 +1,8 @@
 package link.stuf.exceptions.core.handler;
 
 import link.stuf.exceptions.core.*;
-import link.stuf.exceptions.core.throwables.*;
+import link.stuf.exceptions.core.throwables.ThrowableSpecimen;
+import link.stuf.exceptions.core.throwables.Throwables;
 
 public class DefaultThrowablesHandler implements ThrowablesHandler {
 
@@ -27,10 +28,9 @@ public class DefaultThrowablesHandler implements ThrowablesHandler {
 
     @Override
     public SimpleHandlingPolicy handle(Throwable throwable) {
-        ThrowableSpecimen specimen = sensor.registered(
-            storage.store(
-                Throwables.create(throwable)));
-        return new SimpleHandlingPolicy(specimen, throwable, false);
+        ThrowableSpecimen submitted = Throwables.create(throwable);
+        ThrowableSpecimen stored = storage.store(submitted);
+        ThrowableSpecimen registered = sensor.registered(stored);
+        return new SimpleHandlingPolicy(registered, false);
     }
-
 }

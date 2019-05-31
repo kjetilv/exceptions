@@ -10,10 +10,7 @@ import link.stuf.exceptions.core.throwables.ThrowableSpecies
 import link.stuf.exceptions.core.throwables.ThrowableSpeciesId
 import link.stuf.exceptions.core.throwables.ThrowableSpecimen
 import link.stuf.exceptions.micrometer.MeteringThrowablesSensor
-import link.stuf.exceptions.server.api.Occurrence
-import link.stuf.exceptions.server.api.WiredException
-import link.stuf.exceptions.server.api.WiredExceptions
-import link.stuf.exceptions.server.api.WiredStackTraceElement
+import link.stuf.exceptions.server.api.*
 import org.http4k.core.*
 import org.http4k.format.Jackson.auto
 import org.http4k.lens.BiDiBodyLens
@@ -24,60 +21,17 @@ import org.http4k.routing.routes
 import org.http4k.server.Netty
 import org.http4k.server.asServer
 import org.slf4j.LoggerFactory
-import java.nio.ByteBuffer
 import java.util.*
 
 class WiredExceptionsServer(port: Int) {
 
-    private val wireLens: BiDiBodyLens<WiredExceptions> =
+    private val submissionLens: BiDiBodyLens<Submission> =
+            Body.auto<Submission>(contentNegotiation = ContentNegotiation.None).toLens()
+
+    private val wiredLens: BiDiBodyLens<WiredExceptions> =
             Body.auto<WiredExceptions>(contentNegotiation = ContentNegotiation.None).toLens()
 
     private val logger = LoggerFactory.getLogger(WiredExceptionsServer::class.java)
-
-    private val app = routes(
-            "submit" bind Method.POST to {
-                textPlain(
-                        handleSubmission(it.body.payload))
-            },
-            "lookup/{uuid}" bind Method.GET to {
-                applicationJson(
-                        wireLens,
-                        lookup(ThrowableSpeciesId(uuidPath(it))))
-            }
-    )
-
-    private fun uuidPath(req: Request): UUID = req.path("uuid")?.let(UUID::fromString)!!
-
-    private fun lookup(id: ThrowableSpeciesId): WiredExceptions {
-        val species: ThrowableSpecies = storage.getSpecies(id)
-        val specimen: List<ThrowableSpecimen> = storage.getSpecimen(id).toList()
-        return WiredExceptions(species.id.hash, specimen.toList()
-                .map {
-                    Occurrence(
-                            it.id.hash,
-                            it.sequence,
-                            it.time,
-                            this.wiredEx(it.toThrowable()))
-                })
-    }
-
-    private fun <T> applicationJson(lens: BiDiBodyLens<T>, t: T): Response {
-        return try {
-            lens.set(Response(Status.OK).header("Content-Type", ContentType.APPLICATION_JSON.value), t)
-        } catch (e: Exception) {
-            logger.error("Failed", e)
-            Response(Status.INTERNAL_SERVER_ERROR)
-        }
-    }
-
-    private fun <T> textPlain(t: T): Response {
-        return try {
-            Response(Status.OK).header("Content-Type", ContentType.TEXT_PLAIN.value).body(t.toString())
-        } catch (e: Exception) {
-            logger.error("Failed", e)
-            Response(Status.INTERNAL_SERVER_ERROR)
-        }
-    }
 
     private val storage = InMemoryThrowablesStorage()
 
@@ -85,23 +39,68 @@ class WiredExceptionsServer(port: Int) {
 
     private val handler: ThrowablesHandler = DefaultThrowablesHandler(storage, storage, sensor, storage)
 
-    private val server = app.asServer(Netty(port)).start()
+    private val app = routes(
+            "submit" bind Method.POST to {
 
-    private fun handleSubmission(payload: ByteBuffer): UUID {
-        val parsed = ThrowableParser.parse(payload)
-        val handling = handler.handle(parsed)
-        return handling.id
+                applicationJson(submissionLens) {
+                    submission(throwableInBody(it))
+                }
+            },
+            "lookup/{uuid}" bind Method.GET to {
+
+                applicationJson(wiredLens) {
+                    lookup(ThrowableSpeciesId(pathUuid(it)))
+                }
+            })
+
+    private fun submission(throwableInBody: Throwable?): Submission {
+        val handle = handler.handle(throwableInBody)
+        return Submission(handle.speciesId.hash, handle.specimenId.hash)
     }
 
-    private fun wiredEx(specimen: Throwable): WiredException =
-            WiredException(
-                    className = (if (specimen is NamedException)
-                        (specimen as NamedException).proxiedClassName
-                    else
-                        specimen.javaClass.name),
-                    message = specimen.message,
-                    stacktrace = specimen.stackTrace.let(this::wiredStackTrace),
-                    cause = specimen.cause?.let(this::wiredEx))
+    private val server = app.asServer(Netty(port))
+
+    fun start() {
+        server.start()
+    }
+
+    fun stop() {
+        server.stop()
+    }
+
+    private fun throwableInBody(it: Request) = ThrowableParser.parse(it.body.payload)
+
+    private fun pathUuid(req: Request): UUID = req.path("uuid")?.let(UUID::fromString)!!
+
+    private fun <T> applicationJson(lens: BiDiBodyLens<T>, t: () -> T): Response =
+            response(ContentType.APPLICATION_JSON) { lens.set(ok(), t()) }
+
+    private fun response(type: ContentType, toResponse: () -> Response): Response = try {
+        toResponse().header("Content-Type", type.value)
+    } catch (e: Exception) {
+        logger.error("Failed", e)
+        Response(Status.INTERNAL_SERVER_ERROR)
+    }
+
+    private fun ok() = Response(Status.OK)
+
+    private fun lookup(id: ThrowableSpeciesId): WiredExceptions {
+        val species: ThrowableSpecies = storage.getSpecies(id)
+        val specimen: List<ThrowableSpecimen> = storage.getSpecimen(id).toList()
+        return WiredExceptions(species.id.hash,
+                specimen.toList().map {
+                    Occurrence(it.id.hash, it.sequence, it.time, this.wiredEx(it.toThrowable()))
+                })
+    }
+
+    private fun wiredEx(specimen: Throwable): WiredException = WiredException(
+            className = (if (specimen is NamedException)
+                (specimen as NamedException).proxiedClassName
+            else
+                specimen.javaClass.name),
+            message = specimen.message,
+            stacktrace = specimen.stackTrace.let(this::wiredStackTrace),
+            cause = specimen.cause?.let(this::wiredEx))
 
     private fun wiredStackTrace(stackTrace: Array<StackTraceElement>): List<WiredStackTraceElement>? =
             stackTrace.map { element ->
@@ -114,8 +113,4 @@ class WiredExceptionsServer(port: Int) {
                         fileName = element.fileName,
                         lineNumber = element.lineNumber)
             }.toList()
-
-    fun stop() {
-        server.stop()
-    }
 }

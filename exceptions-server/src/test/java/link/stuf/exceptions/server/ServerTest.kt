@@ -1,6 +1,8 @@
 package link.stuf.exceptions.server
 
+import link.stuf.exceptions.server.api.Submission
 import link.stuf.exceptions.server.api.WiredException
+import link.stuf.exceptions.server.api.WiredExceptions
 import org.http4k.client.ApacheClient
 import org.http4k.core.Body
 import org.http4k.core.Method
@@ -12,7 +14,9 @@ fun main() {
 
     val server = WiredExceptionsServer(9000)
 
-    val lens = Body.auto<WiredException>().toLens()
+    val lookupLens = Body.auto<WiredExceptions>().toLens()
+
+    val submitLens = Body.auto<Submission>().toLens()
 
     val input = "java.lang.IllegalStateException: Errr\n" +
             "\tat link.stuf.exceptions.core.parser.ThrowableParserTest.andFail(ThrowableParserTest.java:43)\n" +
@@ -68,17 +72,19 @@ fun main() {
             "\tat link.stuf.exceptions.core.parser.ThrowableParserTest.andFailAgain(ThrowableParserTest.java:48)\n" +
             "\tat link.stuf.exceptions.core.parser.ThrowableParserTest.andFail(ThrowableParserTest.java:41)\n"
 
+    server.start()
+
     val client = ApacheClient()
 
-    val uuid = client(Request(Method.POST, "http://localhost:9000/submit").body(input))
+    val submission = submitLens.extract(client(Request(Method.POST, "http://localhost:9000/submit").body(input)))
 
-    println(uuid.bodyString())
+    println(Jackson.asJsonString(submission))
 
-    val uri = "http://localhost:9000/lookup/${uuid.bodyString()}"
+    val uri = "http://localhost:9000/lookup/${submission.speciesId}"
     val target = client(Request(Method.GET, uri))
 
     if (target.status.successful) {
-        val exc = lens.extract(target)
+        val exc = lookupLens.extract(target)
         println(Jackson.prettify(Jackson.asJsonString(exc)))
     } else {
         println(target.toMessage())
