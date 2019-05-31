@@ -1,7 +1,6 @@
 package link.stuf.exceptions.core.handler;
 
-import link.stuf.exceptions.api.Handling;
-import link.stuf.exceptions.core.throwables.ThrowableSpecies;
+import link.stuf.exceptions.core.Handling;
 import link.stuf.exceptions.core.throwables.ThrowableSpecimen;
 
 import java.util.UUID;

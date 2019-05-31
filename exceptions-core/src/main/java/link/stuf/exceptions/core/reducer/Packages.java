@@ -1,4 +1,4 @@
-package link.stuf.exceptions.core.reduce;
+package link.stuf.exceptions.core.reducer;
 
 import java.util.*;
 import java.util.function.Function;

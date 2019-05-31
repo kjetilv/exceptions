@@ -1,4 +1,4 @@
-package link.stuf.exceptions.core.id;
+package link.stuf.exceptions.core.throwables;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -27,6 +27,8 @@ public abstract class Id {
 
     @Override
     public String toString() {
-        return "{" + hash + "}";
+        String s = getHash().toString();
+        int endIndex = s.indexOf("-");
+        return "{" + (endIndex < 0 ? s : s.substring(0, endIndex)) + "}";
     }
 }

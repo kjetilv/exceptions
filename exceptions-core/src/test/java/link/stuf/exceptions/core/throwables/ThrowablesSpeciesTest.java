@@ -11,14 +11,14 @@ public class ThrowablesSpeciesTest {
 
     @Test
     public void hash() {
-        ThrowableSpecies digest1 = ThrowableSpecies.create(new Throwable(new Throwable()));ThrowableSpecies digest2 = ThrowableSpecies.create(new Throwable(new Throwable()));
+        ThrowableSpecies digest1 = Throwables.species(new Throwable(new Throwable()));ThrowableSpecies digest2 = Throwables.species(new Throwable(new Throwable()));
         assertEquals(digest1.getHash(), digest2.getHash());
     }
 
     @Test
     public void hash2() {
-        ThrowableSpecies digest1 = ThrowableSpecies.create(new Throwable(new Throwable(new Throwable())));
-        ThrowableSpecies digest2 = ThrowableSpecies.create(new Throwable(new Throwable(new Throwable())));
+        ThrowableSpecies digest1 = Throwables.species(new Throwable(new Throwable(new Throwable())));
+        ThrowableSpecies digest2 = Throwables.species(new Throwable(new Throwable(new Throwable())));
         assertNotEquals(digest1.getHash(), digest2.getHash());
     }
 

@@ -1,4 +1,4 @@
-package link.stuf.exceptions.core.hashing;
+package link.stuf.exceptions.core.throwables;
 
 import java.util.UUID;
 import java.util.function.Consumer;

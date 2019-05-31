@@ -1,4 +1,4 @@
-package link.stuf.exceptions.core.reduce;
+package link.stuf.exceptions.core.reducer;
 
 import link.stuf.exceptions.core.ThrowablesReducer;
 import link.stuf.exceptions.core.throwables.ShadowThrowable;

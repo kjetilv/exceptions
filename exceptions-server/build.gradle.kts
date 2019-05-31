@@ -4,9 +4,7 @@ plugins {
 
 dependencies {
 
-    compile(project(":exceptions-api"))
     compile(project(":exceptions-core"))
-
     compile(project(":exceptions-micrometer"))
 
     compile("org.http4k:http4k-core:3.143.1")

@@ -1,6 +1,6 @@
-package link.stuf.exceptions.core.inputs;
+package link.stuf.exceptions.core.throwables;
 
-import link.stuf.exceptions.api.NamedException;
+import link.stuf.exceptions.core.NamedException;
 
 import java.util.Objects;
 
@@ -8,7 +8,7 @@ public class ChameleonException extends Exception implements NamedException {
 
     private final String proxiedClassName;
 
-    ChameleonException(String proxiedClassName, String message, Throwable cause) {
+    public ChameleonException(String proxiedClassName, String message, Throwable cause) {
         super(message, cause, false, true);
         this.proxiedClassName = Objects.requireNonNull(proxiedClassName, "proxiedClassName");
     }

@@ -1,7 +1,6 @@
 rootProject.name = "exceptions"
 
 include("exceptions-core")
-include("exceptions-api")
 include("exceptions-server")
 include("exceptions-micrometer")
 

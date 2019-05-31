@@ -1,4 +1,4 @@
-package link.stuf.exceptions.core.inputs;
+package link.stuf.exceptions.core.parser;
 
 import org.junit.Test;
 
@@ -19,7 +19,7 @@ public class ThrowableParserTest {
         } catch (Exception e) {
             String output = print(e);
             System.out.println(output);
-            ChameleonException chameleon = new ThrowableParser().parse(output);
+            Throwable chameleon = new ThrowableParser().parse(output);
             assertNotNull(chameleon);
             chameleon.printStackTrace(System.out);
             assertEquals(output, print(chameleon));

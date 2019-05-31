@@ -1,7 +1,7 @@
-package link.stuf.exceptions.core.inputs;
+package link.stuf.exceptions.core.parser;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintWriter;
+import link.stuf.exceptions.core.throwables.ChameleonException;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -13,18 +13,6 @@ import java.util.stream.Stream;
 public class ThrowableParser {
 
     private static final String CAUSED_BY = "Caused by: ";
-
-    public static String echo(ByteBuffer buffer) {
-        return echo(buffer.array());
-    }
-
-    public static String echo(byte[] array) {
-        return echo(new String(array, StandardCharsets.UTF_8));
-    }
-
-    public static String echo(String input) {
-        return print(parse(input));
-    }
 
     public static Throwable parse(ByteBuffer buffer) {
         return parse(buffer.array());
@@ -64,16 +52,6 @@ public class ThrowableParser {
         return cause;
     }
 
-    private static String print(Throwable e) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (PrintWriter pw = new PrintWriter(out)) {
-            e.printStackTrace(pw);
-        }
-        return Arrays.stream(new String(out.toByteArray()).split("\n"))
-            .filter(line -> StackTraceEntry.MORE.parts(line).length == 0)
-            .collect(Collectors.joining("\n"));
-    }
-
     private static String exceptionHeading(List<String> lines, List<Integer> causeIndices, int causeIndex) {
         String line = lines.get(causeIndices.get(causeIndex));
         return line.startsWith(CAUSED_BY) ? line.substring(CAUSED_BY.length()) : line;
@@ -97,4 +75,63 @@ public class ThrowableParser {
         return Pattern.compile("^\\s+.*").matcher(line).matches();
     }
 
+    private static class ParsedThrowable {
+
+        private final String exceptionHeading;
+
+        private final StackTraceElement[] parsedStackTrace;
+
+        private ParsedThrowable(String exceptionHeading, StackTraceElement[] parsedStackTrace) {
+            this.exceptionHeading = exceptionHeading;
+            this.parsedStackTrace = parsedStackTrace;
+        }
+
+        private ChameleonException reconstruct(Throwable caused) {
+            String[] split = exceptionHeading.split(": ", 2);
+            String exceptionName = split[0];
+            String message = split[1];
+            ChameleonException chameleonException = new ChameleonException(exceptionName, message, caused);
+            chameleonException.setStackTrace(parsedStackTrace);
+            return chameleonException;
+        }
+    }
+
+    static class StackTraceParts {
+
+        private final StackTraceEntry parser;
+
+        private final String[] parts;
+
+        StackTraceParts(StackTraceEntry parser, String[] parts) {
+            this.parser = parser;
+            this.parts = parts;
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() +
+                "[" + parser + " => " + (parts == null ? null : Arrays.asList(parts)) + "]";
+        }
+
+        Stream<StackTraceElement> reconstruct() {
+            if (parser == StackTraceEntry.MORE) {
+                return Stream.empty();
+            }
+            try {
+                Integer lineNumber = parser.lineNo(parts);
+                String file = parser.file(parts);
+                return Stream.of(new StackTraceElement(
+                    null,
+                    parser.module(parts),
+                    parser.moduleVersion(parts),
+                    parser.className(parts),
+                    parser.method(parts),
+                    file == null ? parser.otherSource(parts) : file,
+                    lineNumber == null ? -1 : lineNumber
+                ));
+            } catch (Exception e) {
+                throw new IllegalStateException(this + " failed to reconstruct", e);
+            }
+        }
+    }
 }

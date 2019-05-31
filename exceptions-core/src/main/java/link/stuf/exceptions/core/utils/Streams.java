@@ -21,10 +21,6 @@ public final class Streams {
         return StreamSupport.stream(new CauseSpliterator(throwable), false);
     }
 
-    public static IntStream reverseRange(int start, int end) {
-        return IntStream.range(start, end).map(i -> end - i - 1);
-    }
-
     private static class CauseSpliterator extends Spliterators.AbstractSpliterator<Throwable> {
 
         private Throwable throwable;

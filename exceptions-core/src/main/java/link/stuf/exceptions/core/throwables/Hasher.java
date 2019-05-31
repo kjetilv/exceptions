@@ -1,4 +1,4 @@
-package link.stuf.exceptions.core.hashing;
+package link.stuf.exceptions.core.throwables;
 
 import link.stuf.exceptions.core.utils.Memoizer;
 

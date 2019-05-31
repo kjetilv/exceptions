@@ -1,4 +1,4 @@
-package link.stuf.exceptions.core.inputs;
+package link.stuf.exceptions.core.parser;
 
 interface StackTraceElementPicker {
 

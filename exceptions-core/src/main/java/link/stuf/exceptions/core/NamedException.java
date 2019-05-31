@@ -1,4 +1,4 @@
-package link.stuf.exceptions.api;
+package link.stuf.exceptions.core;
 
 public interface NamedException {
 

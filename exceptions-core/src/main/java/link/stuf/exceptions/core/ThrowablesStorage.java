@@ -1,20 +1,19 @@
 package link.stuf.exceptions.core;
 
-import link.stuf.exceptions.core.id.ThrowableSpeciesId;
-import link.stuf.exceptions.core.id.ThrowableSpecimenId;
 import link.stuf.exceptions.core.throwables.ThrowableSpecies;
+import link.stuf.exceptions.core.throwables.ThrowableSpeciesId;
 import link.stuf.exceptions.core.throwables.ThrowableSpecimen;
+import link.stuf.exceptions.core.throwables.ThrowableSpecimenId;
 
 import java.util.Collection;
-import java.util.Optional;
 
 public interface ThrowablesStorage {
 
-    ThrowableSpecies store(ThrowableSpecimen specimen);
+    ThrowableSpecimen store(ThrowableSpecimen specimen);
 
-    Optional<ThrowableSpecies> getSpecies(ThrowableSpeciesId digestId);
+    ThrowableSpecies getSpecies(ThrowableSpeciesId digestId);
 
-    Optional<ThrowableSpecimen> getSpecimen(ThrowableSpecimenId specimenId);
+    ThrowableSpecimen getSpecimen(ThrowableSpecimenId specimenId);
 
     Collection<ThrowableSpecimen> getSpecimen(ThrowableSpeciesId speciesId);
 }
