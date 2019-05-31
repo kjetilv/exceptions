@@ -1,9 +1,12 @@
 package link.stuf.exceptions.server
 
+import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.info.Info
 import link.stuf.exceptions.core.parser.ThrowableParser
 import link.stuf.exceptions.core.throwables.ThrowableSpeciesId
 import link.stuf.exceptions.server.api.Submission
 import link.stuf.exceptions.server.api.WiredExceptions
+import link.stuf.exceptions.server.statik.Static
 import org.http4k.core.*
 import org.http4k.format.Jackson.auto
 import org.http4k.lens.BiDiBodyLens
@@ -21,11 +24,18 @@ class WiredExceptionsServer(
         val port: Int = 8080
 ) {
 
-    private val submissionLens: BiDiBodyLens<Submission> =
+    private val submissionLens =
             Body.auto<Submission>(contentNegotiation = ContentNegotiation.None).toLens()
 
-    private val wiredLens: BiDiBodyLens<WiredExceptions> =
+    private val wiredLens =
             Body.auto<WiredExceptions>(contentNegotiation = ContentNegotiation.None).toLens()
+
+    private val swaggerLens =
+            Body.auto<OpenAPI>(contentNegotiation = ContentNegotiation.None).toLens()
+
+    private val staticContent = Static(
+            Thread.currentThread().contextClassLoader,
+            "META-INF/resources/webjars/swagger-ui/3.22.1/")
 
     private val logger = LoggerFactory.getLogger(WiredExceptionsServer::class.java)
 
@@ -41,6 +51,23 @@ class WiredExceptionsServer(
                 applicationJson(wiredLens) {
                     controller.lookup(ThrowableSpeciesId(pathUuid(it)))
                 }
+            },
+            "swagger.json" bind Method.GET to {
+                applicationJson(swaggerLens) {
+                    OpenAPI().run {
+                        info(Info().run {
+                            description("Foobar")
+                        })
+                    }
+                }
+            },
+            "/doc/{path}" bind Method.GET to {
+                response {
+                    Response(Status.OK).body(staticContent.read(it.path("path")))
+                }
+            },
+            "/" bind Method.GET to {
+                Response(Status.FOUND).header("Location", "/doc/index.html")
             })
 
 
@@ -63,6 +90,13 @@ class WiredExceptionsServer(
 
     private fun response(type: ContentType, toResponse: () -> Response): Response = try {
         toResponse().header("Content-Type", type.value)
+    } catch (e: Exception) {
+        logger.error("Failed", e)
+        Response(Status.INTERNAL_SERVER_ERROR)
+    }
+
+    private fun response(toResponse: () -> Response): Response = try {
+        toResponse()
     } catch (e: Exception) {
         logger.error("Failed", e)
         Response(Status.INTERNAL_SERVER_ERROR)
