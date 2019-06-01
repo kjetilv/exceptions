@@ -16,15 +16,14 @@ fun main() {
 
     val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
 
-    val server = WiredExceptionsServer(WiredExceptionsController(storage, storage, storage, sensor));
+    val controller = WiredExceptionsController(storage, storage, storage, sensor)
 
-    server.start()
+    val server = WiredExceptionsServer(controller, SwaggerJson).start()
 
     logger.info("Started @ ${server.port}")
 
     Runtime.getRuntime().addShutdownHook(Thread({
-        logger.info("Stopping ...")
-        server.stop()
-        logger.info("Stopped")
+        logger.info("Stopped: {}", server.stop())
     }, "Shutdown"))
 }
+

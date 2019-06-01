@@ -4,16 +4,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class Static {
+public final class Static {
 
     private final ClassLoader classLoader;
 
     private final String preamble;
 
-    private final Map<String, String> cache = new HashMap<>();
+    private final Map<String, String> cache = new ConcurrentHashMap<>();
 
     public Static(ClassLoader classLoader, String preamble) {
         this.classLoader = classLoader;
@@ -21,29 +21,27 @@ public class Static {
     }
 
     public String read(String path) {
-        return cache.computeIfAbsent(path, p -> readPath(preamble + path));
+        return cache.computeIfAbsent(path, __ -> readPath(path));
     }
 
     private String readPath(String path) {
         byte[] buffer = new byte[8192];
-        try (
-            InputStream resourceAsStream = classLoader.getResourceAsStream(path);
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
-        ) {
-            if (resourceAsStream == null) {
+        try (InputStream in = classLoader.getResourceAsStream(preamble + path)) {
+            if (in == null) {
                 throw new IllegalArgumentException("No such path: " + path);
             }
-            while (true) {
-                int read = resourceAsStream.read(buffer);
-                if (read > 0) {
-                    outputStream.write(buffer, 0, read);
-                }
-                if (read < 0) {
-                    return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
+            try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                while (true) {
+                    int read = in.read(buffer);
+                    if (read > 0) {
+                        out.write(buffer, 0, read);
+                    } else if (read < 0) {
+                        return new String(out.toByteArray(), StandardCharsets.UTF_8);
+                    }
                 }
             }
         } catch (IOException e) {
-            throw new IllegalStateException(e);
+            throw new IllegalStateException("Failed to read " + path, e);
         }
     }
 }

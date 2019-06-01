@@ -18,7 +18,9 @@ fun main() {
 
     val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
 
-    val server = WiredExceptionsServer(WiredExceptionsController(storage, storage, storage, sensor))
+    val server = WiredExceptionsServer(
+            WiredExceptionsController(storage, storage, storage, sensor),
+            SwaggerJson)
 
     val lookupLens = Body.auto<WiredExceptions>().toLens()
 
@@ -82,16 +84,17 @@ fun main() {
 
     val client = ApacheClient()
 
-    val submission = submitLens.extract(client(Request(Method.POST, "http://localhost:9000/submit").body(input)))
+    val target1 = client(Request(Method.POST, "http://localhost:8080/submit").body(input))
+    val submission = submitLens.extract(target1)
 
     println(Jackson.asJsonString(submission))
 
-    val uri = "http://localhost:9000/lookup/${submission.speciesId}"
+    val uri = "http://localhost:8080/lookup/${submission.speciesId}"
     val target = client(Request(Method.GET, uri))
 
     if (target.status.successful) {
         val exc = lookupLens.extract(target)
-        println(Json.prettify(Json.asJsonString(exc)))
+        println(JSON.prettify(JSON.asJsonString(exc)))
     } else {
         println(target.toMessage())
     }

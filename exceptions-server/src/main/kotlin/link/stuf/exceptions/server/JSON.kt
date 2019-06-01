@@ -10,7 +10,7 @@ import org.http4k.format.ConfigurableJackson
 import org.http4k.format.asConfigurable
 import org.http4k.format.withStandardMappings
 
-object Json : ConfigurableJackson(KotlinModule()
+object JSON : ConfigurableJackson(KotlinModule()
         .asConfigurable()
         .withStandardMappings()
         .done()
