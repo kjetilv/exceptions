@@ -1,8 +1,8 @@
 package link.stuf.exceptions.core.handler;
 
 import link.stuf.exceptions.core.*;
-import link.stuf.exceptions.core.throwables.ThrowableSpecimen;
-import link.stuf.exceptions.core.throwables.Throwables;
+import link.stuf.exceptions.munch.ThrowableSpecimen;
+import link.stuf.exceptions.munch.Throwables;
 
 public class DefaultThrowablesHandler implements ThrowablesHandler {
 

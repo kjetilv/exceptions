@@ -1,6 +1,6 @@
 package link.stuf.exceptions.core.parser;
 
-import link.stuf.exceptions.core.throwables.ChameleonException;
+import link.stuf.exceptions.munch.ChameleonException;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

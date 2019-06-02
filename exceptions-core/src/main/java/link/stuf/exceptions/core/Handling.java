@@ -1,7 +1,7 @@
 package link.stuf.exceptions.core;
 
-import link.stuf.exceptions.core.throwables.ThrowableSpeciesId;
-import link.stuf.exceptions.core.throwables.ThrowableSpecimenId;
+import link.stuf.exceptions.munch.ThrowableSpeciesId;
+import link.stuf.exceptions.munch.ThrowableSpecimenId;
 
 public interface Handling {
 

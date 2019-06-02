@@ -1,6 +1,6 @@
 package link.stuf.exceptions.core;
 
-import link.stuf.exceptions.core.throwables.ThrowableSpecimen;
+import link.stuf.exceptions.munch.ThrowableSpecimen;
 
 public interface ThrowablesSensor {
 

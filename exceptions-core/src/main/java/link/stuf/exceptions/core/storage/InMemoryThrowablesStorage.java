@@ -3,10 +3,9 @@ package link.stuf.exceptions.core.storage;
 import link.stuf.exceptions.core.ThrowablesFeed;
 import link.stuf.exceptions.core.ThrowablesStats;
 import link.stuf.exceptions.core.ThrowablesStorage;
-import link.stuf.exceptions.core.throwables.ThrowableSpecies;
-import link.stuf.exceptions.core.throwables.ThrowableSpeciesId;
-import link.stuf.exceptions.core.throwables.ThrowableSpecimen;
-import link.stuf.exceptions.core.throwables.ThrowableSpecimenId;
+import link.stuf.exceptions.munch.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -19,6 +18,8 @@ import java.util.stream.Stream;
 public class InMemoryThrowablesStorage
     implements ThrowablesStorage, ThrowablesStats, ThrowablesFeed {
 
+    private static final Logger log = LoggerFactory.getLogger(InMemoryThrowablesStorage.class);
+
     private static final LinkedList<ThrowableSpecimen> EMPTY = new LinkedList<>();
 
     private final Map<ThrowableSpeciesId, ThrowableSpecies> species = new HashMap<>();
@@ -26,6 +27,8 @@ public class InMemoryThrowablesStorage
     private final Map<ThrowableSpeciesId, Collection<ThrowableSpecimen>> specimens = new HashMap<>();
 
     private final Map<ThrowableSpecimenId, ThrowableSpecimen> specimenRegistry = new HashMap<>();
+
+    private final Map<ThrowableStackId, ThrowableStack> stacks = new HashMap<>();
 
     private final Object lock = new boolean[]{};
 
@@ -52,16 +55,17 @@ public class InMemoryThrowablesStorage
 
     @Override
     public ThrowableSpecies getSpecies(ThrowableSpeciesId speciesId) {
-        return Optional.ofNullable(species.get(speciesId))
-            .orElseThrow(() ->
-                new IllegalArgumentException("No such species: " + speciesId));
+        return get("species", speciesId, species);
+    }
+
+    @Override
+    public ThrowableStack getStack(ThrowableStackId stackId) {
+        return get("stack", stackId, stacks);
     }
 
     @Override
     public ThrowableSpecimen getSpecimen(ThrowableSpecimenId specimenId) {
-        return Optional.ofNullable(specimenRegistry.get(specimenId))
-            .orElseThrow(() ->
-                new IllegalArgumentException("No such specimen: " + specimenId));
+        return get("specimen", specimenId, specimenRegistry);
     }
 
     @Override
@@ -81,7 +85,7 @@ public class InMemoryThrowablesStorage
         return specimens.getOrDefault(id, Collections.emptyList())
             .stream()
             .filter(specimen ->
-                specimen.getSequence() > offset)
+                specimen.getTypeSequence() > offset)
             .limit(count)
             .collect(Collectors.toUnmodifiableList());
     }
@@ -89,7 +93,7 @@ public class InMemoryThrowablesStorage
     @Override
     public Optional<ThrowableSpecimen> lastOccurrence(ThrowableSpeciesId id) {
         return specimen(id).stream()
-            .max(Comparator.comparing(ThrowableSpecimen::getSequence));
+            .max(Comparator.comparing(ThrowableSpecimen::getTypeSequence));
     }
 
     @Override
@@ -110,24 +114,28 @@ public class InMemoryThrowablesStorage
                 specimen.getSpecies().getId(),
                 id1 ->
                     new AtomicLong()
-            ).getAndDecrement());
+            ).getAndIncrement());
+    }
+
+    private <I extends Id, T> T get(String type, I id, Map<I, T> species1) {
+        return Optional.ofNullable(species1.get(id))
+            .orElseThrow(() ->
+                new IllegalArgumentException("No such " + type + ": " + id));
     }
 
     private ThrowableSpecimen stored(ThrowableSpecimen sequenced) {
-        this.species.compute(
-            sequenced.getSpecies().getId(),
-            (id, known) ->
-                known == null ? sequenced.getSpecies() : known
-        );
-        this.specimenRegistry.put(
-            sequenced.getId(),
-            sequenced
-        );
-        this.specimens.computeIfAbsent(
-            sequenced.getSpecies().getId(),
-            id -> new ArrayList<>()
-        ).add(sequenced);
-
+        ThrowableSpecimenId specimenId = sequenced.getId();
+        ThrowableSpecimen existingSpecimen = this.specimenRegistry.put(specimenId, sequenced);
+        if (existingSpecimen == null) {
+            ThrowableSpeciesId speciesId = sequenced.getSpecies().getId();
+            sequenced.getSpecies().stacks().forEach(stack ->
+                this.stacks.putIfAbsent(stack.getId(), stack));
+            this.species.putIfAbsent(speciesId, sequenced.getSpecies());
+            this.specimens.computeIfAbsent(speciesId, __ -> new ArrayList<>()
+            ).add(sequenced);
+        } else {
+            log.warn("Logged again: " + sequenced);
+        }
         return sequenced;
     }
 

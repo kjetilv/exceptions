@@ -1,8 +1,8 @@
 package link.stuf.exceptions.core;
 
-import link.stuf.exceptions.core.throwables.ShadowThrowable;
+import link.stuf.exceptions.munch.ThrowableStack;
 
 public interface ThrowablesReducer {
 
-    ShadowThrowable reduce(ShadowThrowable digest);
+    ThrowableStack reduce(ThrowableStack digest);
 }

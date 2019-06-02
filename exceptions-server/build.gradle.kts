@@ -1,7 +1,7 @@
 plugins {
-    kotlin("jvm") version "1.3.31"
     application
-    id("com.github.johnrengelman.shadow") version "5.0.0"
+    id("com.github.johnrengelman.shadow")
+    kotlin("jvm")
 }
 
 application {
@@ -11,6 +11,7 @@ application {
 dependencies {
 
     compile(project(":exceptions-core"))
+    compile(project(":exceptions-dto"))
     compile(project(":exceptions-micrometer"))
     compile(project(":exceptions-static"))
 
@@ -24,11 +25,10 @@ dependencies {
     compile("io.swagger.core.v3:swagger-core:2.0.8")
     compile("io.micrometer:micrometer-registry-jmx:1.1.4")
 
-    compile("com.fasterxml.jackson.module:jackson-module-parameter-names:2.9.8")
     compile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.8")
     compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.8")
 
-    runtime("org.webjars:swagger-ui:3.22.1")
+    runtime("org.webjars:swagger-ui:3.22.2")
     runtime("ch.qos.logback:logback-classic:1.3.0-alpha4")
 
     testCompile("junit:junit:4.12")

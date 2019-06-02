@@ -1,5 +1,7 @@
 package link.stuf.exceptions.core.throwables;
 
+import link.stuf.exceptions.munch.ThrowableSpecies;
+import link.stuf.exceptions.munch.Throwables;
 import org.junit.Test;
 
 import java.io.IOException;

@@ -1,59 +1,73 @@
 package link.stuf.exceptions.server
 
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import link.stuf.exceptions.core.*
 import link.stuf.exceptions.core.handler.DefaultThrowablesHandler
-import link.stuf.exceptions.core.storage.InMemoryThrowablesStorage
-import link.stuf.exceptions.core.throwables.ThrowableSpecies
-import link.stuf.exceptions.core.throwables.ThrowableSpeciesId
-import link.stuf.exceptions.core.throwables.ThrowableSpecimen
-import link.stuf.exceptions.micrometer.MeteringThrowablesSensor
-import link.stuf.exceptions.server.api.Occurrence
-import link.stuf.exceptions.server.api.WiredException
-import link.stuf.exceptions.server.api.WiredExceptions
-import link.stuf.exceptions.server.api.WiredStackTraceElement
+import link.stuf.exceptions.dto.*
+import link.stuf.exceptions.munch.*
 import java.time.ZoneId
+import java.util.*
 
 class WiredExceptionsController(
-        storage: ThrowablesStorage,
+        private val storage: ThrowablesStorage,
         feed: ThrowablesFeed,
         stats: ThrowablesStats,
         sensor: ThrowablesSensor
 ) {
-
-    private val storage = InMemoryThrowablesStorage()
-
-    private val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
-
     private val handler: ThrowablesHandler = DefaultThrowablesHandler(storage, feed, sensor, stats)
 
     fun handle(throwableInBody: Throwable?): Handling {
         return handler.handle(throwableInBody)
     }
 
-    fun lookup(id: ThrowableSpeciesId): WiredExceptions {
-        val species: ThrowableSpecies = storage.getSpecies(id)
-        val specimen: List<ThrowableSpecimen> = storage.getSpecimen(id).toList()
-        return WiredExceptions(species.id.hash,
+    fun lookup(id: ThrowableSpeciesId, fullStack: Boolean = false): SpeciesExceptions {
+        val specimen = storage.getSpecimen(id)
+        val species = storage.getSpecies(id)
+        return SpeciesExceptions(
+                species.id.hash,
                 specimen.toList().map {
-                    Occurrence(
+                    Specimen(
                             it.id.hash,
-                            it.sequence,
+                            species.id.hash,
+                            it.typeSequence,
                             it.time.atZone(ZoneId.of("UTC")),
-                            this.wiredEx(it.toThrowable()))
-                })
+                            wiredException(it.toThrowableDto(), fullStack)
+                    )
+                }
+        )
     }
 
-    private fun wiredEx(specimen: Throwable): WiredException = WiredException(
-            className = (if (specimen is NamedException)
-                (specimen as NamedException).proxiedClassName
-            else
-                specimen.javaClass.name),
-            message = specimen.message,
-            stacktrace = specimen.stackTrace.let(this::wiredStackTrace),
-            cause = specimen.cause?.let(this::wiredEx))
+    fun lookup(id: ThrowableSpecimenId, fullStack: Boolean = false): SpeciesException {
+        val specimen = storage.getSpecimen(id)
+        return SpeciesException(
+                specimen.species.id.hash,
+                Specimen(
+                        specimen.id.hash,
+                        specimen.species.id.hash,
+                        specimen.typeSequence,
+                        specimen.time.atZone(ZoneId.of("UTC")),
+                        wiredException(specimen.toThrowableDto(), fullStack)
+                )
+        )
+    }
 
-    private fun wiredStackTrace(stackTrace: Array<StackTraceElement>): List<WiredStackTraceElement>? =
+    fun lookupStack(stackId: ThrowableStackId, fullStack: Boolean = false): WiredStackTrace {
+        return wiredStack(storage.getStack(stackId), stackId.hash, fullStack)
+    }
+
+    private fun wiredStack(stack: ThrowableStack, stacktraceRef: UUID, fullStack: Boolean = false): WiredStackTrace {
+        return WiredStackTrace(
+                stack.className,
+                if (fullStack) wiredStackTrace(stack.stackTrace) else emptyList(),
+                stacktraceRef)
+    }
+
+    private fun wiredException(specimen: ThrowableDto, fullStack: Boolean = false): WiredException = WiredException(
+            className = specimen.className,
+            message = specimen.message,
+            stacktrace = wiredStack(specimen.stack, specimen.stack.hash, fullStack),
+            cause = specimen.cause?.let { cause -> wiredException(cause, fullStack) })
+
+    private fun wiredStackTrace(stackTrace: List<StackTraceElement>): List<WiredStackTraceElement>? =
             stackTrace.map { element ->
                 WiredStackTraceElement(
                         classLoaderName = element.classLoaderName,

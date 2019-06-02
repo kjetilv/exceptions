@@ -13,7 +13,7 @@ public final class Static {
 
     private final String preamble;
 
-    private final Map<String, String> cache = new ConcurrentHashMap<>();
+    private final Map<String, String> cacheData = new ConcurrentHashMap<>();
 
     public Static(ClassLoader classLoader, String preamble) {
         this.classLoader = classLoader;
@@ -21,7 +21,7 @@ public final class Static {
     }
 
     public String read(String path) {
-        return cache.computeIfAbsent(path, __ -> readPath(path));
+        return cacheData.computeIfAbsent(path, __ -> readPath(path));
     }
 
     private String readPath(String path) {

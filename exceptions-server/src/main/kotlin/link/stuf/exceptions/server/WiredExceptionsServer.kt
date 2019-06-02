@@ -2,12 +2,17 @@ package link.stuf.exceptions.server
 
 import io.swagger.v3.oas.models.OpenAPI
 import link.stuf.exceptions.core.parser.ThrowableParser
-import link.stuf.exceptions.core.throwables.ThrowableSpeciesId
-import link.stuf.exceptions.core.throwables.Throwables
-import link.stuf.exceptions.server.api.Submission
-import link.stuf.exceptions.server.api.WiredExceptions
+import link.stuf.exceptions.dto.SpeciesException
+import link.stuf.exceptions.dto.Submission
+import link.stuf.exceptions.dto.SpeciesExceptions
+import link.stuf.exceptions.dto.WiredStackTrace
+import link.stuf.exceptions.munch.ThrowableSpeciesId
+import link.stuf.exceptions.munch.ThrowableSpecimenId
+import link.stuf.exceptions.munch.ThrowableStackId
+import link.stuf.exceptions.munch.Throwables
 import link.stuf.exceptions.server.statik.Static
 import org.http4k.core.*
+import org.http4k.core.Method.GET
 import org.http4k.filter.CorsPolicy
 import org.http4k.filter.ServerFilters
 import org.http4k.format.Jackson.auto
@@ -22,8 +27,9 @@ import org.slf4j.LoggerFactory
 import java.util.*
 
 class WiredExceptionsServer(
-        controller: WiredExceptionsController,
-        swaggerJson: () -> OpenAPI,
+        private val controller: WiredExceptionsController,
+        private val swaggerJson: () -> OpenAPI,
+        private val selfDiagnose: Boolean = true,
         val port: Int = 8080
 ) {
     private val logger = LoggerFactory.getLogger(WiredExceptionsServer::class.java)
@@ -31,41 +37,57 @@ class WiredExceptionsServer(
     private val submissionLens =
             Body.auto<Submission>(contentNegotiation = ContentNegotiation.None).toLens()
 
-    private val wiredLens =
-            Body.auto<WiredExceptions>(contentNegotiation = ContentNegotiation.None).toLens()
+    private val speciesExceptionLens =
+            Body.auto<SpeciesException>(contentNegotiation = ContentNegotiation.None).toLens()
+
+    private val speciesExceptionsLens =
+            Body.auto<SpeciesExceptions>(contentNegotiation = ContentNegotiation.None).toLens()
+
+    private val stackLens =
+            Body.auto<WiredStackTrace>(contentNegotiation = ContentNegotiation.None).toLens()
 
     private val swaggerLens =
             Body.auto<OpenAPI>(contentNegotiation = ContentNegotiation.None).toLens()
 
     private val staticContent = Static(
             Thread.currentThread().contextClassLoader,
-            "META-INF/resources/webjars/swagger-ui/3.22.1/")
+            "META-INF/resources/webjars/swagger-ui/3.22.2/")
 
     private val app = routes(
-            "submit" bind Method.POST to {
+            "exception" bind Method.POST to {
                 applicationJson(submissionLens) {
                     controller.handle(throwableInBody(it)).let {
                         Submission(it.speciesId.hash, it.specimenId.hash)
                     }
                 }
             },
-            "lookup/{uuid}" bind Method.GET to {
-                applicationJson(wiredLens) {
-                    controller.lookup(ThrowableSpeciesId(pathUuid(it)))
+            "exception/{uuid}" bind GET to {
+                applicationJson(speciesExceptionLens) {
+                    controller.lookup(ThrowableSpecimenId(pathUuid(it)), flag(it, "fullStack"))
                 }
             },
-            "swagger.json" bind Method.GET to {
+            "stack/{uuid}" bind GET to {
+                applicationJson(stackLens) {
+                    controller.lookupStack(ThrowableStackId(pathUuid(it)), true)
+                }
+            },
+            "exceptions/{uuid}" bind GET to {
+                applicationJson(speciesExceptionsLens) {
+                    controller.lookup(ThrowableSpeciesId(pathUuid(it)), flag(it, "fullStack"))
+                }
+            },
+            "swagger.json" bind GET to {
                 applicationJson(swaggerLens, swaggerJson)
             },
-            "/doc/{path}" bind Method.GET to {
+            "/doc/{path}" bind GET to {
                 Response(Status.OK).body(staticContent.read(it.path("path")))
             },
-            "/" bind Method.GET to {
+            "/" bind GET to {
                 Response(Status.FOUND).header("Location", "/doc/index.html?url=/swagger.json")
-            })
+            }
+    )
 
     private val server = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
-            .then(ServerFilters.GZip())
             .then(Filter(errorHandler()))
             .then(app)
             .asServer(Netty(port))
@@ -75,13 +97,32 @@ class WiredExceptionsServer(
                 { req ->
                     try {
                         next(req)
-                    } catch (e: Exception) {
-                        val id = Throwables.species(e).id
-                        logger.error("Failed: " + id.hash, e)
-                        Response(Status.INTERNAL_SERVER_ERROR).body(id.hash.toString())
+                    } catch (e: Throwable) {
+                        if (selfDiagnose) {
+                            try {
+                                handledFailedResponse(e)
+                            } catch (sde: Exception) {
+                                logger.warn("Failed to self-diagnose", sde)
+                                simpleFailedResponse(e)
+                            }
+                        } else {
+                            simpleFailedResponse(e)
+                        }
                     }
                 }
             }
+
+    private fun handledFailedResponse(e: Throwable): Response {
+        val handle = controller.handle(e)
+        logger.error("Failed: ${handle.specimenId}", e)
+        return Response(Status.INTERNAL_SERVER_ERROR).body(handle.specimenId.hash.toString())
+    }
+
+    private fun simpleFailedResponse(e: Throwable): Response {
+        val speciesId = Throwables.species(e).id
+        logger.error("Failed: $speciesId", e)
+        return Response(Status.INTERNAL_SERVER_ERROR).body(speciesId.hash.toString())
+    }
 
     fun start(): WiredExceptionsServer = apply {
         server.start()
@@ -91,7 +132,9 @@ class WiredExceptionsServer(
         server.stop()
     }
 
-    private fun throwableInBody(it: Request) = ThrowableParser.parse(it.body.payload)!!
+    private fun throwableInBody(req: Request) = ThrowableParser.parse(req.body.payload)!!
+
+    private fun flag(req: Request, flag: String): Boolean = req.query(flag)?.equals("true") ?: false
 
     private fun pathUuid(req: Request): UUID = req.path("uuid")?.let(UUID::fromString)!!
 
@@ -99,7 +142,11 @@ class WiredExceptionsServer(
             response(ContentType.APPLICATION_JSON) { lens.set(ok(), t()) }
 
     private fun response(type: ContentType, toResponse: () -> Response): Response =
-            toResponse().header("Content-Type", type.value)
+            try {
+                toResponse().header("Content-Type", type.value)
+            } catch (e: Exception) {
+                throw IllegalStateException("Failed to return type $type", e)
+            }
 
     private fun ok() = Response(Status.OK)
 }

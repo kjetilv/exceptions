@@ -1,7 +1,7 @@
 package link.stuf.exceptions.core.reducer;
 
 import link.stuf.exceptions.core.ThrowablesReducer;
-import link.stuf.exceptions.core.throwables.ShadowThrowable;
+import link.stuf.exceptions.munch.ThrowableStack;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,11 +23,11 @@ public class SimpleThrowableReducer implements ThrowablesReducer {
     }
 
     @Override
-    public ShadowThrowable reduce(ShadowThrowable digest) {
+    public ThrowableStack reduce(ThrowableStack digest) {
         return digest.withStacktrace(reducedStackTrace(digest));
     }
 
-    private List<StackTraceElement> reducedStackTrace(ShadowThrowable current) {
+    private List<StackTraceElement> reducedStackTrace(ThrowableStack current) {
         List<StackTraceElement> stack = List.copyOf(current.getStackTrace());
         List<StackTraceElement> reducedStack = new ArrayList<>(stack.size());
         List<StackTraceElement> aggregated = new ArrayList<>();

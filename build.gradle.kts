@@ -1,3 +1,10 @@
+plugins {
+    kotlin("jvm") version "1.3.31"
+    id("com.github.johnrengelman.shadow") version "5.0.0"
+    maven
+    `maven-publish`
+}
+
 allprojects {
 
     apply(plugin = "java")
@@ -11,7 +18,6 @@ allprojects {
 
     group = "link.stuf.exceptions"
     version = "0.1.0-SNAPSHOT"
-
 
     repositories {
         mavenCentral()

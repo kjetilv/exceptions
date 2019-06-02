@@ -1,7 +1,10 @@
 rootProject.name = "exceptions"
 
+include("exceptions-client")
+include("exceptions-dto")
 include("exceptions-core")
-include("exceptions-static")
+include("exceptions-munch")
 include("exceptions-micrometer")
 include("exceptions-server")
+include("exceptions-static")
 
