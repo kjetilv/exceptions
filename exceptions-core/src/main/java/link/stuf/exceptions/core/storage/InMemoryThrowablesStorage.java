@@ -58,13 +58,10 @@ public class InMemoryThrowablesStorage
         if (specimens.containsKey(new ThrowableSpeciesId(id))) {
             return new ThrowableSpeciesId(id);
         }
-        return specimenRegistry.keySet().stream()
-            .filter(speciesId ->
-                speciesId.getHash().equals(id)).findFirst()
-            .map(specimenId ->
-                specimenRegistry.get(specimenId).getSpecies().getId())
-            .orElseThrow(() ->
-                new IllegalStateException("No such species or specimen: " + id));
+        if (specimenRegistry.containsKey(new ThrowableSpecimenId(id))) {
+            return specimenRegistry.get(new ThrowableSpecimenId(id)).getSpecies().getId();
+        }
+        throw new IllegalStateException("No such species or specimen: " + id);
     }
 
     @Override
