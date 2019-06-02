@@ -54,6 +54,20 @@ public class InMemoryThrowablesStorage
     }
 
     @Override
+    public ThrowableSpeciesId resolve(UUID id) {
+        if (specimens.containsKey(new ThrowableSpeciesId(id))) {
+            return new ThrowableSpeciesId(id);
+        }
+        return specimenRegistry.keySet().stream()
+            .filter(speciesId ->
+                speciesId.getHash().equals(id)).findFirst()
+            .map(specimenId ->
+                specimenRegistry.get(specimenId).getSpecies().getId())
+            .orElseThrow(() ->
+                new IllegalStateException("No such species or specimen: " + id));
+    }
+
+    @Override
     public ThrowableSpecies getSpecies(ThrowableSpeciesId speciesId) {
         return get("species", speciesId, species);
     }
@@ -69,7 +83,7 @@ public class InMemoryThrowablesStorage
     }
 
     @Override
-    public Collection<ThrowableSpecimen> getSpecimen(ThrowableSpeciesId speciesId) {
+    public Collection<ThrowableSpecimen> getSpecimensOf(ThrowableSpeciesId speciesId) {
         return List.copyOf(specimens.getOrDefault(speciesId, EMPTY));
     }
 
@@ -98,7 +112,7 @@ public class InMemoryThrowablesStorage
 
     @Override
     public long occurrenceCount(ThrowableSpeciesId id, Instant sinceTime, Duration during) {
-        return getSpecimen(id).size();
+        return getSpecimensOf(id).size();
     }
 
     @Override

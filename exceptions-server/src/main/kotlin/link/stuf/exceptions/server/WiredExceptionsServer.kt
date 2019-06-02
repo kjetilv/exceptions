@@ -63,7 +63,12 @@ class WiredExceptionsServer(
             },
             "exception/{uuid}" bind GET to {
                 applicationJson(speciesExceptionLens) {
-                    controller.lookup(ThrowableSpecimenId(pathUuid(it)), flag(it, "fullStack"))
+                    controller.lookupSpecimen(ThrowableSpecimenId(pathUuid(it)), flag(it, "fullStack"))
+                }
+            },
+            "exceptions/{uuid}" bind GET to {
+                applicationJson(speciesExceptionsLens) {
+                    controller.lookupSpecies(ThrowableSpeciesId(pathUuid(it)), flag(it, "fullStack"))
                 }
             },
             "stack/{uuid}" bind GET to {
@@ -71,9 +76,9 @@ class WiredExceptionsServer(
                     controller.lookupStack(ThrowableStackId(pathUuid(it)), true)
                 }
             },
-            "exceptions/{uuid}" bind GET to {
-                applicationJson(speciesExceptionsLens) {
-                    controller.lookup(ThrowableSpeciesId(pathUuid(it)), flag(it, "fullStack"))
+            "exception-out/{uuid}" bind GET to {
+                textPlain {
+                    controller.lookupPrintable(ThrowableSpecimenId(pathUuid(it)))
                 }
             },
             "swagger.json" bind GET to {
@@ -140,6 +145,9 @@ class WiredExceptionsServer(
 
     private fun <T> applicationJson(lens: BiDiBodyLens<T>, t: () -> T): Response =
             response(ContentType.APPLICATION_JSON) { lens.set(ok(), t()) }
+
+    private fun textPlain(t: () -> String): Response =
+            response(ContentType.TEXT_PLAIN) { ok().body(t()) }
 
     private fun response(type: ContentType, toResponse: () -> Response): Response =
             try {

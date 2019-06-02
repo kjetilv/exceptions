@@ -19,9 +19,10 @@ class WiredExceptionsController(
         return handler.handle(throwableInBody)
     }
 
-    fun lookup(id: ThrowableSpeciesId, fullStack: Boolean = false): SpeciesExceptions {
-        val specimen = storage.getSpecimen(id)
-        val species = storage.getSpecies(id)
+    fun lookupSpecies(id: ThrowableSpeciesId, fullStack: Boolean = false): SpeciesExceptions {
+        val speciesId = storage.resolve(id.hash)
+        val specimen = storage.getSpecimensOf(speciesId)
+        val species = storage.getSpecies(speciesId)
         return SpeciesExceptions(
                 species.id.hash,
                 specimen.toList().map {
@@ -36,7 +37,7 @@ class WiredExceptionsController(
         )
     }
 
-    fun lookup(id: ThrowableSpecimenId, fullStack: Boolean = false): SpeciesException {
+    fun lookupSpecimen(id: ThrowableSpecimenId, fullStack: Boolean = false): SpeciesException {
         val specimen = storage.getSpecimen(id)
         return SpeciesException(
                 specimen.species.id.hash,
@@ -53,6 +54,9 @@ class WiredExceptionsController(
     fun lookupStack(stackId: ThrowableStackId, fullStack: Boolean = false): WiredStackTrace {
         return wiredStack(storage.getStack(stackId), stackId.hash, fullStack)
     }
+
+    fun lookupPrintable(specimenId: ThrowableSpecimenId): String =
+            Throwables.string(storage.getSpecimen(specimenId).toThrowable())
 
     private fun wiredStack(stack: ThrowableStack, stacktraceRef: UUID, fullStack: Boolean = false): WiredStackTrace {
         return WiredStackTrace(
