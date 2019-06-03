@@ -18,13 +18,13 @@ class WiredExceptionsController(
     fun handle(throwableInBody: Throwable?): HandlingPolicy =
             handler.handle(throwableInBody)
 
-    fun lookupSpecies(id: ThrowableSpeciesId, fullStack: Boolean = false): SpeciesExceptions {
+    fun lookupSpecies(id: ThrowableSpeciesId, fullStack: Boolean = false): Species {
         val speciesId = storage.resolve(id.hash)
-        val specimen = storage.getSpecimensOf(speciesId)
+        val specimens = storage.getSpecimensOf(speciesId)
         val species = storage.getSpecies(speciesId)
-        return SpeciesExceptions(
+        return Species(
                 species.id.hash,
-                specimen.toList().map { specimen ->
+                specimens.toList().map { specimen ->
                     Specimen(
                             specimen.id.hash,
                             species.id.hash,

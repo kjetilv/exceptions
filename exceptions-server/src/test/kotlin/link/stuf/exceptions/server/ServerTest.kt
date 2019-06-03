@@ -4,7 +4,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import link.stuf.exceptions.core.storage.InMemoryThrowablesStorage
 import link.stuf.exceptions.micrometer.MeteringThrowablesSensor
 import link.stuf.exceptions.dto.Submission
-import link.stuf.exceptions.dto.SpeciesExceptions
+import link.stuf.exceptions.dto.Species
 import org.http4k.client.ApacheClient
 import org.http4k.core.Body
 import org.http4k.core.Method
@@ -22,7 +22,7 @@ fun main() {
             WiredExceptionsController(storage, storage, storage, sensor),
             SwaggerJson)
 
-    val lookupLens = Body.auto<SpeciesExceptions>().toLens()
+    val lookupLens = Body.auto<Species>().toLens()
 
     val submitLens = Body.auto<Submission>().toLens()
 

@@ -2,7 +2,7 @@ package link.stuf.exceptions.server
 
 import io.swagger.v3.oas.models.OpenAPI
 import link.stuf.exceptions.core.parser.ThrowableParser
-import link.stuf.exceptions.dto.SpeciesExceptions
+import link.stuf.exceptions.dto.Species
 import link.stuf.exceptions.dto.Specimen
 import link.stuf.exceptions.dto.Submission
 import link.stuf.exceptions.dto.WiredStackTrace
@@ -41,8 +41,8 @@ class WiredExceptionsServer(
     private val specimenLens =
             Body.auto<Specimen>(contentNegotiation = ContentNegotiation.None).toLens()
 
-    private val speciesExceptionsLens =
-            Body.auto<SpeciesExceptions>(contentNegotiation = ContentNegotiation.None).toLens()
+    private val speciesLens =
+            Body.auto<Species>(contentNegotiation = ContentNegotiation.None).toLens()
 
     private val stackLens =
             Body.auto<WiredStackTrace>(contentNegotiation = ContentNegotiation.None).toLens()
@@ -105,7 +105,7 @@ class WiredExceptionsServer(
             }
 
     private fun lookupExceptions(it: Request): Response =
-            applicationJson(speciesExceptionsLens) {
+            applicationJson(speciesLens) {
                 controller.lookupSpecies(ThrowableSpeciesId(pathUuid(it)), flag(it, "fullStack"))
             }
 
