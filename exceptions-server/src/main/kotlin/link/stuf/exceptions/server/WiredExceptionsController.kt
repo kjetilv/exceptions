@@ -15,9 +15,8 @@ class WiredExceptionsController(
 ) {
     private val handler: ThrowablesHandler = DefaultThrowablesHandler(storage, feed, sensor, stats)
 
-    fun handle(throwableInBody: Throwable?): Handling {
-        return handler.handle(throwableInBody)
-    }
+    fun handle(throwableInBody: Throwable?): HandlingPolicy =
+            handler.handle(throwableInBody)
 
     fun lookupSpecies(id: ThrowableSpeciesId, fullStack: Boolean = false): SpeciesExceptions {
         val speciesId = storage.resolve(id.hash)
@@ -25,45 +24,39 @@ class WiredExceptionsController(
         val species = storage.getSpecies(speciesId)
         return SpeciesExceptions(
                 species.id.hash,
-                specimen.toList().map {
+                specimen.toList().map { specimen ->
                     Specimen(
-                            it.id.hash,
+                            specimen.id.hash,
                             species.id.hash,
-                            it.typeSequence,
-                            it.time.atZone(ZoneId.of("UTC")),
-                            wiredException(it.toThrowableDto(), fullStack)
+                            specimen.typeSequence,
+                            specimen.time.atZone(ZoneId.of("UTC")),
+                            wiredException(specimen.toThrowableDto(), fullStack)
                     )
                 }
         )
     }
 
-    fun lookupSpecimen(id: ThrowableSpecimenId, fullStack: Boolean = false): SpeciesException {
-        val specimen = storage.getSpecimen(id)
-        return SpeciesException(
-                specimen.species.id.hash,
+    fun lookupSpecimen(id: ThrowableSpecimenId, fullStack: Boolean = false) =
+            storage.getSpecimen(id).let { specimen ->
                 Specimen(
                         specimen.id.hash,
                         specimen.species.id.hash,
                         specimen.typeSequence,
                         specimen.time.atZone(ZoneId.of("UTC")),
-                        wiredException(specimen.toThrowableDto(), fullStack)
-                )
-        )
-    }
+                        wiredException(specimen.toThrowableDto(), fullStack))
+            }
 
-    fun lookupStack(stackId: ThrowableStackId, fullStack: Boolean = false): WiredStackTrace {
-        return wiredStack(storage.getStack(stackId), stackId.hash, fullStack)
-    }
+    fun lookupStack(stackId: ThrowableStackId, fullStack: Boolean = false): WiredStackTrace =
+            wiredStack(storage.getStack(stackId), stackId.hash, fullStack)
 
     fun lookupPrintable(specimenId: ThrowableSpecimenId): String =
             Throwables.string(storage.getSpecimen(specimenId).toThrowable())
 
-    private fun wiredStack(stack: ThrowableStack, stacktraceRef: UUID, fullStack: Boolean = false): WiredStackTrace {
-        return WiredStackTrace(
-                stack.className,
-                if (fullStack) wiredStackTrace(stack.stackTrace) else emptyList(),
-                stacktraceRef)
-    }
+    private fun wiredStack(stack: ThrowableStack, stacktraceRef: UUID, fullStack: Boolean = false): WiredStackTrace =
+            WiredStackTrace(
+                    stack.className,
+                    if (fullStack) wiredStackTrace(stack.stackTrace) else emptyList(),
+                    stacktraceRef)
 
     private fun wiredException(specimen: ThrowableDto, fullStack: Boolean = false): WiredException = WiredException(
             className = specimen.className,

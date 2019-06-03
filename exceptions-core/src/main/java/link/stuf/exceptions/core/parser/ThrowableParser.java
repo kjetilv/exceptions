@@ -15,11 +15,7 @@ public class ThrowableParser {
     private static final String CAUSED_BY = "Caused by: ";
 
     public static Throwable parse(ByteBuffer buffer) {
-        return parse(buffer.array());
-    }
-
-    public static Throwable parse(byte[] array) {
-        return parse(new String(array, StandardCharsets.UTF_8));
+        return parse(new String(buffer.array(), StandardCharsets.UTF_8));
     }
 
     public static Throwable parse(String in) {

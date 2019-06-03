@@ -28,7 +28,7 @@ public final class Static {
         byte[] buffer = new byte[8192];
         try (InputStream in = classLoader.getResourceAsStream(preamble + path)) {
             if (in == null) {
-                throw new IllegalArgumentException("No such path: " + path);
+                throw new IllegalArgumentException("No such path: [" + preamble + "]" + path);
             }
             try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
                 while (true) {

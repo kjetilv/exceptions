@@ -2,9 +2,9 @@ package link.stuf.exceptions.server
 
 import io.swagger.v3.oas.models.OpenAPI
 import link.stuf.exceptions.core.parser.ThrowableParser
-import link.stuf.exceptions.dto.SpeciesException
-import link.stuf.exceptions.dto.Submission
 import link.stuf.exceptions.dto.SpeciesExceptions
+import link.stuf.exceptions.dto.Specimen
+import link.stuf.exceptions.dto.Submission
 import link.stuf.exceptions.dto.WiredStackTrace
 import link.stuf.exceptions.munch.ThrowableSpeciesId
 import link.stuf.exceptions.munch.ThrowableSpecimenId
@@ -25,6 +25,7 @@ import org.http4k.server.Netty
 import org.http4k.server.asServer
 import org.slf4j.LoggerFactory
 import java.util.*
+import java.util.regex.Pattern
 
 class WiredExceptionsServer(
         private val controller: WiredExceptionsController,
@@ -37,8 +38,8 @@ class WiredExceptionsServer(
     private val submissionLens =
             Body.auto<Submission>(contentNegotiation = ContentNegotiation.None).toLens()
 
-    private val speciesExceptionLens =
-            Body.auto<SpeciesException>(contentNegotiation = ContentNegotiation.None).toLens()
+    private val specimenLens =
+            Body.auto<Specimen>(contentNegotiation = ContentNegotiation.None).toLens()
 
     private val speciesExceptionsLens =
             Body.auto<SpeciesExceptions>(contentNegotiation = ContentNegotiation.None).toLens()
@@ -49,37 +50,36 @@ class WiredExceptionsServer(
     private val swaggerLens =
             Body.auto<OpenAPI>(contentNegotiation = ContentNegotiation.None).toLens()
 
-    private val staticContent = Static(
-            Thread.currentThread().contextClassLoader,
-            "META-INF/resources/webjars/swagger-ui/3.22.2/")
+    private val staticContent =
+            Thread.currentThread().contextClassLoader.let { cl ->
+                Static(cl, "META-INF/resources/webjars/swagger-ui/".swaggerUi(cl))
+            }
+
+    private fun String.swaggerUi(cl: ClassLoader): String =
+            cl.getResource(this)?.let { url ->
+                Pattern.compile("^.*swagger-ui-([\\d.]+).jar!.*$").matcher(url.toExternalForm()).let { matcher ->
+                    if (matcher.matches()) {
+                        return this + matcher.group(1) + "/"
+                    }
+                    throw java.lang.IllegalStateException("No swagger-ui version found: $url")
+                }
+            } ?: throw IllegalStateException("No swagger-ui webjar found")
 
     private val app = routes(
-            "exception" bind Method.POST to {
-                applicationJson(submissionLens) {
-                    controller.handle(throwableInBody(it)).let {
-                        Submission(it.speciesId.hash, it.specimenId.hash)
-                    }
-                }
+            "exception" bind Method.POST to { req ->
+                submitException(req)
             },
-            "exception/{uuid}" bind GET to {
-                applicationJson(speciesExceptionLens) {
-                    controller.lookupSpecimen(ThrowableSpecimenId(pathUuid(it)), flag(it, "fullStack"))
-                }
+            "exception/{uuid}" bind GET to { req ->
+                lookupException(req)
             },
-            "exceptions/{uuid}" bind GET to {
-                applicationJson(speciesExceptionsLens) {
-                    controller.lookupSpecies(ThrowableSpeciesId(pathUuid(it)), flag(it, "fullStack"))
-                }
+            "exceptions/{uuid}" bind GET to { req ->
+                lookupExceptions(req)
             },
-            "stack/{uuid}" bind GET to {
-                applicationJson(stackLens) {
-                    controller.lookupStack(ThrowableStackId(pathUuid(it)), true)
-                }
+            "stack/{uuid}" bind GET to { req ->
+                lookupStack(req)
             },
-            "exception-out/{uuid}" bind GET to {
-                textPlain {
-                    controller.lookupPrintable(ThrowableSpecimenId(pathUuid(it)))
-                }
+            "exception-out/{uuid}" bind GET to { req ->
+                printException(req)
             },
             "swagger.json" bind GET to {
                 applicationJson(swaggerLens, swaggerJson)
@@ -92,6 +92,33 @@ class WiredExceptionsServer(
             }
     )
 
+    private fun submitException(it: Request): Response =
+            applicationJson(submissionLens) {
+                controller.handle(throwableInBody(it)).let { sub ->
+                    Submission(sub.speciesId.hash, sub.specimenId.hash, sub.isLoggable, sub.isNew)
+                }
+            }
+
+    private fun lookupException(it: Request): Response =
+            applicationJson(specimenLens) {
+                controller.lookupSpecimen(ThrowableSpecimenId(pathUuid(it)), flag(it, "fullStack"))
+            }
+
+    private fun lookupExceptions(it: Request): Response =
+            applicationJson(speciesExceptionsLens) {
+                controller.lookupSpecies(ThrowableSpeciesId(pathUuid(it)), flag(it, "fullStack"))
+            }
+
+    private fun lookupStack(it: Request): Response =
+            applicationJson(stackLens) {
+                controller.lookupStack(ThrowableStackId(pathUuid(it)), true)
+            }
+
+    private fun printException(it: Request): Response =
+            textPlain {
+                controller.lookupPrintable(ThrowableSpecimenId(pathUuid(it)))
+            }
+
     private val server = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
             .then(Filter(errorHandler()))
             .then(app)
@@ -100,22 +127,26 @@ class WiredExceptionsServer(
     private fun errorHandler(): (HttpHandler) -> (Request) -> Response =
             { next ->
                 { req ->
-                    try {
-                        next(req)
-                    } catch (e: Throwable) {
-                        if (selfDiagnose) {
-                            try {
-                                handledFailedResponse(e)
-                            } catch (sde: Exception) {
-                                logger.warn("Failed to self-diagnose", sde)
-                                simpleFailedResponse(e)
-                            }
-                        } else {
-                            simpleFailedResponse(e)
-                        }
-                    }
+                    handleErrors(next, req)
                 }
             }
+
+    private fun handleErrors(next: HttpHandler, req: Request): Response {
+        return try {
+            next(req)
+        } catch (e: Throwable) {
+            if (selfDiagnose) {
+                try {
+                    handledFailedResponse(e)
+                } catch (sde: Exception) {
+                    logger.warn("Failed to self-diagnose", sde)
+                    simpleFailedResponse(e)
+                }
+            } else {
+                simpleFailedResponse(e)
+            }
+        }
+    }
 
     private fun handledFailedResponse(e: Throwable): Response {
         val handle = controller.handle(e)
@@ -139,7 +170,7 @@ class WiredExceptionsServer(
 
     private fun throwableInBody(req: Request) = ThrowableParser.parse(req.body.payload)!!
 
-    private fun flag(req: Request, flag: String): Boolean = req.query(flag)?.equals("true") ?: false
+    private fun flag(req: Request, flag: String): Boolean = req.queries(flag).isNotEmpty()
 
     private fun pathUuid(req: Request): UUID = req.path("uuid")?.let(UUID::fromString)!!
 

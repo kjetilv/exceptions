@@ -1,11 +1,11 @@
 package link.stuf.exceptions.core.handler;
 
-import link.stuf.exceptions.core.Handling;
+import link.stuf.exceptions.core.HandlingPolicy;
 import link.stuf.exceptions.munch.ThrowableSpeciesId;
 import link.stuf.exceptions.munch.ThrowableSpecimen;
 import link.stuf.exceptions.munch.ThrowableSpecimenId;
 
-class SimpleHandlingPolicy implements Handling {
+class SimpleHandlingPolicy implements HandlingPolicy {
 
     private final ThrowableSpecimen specimen;
 
