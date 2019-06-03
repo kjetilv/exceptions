@@ -1,6 +1,5 @@
 package link.stuf.exceptions.server
 
-import io.swagger.v3.oas.models.OpenAPI
 import link.stuf.exceptions.core.parser.ThrowableParser
 import link.stuf.exceptions.dto.Species
 import link.stuf.exceptions.dto.Specimen
@@ -11,11 +10,12 @@ import link.stuf.exceptions.munch.ThrowableSpecimenId
 import link.stuf.exceptions.munch.ThrowableStackId
 import link.stuf.exceptions.munch.Throwables
 import link.stuf.exceptions.server.statik.Static
+import link.stuf.exceptions.server.JSON.auto
+
 import org.http4k.core.*
 import org.http4k.core.Method.GET
 import org.http4k.filter.CorsPolicy
 import org.http4k.filter.ServerFilters
-import org.http4k.format.Jackson.auto
 import org.http4k.lens.BiDiBodyLens
 import org.http4k.lens.ContentNegotiation
 import org.http4k.routing.bind
@@ -24,8 +24,12 @@ import org.http4k.routing.routes
 import org.http4k.server.Netty
 import org.http4k.server.asServer
 import org.slf4j.LoggerFactory
+
+import io.swagger.v3.oas.models.OpenAPI
+
 import java.util.*
 import java.util.regex.Pattern
+
 
 class WiredExceptionsServer(
         private val controller: WiredExceptionsController,

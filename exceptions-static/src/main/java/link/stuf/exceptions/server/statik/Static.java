@@ -1,8 +1,6 @@
 package link.stuf.exceptions.server.statik;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,9 +28,10 @@ public final class Static {
             if (in == null) {
                 throw new IllegalArgumentException("No such path: [" + preamble + "]" + path);
             }
+            InputStream bin = new BufferedInputStream(in);
             try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
                 while (true) {
-                    int read = in.read(buffer);
+                    int read = bin.read(buffer);
                     if (read > 0) {
                         out.write(buffer, 0, read);
                     } else if (read < 0) {
