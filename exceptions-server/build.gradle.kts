@@ -22,6 +22,7 @@ dependencies {
     compile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.8")
     compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.8")
 
+    compile("com.natpryce:konfig:1.6.10.0")    
     compile("io.micrometer:micrometer-registry-jmx:1.1.4")
 
     compile("io.swagger.core.v3:swagger-core:2.0.8")

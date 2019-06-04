@@ -21,7 +21,6 @@ import org.http4k.lens.ContentNegotiation
 import org.http4k.routing.bind
 import org.http4k.routing.path
 import org.http4k.routing.routes
-import org.http4k.server.Netty
 import org.http4k.server.asServer
 import org.slf4j.LoggerFactory
 
@@ -30,12 +29,12 @@ import io.swagger.v3.oas.models.OpenAPI
 import java.util.*
 import java.util.regex.Pattern
 
-
 class WiredExceptionsServer(
         private val controller: WiredExceptionsController,
         private val swaggerJson: () -> OpenAPI,
-        private val selfDiagnose: Boolean = true,
-        val port: Int = 8080
+        val host: String = "0.0.0.0",
+        val port: Int = 8080,
+        private val selfDiagnose: Boolean = true
 ) {
     private val logger = LoggerFactory.getLogger(WiredExceptionsServer::class.java)
 
@@ -126,7 +125,7 @@ class WiredExceptionsServer(
     private val server = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
             .then(Filter(errorHandler()))
             .then(app)
-            .asServer(Netty(port))
+            .asServer(NettyConfig(host, port))
 
     private fun errorHandler(): (HttpHandler) -> (Request) -> Response =
             { next ->
