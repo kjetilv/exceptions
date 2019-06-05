@@ -18,7 +18,7 @@ fun main() {
 
     val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
 
-    val server = WiredExceptionsServer(
+    val server = SimpleRoutingServer(
             WiredExceptionsController(storage, storage, storage, sensor),
             SwaggerJson)
 
