@@ -30,9 +30,8 @@ fun main() {
 
     val controller = WiredExceptionsController(storage, storage, storage, sensor)
 
-    val server = SimpleRoutingServer(
+    val server = ContractualObligationServer(
             controller,
-            SwaggerJson,
             host = config[serverHost],
             port = config[serverPort],
             selfDiagnose = config[selfDiagnose]).start()

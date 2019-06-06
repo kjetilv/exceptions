@@ -18,11 +18,12 @@ dependencies {
     compile("org.http4k:http4k-core:3.143.1")
     compile("org.http4k:http4k-server-netty:3.143.1")
     compile("org.http4k:http4k-format-jackson:3.143.1")
+    compile("org.http4k:http4k-contract:3.143.0")
 
     compile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.8")
     compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.8")
 
-    compile("com.natpryce:konfig:1.6.10.0")    
+    compile("com.natpryce:konfig:1.6.10.0")
     compile("io.micrometer:micrometer-registry-jmx:1.1.4")
 
     compile("io.swagger.core.v3:swagger-core:2.0.8")

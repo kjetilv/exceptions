@@ -26,7 +26,6 @@ import java.util.regex.Pattern
 
 abstract class AbstractServer(
         private val controller: WiredExceptionsController,
-        protected val swaggerJson: () -> OpenAPI,
         val host: String = "0.0.0.0",
         val port: Int = 8080,
         protected val selfDiagnose: Boolean = true
@@ -73,14 +72,22 @@ abstract class AbstractServer(
 
     protected fun submitException(it: Request): Response =
             applicationJson(submissionLens) {
-                controller.handle(throwableInBody(it)).let { sub ->
-                    Submission(sub.speciesId.hash, sub.specimenId.hash, sub.isLoggable, sub.isNew)
-                }
+                acceptException(throwableInBody(it))
             }
+
+    fun acceptException(throwable: Throwable?) =
+        controller.handle(throwable).let { sub ->
+            Submission(sub.speciesId.hash, sub.specimenId.hash, sub.isLoggable, sub.isNew)
+        }
+
+    fun lookupException(uuid: UUID, fullStack: Boolean = true) =
+            controller.lookupSpecimen(ThrowableSpecimenId(uuid), fullStack)
 
     protected fun lookupException(it: Request): Response =
             applicationJson(specimenLens) {
-                controller.lookupSpecimen(ThrowableSpecimenId(pathUuid(it)), flag(it, "fullStack"))
+                val pathUuid = pathUuid(it)
+                val fullStack = flag(it, "fullStack")
+                lookupException(pathUuid, fullStack)
             }
 
     protected fun lookupExceptions(it: Request): Response =

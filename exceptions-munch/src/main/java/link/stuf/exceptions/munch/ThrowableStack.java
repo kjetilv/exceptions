@@ -50,13 +50,13 @@ public class ThrowableStack extends AbstractHashed implements Identified<Throwab
         return className;
     }
 
-    public Throwable toException(String message, Throwable cause) {
+    Throwable toException(String message, Throwable cause) {
         Throwable exception = new ChameleonException(getClassName(), message, cause);
         exception.setStackTrace(getStackTrace().toArray(StackTraceElement[]::new));
         return exception;
     }
 
-    public ThrowableDto toExceptionDto(String message, ThrowableStack stack, ThrowableDto cause) {
+    ThrowableDto toExceptionDto(String message, ThrowableStack stack, ThrowableDto cause) {
         return new ThrowableDto(getClassName(), message, stack, cause);
     }
 

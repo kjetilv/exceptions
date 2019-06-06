@@ -12,11 +12,11 @@ import org.http4k.routing.routes
 
 class SimpleRoutingServer(
         controller: WiredExceptionsController,
-        swaggerJson: () -> OpenAPI,
+        val swaggerJson: () -> OpenAPI,
         host: String = "0.0.0.0",
         port: Int = 8080,
         selfDiagnose: Boolean = true
-) : AbstractServer(controller, swaggerJson, host, port, selfDiagnose) {
+) : AbstractServer(controller, host, port, selfDiagnose) {
 
     override fun app(): HttpHandler = routes(
             "exception" bind Method.POST to { req ->
