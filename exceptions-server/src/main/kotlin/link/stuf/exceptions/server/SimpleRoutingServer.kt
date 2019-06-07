@@ -4,10 +4,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Method.GET
-import org.http4k.core.Response
-import org.http4k.core.Status
 import org.http4k.routing.bind
-import org.http4k.routing.path
 import org.http4k.routing.routes
 
 class SimpleRoutingServer(
@@ -37,11 +34,7 @@ class SimpleRoutingServer(
             "swagger.json" bind GET to {
                 swaggerJsonResponse(swaggerJson)
             },
-            "/doc/{path}" bind GET to {
-                staticResponse(it.path("path"))
-            },
-            "/" bind GET to {
-                Response(Status.FOUND).header("Location", "/doc/index.html?url=/swagger.json")
-            }
+            swaggerUiRoute(),
+            swaggerReroute("")
     )
 }

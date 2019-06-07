@@ -36,7 +36,7 @@ class WiredExceptionsController(
         )
     }
 
-    fun lookupSpecimen(id: ThrowableSpecimenId, fullStack: Boolean = false) =
+    fun lookupSpecimen(id: ThrowableSpecimenId, fullStack: Boolean = false): Specimen =
             storage.getSpecimen(id).let { specimen ->
                 Specimen(
                         specimen.id.hash,
