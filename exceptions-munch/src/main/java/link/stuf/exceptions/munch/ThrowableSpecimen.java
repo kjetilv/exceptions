@@ -5,12 +5,13 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class ThrowableSpecimen extends AbstractHashed implements Identified<ThrowableSpecimenId> {
+public class ThrowableSpecimen extends AbstractHashedIdentified<ThrowableSpecimenId> {
 
     private final List<String> messages;
 
@@ -74,8 +75,8 @@ public class ThrowableSpecimen extends AbstractHashed implements Identified<Thro
     }
 
     @Override
-    public ThrowableSpecimenId getId() {
-        return new ThrowableSpecimenId(getHash());
+    protected ThrowableSpecimenId id(UUID hash) {
+        return new ThrowableSpecimenId(hash);
     }
 
     @Override

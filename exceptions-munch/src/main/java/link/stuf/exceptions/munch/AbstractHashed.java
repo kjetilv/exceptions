@@ -10,6 +10,12 @@ abstract class AbstractHashed implements Hashed {
 
     private final Supplier<UUID> supplier;
 
+    private final Supplier<String> toString = Memoizer.get(() -> {
+        String body = toStringBody();
+        String contents = body == null || body.isBlank() ? "" : " " + body.trim();
+        return getClass().getSimpleName() + "[" + identifier() + contents + "]";
+    });
+
     AbstractHashed() {
         supplier = Hasher.uuid(this);
     }
@@ -31,6 +37,19 @@ abstract class AbstractHashed implements Hashed {
         hasheds.forEach(hashed -> hashed.hashTo(hash));
     }
 
+    Object identifier() {
+        return getHash();
+    }
+
+    String toStringBody() {
+        return null;
+    }
+
+    @Override
+    public final UUID getHash() {
+        return supplier.get();
+    }
+
     @Override
     public final int hashCode() {
         return getHash().hashCode();
@@ -38,11 +57,12 @@ abstract class AbstractHashed implements Hashed {
 
     @Override
     public boolean equals(Object obj) {
-        return obj == this || obj.getClass() == getClass() && ((AbstractHashed)obj).getHash().equals(getHash());
+        return obj == this || obj.getClass() == getClass()
+            && ((AbstractHashed)obj).getHash().equals(getHash());
     }
 
     @Override
-    public final UUID getHash() {
-        return supplier.get();
+    public String toString() {
+        return toString.get();
     }
 }

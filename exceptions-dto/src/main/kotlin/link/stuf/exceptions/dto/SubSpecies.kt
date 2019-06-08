@@ -2,12 +2,10 @@ package link.stuf.exceptions.dto
 
 import java.util.*
 
-data class Submission(
+data class SubSpecies(
 
         val speciesId: UUID,
 
         val specimenId: UUID,
 
-        val loggable: Boolean = true,
-
-        val newSpecies: Boolean = true)
+        val exceptions: List<Specimen>)

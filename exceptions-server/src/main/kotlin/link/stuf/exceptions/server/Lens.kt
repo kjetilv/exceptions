@@ -14,7 +14,7 @@ import org.http4k.lens.BiDiBodyLens
 import org.http4k.lens.ContentNegotiation
 import org.http4k.lens.string
 
-object Lenses {
+object Lens {
 
     val submission =
             Body.auto<Submission>(contentNegotiation = ContentNegotiation.None).toLens()

@@ -5,17 +5,14 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class ThrowableSpecies extends AbstractHashed implements Identified<ThrowableSpeciesId> {
+public class ThrowableSpecies extends AbstractHashedIdentified<ThrowableSpeciesId> {
 
     private final List<ThrowableStack> stacks;
-
-    private final ThrowableSpeciesId id;
 
     ThrowableSpecies(Collection<ThrowableStack> stacks) {
         this.stacks = Collections.unmodifiableList(stacks instanceof List<?>
             ? (List<ThrowableStack>) stacks
             : new ArrayList<>(stacks));
-        this.id = new ThrowableSpeciesId(getHash());
     }
 
     public List<ThrowableStack> stacks() {
@@ -24,7 +21,7 @@ public class ThrowableSpecies extends AbstractHashed implements Identified<Throw
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + id + " <" +
+        return getClass().getSimpleName() + "[" + getId() + " <" +
             stacks.stream().map(Objects::toString).collect(Collectors.joining(" ")) +
             ">]";
     }
@@ -35,8 +32,8 @@ public class ThrowableSpecies extends AbstractHashed implements Identified<Throw
     }
 
     @Override
-    public ThrowableSpeciesId getId() {
-        return id;
+    protected ThrowableSpeciesId id(UUID hash) {
+        return new ThrowableSpeciesId(hash);
     }
 
     @Override

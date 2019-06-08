@@ -7,13 +7,10 @@ public class ThrowableDto extends AbstractHashed {
     private final String className;
 
     private final String message;
+
     private final ThrowableStack stack;
 
     private final ThrowableDto cause;
-
-    ThrowableDto(String className, String message, ThrowableStack stack) {
-        this(className, message, stack, null);
-    }
 
     ThrowableDto(String className, String message, ThrowableStack stack, ThrowableDto cause) {
         this.className = className;

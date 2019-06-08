@@ -1,27 +1,16 @@
 package link.stuf.exceptions.server
 
-import link.stuf.exceptions.dto.Specimen
-import link.stuf.exceptions.dto.Submission
-import link.stuf.exceptions.dto.WiredException
-import link.stuf.exceptions.dto.WiredStackTrace
 import org.http4k.contract.ContractRoute
 import org.http4k.contract.contract
 import org.http4k.contract.div
 import org.http4k.contract.meta
 import org.http4k.contract.openapi.ApiInfo
 import org.http4k.contract.openapi.v3.OpenApi3
-import org.http4k.core.HttpHandler
-import org.http4k.core.Method
-import org.http4k.core.Response
-import org.http4k.core.Status
-import org.http4k.lens.BiDiBodyLens
-import org.http4k.lens.Path
-import org.http4k.lens.Query
-import org.http4k.lens.boolean
+import org.http4k.core.*
+import org.http4k.lens.*
 import org.http4k.routing.RoutingHttpHandler
 import org.http4k.routing.bind
 import org.http4k.routing.routes
-import java.time.ZonedDateTime
 import java.util.*
 
 class ContractualObligationServer(
@@ -29,64 +18,94 @@ class ContractualObligationServer(
         host: String = "0.0.0.0",
         port: Int = 8080,
         selfDiagnose: Boolean = true
-) : AbstractServer(controller, host, port, selfDiagnose) {
-
-    private val fullStack = Query.boolean().optional("fullStack")
+) : AbstractServer(host, port, controller, selfDiagnose) {
 
     private fun submitSpecimenRoute(): ContractRoute =
             "/exception" meta {
                 summary = "Submit an exception"
-                receiving(Lenses.exception to exampleException())
-                returning(Status.OK, Lenses.submission to exampleSubmission())
+                receiving(Lens.exception to Ex.exception())
+                returning(Status.OK, Lens.submission to Ex.submission())
             } bindContract Method.POST to bodyExchange(
-                    Lenses.exception, Lenses.submission, ::acceptException
+                    Lens.exception, Lens.submission, ::submitException
             )
 
     private fun lookupSpecimenRoute(): ContractRoute =
             "/exception" / Path.of("uuid") meta {
                 summary = "Lookup an exception"
-                returning(Status.OK, Lenses.specimen to exampleSpecimen())
+                queries += listOf(fullStack, simpleTrace)
+                returning(Status.OK, Lens.specimen to Ex.specimen())
             } bindContract Method.GET to { uuid ->
                 { req ->
-                    responseWith(Lenses.specimen) {
-                        lookupException(UUID.fromString(uuid), fullStack(req) ?: false)
+                    responseWith(Lens.specimen) {
+                        lookupException(UUID.fromString(uuid), isSet(req, fullStack), isSet(req, simpleTrace))
                     }
                 }
             }
 
-    private fun <I, O> bodyExchange(inLens: BiDiBodyLens<I?>, outLens: BiDiBodyLens<O>, accept: (I) -> O): HttpHandler =
+    private fun lookupSpecimensRoute(): ContractRoute =
+            "/exceptions" / Path.of("uuid") meta {
+                summary = "Lookup a species, with specimen"
+                queries += listOf(fullStack, simpleTrace)
+                returning(Status.OK, Lens.species to Ex.species())
+            } bindContract Method.GET to { uuid ->
+                { req ->
+                    responseWith(Lens.species) {
+                        lookupExceptions(UUID.fromString(uuid), isSet(req, fullStack))
+                    }
+                }
+            }
+
+    private fun lookupStackRoute(): ContractRoute =
+            "/stack" / Path.of("uuid") meta {
+                summary = "Lookup a stack"
+                queries += listOf(fullStack, simpleTrace)
+                returning(Status.OK, Lens.stack to Ex.stack())
+            } bindContract Method.GET to { uuid ->
+                { req ->
+                    responseWith(Lens.stack) {
+                        lookupStack(
+                                UUID.fromString(uuid),
+                                isSet(req, fullStack, true),
+                                isSet(req, simpleTrace))
+                    }
+                }
+            }
+
+    private fun printThrowableRoute(): ContractRoute =
+            "/exception-out" / Path.of("uuid") meta {
+                summary = "Print an exception"
+                returning(Status.OK, Lens.string to Ex.exceptionOut())
+            } bindContract Method.GET to { uuid ->
+                { req ->
+                    responseWith(Lens.exception, type = ContentType.TEXT_PLAIN) {
+                        lookupThrowable(UUID.fromString(uuid))
+                    }
+                }
+            }
+
+    private fun <I, O> bodyExchange(iLens: BiDiBodyLens<I?>, oLens: BiDiBodyLens<O>, accept: (I) -> O): HttpHandler =
             { req ->
-                inLens[req]?.let {
+                iLens[req]?.let {
                     accept(it)
                 }?.let {
-                    outLens.set(Response(Status.OK), it)
+                    oLens.set(Response(Status.OK), it)
                 } ?: Response(Status.BAD_REQUEST)
             }
 
-    private fun <O> responseWith(outLens: BiDiBodyLens<O>, result: () -> O): Response =
-            outLens.set(Response(Status.OK), result())
+    private fun isSet(req: Request, lens: BiDiLens<Request, Boolean?>, defaultValue: Boolean = false) =
+            lens[req] ?: defaultValue
 
-    private fun exampleUuid() = UUID.randomUUID()
-
-    private fun exampleSubmission() =
-            Submission(UUID.randomUUID(), UUID.randomUUID())
-
-    private fun exampleSpecimen() = Specimen(
-            exampleUuid(), exampleUuid(), random.nextLong(), ZonedDateTime.now(), exampleWiredException())
-
-    private fun exampleWiredException(): WiredException =
-            WiredException(
-                    "BadClass",
-                    "Bad class!",
-                    stacktrace = WiredStackTrace("foo.bar.BadException", emptyList(), exampleUuid()));
-
-    private fun exampleException(): Throwable = RuntimeException("Example throwable")
+    private fun <O> responseWith(
+            outLens: BiDiBodyLens<O>,
+            type: ContentType = ContentType.APPLICATION_JSON,
+            result: () -> O
+    ): Response =
+            outLens.set(withContentType(Response(Status.OK), type), result())
 
     override fun app(): HttpHandler = routes(
             apiRoute(),
             swaggerUiRoute(),
-            swaggerReroute("/api/v1")
-    )
+            swaggerReroute("/api/v1"))
 
     private fun apiRoute(): RoutingHttpHandler {
         return "/api/v1" bind contract {
@@ -100,12 +119,18 @@ class ContractualObligationServer(
             descriptionPath = "/swagger.json"
             routes += listOf(
                     submitSpecimenRoute(),
-                    lookupSpecimenRoute())
+                    lookupSpecimenRoute(),
+                    lookupSpecimensRoute(),
+                    lookupStackRoute(),
+                    printThrowableRoute()
+            )
         }
     }
 
     companion object {
 
-        private val random = Random()
+        private val fullStack = Query.boolean().optional("fullStack")
+
+        private val simpleTrace = Query.boolean().optional("simpleTrace")
     }
 }

@@ -36,35 +36,67 @@ class WiredExceptionsController(
         )
     }
 
-    fun lookupSpecimen(id: ThrowableSpecimenId, fullStack: Boolean = false): Specimen =
+    fun lookupSpecimen(
+            id: ThrowableSpecimenId,
+            fullStack: Boolean = false,
+            simpleTrace: Boolean = false
+    ): Specimen =
             storage.getSpecimen(id).let { specimen ->
                 Specimen(
                         specimen.id.hash,
                         specimen.species.id.hash,
                         specimen.typeSequence,
                         specimen.time.atZone(ZoneId.of("UTC")),
-                        wiredException(specimen.toThrowableDto(), fullStack))
+                        wiredException(specimen.toThrowableDto(), fullStack, simpleTrace))
             }
 
-    fun lookupStack(stackId: ThrowableStackId, fullStack: Boolean = false): WiredStackTrace =
-            wiredStack(storage.getStack(stackId), stackId.hash, fullStack)
+    fun lookupStack(
+            stackId: ThrowableStackId,
+            fullStack: Boolean = false,
+            simpleTrace: Boolean = false
+    ): WiredStackTrace =
+            wiredStack(storage.getStack(stackId), stackId.hash, fullStack, simpleTrace)
 
     fun lookupPrintable(specimenId: ThrowableSpecimenId): String =
-            Throwables.string(storage.getSpecimen(specimenId).toThrowable())
+            Throwables.string(lookupThrowable(specimenId))
 
-    private fun wiredStack(stack: ThrowableStack, stacktraceRef: UUID, fullStack: Boolean = false): WiredStackTrace =
-            WiredStackTrace(
-                    stack.className,
-                    if (fullStack) wiredStackTrace(stack.stackTrace) else emptyList(),
-                    stacktraceRef)
+    fun lookupThrowable(specimenId: ThrowableSpecimenId): Throwable =
+            storage.getSpecimen(specimenId).toThrowable()
 
-    private fun wiredException(specimen: ThrowableDto, fullStack: Boolean = false): WiredException = WiredException(
+    private fun wiredException(
+            specimen: ThrowableDto,
+            fullStack: Boolean = false,
+            simpleTrace: Boolean = false
+    ): WiredException = WiredException(
             className = specimen.className,
             message = specimen.message,
-            stacktrace = wiredStack(specimen.stack, specimen.stack.hash, fullStack),
+            stacktrace = wiredStack(specimen.stack, specimen.stack.hash, fullStack, simpleTrace),
             cause = specimen.cause?.let { cause -> wiredException(cause, fullStack) })
 
-    private fun wiredStackTrace(stackTrace: List<StackTraceElement>): List<WiredStackTraceElement>? =
+    private fun wiredStack(
+            stack: ThrowableStack,
+            stacktraceRef: UUID,
+            fullStack: Boolean = false,
+            simpleTrace: Boolean = false
+    ): WiredStackTrace {
+        return WiredStackTrace(
+                stack.className,
+                if (full(fullStack, simpleTrace))
+                    wiredStackTrace(stack.stackTrace)
+                else
+                    emptyList(),
+                if (simpleTrace && !full(fullStack, simpleTrace))
+                    simpleStackTrace(stack.stackTrace)
+                else
+                    emptyList(),
+                stacktraceRef)
+    }
+
+    private fun full(fullStack: Boolean, simpleTrace: Boolean): Boolean = fullStack && !simpleTrace
+
+    private fun wiredStackTrace(
+            stackTrace: List<StackTraceElement>
+    ): List<WiredStackTraceElement>? =
             stackTrace.map { element ->
                 WiredStackTraceElement(
                         classLoaderName = element.classLoaderName,
@@ -75,4 +107,7 @@ class WiredExceptionsController(
                         fileName = element.fileName,
                         lineNumber = element.lineNumber)
             }.toList()
+
+    private fun simpleStackTrace(stackTrace: List<StackTraceElement>): List<String> =
+            stackTrace.map { it.toString() }
 }

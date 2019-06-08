@@ -2,14 +2,11 @@ package link.stuf.exceptions.munch;
 
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class ThrowableStack extends AbstractHashed implements Identified<ThrowableStackId> {
+public class ThrowableStack extends AbstractHashedIdentified<ThrowableStackId> {
 
     static ThrowableStack create(Throwable throwable) {
         return new ThrowableStack(className(throwable), copy(throwable.getStackTrace()));
@@ -42,8 +39,8 @@ public class ThrowableStack extends AbstractHashed implements Identified<Throwab
     }
 
     @Override
-    public ThrowableStackId getId() {
-        return new ThrowableStackId(getHash());
+    protected ThrowableStackId id(UUID hash) {
+        return new ThrowableStackId(hash);
     }
 
     public String getClassName() {
