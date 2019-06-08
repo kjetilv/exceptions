@@ -81,18 +81,16 @@ class WiredExceptionsController(
     ): WiredStackTrace {
         return WiredStackTrace(
                 stack.className,
-                if (full(fullStack, simpleTrace))
+                if (fullStack)
                     wiredStackTrace(stack.stackTrace)
                 else
                     emptyList(),
-                if (simpleTrace && !full(fullStack, simpleTrace))
+                if (simpleTrace && !fullStack)
                     simpleStackTrace(stack.stackTrace)
                 else
                     emptyList(),
                 stacktraceRef)
     }
-
-    private fun full(fullStack: Boolean, simpleTrace: Boolean): Boolean = fullStack && !simpleTrace
 
     private fun wiredStackTrace(
             stackTrace: List<StackTraceElement>

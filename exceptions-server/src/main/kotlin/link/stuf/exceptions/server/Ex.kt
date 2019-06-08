@@ -36,5 +36,5 @@ object Ex {
 
     fun exceptionOut(): String = Throwables.string(exception())
 
-    fun stack() = WiredStackTrace("foo.bar.BadException", emptyList(), uuid())
+    fun stack() = WiredStackTrace("foo.bar.BadException", emptyList(), emptyList(), uuid())
 }
