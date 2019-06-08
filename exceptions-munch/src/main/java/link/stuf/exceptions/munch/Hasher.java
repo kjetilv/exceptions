@@ -4,11 +4,11 @@ import java.security.MessageDigest;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-public final class Hasher {
+final class Hasher {
 
     private static final String HASH = "MD5";
 
-    public static Supplier<UUID> uuid(Hashed hashed) {
+    static Supplier<UUID> uuid(Hashed hashed) {
         return Memoizer.get(() -> {
             MessageDigest md5 = md5();
             hashed.hashTo(md5::update);

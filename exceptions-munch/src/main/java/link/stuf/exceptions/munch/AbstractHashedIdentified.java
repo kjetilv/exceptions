@@ -1,6 +1,8 @@
 package link.stuf.exceptions.munch;
 
+import java.nio.ByteBuffer;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public abstract class AbstractHashedIdentified<I extends Id> extends AbstractHashed implements Identified<I> {

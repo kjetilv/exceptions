@@ -15,6 +15,8 @@ public interface ThrowablesStorage {
 
     Collection<ThrowableSpecimen> getSpecimensOf(ThrowableSpeciesId speciesId);
 
+    Collection<ThrowableSpecimen> getSpecimensOf(ThrowableSubspeciesId speciesId);
+
     ThrowableSpecimen getSpecimen(ThrowableSpecimenId specimenId);
 
     ThrowableStack getStack(ThrowableStackId stackId);

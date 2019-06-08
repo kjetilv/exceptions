@@ -83,11 +83,12 @@ abstract class AbstractServer(
     protected fun lookupThrowable(pathUuid: UUID): Throwable =
             controller.lookupThrowable(ThrowableSpecimenId(pathUuid))
 
-    private fun errors(): (HttpHandler) -> (Request) -> Response = { next ->
-        { req ->
-            handleErrors(next, req)
-        }
-    }
+    private fun errors(): (HttpHandler) -> (Request) -> Response =
+            { next ->
+                { req ->
+                    handleErrors(next, req)
+                }
+            }
 
     private fun handleErrors(next: HttpHandler, req: Request): Response {
         return try {

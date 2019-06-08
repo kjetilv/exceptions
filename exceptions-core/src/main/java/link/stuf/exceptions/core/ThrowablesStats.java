@@ -10,25 +10,25 @@ import java.util.stream.Stream;
 
 public interface ThrowablesStats {
 
-    Optional<ThrowableSpecimen> lastOccurrence(ThrowableSpeciesId id);
+    Optional<ThrowableSpecimen> lastSpecimen(ThrowableSpeciesId id);
 
-    default long occurrenceCount(ThrowableSpeciesId id) {
-        return occurrenceCount(id, null);
+    default long specimentCount(ThrowableSpeciesId id) {
+        return specimentCount(id, null);
     }
 
-    default long occurrenceCount(ThrowableSpeciesId id, Instant sinceTime) {
-        return occurrenceCount(id, sinceTime, null);
+    default long specimentCount(ThrowableSpeciesId id, Instant sinceTime) {
+        return specimenCount(id, sinceTime, null);
     }
 
-    long occurrenceCount(ThrowableSpeciesId id, Instant sinceTime, Duration during);
+    long specimenCount(ThrowableSpeciesId id, Instant sinceTime, Duration during);
 
-    default Stream<ThrowableSpecimen> occurrences(ThrowableSpeciesId id) {
-        return occurrences(id, null);
+    default Stream<ThrowableSpecimen> specimens(ThrowableSpeciesId id) {
+        return specimens(id, null);
     }
 
-    default Stream<ThrowableSpecimen> occurrences(ThrowableSpeciesId id, Instant sinceTime) {
-        return occurrences(id, sinceTime, null);
+    default Stream<ThrowableSpecimen> specimens(ThrowableSpeciesId id, Instant sinceTime) {
+        return specimens(id, sinceTime, null);
     }
 
-    Stream<ThrowableSpecimen> occurrences(ThrowableSpeciesId id, Instant sinceTime, Duration period);
+    Stream<ThrowableSpecimen> specimens(ThrowableSpeciesId id, Instant sinceTime, Duration period);
 }

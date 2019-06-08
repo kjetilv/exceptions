@@ -4,7 +4,7 @@ import java.util.UUID;
 
 public class ThrowableMessagesId extends Id {
 
-    public ThrowableMessagesId(UUID hash) {
+    ThrowableMessagesId(UUID hash) {
         super(hash);
     }
 }

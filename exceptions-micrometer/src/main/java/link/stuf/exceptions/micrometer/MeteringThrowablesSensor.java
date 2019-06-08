@@ -6,6 +6,7 @@ import io.micrometer.core.instrument.Tag;
 import link.stuf.exceptions.core.ThrowablesSensor;
 import link.stuf.exceptions.munch.ThrowableSpecies;
 import link.stuf.exceptions.munch.ThrowableSpecimen;
+import link.stuf.exceptions.munch.ThrowableSubspecies;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,9 +24,11 @@ public class MeteringThrowablesSensor implements ThrowablesSensor {
 
     @Override
     public ThrowableSpecimen registered(ThrowableSpecimen specimen) {
-        ThrowableSpecies species = specimen.getSpecies();
+        ThrowableSubspecies subspecies = specimen.getSubspecies();
+        subspeciesCounter(subspecies).count();
+        ThrowableSpecies species = subspecies.getSpecies();
         speciesCounter(species).count();
-        specimenCounter(species, specimen).count();
+        specimenCounter(species, subspecies, specimen).count();
         return specimen;
     }
 
@@ -33,7 +36,11 @@ public class MeteringThrowablesSensor implements ThrowablesSensor {
         return metrics.counter(EXCEPTIONS, Collections.singleton(speciesTag(species)));
     }
 
-    private Counter specimenCounter(ThrowableSpecies species, ThrowableSpecimen specimen) {
+    private Counter subspeciesCounter(ThrowableSubspecies species) {
+        return metrics.counter(EXCEPTIONS, Collections.singleton(subspeciesTag(species)));
+    }
+
+    private Counter specimenCounter(ThrowableSpecies species, ThrowableSubspecies subspecies, ThrowableSpecimen specimen) {
         return metrics.counter(
             EXCEPTIONS + "-" + species.getHash(),
             Arrays.asList(speciesTag(species), specimenTag(specimen)));
@@ -43,8 +50,16 @@ public class MeteringThrowablesSensor implements ThrowablesSensor {
         return speciesTag(exc.getHash());
     }
 
+    private Tag subspeciesTag(ThrowableSubspecies exc) {
+        return subspeciesTag(exc.getHash());
+    }
+
     private Tag speciesTag(UUID hash) {
         return Tag.of(SPECIES, hash.toString());
+    }
+
+    private Tag subspeciesTag(UUID hash) {
+        return Tag.of(SUBSPECIES, hash.toString());
     }
 
     private Tag specimenTag(ThrowableSpecimen specimen) {
@@ -52,6 +67,8 @@ public class MeteringThrowablesSensor implements ThrowablesSensor {
     }
 
     private static final String SPECIES = "species";
+
+    private static final String SUBSPECIES = "subspecies";
 
     private static final String SPECIMEN = "specimen";
 }

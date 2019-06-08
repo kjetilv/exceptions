@@ -36,8 +36,8 @@ public class ThrowableDto extends AbstractHashed {
     }
 
     @Override
-    public void hashTo(Consumer<byte[]> hash) {
-        hashStrings(hash, className, message);
-        hash(hash, stack);
+    public void hashTo(Consumer<byte[]> h) {
+        hashStrings(h, className, message);
+        hashHashables(h, stack);
     }
 }

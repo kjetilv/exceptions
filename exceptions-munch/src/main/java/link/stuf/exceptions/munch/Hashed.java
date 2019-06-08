@@ -7,5 +7,5 @@ public interface Hashed {
 
     UUID getHash();
 
-    void hashTo(Consumer<byte[]> hash);
+    void hashTo(Consumer<byte[]> h);
 }

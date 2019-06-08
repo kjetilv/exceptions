@@ -1,10 +1,10 @@
 package link.stuf.exceptions.munch;
 
-import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-public class ThrowableSubspecies extends AbstractHashedIdentified<ThrowableSubpeciesId> {
+@SuppressWarnings("WeakerAccess")
+public class ThrowableSubspecies extends AbstractHashedIdentified<ThrowableSubspeciesId> {
 
     private final ThrowableSpecies species;
 
@@ -13,16 +13,31 @@ public class ThrowableSubspecies extends AbstractHashedIdentified<ThrowableSubpe
     public ThrowableSubspecies(ThrowableSpecies species, ThrowableMessages messages) {
         this.species = species;
         this.messages = messages;
+        if (species.stackCount() != messages.count()) {
+            throw new IllegalStateException("Expected same arity: " + species.stacks().size() + "/" + messages.count());
+        }
+    }
+
+    public ThrowableSpecies getSpecies() {
+        return species;
+    }
+
+    public ThrowableMessages getMessages() {
+        return messages;
     }
 
     @Override
-    protected ThrowableSubpeciesId id(UUID hash) {
-        return new ThrowableSubpeciesId(hash);
+    protected ThrowableSubspeciesId id(UUID hash) {
+        return new ThrowableSubspeciesId(hash);
     }
 
     @Override
-    public void hashTo(Consumer<byte[]> hash) {
-        species.hashTo(hash);
-        messages.hashTo(hash);
+    String toStringBody() {
+        return "species:" + species + ": " + messages;
+    }
+
+    @Override
+    public void hashTo(Consumer<byte[]> h) {
+        hashHashables(h, species, messages);
     }
 }

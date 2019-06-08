@@ -4,6 +4,7 @@ import link.stuf.exceptions.core.HandlingPolicy;
 import link.stuf.exceptions.munch.ThrowableSpeciesId;
 import link.stuf.exceptions.munch.ThrowableSpecimen;
 import link.stuf.exceptions.munch.ThrowableSpecimenId;
+import link.stuf.exceptions.munch.ThrowableSubspeciesId;
 
 class SimpleHandlingPolicy implements HandlingPolicy {
 
@@ -18,7 +19,11 @@ class SimpleHandlingPolicy implements HandlingPolicy {
 
     @Override
     public ThrowableSpeciesId getSpeciesId() {
-        return specimen.getSpecies().getId();
+        return specimen.getSubspecies().getSpecies().getId();
+    }
+
+    public ThrowableSubspeciesId getSubspeciesId() {
+        return specimen.getSubspecies().getId();
     }
 
     @Override

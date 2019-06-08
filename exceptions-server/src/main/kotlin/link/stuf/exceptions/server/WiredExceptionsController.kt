@@ -28,7 +28,7 @@ class WiredExceptionsController(
                     Specimen(
                             specimen.id.hash,
                             species.id.hash,
-                            specimen.typeSequence,
+                            specimen.speciesSequence,
                             specimen.time.atZone(ZoneId.of("UTC")),
                             wiredException(specimen.toThrowableDto(), fullStack)
                     )
@@ -44,8 +44,8 @@ class WiredExceptionsController(
             storage.getSpecimen(id).let { specimen ->
                 Specimen(
                         specimen.id.hash,
-                        specimen.species.id.hash,
-                        specimen.typeSequence,
+                        specimen.subspecies.id.hash,
+                        specimen.speciesSequence,
                         specimen.time.atZone(ZoneId.of("UTC")),
                         wiredException(specimen.toThrowableDto(), fullStack, simpleTrace))
             }

@@ -28,7 +28,7 @@ public class Throwables {
     }
 
     public static ThrowableSpecimen create(Throwable throwable) {
-        return new ThrowableSpecimen(messages(throwable), species(throwable));
+        return new ThrowableSpecimen(new ThrowableSubspecies(species(throwable), messages(throwable)));
     }
 
     private static byte[] bytes(Throwable throwable) {
@@ -39,11 +39,12 @@ public class Throwables {
             }
             return baos.toByteArray();
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to print: " + throwable, e);
+            throw new IllegalStateException("Failed to serialize: " + throwable, e);
         }
     }
 
-    private static List<String> messages(Throwable throwable) {
-        return Streams.causes(throwable).map(Throwable::getMessage).collect(Collectors.toList());
+    private static ThrowableMessages messages(Throwable throwable) {
+        return new ThrowableMessages(
+            Streams.causes(throwable).map(Throwable::getMessage).collect(Collectors.toList()));
     }
 }

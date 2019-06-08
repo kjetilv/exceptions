@@ -1,8 +1,8 @@
 package link.stuf.exceptions.munch;
 
-import java.nio.ByteBuffer;
 import java.time.Instant;
-import java.util.Collections;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -13,22 +13,36 @@ import java.util.stream.Stream;
 
 public class ThrowableSpecimen extends AbstractHashedIdentified<ThrowableSpecimenId> {
 
-    private final List<String> messages;
-
-    private final ThrowableSpecies species;
+    private final ThrowableSubspecies subspecies;
 
     private final Instant time;
 
     private final Long globalSequence;
 
-    private final Long typeSequence;
+    private final Long speciesSequence;
 
-    ThrowableSpecimen(List<String> messages, ThrowableSpecies species) {
-        this(messages, species, null, null, null);
+    private final Long subspeciesSequence;
+
+    ThrowableSpecimen(ThrowableSubspecies subspecies) {
+        this(subspecies, null, null, null, null);
     }
 
-    public ThrowableSpecies getSpecies() {
-        return species;
+    private ThrowableSpecimen(
+        ThrowableSubspecies species,
+        Instant time,
+        Long globalSequence,
+        Long speciesSequence,
+        Long subspeciesSequence
+    ) {
+        this.subspecies = Objects.requireNonNull(species);
+        this.time = time;
+        this.globalSequence = globalSequence;
+        this.speciesSequence = speciesSequence;
+        this.subspeciesSequence = subspeciesSequence;
+    }
+
+    public ThrowableSubspecies getSubspecies() {
+        return subspecies;
     }
 
     public Instant getTime() {
@@ -39,32 +53,57 @@ public class ThrowableSpecimen extends AbstractHashedIdentified<ThrowableSpecime
         return globalSequence;
     }
 
-    public Long getTypeSequence() {
-        return typeSequence;
+    public Long getSpeciesSequence() {
+        return speciesSequence;
     }
 
-    public ThrowableSpecimen sequenced(Instant time, Long globalSequence, Long typeSequence) {
-        return new ThrowableSpecimen(messages, species,
+    public Long getSubspeciesSequence() {
+        return subspeciesSequence;
+    }
+
+    public ThrowableSpecimen sequenced(
+        Instant time,
+        Long globalSequence,
+        Long speciesSequence,
+        Long subspeciesSequence
+    ) {
+        if (this.time != null) {
+            throw new IllegalStateException(this + " already sequenced");
+        }
+        return new ThrowableSpecimen(subspecies,
             Objects.requireNonNull(time),
             Objects.requireNonNull(globalSequence),
-            Objects.requireNonNull(typeSequence));
+            Objects.requireNonNull(speciesSequence),
+            Objects.requireNonNull(subspeciesSequence));
+    }
+
+    @Override
+    String toStringBody() {
+        String time = this.time == null
+            ? "<>"
+            : this.time.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_ZONED_DATE_TIME);
+        return "@" + time + " g:" + globalSequence + " s:" + speciesSequence + " ss:" + subspeciesSequence;
     }
 
     public ThrowableDto toThrowableDto() {
-        return reversedRange(species.stacks())
+        return reversedRange(subspecies.getSpecies().stacks())
             .reduce(
                 null,
                 (cause, i) ->
-                    species.stacks().get(i).toExceptionDto(messages.get(i), species.stacks().get(i), cause),
+                    subspecies.getSpecies().stacks().get(i).toExceptionDto(
+                        subspecies.getMessages().get(i),
+                        subspecies.getSpecies().stacks().get(i),
+                        cause),
                 noCombine());
     }
 
     public Throwable toThrowable() {
-        return reversedRange(species.stacks())
+        return reversedRange(subspecies.getSpecies().stacks())
             .reduce(
                 null,
                 (cause, i) ->
-                    species.stacks().get(i).toException(messages.get(i), cause),
+                    subspecies.getSpecies().stacks().get(i).toException(
+                        subspecies.getMessages().get(i), cause),
                 noCombine());
     }
 
@@ -80,26 +119,9 @@ public class ThrowableSpecimen extends AbstractHashedIdentified<ThrowableSpecime
     }
 
     @Override
-    public void hashTo(Consumer<byte[]> hash) {
-        species.hashTo(hash);
-        hashStrings(hash, messages);
-        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-        buffer.putLong(time.toEpochMilli());
-        hash.accept(buffer.array());
-    }
-
-    private ThrowableSpecimen(List<String> messages, ThrowableSpecies species,
-                              Instant time,
-                              Long globalSequence,
-                              Long typeSequence) {
-        this.messages = Collections.unmodifiableList(messages);
-        this.species = Objects.requireNonNull(species);
-        this.time = time;
-        this.globalSequence = globalSequence;
-        this.typeSequence = typeSequence;
-        if (species.stacks().size() != messages.size()) {
-            throw new IllegalStateException("Expected same arity: " + species.stacks().size() + "/" + messages.size());
-        }
+    public void hashTo(Consumer<byte[]> h) {
+        hashHashables(h, subspecies);
+        hashLongs(h, time.toEpochMilli());
     }
 
     private static <T> BinaryOperator<T> noCombine() {

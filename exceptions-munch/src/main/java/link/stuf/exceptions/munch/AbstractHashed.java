@@ -1,14 +1,16 @@
 package link.stuf.exceptions.munch;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+@SuppressWarnings("WeakerAccess")
 abstract class AbstractHashed implements Hashed {
 
-    private final Supplier<UUID> supplier;
+    private final Supplier<UUID> supplier = Hasher.uuid(this);
 
     private final Supplier<String> toString = Memoizer.get(() -> {
         String body = toStringBody();
@@ -16,25 +18,30 @@ abstract class AbstractHashed implements Hashed {
         return getClass().getSimpleName() + "[" + identifier() + contents + "]";
     });
 
-    AbstractHashed() {
-        supplier = Hasher.uuid(this);
-    }
-
-    void hashStrings(Consumer<byte[]> hash, String... strings) {
+    final void hashStrings(Consumer<byte[]> hash, String... strings) {
         hashStrings(hash, Arrays.asList(strings));
     }
 
-    void hashStrings(Consumer<byte[]> hash, Iterable<String> strings) {
+    final void hashStrings(Consumer<byte[]> hash, Iterable<String> strings) {
         strings.forEach(string ->
             hash.accept(string.getBytes(StandardCharsets.UTF_8)));
     }
 
-    void hash(Consumer<byte[]> hash, Hashed... hasheds) {
-        hash(hash, Arrays.asList(hasheds));
+    final void hashHashables(Consumer<byte[]> hash, Hashed... hasheds) {
+        hashHashables(hash, Arrays.asList(hasheds));
     }
 
-    void hash(Consumer<byte[]> hash, Iterable<? extends Hashed> hasheds) {
+    final void hashHashables(Consumer<byte[]> hash, Iterable<? extends Hashed> hasheds) {
         hasheds.forEach(hashed -> hashed.hashTo(hash));
+    }
+
+    final void hashLongs(Consumer<byte[]> hash, long... values) {
+        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+        for (long value : values) {
+            buffer.putLong(value);
+            hash.accept(buffer.array());
+            buffer.reset();
+        }
     }
 
     Object identifier() {
@@ -56,13 +63,13 @@ abstract class AbstractHashed implements Hashed {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public final boolean equals(Object obj) {
         return obj == this || obj.getClass() == getClass()
             && ((AbstractHashed)obj).getHash().equals(getHash());
     }
 
     @Override
-    public String toString() {
+    public final String toString() {
         return toString.get();
     }
 }

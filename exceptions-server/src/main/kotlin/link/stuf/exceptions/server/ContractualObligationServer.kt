@@ -76,7 +76,7 @@ class ContractualObligationServer(
                 summary = "Print an exception"
                 returning(Status.OK, Lens.string to Ex.exceptionOut())
             } bindContract Method.GET to { uuid ->
-                { req ->
+                {
                     responseWith(Lens.exception, type = ContentType.TEXT_PLAIN) {
                         lookupThrowable(UUID.fromString(uuid))
                     }
