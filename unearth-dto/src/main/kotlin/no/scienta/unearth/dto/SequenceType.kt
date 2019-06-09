@@ -15,23 +15,15 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.core;
+package no.scienta.unearth.dto
 
-import no.scienta.unearth.munch.ids.FaultTypeId;
-import no.scienta.unearth.munch.data.FaultEvent;
-import no.scienta.unearth.munch.ids.FaultId;
+enum class SequenceType(
+        val seq: (FaultEventDto) -> Long
+) : (FaultEventDto) -> Long {
 
-import java.util.List;
+    GLOBAL(FaultEventDto::sequence),
+    FAULT_TYPE(FaultEventDto::faultTypeSequence),
+    FAULT(FaultEventDto::faultSequence);
 
-public interface FaultFeed {
-
-    long limit();
-
-    long limit(FaultTypeId id);
-
-    long limit(FaultId id);
-
-    List<FaultEvent> feed(FaultTypeId id, long offset, int count);
-
-    List<FaultEvent> feed(FaultId id, long offset, int count);
+    override fun invoke(dto: FaultEventDto): Long = seq(dto)
 }

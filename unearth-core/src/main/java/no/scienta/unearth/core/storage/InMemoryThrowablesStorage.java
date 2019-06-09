@@ -103,18 +103,30 @@ public class InMemoryThrowablesStorage
     }
 
     @Override
-    public FaultTypeId resolve(UUID id) {
-        if (faultTypes.containsKey(new FaultTypeId(id))) {
-            return new FaultTypeId(id);
+    public FaultTypeId resolveFaultType(UUID uuid) {
+        if (faultTypes.containsKey(new FaultTypeId(uuid))) {
+            return new FaultTypeId(uuid);
         }
-        if (faults.containsKey(new FaultId(id))) {
-            return faults.get(new FaultId(id)).getFaultType().getId();
+        if (faults.containsKey(new FaultId(uuid))) {
+            return faults.get(new FaultId(uuid)).getFaultType().getId();
         }
-        if (events.containsKey(new FaultEventId(id))) {
-            FaultEvent throwableSpecimen = events.get(new FaultEventId(id));
+        if (events.containsKey(new FaultEventId(uuid))) {
+            FaultEvent throwableSpecimen = events.get(new FaultEventId(uuid));
             return throwableSpecimen.getFault().getFaultType().getId();
         }
-        throw new IllegalStateException("No such fault type or fault: " + id);
+        throw new IllegalStateException("No such fault type or fault: " + uuid);
+    }
+
+    @Override
+    public FaultId resolveFault(UUID uuid) {
+        if (faults.containsKey(new FaultId(uuid))) {
+            return new FaultId(uuid);
+        }
+        if (events.containsKey(new FaultEventId(uuid))) {
+            FaultEvent throwableSpecimen = events.get(new FaultEventId(uuid));
+            return throwableSpecimen.getFault().getId();
+        }
+        throw new IllegalStateException("No such fault type or fault: " + uuid);
     }
 
     @Override
@@ -138,13 +150,18 @@ public class InMemoryThrowablesStorage
     }
 
     @Override
-    public Collection<FaultEvent> getEvents(FaultTypeId faultTypeId, long offset, long count) {
+    public Collection<FaultEvent> getEvents(FaultTypeId faultTypeId, Long offset, Long count) {
         return listLookup(this.faultTypeEvents, faultTypeId, offset, count);
     }
 
     @Override
-    public Collection<FaultEvent> getEvents(FaultId faultId, long offset, long count) {
+    public Collection<FaultEvent> getEvents(FaultId faultId, Long offset, Long count) {
         return listLookup(faultEvents, faultId, offset, count);
+    }
+
+    @Override
+    public long limit() {
+        return globalSequence.get();
     }
 
     @Override

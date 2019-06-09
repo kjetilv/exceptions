@@ -33,23 +33,25 @@ public interface FaultStorage {
 
     FaultEvent store(Fault fault);
 
-    FaultTypeId resolve(UUID id);
+    FaultTypeId resolveFaultType(UUID id);
+
+    FaultId resolveFault(UUID id);
 
     Fault getFault(FaultId faultId);
 
     FaultType getFaultType(FaultTypeId digestId);
 
     default Collection<FaultEvent> getEvents(FaultTypeId faultTypeId) {
-        return getEvents(faultTypeId, -1, -1);
+        return getEvents(faultTypeId, null, null);
     }
 
-    Collection<FaultEvent> getEvents(FaultTypeId faultTypeId, long offset, long count);
+    Collection<FaultEvent> getEvents(FaultTypeId faultTypeId, Long offset, Long count);
 
     default Collection<FaultEvent> getEvents(FaultId faultId) {
-        return getEvents(faultId, -1, -1);
+        return getEvents(faultId, null, null);
     }
 
-    Collection<FaultEvent> getEvents(FaultId faultId, long offset, long count);
+    Collection<FaultEvent> getEvents(FaultId faultId, Long offset, Long count);
 
     FaultEvent getFaultEvent(FaultEventId specimenId);
 

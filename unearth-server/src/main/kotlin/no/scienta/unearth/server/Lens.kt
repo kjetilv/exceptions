@@ -19,25 +19,25 @@ package no.scienta.unearth.server
 
 import io.swagger.v3.oas.models.OpenAPI
 import no.scienta.unearth.core.parser.ThrowableParser
-import no.scienta.unearth.dto.FaultTypeDto
-import no.scienta.unearth.dto.FaultEventDto
-import no.scienta.unearth.dto.Submission
-import no.scienta.unearth.dto.CauseDto
+import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.util.Throwables
 import no.scienta.unearth.server.JSON.auto
 import org.http4k.core.Body
 import org.http4k.core.ContentType.Companion.TEXT_PLAIN
 import org.http4k.lens.BiDiBodyLens
-import org.http4k.lens.ContentNegotiation
 import org.http4k.lens.string
 
 object Lens {
 
-    val submission =
-            Body.auto<Submission>(contentNegotiation = ContentNegotiation.None).toLens()
+    val submission = Body.auto<Submission>().toLens()
+
+    val sequenceType: BiDiBodyLens<SequenceType> = Body.auto<SequenceType>().toLens()
+
+    val faultSequence =
+            Body.auto<List<FaultSequence>>().toLens();
 
     val faultEvent =
-            Body.auto<FaultEventDto>(contentNegotiation = ContentNegotiation.None).toLens()
+            Body.auto<FaultEventDto>().toLens()
 
     val exception: BiDiBodyLens<Throwable> = BiDiBodyLens(
             metas = emptyList(),
@@ -52,12 +52,12 @@ object Lens {
     val string = Body.string(TEXT_PLAIN).toLens()
 
     val faultType =
-            Body.auto<FaultTypeDto>(contentNegotiation = ContentNegotiation.None).toLens()
+            Body.auto<FaultTypeDto>().toLens()
 
     val cause =
-            Body.auto<CauseDto>(contentNegotiation = ContentNegotiation.None).toLens()
+            Body.auto<CauseDto>().toLens()
 
     val swagger =
-            Body.auto<OpenAPI>(contentNegotiation = ContentNegotiation.None).toLens()
+            Body.auto<OpenAPI>().toLens()
 
 }

@@ -22,32 +22,41 @@ import no.scienta.unearth.munch.util.Throwables
 import java.time.ZonedDateTime
 import java.util.*
 
-object Ex {
+object Example {
 
-    private val random = Random()
+    private val random =
+            Random()
 
-    fun uuid() = UUID.randomUUID()
+    fun uuid() =
+            UUID.randomUUID()
 
-    fun submission() = Submission(
-            UUID.randomUUID(),
-            UUID.randomUUID(),
-            UUID.randomUUID(),
-            random.nextLong() % 1000,
-            1000L + random.nextLong() % 1000,
-            2000L + random.nextLong() % 1000,
-            random.nextBoolean())
+    fun submission() =
+            Submission(
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    random.nextLong() % 1000,
+                    1000L + random.nextLong() % 1000,
+                    2000L + random.nextLong() % 1000,
+                    random.nextBoolean())
 
-    fun faultEventDtos(): FaultEventDto = faultEventDtos(uuid())
+    fun faultSequence(): FaultSequence =
+            FaultSequence(
+                    SequenceType.FAULT,
+                    listOf(faultEventDtos())
+            )
 
-    fun faultEventDtos(faultTypeId: UUID): FaultEventDto {
-        return FaultEventDto(uuid(),
-                faultTypeId,
-                random.nextLong(),
-                random.nextLong(),
-                random.nextLong(),
-                ZonedDateTime.now(),
-                wiredException())
-    }
+    fun faultEventDtos(): FaultEventDto =
+            faultEventDtos(uuid())
+
+    fun faultEventDtos(faultTypeId: UUID): FaultEventDto =
+            FaultEventDto(uuid(),
+                    faultTypeId,
+                    random.nextLong(),
+                    random.nextLong(),
+                    random.nextLong(),
+                    ZonedDateTime.now(),
+                    wiredException())
 
     fun faultTypeDto() = uuid().let { id ->
         FaultTypeDto(id, listOf(faultEventDtos(id)))

@@ -24,6 +24,7 @@ import no.scienta.unearth.munch.data.CauseType
 import no.scienta.unearth.munch.data.ThrowableDto
 import no.scienta.unearth.munch.ids.CauseTypeId
 import no.scienta.unearth.munch.ids.FaultEventId
+import no.scienta.unearth.munch.ids.FaultId
 import no.scienta.unearth.munch.ids.FaultTypeId
 import no.scienta.unearth.munch.util.Throwables
 import java.time.ZoneId
@@ -39,10 +40,14 @@ class UnearthController(
 
     fun submit(throwableInBody: Throwable?): HandlingPolicy = handler.handle(throwableInBody)
 
-    fun lookupFaultType(id: FaultTypeId, fullStack: Boolean = false): FaultTypeDto {
-        val faultTypeId = storage.resolve(id.hash)
+    fun lookupFaultType(id: FaultTypeId,
+                        fullStack: Boolean = false,
+                        offset: Long? = null,
+                        count: Long? = null
+    ): FaultTypeDto {
+        val faultTypeId = storage.resolveFaultType(id.hash)
         val faultType = storage.getFaultType(faultTypeId)
-        val events = storage.getEvents(faultTypeId)
+        val events = storage.getEvents(faultTypeId, offset, count)
         return FaultTypeDto(
                 faultType.id.hash,
                 events.toList().map { event ->
@@ -84,10 +89,20 @@ class UnearthController(
             wiredStack(storage.getStack(causeTypeId), causeTypeId.hash, fullStack, simpleTrace)
 
     fun lookupPrintable(eventId: FaultEventId): String =
-            Throwables.string(lookupThrowable(eventId))
+            Throwables.string(lookupFaultEvent(eventId))
 
-    fun lookupThrowable(eventId: FaultEventId): Throwable =
+    fun lookupFaultEvent(eventId: FaultEventId): Throwable =
             storage.getFaultEvent(eventId).fault.toThrowable()
+
+    fun lookupFault(uuid: UUID): Throwable =
+            storage.getFault(storage.resolveFault(uuid)).toThrowable()
+
+    fun feedLimit(type: SequenceType, uuid: UUID): Long =
+            when (type) {
+                SequenceType.FAULT -> feed.limit(FaultId(uuid))
+                SequenceType.FAULT_TYPE -> feed.limit(FaultTypeId(uuid))
+                else -> feed.limit()
+            }
 
     private fun wiredException(
             specimen: ThrowableDto,
