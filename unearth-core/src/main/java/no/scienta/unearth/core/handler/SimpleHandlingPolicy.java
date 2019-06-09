@@ -54,7 +54,17 @@ class SimpleHandlingPolicy implements HandlingPolicy {
     }
 
     @Override
-    public boolean isNew() {
-        return isNew;
+    public long getGlobalSequence() {
+        return faultEvent.getGlobalSequence();
+    }
+
+    @Override
+    public long getFaultSequence() {
+        return faultEvent.getFaultSequence();
+    }
+
+    @Override
+    public long getFaultTypeSequence() {
+        return faultEvent.getFaultTypeSequence();
     }
 }

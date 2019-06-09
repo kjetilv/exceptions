@@ -31,5 +31,9 @@ public interface HandlingPolicy {
 
     boolean isLoggable();
 
-    boolean isNew();
+    long getGlobalSequence();
+
+    long getFaultTypeSequence();
+
+    long getFaultSequence();
 }

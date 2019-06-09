@@ -181,13 +181,15 @@ class UnearthServer(
             .asServer(NettyConfig(configuration.host, configuration.port))
 
     private fun submitFault(throwable: Throwable?) =
-            controller.submit(throwable).let { sub ->
+            controller.submit(throwable).let {
                 Submission(
-                        sub.faultTypeId.hash,
-                        sub.faultId.hash,
-                        sub.faultEventId.hash,
-                        sub.isLoggable,
-                        sub.isNew)
+                        it.faultTypeId.hash,
+                        it.faultId.hash,
+                        it.faultEventId.hash,
+                        it.globalSequence,
+                        it.faultTypeSequence,
+                        it.faultSequence,
+                        it.isLoggable)
             }
 
     private fun lookupFault(
@@ -207,10 +209,14 @@ class UnearthServer(
     ): CauseDto =
             controller.lookupStack(CauseTypeId(pathUuid), fullStack, simpleTrace)
 
-    private fun printException(pathUuid: UUID): String =
+    private fun printException(
+            pathUuid: UUID
+    ): String =
             controller.lookupPrintable(FaultEventId(pathUuid))
 
-    private fun lookupThrowable(pathUuid: UUID): Throwable =
+    private fun lookupThrowable(
+            pathUuid: UUID
+    ): Throwable =
             controller.lookupThrowable(FaultEventId(pathUuid))
 
     private fun errors(): (HttpHandler) -> (Request) -> Response =

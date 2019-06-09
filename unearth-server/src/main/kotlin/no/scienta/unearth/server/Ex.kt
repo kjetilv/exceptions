@@ -28,8 +28,14 @@ object Ex {
 
     fun uuid() = UUID.randomUUID()
 
-    fun submission() =
-            Submission(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID())
+    fun submission() = Submission(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            random.nextLong() % 1000,
+            1000L + random.nextLong() % 1000,
+            2000L + random.nextLong() % 1000,
+            random.nextBoolean())
 
     fun faultEventDtos(): FaultEventDto = faultEventDtos(uuid())
 

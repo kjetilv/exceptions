@@ -90,11 +90,11 @@ data class NettyConfig(
         override fun port(): Int = address.port
 
         override fun toString(): String =
-                "Netty@ http://${if (host == listenAll) "localhost" else address.hostName}:${address.port}"
+                "Netty @ http://${if (host == listenAll) "localhost" else address.hostName}:${address.port}"
     }
 
     companion object {
 
-        val listenAll = "0.0.0.0"
+        const val listenAll = "0.0.0.0"
     }
 }
