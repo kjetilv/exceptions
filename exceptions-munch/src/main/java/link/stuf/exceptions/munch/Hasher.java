@@ -1,5 +1,7 @@
 package link.stuf.exceptions.munch;
 
+import link.stuf.exceptions.munch.util.Memoizer;
+
 import java.security.MessageDigest;
 import java.util.UUID;
 import java.util.function.Supplier;

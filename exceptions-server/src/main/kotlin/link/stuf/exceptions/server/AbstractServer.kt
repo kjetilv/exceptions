@@ -1,13 +1,13 @@
 package link.stuf.exceptions.server
 
-import link.stuf.exceptions.dto.Species
-import link.stuf.exceptions.dto.Specimen
+import link.stuf.exceptions.dto.FaultTypeDto
+import link.stuf.exceptions.dto.FaultEventDto
 import link.stuf.exceptions.dto.Submission
-import link.stuf.exceptions.dto.WiredStackTrace
-import link.stuf.exceptions.munch.ThrowableSpeciesId
-import link.stuf.exceptions.munch.ThrowableSpecimenId
-import link.stuf.exceptions.munch.ThrowableStackId
-import link.stuf.exceptions.munch.Throwables
+import link.stuf.exceptions.dto.CauseDto
+import link.stuf.exceptions.munch.ids.FaultTypeId
+import link.stuf.exceptions.munch.ids.FaultEventId
+import link.stuf.exceptions.munch.ids.CauseTypeId
+import link.stuf.exceptions.munch.data.FaultType
 import link.stuf.exceptions.server.statik.Static
 import org.http4k.core.*
 import org.http4k.filter.CorsPolicy
@@ -28,7 +28,7 @@ abstract class AbstractServer(
         val controller: WiredExceptionsController
 ) {
 
-    private val logger: Logger = LoggerFactory.getLogger(SimpleRoutingServer::class.java)
+    private val logger: Logger = LoggerFactory.getLogger(AbstractServer::class.java)
 
     fun start(after: (Http4kServer) -> Unit = {}): AbstractServer = apply {
         server.start()
@@ -53,38 +53,38 @@ abstract class AbstractServer(
             .then(app())
             .asServer(NettyConfig(configuration.host, configuration.port))
 
-    protected fun submitException(throwable: Throwable?) =
-            controller.handle(throwable).let { sub ->
+    protected fun submitFault(throwable: Throwable?) =
+            controller.submit(throwable).let { sub ->
                 Submission(
-                        sub.speciesId.hash,
-                        sub.subspeciesId.hash,
-                        sub.specimenId.hash,
+                        sub.faultTypeId.hash,
+                        sub.faultId.hash,
+                        sub.faultEventId.hash,
                         sub.isLoggable,
                         sub.isNew)
             }
 
-    protected fun lookupException(
+    protected fun lookupFault(
             uuid: UUID,
             fullStack: Boolean = true,
             simpleTrace: Boolean = false
-    ): Specimen =
-            controller.lookupSpecimen(ThrowableSpecimenId(uuid), fullStack, simpleTrace)
+    ): FaultEventDto =
+            controller.lookupEvent(FaultEventId(uuid), fullStack, simpleTrace)
 
-    protected fun lookupExceptions(uuid: UUID, fullStack: Boolean = true): Species =
-            controller.lookupSpecies(ThrowableSpeciesId(uuid), fullStack)
+    protected fun lookupFaults(uuid: UUID, fullStack: Boolean = true): FaultTypeDto =
+            controller.lookupFaultType(FaultTypeId(uuid), fullStack)
 
-    protected fun lookupStack(
+    protected fun lookupCause(
             pathUuid: UUID,
             fullStack: Boolean = true,
             simpleTrace: Boolean = false
-    ): WiredStackTrace =
-            controller.lookupStack(ThrowableStackId(pathUuid), fullStack, simpleTrace)
+    ): CauseDto =
+            controller.lookupStack(CauseTypeId(pathUuid), fullStack, simpleTrace)
 
     protected fun printException(pathUuid: UUID): String =
-            controller.lookupPrintable(ThrowableSpecimenId(pathUuid))
+            controller.lookupPrintable(FaultEventId(pathUuid))
 
     protected fun lookupThrowable(pathUuid: UUID): Throwable =
-            controller.lookupThrowable(ThrowableSpecimenId(pathUuid))
+            controller.lookupThrowable(FaultEventId(pathUuid))
 
     private fun errors(): (HttpHandler) -> (Request) -> Response =
             { next ->
@@ -111,15 +111,15 @@ abstract class AbstractServer(
     }
 
     private fun handledFailedResponse(e: Throwable): Response {
-        val handle = controller.handle(e)
-        logger.error("Failed: ${handle.specimenId}", e)
-        return Response(Status.INTERNAL_SERVER_ERROR).body(handle.specimenId.hash.toString())
+        val handle = controller.submit(e)
+        logger.error("Failed: ${handle.faultEventId}", e)
+        return Response(Status.INTERNAL_SERVER_ERROR).body(handle.faultEventId.hash.toString())
     }
 
     private fun simpleFailedResponse(e: Throwable): Response {
-        val speciesId = Throwables.species(e).id
-        logger.error("Failed: $speciesId", e)
-        return Response(Status.INTERNAL_SERVER_ERROR).body(speciesId.hash.toString())
+        val faultTypeId = FaultType.create(e).id
+        logger.error("Failed: $faultTypeId", e)
+        return Response(Status.INTERNAL_SERVER_ERROR).body(faultTypeId.hash.toString())
     }
 
     private fun String.swaggerUi(cl: ClassLoader): String =

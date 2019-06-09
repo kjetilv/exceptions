@@ -4,64 +4,73 @@ import link.stuf.exceptions.core.*
 import link.stuf.exceptions.core.handler.DefaultThrowablesHandler
 import link.stuf.exceptions.dto.*
 import link.stuf.exceptions.munch.*
+import link.stuf.exceptions.munch.data.CauseType
+import link.stuf.exceptions.munch.ids.CauseTypeId
+import link.stuf.exceptions.munch.ids.FaultEventId
+import link.stuf.exceptions.munch.ids.FaultTypeId
+import link.stuf.exceptions.munch.dto.ThrowableDto
 import java.time.ZoneId
 import java.util.*
 
 class WiredExceptionsController(
-        private val storage: ThrowablesStorage,
-        feed: ThrowablesFeed,
-        stats: ThrowablesStats,
-        sensor: ThrowablesSensor
+        private val storage: FaultStorage,
+        private val feed: FaultFeed,
+        private val stats: FaultStats,
+        sensor: FaultSensor
 ) {
-    private val handler: ThrowablesHandler = DefaultThrowablesHandler(storage, feed, sensor, stats)
+    private val handler: FaultHandler = DefaultThrowablesHandler(storage, sensor)
 
-    fun handle(throwableInBody: Throwable?): HandlingPolicy =
-            handler.handle(throwableInBody)
+    fun submit(throwableInBody: Throwable?): HandlingPolicy = handler.handle(throwableInBody)
 
-    fun lookupSpecies(id: ThrowableSpeciesId, fullStack: Boolean = false): Species {
-        val speciesId = storage.resolve(id.hash)
-        val specimens = storage.getSpecimensOf(speciesId)
-        val species = storage.getSpecies(speciesId)
-        return Species(
-                species.id.hash,
-                specimens.toList().map { specimen ->
-                    Specimen(
-                            specimen.id.hash,
-                            species.id.hash,
-                            specimen.speciesSequence,
-                            specimen.time.atZone(ZoneId.of("UTC")),
-                            wiredException(specimen.toThrowableDto(), fullStack)
+    fun lookupFaultType(id: FaultTypeId, fullStack: Boolean = false): FaultTypeDto {
+        val faultTypeId = storage.resolve(id.hash)
+        val faultType = storage.getFaultType(faultTypeId)
+        val events = storage.getEvents(faultTypeId)
+        return FaultTypeDto(
+                faultType.id.hash,
+                events.toList().map { event ->
+                    FaultEventDto(
+                            event.id.hash,
+                            faultType.id.hash,
+                            event.globalSequence,
+                            event.faultSequence,
+                            event.faultTypeSequence,
+                            event.time.atZone(ZoneId.of("UTC")),
+                            wiredException(
+                                    event.fault.toThrowableDto(), fullStack)
                     )
                 }
         )
     }
 
-    fun lookupSpecimen(
-            id: ThrowableSpecimenId,
+    fun lookupEvent(
+            id: FaultEventId,
             fullStack: Boolean = false,
             simpleTrace: Boolean = false
-    ): Specimen =
-            storage.getSpecimen(id).let { specimen ->
-                Specimen(
-                        specimen.id.hash,
-                        specimen.subspecies.id.hash,
-                        specimen.speciesSequence,
-                        specimen.time.atZone(ZoneId.of("UTC")),
-                        wiredException(specimen.toThrowableDto(), fullStack, simpleTrace))
+    ): FaultEventDto =
+            storage.getFaultEvent(id).let { event ->
+                FaultEventDto(
+                        event.id.hash,
+                        event.fault.id.hash,
+                        event.globalSequence,
+                        event.faultSequence,
+                        event.faultTypeSequence,
+                        event.time.atZone(ZoneId.of("UTC")),
+                        wiredException(event.fault.toThrowableDto(), fullStack, simpleTrace))
             }
 
     fun lookupStack(
-            stackId: ThrowableStackId,
+            causeTypeId: CauseTypeId,
             fullStack: Boolean = false,
             simpleTrace: Boolean = false
-    ): WiredStackTrace =
-            wiredStack(storage.getStack(stackId), stackId.hash, fullStack, simpleTrace)
+    ): CauseDto =
+            wiredStack(storage.getStack(causeTypeId), causeTypeId.hash, fullStack, simpleTrace)
 
-    fun lookupPrintable(specimenId: ThrowableSpecimenId): String =
-            Throwables.string(lookupThrowable(specimenId))
+    fun lookupPrintable(eventId: FaultEventId): String =
+            Throwables.string(lookupThrowable(eventId))
 
-    fun lookupThrowable(specimenId: ThrowableSpecimenId): Throwable =
-            storage.getSpecimen(specimenId).toThrowable()
+    fun lookupThrowable(eventId: FaultEventId): Throwable =
+            storage.getFaultEvent(eventId).fault.toThrowable()
 
     private fun wiredException(
             specimen: ThrowableDto,
@@ -74,19 +83,19 @@ class WiredExceptionsController(
             cause = specimen.cause?.let { cause -> wiredException(cause, fullStack) })
 
     private fun wiredStack(
-            stack: ThrowableStack,
+            throwableType: CauseType,
             stacktraceRef: UUID,
             fullStack: Boolean = false,
             simpleTrace: Boolean = false
-    ): WiredStackTrace {
-        return WiredStackTrace(
-                stack.className,
+    ): CauseDto {
+        return CauseDto(
+                throwableType.className,
                 if (fullStack)
-                    wiredStackTrace(stack.stackTrace)
+                    wiredStackTrace(throwableType.stackTrace)
                 else
                     emptyList(),
                 if (simpleTrace && !fullStack)
-                    simpleStackTrace(stack.stackTrace)
+                    simpleStackTrace(throwableType.stackTrace)
                 else
                     emptyList(),
                 stacktraceRef)

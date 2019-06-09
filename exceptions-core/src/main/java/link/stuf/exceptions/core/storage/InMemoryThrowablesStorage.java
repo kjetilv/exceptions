@@ -1,9 +1,18 @@
 package link.stuf.exceptions.core.storage;
 
-import link.stuf.exceptions.core.ThrowablesFeed;
-import link.stuf.exceptions.core.ThrowablesStats;
-import link.stuf.exceptions.core.ThrowablesStorage;
-import link.stuf.exceptions.munch.*;
+import link.stuf.exceptions.core.FaultFeed;
+import link.stuf.exceptions.core.FaultStats;
+import link.stuf.exceptions.core.FaultStorage;
+import link.stuf.exceptions.munch.Id;
+import link.stuf.exceptions.munch.Identified;
+import link.stuf.exceptions.munch.data.CauseType;
+import link.stuf.exceptions.munch.data.Fault;
+import link.stuf.exceptions.munch.data.FaultEvent;
+import link.stuf.exceptions.munch.data.FaultType;
+import link.stuf.exceptions.munch.ids.CauseTypeId;
+import link.stuf.exceptions.munch.ids.FaultEventId;
+import link.stuf.exceptions.munch.ids.FaultId;
+import link.stuf.exceptions.munch.ids.FaultTypeId;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -15,30 +24,33 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@SuppressWarnings("WeakerAccess")
 public class InMemoryThrowablesStorage
-    implements ThrowablesStorage, ThrowablesStats, ThrowablesFeed {
+    implements FaultStorage, FaultStats, FaultFeed {
 
-    private final Map<ThrowableSpeciesId, ThrowableSpecies> species = new HashMap<>();
+    private final Map<FaultId, Fault> faults = new HashMap<>();
 
-    private final Map<ThrowableSubspeciesId, ThrowableSubspecies> subspecies = new HashMap<>();
+    private final Map<FaultTypeId, FaultType> faultTypes = new HashMap<>();
 
-    private final Map<ThrowableSpecimenId, ThrowableSpecimen> specimens = new HashMap<>();
+    private final Map<FaultEventId, FaultEvent> events = new HashMap<>();
 
-    private final Map<ThrowableSpeciesId, Collection<ThrowableSubspecies>> subspeciesOfSpecies = new HashMap<>();
+    private final Map<CauseTypeId, CauseType> causeTypes = new HashMap<>();
 
-    private final Map<ThrowableSpeciesId, Collection<ThrowableSpecimen>> specimensOfSpecies = new HashMap<>();
 
-    private final Map<ThrowableSubspeciesId, Collection<ThrowableSpecimen>> specimensOfSubspecies = new HashMap<>();
+    private final Map<FaultTypeId, Collection<Fault>> typedFaults = new HashMap<>();
 
-    private final Map<ThrowableStackId, ThrowableStack> stacks = new HashMap<>();
+    private final Map<FaultTypeId, Collection<FaultEvent>> faultTypeEvents = new HashMap<>();
+
+    private final Map<FaultId, Collection<FaultEvent>> faultEvents = new HashMap<>();
+
 
     private final Object lock = new boolean[]{};
 
     private final AtomicLong globalSequence = new AtomicLong();
 
-    private final Map<ThrowableSpeciesId, AtomicLong> speciesSequences = new LinkedHashMap<>();
+    private final Map<FaultTypeId, AtomicLong> faultTypeSequence = new LinkedHashMap<>();
 
-    private final Map<ThrowableSubspeciesId, AtomicLong> subspeciesSequences = new LinkedHashMap<>();
+    private final Map<FaultId, AtomicLong> faultSequence = new LinkedHashMap<>();
 
     private final Clock clock;
 
@@ -51,124 +63,118 @@ public class InMemoryThrowablesStorage
     }
 
     @Override
-    public ThrowableSpecimen store(ThrowableSpecimen newSpecimen) {
+    public FaultEvent store(Fault fault) {
         synchronized (lock) {
-            ThrowableSpecimen sequencedSpecimen = sequenced(newSpecimen);
-            putNew(this.specimens, sequencedSpecimen);
-            ThrowableSubspecies subspecies = sequencedSpecimen.getSubspecies();
-            ThrowableSpecies species = sequencedSpecimen.getSubspecies().getSpecies();
-            species.stacks().forEach(put(this.stacks));
-            put(this.species, species);
-            put(this.subspecies, subspecies);
+            FaultEvent faultEvent = storedNew(this.events,
+                new FaultEvent(
+                    fault,
+                    Instant.now(clock),
+                    globalSequence.getAndIncrement(),
+                    increment(this.faultTypeSequence, fault.getFaultType().getId()),
+                    increment(this.faultSequence, fault.getId())));
+            FaultType faultType = fault.getFaultType();
+            put(this.faultTypes, faultType);
+            put(this.faults, fault);
+            faultType.getCauseTypes().forEach(put(this.causeTypes));
 
-            addTo(subspeciesOfSpecies, species.getId(), subspecies);
-            addTo(specimensOfSpecies, species.getId(), sequencedSpecimen);
-            addTo(specimensOfSubspecies, subspecies.getId(), sequencedSpecimen);
+            addTo(typedFaults, faultType.getId(), fault);
+            addTo(faultTypeEvents, faultType.getId(), faultEvent);
+            addTo(faultEvents, fault.getId(), faultEvent);
 
-            return sequencedSpecimen;
+            return faultEvent;
         }
     }
 
     @Override
-    public ThrowableSpeciesId resolve(UUID id) {
-        if (species.containsKey(new ThrowableSpeciesId(id))) {
-            return new ThrowableSpeciesId(id);
+    public FaultTypeId resolve(UUID id) {
+        if (faultTypes.containsKey(new FaultTypeId(id))) {
+            return new FaultTypeId(id);
         }
-        if (subspecies.containsKey(new ThrowableSubspeciesId(id))) {
-            return subspecies.get(new ThrowableSubspeciesId(id)).getSpecies().getId();
+        if (faults.containsKey(new FaultId(id))) {
+            return faults.get(new FaultId(id)).getFaultType().getId();
         }
-        if (specimens.containsKey(new ThrowableSpecimenId(id))) {
-            ThrowableSpecimen throwableSpecimen = specimens.get(new ThrowableSpecimenId(id));
-            return throwableSpecimen.getSubspecies().getSpecies().getId();
+        if (events.containsKey(new FaultEventId(id))) {
+            FaultEvent throwableSpecimen = events.get(new FaultEventId(id));
+            return throwableSpecimen.getFault().getFaultType().getId();
         }
-        throw new IllegalStateException("No such species or specimen: " + id);
+        throw new IllegalStateException("No such fault type or fault: " + id);
     }
 
     @Override
-    public ThrowableSpecies getSpecies(ThrowableSpeciesId speciesId) {
-        return get("species", speciesId, species);
+    public FaultType getFaultType(FaultTypeId faultTypeId) {
+        return get("faultType", faultTypeId, faultTypes);
     }
 
     @Override
-    public Collection<ThrowableSpecimen> getSpecimensOf(ThrowableSubspeciesId id) {
-        return listLookup(specimensOfSubspecies, id);
+    public Fault getFault(FaultId faultTypeId) {
+        return get("fault", faultTypeId, faults);
     }
 
     @Override
-    public ThrowableStack getStack(ThrowableStackId stackId) {
-        return get("stack", stackId, stacks);
+    public CauseType getStack(CauseTypeId causeTypeId) {
+        return get("cause", causeTypeId, causeTypes);
     }
 
     @Override
-    public ThrowableSpecimen getSpecimen(ThrowableSpecimenId specimenId) {
-        return get("specimen", specimenId, specimens);
+    public FaultEvent getFaultEvent(FaultEventId faultEventId) {
+        return get("faultEvent", faultEventId, events);
     }
 
     @Override
-    public Collection<ThrowableSpecimen> getSpecimensOf(ThrowableSpeciesId speciesId) {
-        return listLookup(this.specimensOfSpecies, speciesId);
+    public Collection<FaultEvent> getEvents(FaultTypeId faultTypeId, long offset, long count) {
+        return listLookup(this.faultTypeEvents, faultTypeId, offset, count);
     }
 
     @Override
-    public long limit(ThrowableSpeciesId id) {
-        return Optional.ofNullable(speciesSequences.get(id))
-            .map(AtomicLong::longValue)
-            .orElse(0L);
+    public Collection<FaultEvent> getEvents(FaultId faultId, long offset, long count) {
+        return listLookup(faultEvents, faultId, offset, count);
     }
 
     @Override
-    public long limit(ThrowableSubspeciesId id) {
-        return Optional.ofNullable(subspeciesSequences.get(id))
-            .map(AtomicLong::longValue)
-            .orElse(0L);
+    public long limit(FaultTypeId id) {
+        return getLimit(this.faultTypeSequence, id);
     }
 
     @Override
-    public List<ThrowableSpecimen> feed(ThrowableSpeciesId id, long offset, int count) {
-        return feed(id, offset, count, this.specimensOfSpecies, ThrowableSpecimen::getSpeciesSequence);
+    public long limit(FaultId id) {
+        return getLimit(this.faultSequence, id);
     }
 
     @Override
-    public List<ThrowableSpecimen> feed(ThrowableSubspeciesId id, long offset, int count) {
-        return feed(id, offset, count, this.specimensOfSubspecies, ThrowableSpecimen::getSubspeciesSequence);
+    public List<FaultEvent> feed(FaultTypeId id, long offset, int count) {
+        return feed(id, offset, count, this.faultTypeEvents, FaultEvent::getFaultTypeSequence);
     }
 
     @Override
-    public Optional<ThrowableSpecimen> lastSpecimen(ThrowableSpeciesId id) {
-        return streamLookup(specimensOfSpecies, id)
-            .max(Comparator.comparing(ThrowableSpecimen::getSpeciesSequence));
+    public List<FaultEvent> feed(FaultId id, long offset, int count) {
+        return feed(id, offset, count, this.faultEvents, FaultEvent::getFaultSequence);
     }
 
     @Override
-    public long specimenCount(ThrowableSpeciesId id, Instant sinceTime, Duration during) {
-        return getSpecimensOf(id).size();
+    public Optional<FaultEvent> lastFaultEvent(FaultTypeId id) {
+        return streamLookup(faultTypeEvents, id)
+            .max(Comparator.comparing(FaultEvent::getFaultTypeSequence));
     }
 
     @Override
-    public Stream<ThrowableSpecimen> specimens(ThrowableSpeciesId id, Instant sinceTime, Duration period) {
-        return specimen(id).stream();
+    public long faultEventCount(FaultTypeId id, Instant sinceTime, Duration during) {
+        return getEvents(id).size();
     }
 
-    private ThrowableSpecimen sequenced(ThrowableSpecimen specimen) {
-        ThrowableSubspecies subspecies = specimen.getSubspecies();
-        ThrowableSpecies species = subspecies.getSpecies();
-        return specimen.sequenced(
-            Instant.now(clock),
-            globalSequence.getAndIncrement(),
-            increment(this.speciesSequences, species.getId()),
-            increment(this.subspeciesSequences, subspecies.getId()));
+    @Override
+    public Stream<FaultEvent> faultEvents(FaultTypeId id, Instant sinceTime, Duration period) {
+        return faultEvents(id);
     }
 
-    private <I extends Id, T> T get(String type, I id, Map<I, T> species1) {
-        return Optional.ofNullable(species1.get(id))
+    private <I extends Id, T> T get(String type, I id, Map<I, T> map) {
+        return Optional.ofNullable(map.get(id))
             .orElseThrow(() ->
                 new IllegalArgumentException("No such " + type + ": " + id));
     }
 
-    private Collection<ThrowableSpecimen> specimen(ThrowableSpeciesId id) {
-        return streamLookup(subspeciesOfSpecies, id).flatMap(subspecies ->
-            streamLookup(specimensOfSubspecies, subspecies.getId())
-        ).collect(Collectors.toList());
+    public Stream<FaultEvent> faultEvents(FaultTypeId id) {
+        return streamLookup(typedFaults, id).flatMap(fault ->
+            streamLookup(faultEvents, fault.getId()));
     }
 
     private static <I extends Id, T> List<T> feed(
@@ -186,16 +192,36 @@ public class InMemoryThrowablesStorage
             .collect(Collectors.toUnmodifiableList());
     }
 
-    private static <K> long increment(Map<K, AtomicLong> speciesSequences, K id) {
-        return speciesSequences.computeIfAbsent(id, __ -> new AtomicLong()).getAndIncrement();
+    private static <I extends Id> long getLimit(Map<I, AtomicLong> seq, I id) {
+        return Optional.ofNullable(seq.get(id)).map(AtomicLong::longValue).orElse(0L);
+    }
+
+    private static <K> long increment(Map<K, AtomicLong> sequences, K id) {
+        return sequences.computeIfAbsent(id, __ -> new AtomicLong()).getAndIncrement();
     }
 
     private static <K, V> Stream<V> streamLookup(Map<K, Collection<V>> map, K key) {
-        return listLookup(map, key).stream();
+        return listLookup(map, key, null, null).stream();
     }
 
     private static <K, V> Collection<V> listLookup(Map<K, Collection<V>> map, K key) {
-        return List.copyOf(map.getOrDefault(key, Collections.emptyList()));
+        return listLookup(map, key, null, null);
+    }
+
+    private static <K, V> Collection<V> listLookup(Map<K, Collection<V>> map, K key, Long offset, Long count) {
+        if (offset != null && offset > Integer.MAX_VALUE || count != null && count > Integer.MAX_VALUE) {
+            throw new UnsupportedOperationException
+                (InMemoryThrowablesStorage.class + " is for sub-ginormous data amounts ONLY!");
+        }
+        Collection<V> coll = map.getOrDefault(key, Collections.emptyList());
+        if (offset == null || count == null || offset < 0 && count < 0 || offset == 0 && count <= coll.size()) {
+            return List.copyOf(coll);
+        }
+        if (offset >= coll.size()) {
+            return Collections.emptyList();
+        }
+        int lastIndex = Math.min(offset.intValue() + count.intValue(), coll.size());
+        return List.copyOf(new ArrayList<>(coll).subList(offset.intValue(), lastIndex));
     }
 
     private static <I extends Id, T extends Identified<I>> Consumer<T> put(Map<I, T> map) {
@@ -206,23 +232,12 @@ public class InMemoryThrowablesStorage
         map.putIfAbsent(t.getId(), t);
     }
 
-    private static <I extends Id, T extends Identified<I>> void putNew(Map<I, T> map, T t) {
+    private static <I extends Id, T extends Identified<I>> T storedNew(Map<I, T> map, T t) {
         T existing = map.putIfAbsent(t.getId(), t);
         if (existing != null) {
             throw new IllegalStateException("Already stored: " + existing.getId());
         }
-    }
-
-    private static <I extends Id, T extends Identified<I>> void replace(Map<I, T> map, T t, T expected) {
-        map.compute(t.getId(), (id, previous) -> {
-            if (previous == null) {
-                throw new IllegalStateException("Did not exist: " + id);
-            }
-            if (previous != expected) {
-                throw new IllegalStateException("Wrong value to be overwritten: " + previous.getId());
-            }
-            return t;
-        });
+        return t;
     }
 
     private static <K, V> void addTo(Map<K, Collection<V>> map, K k, V v) {

@@ -19,33 +19,38 @@ public class ThrowableParser {
     }
 
     public static Throwable parse(String in) {
-        List<String> lines = Arrays.stream(in.split("\n"))
-            .filter(Objects::nonNull)
-            .filter(line -> !line.isBlank())
-            .collect(Collectors.toList());
-        List<Integer> causeIndices =
-            IntStream.range(0, lines.size())
-                .filter(index ->
-                    !whitespaceAtStart(lines.get(index)))
-                .boxed().collect(Collectors.toList());
+        try {
+            List<String> lines = Arrays.stream(in.split("\n"))
+                .filter(Objects::nonNull)
+                .filter(line -> !line.isBlank())
+                .collect(Collectors.toList());
+            List<Integer> causeIndices =
+                IntStream.range(0, lines.size())
+                    .filter(index ->
+                        !whitespaceAtStart(lines.get(index)))
+                    .boxed().collect(Collectors.toList());
 
-        List<ParsedThrowable> parsedThrowables = IntStream.range(0, causeIndices.size()).mapToObj(causeIndex -> {
-            int endIndex = causeIndex >= causeIndices.size() - 1
-                ? lines.size()
-                : causeIndices.get(causeIndex + 1);
-            StackTraceElement[] parsed = parsed(
-                lines,
-                causeIndices.get(causeIndex) + 1,
-                endIndex);
-            String s = exceptionHeading(lines, causeIndices, causeIndex);
-            return new ParsedThrowable(s, parsed);
-        }).collect(Collectors.toCollection(ArrayList::new));
-        Collections.reverse(parsedThrowables);
-        Throwable cause = null;
-        for (ParsedThrowable parsedThrowable : parsedThrowables) {
-            cause = parsedThrowable.reconstruct(cause);
+            List<ParsedThrowable> parsedThrowables = IntStream.range(0, causeIndices.size()).mapToObj(causeIndex -> {
+                int endIndex = causeIndex >= causeIndices.size() - 1
+                    ? lines.size()
+                    : causeIndices.get(causeIndex + 1);
+                StackTraceElement[] parsed = parsed(
+                    lines,
+                    causeIndices.get(causeIndex) + 1,
+                    endIndex);
+                String s = exceptionHeading(lines, causeIndices, causeIndex);
+                return new ParsedThrowable(s, parsed);
+            }).collect(Collectors.toCollection(ArrayList::new));
+            Collections.reverse(parsedThrowables);
+            Throwable cause = null;
+            for (ParsedThrowable parsedThrowable : parsedThrowables) {
+                cause = parsedThrowable.reconstruct(cause);
+            }
+            return cause;
+        } catch (Exception e) {
+            throw new IllegalArgumentException(
+                "Failed to parse as exception: " + in.substring(0, Math.max(30, in.length())) + "...", e);
         }
-        return cause;
     }
 
     private static String exceptionHeading(List<String> lines, List<Integer> causeIndices, int causeIndex) {

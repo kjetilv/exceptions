@@ -1,5 +1,7 @@
 package link.stuf.exceptions.munch;
 
+import link.stuf.exceptions.munch.util.Memoizer;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -8,34 +10,35 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 @SuppressWarnings("WeakerAccess")
-abstract class AbstractHashed implements Hashed {
+public abstract class AbstractHashed implements Hashed {
 
     private final Supplier<UUID> supplier = Hasher.uuid(this);
 
-    private final Supplier<String> toString = Memoizer.get(() -> {
-        String body = toStringBody();
-        String contents = body == null || body.isBlank() ? "" : " " + body.trim();
-        return getClass().getSimpleName() + "[" + identifier() + contents + "]";
-    });
+    private final Supplier<String> toString = Memoizer.get(() ->
+        getClass().getSimpleName() + "[" + toStringIdentifier() + toStringContents() + "]");
 
-    final void hashStrings(Consumer<byte[]> hash, String... strings) {
+    protected final void hashString(Consumer<byte[]> hash, String string) {
+        hashStrings(hash, string);
+    }
+
+    protected final void hashStrings(Consumer<byte[]> hash, String... strings) {
         hashStrings(hash, Arrays.asList(strings));
     }
 
-    final void hashStrings(Consumer<byte[]> hash, Iterable<String> strings) {
+    protected final void hashStrings(Consumer<byte[]> hash, Iterable<String> strings) {
         strings.forEach(string ->
             hash.accept(string.getBytes(StandardCharsets.UTF_8)));
     }
 
-    final void hashHashables(Consumer<byte[]> hash, Hashed... hasheds) {
+    protected final void hashHashables(Consumer<byte[]> hash, Hashed... hasheds) {
         hashHashables(hash, Arrays.asList(hasheds));
     }
 
-    final void hashHashables(Consumer<byte[]> hash, Iterable<? extends Hashed> hasheds) {
+    protected final void hashHashables(Consumer<byte[]> hash, Iterable<? extends Hashed> hasheds) {
         hasheds.forEach(hashed -> hashed.hashTo(hash));
     }
 
-    final void hashLongs(Consumer<byte[]> hash, long... values) {
+    protected final void hashLongs(Consumer<byte[]> hash, long... values) {
         for (long value : values) {
             ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
             buffer.putLong(value);
@@ -43,12 +46,17 @@ abstract class AbstractHashed implements Hashed {
         }
     }
 
-    Object identifier() {
+    protected Object toStringIdentifier() {
         return getHash();
     }
 
-    String toStringBody() {
+    protected String toStringBody() {
         return null;
+    }
+
+    private String toStringContents() {
+        String body = toStringBody();
+        return body == null || body.isBlank() ? "" : " " + body.trim();
     }
 
     @Override

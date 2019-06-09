@@ -2,10 +2,10 @@ package link.stuf.exceptions.server
 
 import io.swagger.v3.oas.models.OpenAPI
 import link.stuf.exceptions.core.parser.ThrowableParser
-import link.stuf.exceptions.dto.Species
-import link.stuf.exceptions.dto.Specimen
+import link.stuf.exceptions.dto.FaultTypeDto
+import link.stuf.exceptions.dto.FaultEventDto
 import link.stuf.exceptions.dto.Submission
-import link.stuf.exceptions.dto.WiredStackTrace
+import link.stuf.exceptions.dto.CauseDto
 import link.stuf.exceptions.munch.Throwables
 import link.stuf.exceptions.server.JSON.auto
 import org.http4k.core.Body
@@ -19,10 +19,10 @@ object Lens {
     val submission =
             Body.auto<Submission>(contentNegotiation = ContentNegotiation.None).toLens()
 
-    val specimen =
-            Body.auto<Specimen>(contentNegotiation = ContentNegotiation.None).toLens()
+    val faultEvent =
+            Body.auto<FaultEventDto>(contentNegotiation = ContentNegotiation.None).toLens()
 
-    val exception: BiDiBodyLens<Throwable?> = BiDiBodyLens(
+    val exception: BiDiBodyLens<Throwable> = BiDiBodyLens(
             metas = emptyList(),
             contentType = TEXT_PLAIN,
             get = { msg ->
@@ -34,11 +34,11 @@ object Lens {
 
     val string = Body.string(TEXT_PLAIN).toLens()
 
-    val species =
-            Body.auto<Species>(contentNegotiation = ContentNegotiation.None).toLens()
+    val faultType =
+            Body.auto<FaultTypeDto>(contentNegotiation = ContentNegotiation.None).toLens()
 
-    val stack =
-            Body.auto<WiredStackTrace>(contentNegotiation = ContentNegotiation.None).toLens()
+    val cause =
+            Body.auto<CauseDto>(contentNegotiation = ContentNegotiation.None).toLens()
 
     val swagger =
             Body.auto<OpenAPI>(contentNegotiation = ContentNegotiation.None).toLens()

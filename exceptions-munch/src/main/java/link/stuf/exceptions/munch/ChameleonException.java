@@ -1,5 +1,7 @@
 package link.stuf.exceptions.munch;
 
+import link.stuf.exceptions.munch.util.NamedException;
+
 import java.util.Objects;
 
 public class ChameleonException extends Exception implements NamedException {

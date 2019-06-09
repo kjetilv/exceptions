@@ -3,13 +3,17 @@ package link.stuf.exceptions.dto
 import java.time.ZonedDateTime
 import java.util.*
 
-data class Specimen(
+data class FaultEventDto(
 
-        val specimenId: UUID,
+        val faultId: UUID,
 
-        val speciesId: UUID,
+        val faultTypeId: UUID,
 
         val sequence: Long,
+
+        val faultSequence: Long,
+
+        val faultTypeSequence: Long,
 
         val time: ZonedDateTime,
 

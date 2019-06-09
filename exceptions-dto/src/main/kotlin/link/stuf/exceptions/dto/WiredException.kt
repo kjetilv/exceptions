@@ -6,6 +6,6 @@ data class WiredException(
 
         val message: String?,
 
-        val stacktrace: WiredStackTrace,
+        val stacktrace: CauseDto,
 
         val cause: WiredException? = null)

@@ -7,7 +7,7 @@ public abstract class Id {
 
     private final UUID hash;
 
-    Id(UUID hash) {
+    protected Id(UUID hash) {
         this.hash = hash;
     }
 

@@ -1,4 +1,4 @@
-package link.stuf.exceptions.munch;
+package link.stuf.exceptions.munch.util;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;

@@ -4,12 +4,12 @@ import java.util.*
 
 data class Submission(
 
-        val speciesId: UUID,
+        val faultTypeId: UUID,
 
-        val subspeciesId: UUID,
+        val faultId: UUID,
 
-        val specimenId: UUID,
+        val faultEventId: UUID,
 
         val loggable: Boolean = true,
 
-        val newSpecies: Boolean = true)
+        val newType: Boolean = true)

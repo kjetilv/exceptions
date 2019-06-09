@@ -14,50 +14,55 @@ class ContractualObligationServer(
         controller: WiredExceptionsController
 ) : AbstractServer(configuration, controller) {
 
-    private fun submitSpecimenRoute(): ContractRoute =
-            "/exception" meta {
+    private fun logFaultRoute(): ContractRoute =
+            "/fault" meta {
                 summary = "Submit an exception"
+                consumes += ContentType.TEXT_PLAIN
+                produces += ContentType.APPLICATION_JSON
                 receiving(Lens.exception to Ex.exception())
                 returning(Status.OK, Lens.submission to Ex.submission())
             } bindContract Method.POST to bodyExchange(
-                    Lens.exception, Lens.submission, ::submitException
+                    Lens.exception, Lens.submission, ::submitFault
             )
 
-    private fun lookupSpecimenRoute(): ContractRoute =
-            "/exception" / Path.of("uuid") meta {
+    private fun lookupFaultRoute(): ContractRoute =
+            "/fault" / Path.of("uuid") meta {
                 summary = "Lookup an exception"
                 queries += listOf(fullStack, simpleTrace)
-                returning(Status.OK, Lens.specimen to Ex.specimen())
+                produces += ContentType.APPLICATION_JSON
+                returning(Status.OK, Lens.faultEvent to Ex.faultEventDtos())
             } bindContract Method.GET to { uuid ->
                 { req ->
-                    responseWith(Lens.specimen) {
-                        lookupException(UUID.fromString(uuid), isSet(req, fullStack), isSet(req, simpleTrace))
+                    responseWith(Lens.faultEvent) {
+                        lookupFault(UUID.fromString(uuid), isSet(req, fullStack), isSet(req, simpleTrace))
                     }
                 }
             }
 
-    private fun lookupSpecimensRoute(): ContractRoute =
-            "/exceptions" / Path.of("uuid") meta {
-                summary = "Lookup a species, with specimen"
+    private fun lookupFaultsRoute(): ContractRoute =
+            "/faults" / Path.of("uuid") meta {
+                summary = "Lookup a fault type, with fault events"
                 queries += listOf(fullStack, simpleTrace)
-                returning(Status.OK, Lens.species to Ex.species())
+                produces += ContentType.APPLICATION_JSON
+                returning(Status.OK, Lens.faultType to Ex.faultTypeDto())
             } bindContract Method.GET to { uuid ->
                 { req ->
-                    responseWith(Lens.species) {
-                        lookupExceptions(UUID.fromString(uuid), isSet(req, fullStack))
+                    responseWith(Lens.faultType) {
+                        lookupFaults(UUID.fromString(uuid), isSet(req, fullStack))
                     }
                 }
             }
 
-    private fun lookupStackRoute(): ContractRoute =
-            "/stack" / Path.of("uuid") meta {
+    private fun lookupCauseRoute(): ContractRoute =
+            "/cause" / Path.of("uuid") meta {
                 summary = "Lookup a stack"
                 queries += listOf(fullStack, simpleTrace)
-                returning(Status.OK, Lens.stack to Ex.stack())
+                produces += ContentType.APPLICATION_JSON
+                returning(Status.OK, Lens.cause to Ex.stack())
             } bindContract Method.GET to { uuid ->
                 { req ->
-                    responseWith(Lens.stack) {
-                        lookupStack(
+                    responseWith(Lens.cause) {
+                        lookupCause(
                                 UUID.fromString(uuid),
                                 isSet(req, fullStack, true),
                                 isSet(req, simpleTrace))
@@ -65,9 +70,10 @@ class ContractualObligationServer(
                 }
             }
 
-    private fun printThrowableRoute(): ContractRoute =
-            "/exception-out" / Path.of("uuid") meta {
+    private fun printFaultRoute(): ContractRoute =
+            "/fault-out" / Path.of("uuid") meta {
                 summary = "Print an exception"
+                produces += ContentType.TEXT_PLAIN
                 returning(Status.OK, Lens.string to Ex.exceptionOut())
             } bindContract Method.GET to { uuid ->
                 {
@@ -77,7 +83,7 @@ class ContractualObligationServer(
                 }
             }
 
-    private fun <I, O> bodyExchange(iLens: BiDiBodyLens<I?>, oLens: BiDiBodyLens<O>, accept: (I) -> O): HttpHandler =
+    private fun <I, O> bodyExchange(iLens: BiDiBodyLens<I>, oLens: BiDiBodyLens<O>, accept: (I) -> O): HttpHandler =
             { req ->
                 iLens[req]?.let {
                     accept(it)
@@ -112,11 +118,11 @@ class ContractualObligationServer(
 
     private fun appRoutes(): List<ContractRoute> {
         return listOf(
-                submitSpecimenRoute(),
-                lookupSpecimenRoute(),
-                lookupSpecimensRoute(),
-                lookupStackRoute(),
-                printThrowableRoute())
+                logFaultRoute(),
+                lookupFaultRoute(),
+                lookupFaultsRoute(),
+                lookupCauseRoute(),
+                printFaultRoute())
     }
 
     companion object {
@@ -124,5 +130,9 @@ class ContractualObligationServer(
         private val fullStack = Query.boolean().optional("fullStack")
 
         private val simpleTrace = Query.boolean().optional("simpleTrace")
+
+        private val offset = Query.long().optional("offset")
+
+        private val count = Query.long().optional("count")
     }
 }

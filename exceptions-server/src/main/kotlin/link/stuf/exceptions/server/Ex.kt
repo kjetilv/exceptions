@@ -14,16 +14,20 @@ object Ex {
     fun submission() =
             Submission(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID())
 
-    fun specimen(): Specimen = specimen(uuid())
+    fun faultEventDtos(): FaultEventDto = faultEventDtos(uuid())
 
-    fun specimen(speciesId: UUID): Specimen {
-        return Specimen(uuid(), speciesId, random.nextLong(), ZonedDateTime.now(), wiredException())
+    fun faultEventDtos(faultTypeId: UUID): FaultEventDto {
+        return FaultEventDto(uuid(),
+                faultTypeId,
+                random.nextLong(),
+                random.nextLong(),
+                random.nextLong(),
+                ZonedDateTime.now(),
+                wiredException())
     }
 
-    fun species() = uuid().let { speciesId ->
-        Species(
-                speciesId,
-                listOf(specimen(speciesId)))
+    fun faultTypeDto() = uuid().let { id ->
+        FaultTypeDto(id, listOf(faultEventDtos(id)))
     }
 
     fun wiredException(): WiredException =
@@ -36,5 +40,5 @@ object Ex {
 
     fun exceptionOut(): String = Throwables.string(exception())
 
-    fun stack() = WiredStackTrace("foo.bar.BadException", emptyList(), emptyList(), uuid())
+    fun stack() = CauseDto("foo.bar.BadException", emptyList(), emptyList(), uuid())
 }

@@ -1,16 +1,16 @@
 package link.stuf.exceptions.core;
 
-import link.stuf.exceptions.munch.ThrowableSpeciesId;
-import link.stuf.exceptions.munch.ThrowableSpecimenId;
-import link.stuf.exceptions.munch.ThrowableSubspeciesId;
+import link.stuf.exceptions.munch.ids.FaultTypeId;
+import link.stuf.exceptions.munch.ids.FaultEventId;
+import link.stuf.exceptions.munch.ids.FaultId;
 
 public interface HandlingPolicy {
 
-    ThrowableSpeciesId getSpeciesId();
+    FaultTypeId getFaultTypeId();
 
-    ThrowableSubspeciesId getSubspeciesId();
+    FaultId getFaultId();
 
-    ThrowableSpecimenId getSpecimenId();
+    FaultEventId getFaultEventId();
 
     boolean isLoggable();
 

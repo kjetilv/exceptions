@@ -1,4 +1,4 @@
-package link.stuf.exceptions.munch;
+package link.stuf.exceptions.munch.util;
 
 import java.util.List;
 import java.util.Spliterator;
@@ -15,7 +15,7 @@ public final class Streams {
     }
 
     public static <T> Stream<T> reverse(List<T> s) {
-        return StreamSupport.stream(new ReverseSpliterator<T>(s), false);
+        return StreamSupport.stream(new ReverseSpliterator<>(s), false);
     }
 
     public static Stream<Throwable> causes(Throwable throwable) {

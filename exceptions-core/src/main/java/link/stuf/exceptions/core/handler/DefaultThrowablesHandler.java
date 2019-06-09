@@ -1,36 +1,28 @@
 package link.stuf.exceptions.core.handler;
 
 import link.stuf.exceptions.core.*;
-import link.stuf.exceptions.munch.ThrowableSpecimen;
-import link.stuf.exceptions.munch.Throwables;
+import link.stuf.exceptions.munch.data.FaultEvent;
+import link.stuf.exceptions.munch.data.Fault;
 
-public class DefaultThrowablesHandler implements ThrowablesHandler {
+public class DefaultThrowablesHandler implements FaultHandler {
 
-    private final ThrowablesStorage storage;
+    private final FaultStorage storage;
 
-    private final ThrowablesFeed feed;
-
-    private final ThrowablesSensor sensor;
-
-    private final ThrowablesStats stats;
+    private final FaultSensor sensor;
 
     public DefaultThrowablesHandler(
-        ThrowablesStorage storage,
-        ThrowablesFeed feed,
-        ThrowablesSensor sensor,
-        ThrowablesStats stats
+        FaultStorage storage,
+        FaultSensor sensor
     ) {
         this.storage = storage;
-        this.feed = feed;
         this.sensor = sensor;
-        this.stats = stats;
     }
 
     @Override
     public SimpleHandlingPolicy handle(Throwable throwable) {
-        ThrowableSpecimen submitted = Throwables.create(throwable);
-        ThrowableSpecimen stored = storage.store(submitted);
-        ThrowableSpecimen registered = sensor.registered(stored);
-        return new SimpleHandlingPolicy(registered, false);
+        Fault submitted = Fault.create(throwable);
+        FaultEvent stored = storage.store(submitted);
+        FaultEvent registered = sensor.registered(stored);
+        return new SimpleHandlingPolicy(registered, stored.getFaultTypeSequence() == 0);
     }
 }

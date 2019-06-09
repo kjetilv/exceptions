@@ -1,7 +1,7 @@
 package link.stuf.exceptions.core.reducer;
 
 import link.stuf.exceptions.core.ThrowablesReducer;
-import link.stuf.exceptions.munch.ThrowableStack;
+import link.stuf.exceptions.munch.data.CauseType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,11 +23,11 @@ public class SimpleThrowableReducer implements ThrowablesReducer {
     }
 
     @Override
-    public ThrowableStack reduce(ThrowableStack digest) {
+    public CauseType reduce(CauseType digest) {
         return digest.withStacktrace(reducedStackTrace(digest));
     }
 
-    private List<StackTraceElement> reducedStackTrace(ThrowableStack current) {
+    private List<StackTraceElement> reducedStackTrace(CauseType current) {
         List<StackTraceElement> stack = List.copyOf(current.getStackTrace());
         List<StackTraceElement> reducedStack = new ArrayList<>(stack.size());
         List<StackTraceElement> aggregated = new ArrayList<>();

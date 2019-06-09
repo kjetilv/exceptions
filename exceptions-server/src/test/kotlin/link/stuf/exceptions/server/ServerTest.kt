@@ -4,7 +4,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import link.stuf.exceptions.core.storage.InMemoryThrowablesStorage
 import link.stuf.exceptions.micrometer.MeteringThrowablesSensor
 import link.stuf.exceptions.dto.Submission
-import link.stuf.exceptions.dto.Species
+import link.stuf.exceptions.dto.FaultTypeDto
 import org.http4k.client.ApacheClient
 import org.http4k.core.Body
 import org.http4k.core.Method
@@ -18,11 +18,10 @@ fun main() {
 
     val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
 
-    val server = SimpleRoutingServer(
-            controller = WiredExceptionsController(storage, storage, storage, sensor),
-            swaggerJson = SwaggerJson)
+    val server = ContractualObligationServer(
+            controller = WiredExceptionsController(storage, storage, storage, sensor))
 
-    val lookupLens = Body.auto<Species>().toLens()
+    val lookupLens = Body.auto<FaultTypeDto>().toLens()
 
     val submitLens = Body.auto<Submission>().toLens()
 
@@ -89,7 +88,7 @@ fun main() {
 
     println(Jackson.asJsonString(submission))
 
-    val uri = "http://localhost:8080/lookup/${submission.speciesId}"
+    val uri = "http://localhost:8080/lookup/${submission.faultTypeId}"
     val target = client(Request(Method.GET, uri))
 
     if (target.status.successful) {

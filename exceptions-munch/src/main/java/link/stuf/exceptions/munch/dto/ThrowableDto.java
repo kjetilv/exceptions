@@ -1,4 +1,7 @@
-package link.stuf.exceptions.munch;
+package link.stuf.exceptions.munch.dto;
+
+import link.stuf.exceptions.munch.AbstractHashed;
+import link.stuf.exceptions.munch.data.CauseType;
 
 import java.util.function.Consumer;
 
@@ -8,11 +11,11 @@ public class ThrowableDto extends AbstractHashed {
 
     private final String message;
 
-    private final ThrowableStack stack;
+    private final CauseType stack;
 
     private final ThrowableDto cause;
 
-    ThrowableDto(String className, String message, ThrowableStack stack, ThrowableDto cause) {
+    public ThrowableDto(String className, String message, CauseType stack, ThrowableDto cause) {
         this.className = className;
         this.message = message;
         this.stack = stack;
@@ -27,7 +30,7 @@ public class ThrowableDto extends AbstractHashed {
         return message;
     }
 
-    public ThrowableStack getStack() {
+    public CauseType getStack() {
         return stack;
     }
 

@@ -1,5 +1,6 @@
 package link.stuf.exceptions.munch;
 
+import link.stuf.exceptions.munch.data.CauseType;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -9,7 +10,7 @@ public class ThrowableStackTest {
 
     @Test
     public void can_hash() {
-        ThrowableStack digest = ThrowableStack.create(new Exception());
+        CauseType digest = CauseType.create(new Exception());
 
         UUID hash = digest.getHash();
 

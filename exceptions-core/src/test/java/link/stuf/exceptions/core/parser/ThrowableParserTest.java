@@ -19,7 +19,7 @@ public class ThrowableParserTest {
         } catch (Exception e) {
             String output = print(e);
             System.out.println(output);
-            Throwable chameleon = new ThrowableParser().parse(output);
+            Throwable chameleon = ThrowableParser.parse(output);
             assertNotNull(chameleon);
             chameleon.printStackTrace(System.out);
             assertEquals(output, print(chameleon));

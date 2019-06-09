@@ -1,34 +1,34 @@
 package link.stuf.exceptions.core.handler;
 
 import link.stuf.exceptions.core.HandlingPolicy;
-import link.stuf.exceptions.munch.ThrowableSpeciesId;
-import link.stuf.exceptions.munch.ThrowableSpecimen;
-import link.stuf.exceptions.munch.ThrowableSpecimenId;
-import link.stuf.exceptions.munch.ThrowableSubspeciesId;
+import link.stuf.exceptions.munch.ids.FaultTypeId;
+import link.stuf.exceptions.munch.data.FaultEvent;
+import link.stuf.exceptions.munch.ids.FaultEventId;
+import link.stuf.exceptions.munch.ids.FaultId;
 
 class SimpleHandlingPolicy implements HandlingPolicy {
 
-    private final ThrowableSpecimen specimen;
+    private final FaultEvent faultEvent;
 
     private final boolean isNew;
 
-    SimpleHandlingPolicy(ThrowableSpecimen specimen, boolean isNew) {
-        this.specimen = specimen;
+    SimpleHandlingPolicy(FaultEvent faultEvent, boolean isNew) {
+        this.faultEvent = faultEvent;
         this.isNew = isNew;
     }
 
     @Override
-    public ThrowableSpeciesId getSpeciesId() {
-        return specimen.getSubspecies().getSpecies().getId();
+    public FaultTypeId getFaultTypeId() {
+        return faultEvent.getFault().getFaultType().getId();
     }
 
-    public ThrowableSubspeciesId getSubspeciesId() {
-        return specimen.getSubspecies().getId();
+    public FaultId getFaultId() {
+        return faultEvent.getFault().getId();
     }
 
     @Override
-    public ThrowableSpecimenId getSpecimenId() {
-        return specimen.getId();
+    public FaultEventId getFaultEventId() {
+        return faultEvent.getId();
     }
 
     @Override

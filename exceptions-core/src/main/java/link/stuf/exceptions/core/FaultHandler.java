@@ -1,6 +1,6 @@
 package link.stuf.exceptions.core;
 
-public interface ThrowablesHandler {
+public interface FaultHandler {
 
     HandlingPolicy handle(Throwable throwable);
 }

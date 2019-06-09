@@ -3,16 +3,16 @@ package link.stuf.exceptions.micrometer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
-import link.stuf.exceptions.core.ThrowablesSensor;
-import link.stuf.exceptions.munch.ThrowableSpecies;
-import link.stuf.exceptions.munch.ThrowableSpecimen;
-import link.stuf.exceptions.munch.ThrowableSubspecies;
+import link.stuf.exceptions.core.FaultSensor;
+import link.stuf.exceptions.munch.data.FaultType;
+import link.stuf.exceptions.munch.data.FaultEvent;
+import link.stuf.exceptions.munch.data.Fault;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
 
-public class MeteringThrowablesSensor implements ThrowablesSensor {
+public class MeteringThrowablesSensor implements FaultSensor {
 
     private static final String EXCEPTIONS = "exceptions";
 
@@ -23,52 +23,52 @@ public class MeteringThrowablesSensor implements ThrowablesSensor {
     }
 
     @Override
-    public ThrowableSpecimen registered(ThrowableSpecimen specimen) {
-        ThrowableSubspecies subspecies = specimen.getSubspecies();
-        subspeciesCounter(subspecies).count();
-        ThrowableSpecies species = subspecies.getSpecies();
-        speciesCounter(species).count();
-        specimenCounter(species, subspecies, specimen).count();
-        return specimen;
+    public FaultEvent registered(FaultEvent faultEvent) {
+        Fault fault = faultEvent.getFault();
+        faultCounter(fault).count();
+        FaultType faultType = fault.getFaultType();
+        faultTypeCounter(faultType).count();
+        faultCounter(faultType, fault, faultEvent).count();
+        return faultEvent;
     }
 
-    private Counter speciesCounter(ThrowableSpecies species) {
-        return metrics.counter(EXCEPTIONS, Collections.singleton(speciesTag(species)));
+    private Counter faultTypeCounter(FaultType faultType) {
+        return metrics.counter(EXCEPTIONS, Collections.singleton(faultTypeTag(faultType)));
     }
 
-    private Counter subspeciesCounter(ThrowableSubspecies species) {
-        return metrics.counter(EXCEPTIONS, Collections.singleton(subspeciesTag(species)));
+    private Counter faultCounter(Fault fault) {
+        return metrics.counter(EXCEPTIONS, Collections.singleton(faultTag(fault)));
     }
 
-    private Counter specimenCounter(ThrowableSpecies species, ThrowableSubspecies subspecies, ThrowableSpecimen specimen) {
+    private Counter faultCounter(FaultType faultType, Fault fault, FaultEvent faultEvent) {
         return metrics.counter(
-            EXCEPTIONS + "-" + species.getHash(),
-            Arrays.asList(speciesTag(species), specimenTag(specimen)));
+            EXCEPTIONS + "-" + faultType.getHash(),
+            Arrays.asList(faultTypeTag(faultType), faultEventTag(faultEvent)));
     }
 
-    private Tag speciesTag(ThrowableSpecies exc) {
-        return speciesTag(exc.getHash());
+    private Tag faultTypeTag(FaultType faultType) {
+        return faultTypeTag(faultType.getHash());
     }
 
-    private Tag subspeciesTag(ThrowableSubspecies exc) {
-        return subspeciesTag(exc.getHash());
+    private Tag faultTag(Fault fault) {
+        return faultTag(fault.getHash());
     }
 
-    private Tag speciesTag(UUID hash) {
-        return Tag.of(SPECIES, hash.toString());
+    private Tag faultTypeTag(UUID hash) {
+        return Tag.of(FAULT_TYPE, hash.toString());
     }
 
-    private Tag subspeciesTag(UUID hash) {
-        return Tag.of(SUBSPECIES, hash.toString());
+    private Tag faultTag(UUID hash) {
+        return Tag.of(FAULT, hash.toString());
     }
 
-    private Tag specimenTag(ThrowableSpecimen specimen) {
-        return Tag.of(SPECIMEN, specimen.getHash().toString());
+    private Tag faultEventTag(FaultEvent faultEvent) {
+        return Tag.of(FAULT_EVENT, faultEvent.getHash().toString());
     }
 
-    private static final String SPECIES = "species";
+    private static final String FAULT_TYPE = "faul-type";
 
-    private static final String SUBSPECIES = "subspecies";
+    private static final String FAULT = "fault";
 
-    private static final String SPECIMEN = "specimen";
+    private static final String FAULT_EVENT = "fault-event";
 }

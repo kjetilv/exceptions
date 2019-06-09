@@ -1,8 +1,8 @@
 package link.stuf.exceptions.core;
 
-import link.stuf.exceptions.munch.ThrowableStack;
+import link.stuf.exceptions.munch.data.CauseType;
 
 public interface ThrowablesReducer {
 
-    ThrowableStack reduce(ThrowableStack digest);
+    CauseType reduce(CauseType digest);
 }

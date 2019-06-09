@@ -2,7 +2,7 @@ package link.stuf.exceptions.dto
 
 import java.util.*
 
-data class WiredStackTrace(
+data class CauseDto(
 
         val className: String,
 
