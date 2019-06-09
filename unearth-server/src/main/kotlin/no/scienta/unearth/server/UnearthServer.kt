@@ -23,10 +23,7 @@ import no.scienta.unearth.munch.ids.CauseTypeId
 import no.scienta.unearth.munch.ids.FaultEventId
 import no.scienta.unearth.munch.ids.FaultTypeId
 import no.scienta.unearth.server.statik.Statik
-import org.http4k.contract.ContractRoute
-import org.http4k.contract.contract
-import org.http4k.contract.div
-import org.http4k.contract.meta
+import org.http4k.contract.*
 import org.http4k.contract.openapi.ApiInfo
 import org.http4k.contract.openapi.v3.OpenApi3
 import org.http4k.core.*
@@ -63,7 +60,7 @@ class UnearthServer(
             )
 
     private fun lookupFaultRoute(): ContractRoute =
-            "/fault" / Path.of("uuid") meta {
+            "/fault" / Path.uuid().of("uuid") meta {
                 summary = "Lookup an exception"
                 queries += listOf(fullStack, simpleTrace)
                 produces += ContentType.APPLICATION_JSON
@@ -71,13 +68,13 @@ class UnearthServer(
             } bindContract Method.GET to { uuid ->
                 { req ->
                     responseWith(Lens.faultEvent) {
-                        lookupFault(UUID.fromString(uuid), isSet(req, fullStack), isSet(req, simpleTrace))
+                        lookupFault(uuid, isSet(req, fullStack), isSet(req, simpleTrace))
                     }
                 }
             }
 
     private fun lookupFaultsRoute(): ContractRoute =
-            "/faults" / Path.of("uuid") meta {
+            "/faults" / Path.uuid().of("uuid") meta {
                 summary = "Lookup a fault type, with fault events"
                 queries += listOf(fullStack, simpleTrace, offset, count)
                 produces += ContentType.APPLICATION_JSON
@@ -85,13 +82,13 @@ class UnearthServer(
             } bindContract Method.GET to { uuid ->
                 { req ->
                     responseWith(Lens.faultType) {
-                        lookupFaults(UUID.fromString(uuid), isSet(req, fullStack), offset[req], count[req])
+                        lookupFaults(uuid, isSet(req, fullStack), offset[req], count[req])
                     }
                 }
             }
 
     private fun lookupCauseRoute(): ContractRoute =
-            "/cause" / Path.of("uuid") meta {
+            "/cause" / Path.uuid().of("uuid") meta {
                 summary = "Lookup a stack"
                 queries += listOf(fullStack, simpleTrace)
                 produces += ContentType.APPLICATION_JSON
@@ -100,7 +97,7 @@ class UnearthServer(
                 { req ->
                     responseWith(Lens.cause) {
                         lookupCause(
-                                UUID.fromString(uuid),
+                                uuid,
                                 isSet(req, fullStack, true),
                                 isSet(req, simpleTrace))
                     }
@@ -108,32 +105,33 @@ class UnearthServer(
             }
 
     private fun printFaultRoute(): ContractRoute =
-            "/fault-out" / Path.of("uuid") meta {
+            "/fault-out" / Path.uuid().of("uuid") meta {
                 summary = "Print an exception"
                 produces += ContentType.TEXT_PLAIN
                 returning(Status.OK, Lens.string to Example.exceptionOut())
             } bindContract Method.GET to { uuid ->
                 {
                     responseWith(Lens.exception, type = ContentType.TEXT_PLAIN) {
-                        lookupThrowable(UUID.fromString(uuid))
+                        lookupThrowable(uuid)
                     }
                 }
             }
 
     private fun feedLimitsRoute(): ContractRoute =
-            "/feed/limit" / Path.of("type") / Path.of("uuid") meta {
+            "/feed/limit" / Path.string().of("type") / Path.uuid().of("uuid") meta {
                 summary = "Global events"
                 produces += ContentType.APPLICATION_JSON
                 returning(Status.OK)
             } bindContract Method.GET to { type, uuid ->
                 {
                     responseWith {
-                        feedLimit(SequenceType.valueOf(type.toUpperCase()), UUID.fromString(uuid)).toString()
+                        feedLimit(seqType(type), uuid).toString()
                     }
                 }
             }
 
-//    private fun feedLookupRoute(): ContractRoute =
+
+    //    private fun feedLookupRoute(): ContractRoute =
 //            "/feed" / Path.of("type")
 //
     private fun <I, O> bodyExchange(iLens: BiDiBodyLens<I>, oLens: BiDiBodyLens<O>, accept: (I) -> O): HttpHandler =
@@ -304,5 +302,7 @@ class UnearthServer(
         private val offset = Query.long().optional("offset")
 
         private val count = Query.long().optional("count")
+
+        private fun seqType(type: String) = SequenceType.valueOf(type.toUpperCase())
     }
 }
