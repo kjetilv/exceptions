@@ -11,12 +11,10 @@ import org.http4k.routing.routes
 import java.util.*
 
 open class SimpleRoutingServer(
+        configuration: ServerConfiguration = ServerConfiguration(),
         controller: WiredExceptionsController,
-        val swaggerJson: () -> OpenAPI,
-        host: String = "0.0.0.0",
-        port: Int = 8080,
-        selfDiagnose: Boolean = true
-) : AbstractServer(host, port, controller, selfDiagnose) {
+        private val swaggerJson: () -> OpenAPI
+) : AbstractServer(configuration, controller) {
 
     private fun pathUuid(req: Request): UUID = req.path("uuid")?.let(UUID::fromString)!!
 
@@ -60,25 +58,25 @@ open class SimpleRoutingServer(
             applicationJson(Lens.swagger, swaggerJson)
 
     override fun app(): HttpHandler = routes(
-            "exception" bind Method.POST to { req ->
+            configuration.prefix + "exception" bind Method.POST to { req ->
                 submitException(req)
             },
-            "exception/{uuid}" bind GET to { req ->
+            configuration.prefix + "exception/{uuid}" bind GET to { req ->
                 lookupException(req)
             },
-            "exceptions/{uuid}" bind GET to { req ->
+            configuration.prefix + "exceptions/{uuid}" bind GET to { req ->
                 lookupExceptions(req)
             },
-            "stack/{uuid}" bind GET to { req ->
+            configuration.prefix + "stack/{uuid}" bind GET to { req ->
                 lookupStack(req)
             },
-            "exception-out/{uuid}" bind GET to { req ->
+            configuration.prefix + "exception-out/{uuid}" bind GET to { req ->
                 printException(req)
             },
-            "swagger.json" bind GET to {
+            configuration.prefix + "swagger.json" bind GET to {
                 swaggerJsonResponse(swaggerJson)
             },
             swaggerUiRoute(),
-            swaggerReroute("")
+            swaggerReroute(configuration.prefix)
     )
 }

@@ -36,11 +36,10 @@ abstract class AbstractHashed implements Hashed {
     }
 
     final void hashLongs(Consumer<byte[]> hash, long... values) {
-        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
         for (long value : values) {
+            ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
             buffer.putLong(value);
             hash.accept(buffer.array());
-            buffer.reset();
         }
     }
 

@@ -120,6 +120,10 @@ public class ThrowableSpecimen extends AbstractHashedIdentified<ThrowableSpecime
 
     @Override
     public void hashTo(Consumer<byte[]> h) {
+        if (time == null) {
+            throw new IllegalStateException(
+                "This instance of " + getClass() + " is not yet completed, cannot hash");
+        }
         hashHashables(h, subspecies);
         hashLongs(h, time.toEpochMilli());
     }

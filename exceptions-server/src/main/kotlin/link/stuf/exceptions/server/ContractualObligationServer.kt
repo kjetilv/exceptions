@@ -1,24 +1,18 @@
 package link.stuf.exceptions.server
 
-import org.http4k.contract.ContractRoute
-import org.http4k.contract.contract
-import org.http4k.contract.div
-import org.http4k.contract.meta
+import org.http4k.contract.*
 import org.http4k.contract.openapi.ApiInfo
 import org.http4k.contract.openapi.v3.OpenApi3
 import org.http4k.core.*
 import org.http4k.lens.*
 import org.http4k.routing.RoutingHttpHandler
-import org.http4k.routing.bind
 import org.http4k.routing.routes
 import java.util.*
 
 class ContractualObligationServer(
-        controller: WiredExceptionsController,
-        host: String = "0.0.0.0",
-        port: Int = 8080,
-        selfDiagnose: Boolean = true
-) : AbstractServer(host, port, controller, selfDiagnose) {
+        configuration: ServerConfiguration = ServerConfiguration(),
+        controller: WiredExceptionsController
+) : AbstractServer(configuration, controller) {
 
     private fun submitSpecimenRoute(): ContractRoute =
             "/exception" meta {
@@ -105,26 +99,24 @@ class ContractualObligationServer(
     override fun app(): HttpHandler = routes(
             apiRoute(),
             swaggerUiRoute(),
-            swaggerReroute("/api/v1"))
+            swaggerReroute(configuration.prefix))
 
-    private fun apiRoute(): RoutingHttpHandler {
-        return "/api/v1" bind contract {
-            renderer = OpenApi3(
-                    ApiInfo(
-                            "My great API",
-                            "v1.0"
-                    ),
-                    JSON
-            )
-            descriptionPath = "/swagger.json"
-            routes += listOf(
-                    submitSpecimenRoute(),
-                    lookupSpecimenRoute(),
-                    lookupSpecimensRoute(),
-                    lookupStackRoute(),
-                    printThrowableRoute()
-            )
-        }
+    private fun apiRoute(): RoutingHttpHandler =
+            configuration.prefix bind contract {
+                renderer = OpenApi3(
+                        apiInfo = ApiInfo("Exceptions", "v1"),
+                        json = JSON)
+                descriptionPath = "/swagger.json"
+                routes += appRoutes()
+            }
+
+    private fun appRoutes(): List<ContractRoute> {
+        return listOf(
+                submitSpecimenRoute(),
+                lookupSpecimenRoute(),
+                lookupSpecimensRoute(),
+                lookupStackRoute(),
+                printThrowableRoute())
     }
 
     companion object {

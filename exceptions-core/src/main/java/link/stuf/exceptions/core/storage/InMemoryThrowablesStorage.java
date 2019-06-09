@@ -53,9 +53,8 @@ public class InMemoryThrowablesStorage
     @Override
     public ThrowableSpecimen store(ThrowableSpecimen newSpecimen) {
         synchronized (lock) {
-            putNew(this.specimens, newSpecimen);
             ThrowableSpecimen sequencedSpecimen = sequenced(newSpecimen);
-            replace(this.specimens, sequencedSpecimen, newSpecimen);
+            putNew(this.specimens, sequencedSpecimen);
             ThrowableSubspecies subspecies = sequencedSpecimen.getSubspecies();
             ThrowableSpecies species = sequencedSpecimen.getSubspecies().getSpecies();
             species.stacks().forEach(put(this.stacks));

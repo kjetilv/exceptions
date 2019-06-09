@@ -12,7 +12,7 @@ object Ex {
     fun uuid() = UUID.randomUUID()
 
     fun submission() =
-            Submission(UUID.randomUUID(), UUID.randomUUID())
+            Submission(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID())
 
     fun specimen(): Specimen = specimen(uuid())
 

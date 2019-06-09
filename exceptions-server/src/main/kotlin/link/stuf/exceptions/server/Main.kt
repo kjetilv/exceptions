@@ -14,15 +14,15 @@ fun main() {
             EnvironmentVariables() overriding
             ConfigurationProperties.fromResource("defaults.properties")
 
+    val serverApi = Key("server.api", stringType)
+
     val serverHost = Key("server.host", stringType)
 
     val serverPort = Key("server.port", intType)
 
-    val selfDiagnose= Key("exceptions.self-diagnose", booleanType)
+    val selfDiagnose = Key("exceptions.self-diagnose", booleanType)
 
     val logger: Logger = LoggerFactory.getLogger("exceptions")
-
-    logger.info("Starting ...")
 
     val storage = InMemoryThrowablesStorage()
 
@@ -30,16 +30,22 @@ fun main() {
 
     val controller = WiredExceptionsController(storage, storage, storage, sensor)
 
-    val server = ContractualObligationServer(
-            controller,
-            host = config[serverHost],
-            port = config[serverPort],
-            selfDiagnose = config[selfDiagnose]).start()
+    logger.info("Starting ...")
 
-    logger.info("Started @ ${server.port}")
+    val server = ContractualObligationServer(
+            ServerConfiguration(
+                    prefix = config[serverApi],
+                    host = config[serverHost],
+                    port = config[serverPort],
+                    selfDiagnose = config[selfDiagnose]),
+            controller
+    ).start { srv ->
+        logger.info("Started @ {}", srv)
+    }
 
     Runtime.getRuntime().addShutdownHook(Thread({
-        logger.info("Stopped: {}", server.stop())
+        server.stop { srv ->
+            logger.info("Stopped @ {}", srv) }
     }, "Shutdown"))
 }
 

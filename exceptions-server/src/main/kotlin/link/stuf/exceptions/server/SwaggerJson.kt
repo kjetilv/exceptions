@@ -123,8 +123,7 @@ object SwaggerJson : () -> OpenAPI {
 
     private fun exampleUuid() = UUID.randomUUID().toString()
 
-    private fun exampleSubmission() =
-            Submission(UUID.randomUUID(), UUID.randomUUID())
+    private fun exampleSubmission() = Submission(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID())
 
     private fun exampleException(): String =
             ByteArrayOutputStream().let { baos ->

@@ -6,6 +6,8 @@ data class Submission(
 
         val speciesId: UUID,
 
+        val subspeciesId: UUID,
+
         val specimenId: UUID,
 
         val loggable: Boolean = true,

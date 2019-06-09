@@ -19,8 +19,8 @@ fun main() {
     val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
 
     val server = SimpleRoutingServer(
-            WiredExceptionsController(storage, storage, storage, sensor),
-            SwaggerJson)
+            controller = WiredExceptionsController(storage, storage, storage, sensor),
+            swaggerJson = SwaggerJson)
 
     val lookupLens = Body.auto<Species>().toLens()
 

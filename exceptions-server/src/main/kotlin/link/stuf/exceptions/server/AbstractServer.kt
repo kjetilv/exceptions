@@ -15,6 +15,7 @@ import org.http4k.filter.ServerFilters
 import org.http4k.routing.RoutingHttpHandler
 import org.http4k.routing.bind
 import org.http4k.routing.path
+import org.http4k.server.Http4kServer
 import org.http4k.server.asServer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -23,24 +24,20 @@ import java.util.regex.Pattern
 
 @Suppress("CanBeParameter", "MemberVisibilityCanBePrivate")
 abstract class AbstractServer(
-
-        val host: String = "0.0.0.0",
-
-        val port: Int = 8080,
-
-        private val controller: WiredExceptionsController,
-
-        private val selfDiagnose: Boolean = true
+        val configuration: ServerConfiguration = ServerConfiguration(),
+        val controller: WiredExceptionsController
 ) {
 
     private val logger: Logger = LoggerFactory.getLogger(SimpleRoutingServer::class.java)
 
-    fun start(): AbstractServer = apply {
+    fun start(after: (Http4kServer) -> Unit = {}): AbstractServer = apply {
         server.start()
+        after(server)
     }
 
-    fun stop(): AbstractServer = apply {
+    fun stop(after: (Http4kServer) -> Unit = {}): AbstractServer = apply {
         server.stop()
+        after(server)
     }
 
     private val staticContent =
@@ -50,14 +47,20 @@ abstract class AbstractServer(
 
     protected abstract fun app(): HttpHandler
 
+    @Suppress("LeakingThis")
     private val server = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
             .then(Filter(errors()))
             .then(app())
-            .asServer(NettyConfig(host, port))
+            .asServer(NettyConfig(configuration.host, configuration.port))
 
     protected fun submitException(throwable: Throwable?) =
             controller.handle(throwable).let { sub ->
-                Submission(sub.speciesId.hash, sub.specimenId.hash, sub.isLoggable, sub.isNew)
+                Submission(
+                        sub.speciesId.hash,
+                        sub.subspeciesId.hash,
+                        sub.specimenId.hash,
+                        sub.isLoggable,
+                        sub.isNew)
             }
 
     protected fun lookupException(
@@ -94,7 +97,7 @@ abstract class AbstractServer(
         return try {
             next(req)
         } catch (e: Throwable) {
-            if (selfDiagnose) {
+            if (configuration.selfDiagnose) {
                 try {
                     handledFailedResponse(e)
                 } catch (sde: Exception) {
