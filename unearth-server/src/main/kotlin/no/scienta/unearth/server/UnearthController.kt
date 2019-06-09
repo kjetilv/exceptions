@@ -21,6 +21,7 @@ import no.scienta.unearth.core.*
 import no.scienta.unearth.core.handler.DefaultThrowablesHandler
 import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.data.CauseType
+import no.scienta.unearth.munch.data.FaultEvent
 import no.scienta.unearth.munch.data.ThrowableDto
 import no.scienta.unearth.munch.ids.CauseTypeId
 import no.scienta.unearth.munch.ids.FaultEventId
@@ -58,7 +59,7 @@ class UnearthController(
                             event.faultSequence,
                             event.faultTypeSequence,
                             event.time.atZone(ZoneId.of("UTC")),
-                            wiredException(
+                            unearthedException(
                                     event.fault.toThrowableDto(), fullStack)
                     )
                 }
@@ -78,7 +79,7 @@ class UnearthController(
                         event.faultSequence,
                         event.faultTypeSequence,
                         event.time.atZone(ZoneId.of("UTC")),
-                        wiredException(event.fault.toThrowableDto(), fullStack, simpleTrace))
+                        unearthedException(event.fault.toThrowableDto(), fullStack, simpleTrace))
             }
 
     fun lookupStack(
@@ -86,13 +87,10 @@ class UnearthController(
             fullStack: Boolean = false,
             simpleTrace: Boolean = false
     ): CauseDto =
-            wiredStack(storage.getStack(causeTypeId), causeTypeId.hash, fullStack, simpleTrace)
+            unearthedStack(storage.getStack(causeTypeId), causeTypeId.hash, fullStack, simpleTrace)
 
     fun lookupPrintable(eventId: FaultEventId): String =
-            Throwables.string(lookupFaultEvent(eventId))
-
-    fun lookupFaultEvent(eventId: FaultEventId): Throwable =
-            storage.getFaultEvent(eventId).fault.toThrowable()
+            Throwables.string(storage.getFaultEvent(eventId).fault.toThrowable())
 
     fun lookupFault(uuid: UUID): Throwable =
             storage.getFault(storage.resolveFault(uuid)).toThrowable()
@@ -104,17 +102,45 @@ class UnearthController(
                 else -> feed.limit()
             }
 
-    private fun wiredException(
-            specimen: ThrowableDto,
+    fun faultSequence(
+            type: SequenceType,
+            uuid: UUID,
+            offset: Long,
+            count: Long,
+            thin: Boolean = false
+    ): FaultSequence = FaultSequence(
+            type,
+            events(type, uuid, offset, count).map { event ->
+                FaultEventDto(
+                        event.fault.hash,
+                        event.fault.faultType.hash,
+                        event.globalSequence,
+                        event.faultSequence,
+                        event.faultTypeSequence,
+                        event.time.atZone(ZoneId.systemDefault()),
+                        unearthedException(event.fault.toThrowableDto()))
+            })
+
+    private fun events(type: SequenceType, uuid: UUID, offset: Long, count: Long): List<FaultEvent> =
+            when (type) {
+                SequenceType.FAULT_TYPE -> feed.feed(FaultTypeId(uuid), offset, count)
+                SequenceType.FAULT -> feed.feed(FaultId(uuid), offset, count)
+                else -> feed.feed(offset, count)
+            }!!
+
+    private fun unearthedException(
+            dto: ThrowableDto,
             fullStack: Boolean = false,
             simpleTrace: Boolean = false
     ): UnearthedException = UnearthedException(
-            className = specimen.causeType.className,
-            message = specimen.message,
-            stacktrace = wiredStack(specimen.causeType, specimen.causeType.hash, fullStack, simpleTrace),
-            cause = specimen.cause?.let { cause -> wiredException(cause, fullStack) })
+            className = dto.causeType.className,
+            message = dto.message,
+            stacktrace = unearthedStack(dto.causeType, dto.causeType.hash, fullStack, simpleTrace),
+            cause = dto.cause?.let { cause ->
+                unearthedException(cause, fullStack)
+            })
 
-    private fun wiredStack(
+    private fun unearthedStack(
             throwableType: CauseType,
             stacktraceRef: UUID,
             fullStack: Boolean = false,

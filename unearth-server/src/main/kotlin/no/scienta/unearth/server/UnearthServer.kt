@@ -23,7 +23,10 @@ import no.scienta.unearth.munch.ids.CauseTypeId
 import no.scienta.unearth.munch.ids.FaultEventId
 import no.scienta.unearth.munch.ids.FaultTypeId
 import no.scienta.unearth.server.statik.Statik
-import org.http4k.contract.*
+import org.http4k.contract.ContractRoute
+import org.http4k.contract.contract
+import org.http4k.contract.div
+import org.http4k.contract.meta
 import org.http4k.contract.openapi.ApiInfo
 import org.http4k.contract.openapi.v3.OpenApi3
 import org.http4k.core.*
@@ -60,7 +63,7 @@ class UnearthServer(
             )
 
     private fun lookupFaultRoute(): ContractRoute =
-            "/fault" / Path.uuid().of("uuid") meta {
+            "/fault" / uuidPath meta {
                 summary = "Lookup an exception"
                 queries += listOf(fullStack, simpleTrace)
                 produces += ContentType.APPLICATION_JSON
@@ -74,21 +77,21 @@ class UnearthServer(
             }
 
     private fun lookupFaultsRoute(): ContractRoute =
-            "/faults" / Path.uuid().of("uuid") meta {
+            "/faults" / uuidPath meta {
                 summary = "Lookup a fault type, with fault events"
-                queries += listOf(fullStack, simpleTrace, offset, count)
+                queries += listOf(fullStack, simpleTrace, offsetQuery, countQuery)
                 produces += ContentType.APPLICATION_JSON
                 returning(Status.OK, Lens.faultType to Example.faultTypeDto())
             } bindContract Method.GET to { uuid ->
                 { req ->
                     responseWith(Lens.faultType) {
-                        lookupFaults(uuid, isSet(req, fullStack), offset[req], count[req])
+                        lookupFaults(uuid, isSet(req, fullStack), offsetQuery[req], countQuery[req])
                     }
                 }
             }
 
     private fun lookupCauseRoute(): ContractRoute =
-            "/cause" / Path.uuid().of("uuid") meta {
+            "/cause" / uuidPath meta {
                 summary = "Lookup a stack"
                 queries += listOf(fullStack, simpleTrace)
                 produces += ContentType.APPLICATION_JSON
@@ -105,7 +108,7 @@ class UnearthServer(
             }
 
     private fun printFaultRoute(): ContractRoute =
-            "/fault-out" / Path.uuid().of("uuid") meta {
+            "/fault-out" / uuidPath meta {
                 summary = "Print an exception"
                 produces += ContentType.TEXT_PLAIN
                 returning(Status.OK, Lens.string to Example.exceptionOut())
@@ -118,22 +121,37 @@ class UnearthServer(
             }
 
     private fun feedLimitsRoute(): ContractRoute =
-            "/feed/limit" / Path.string().of("type") / Path.uuid().of("uuid") meta {
-                summary = "Global events"
+            "/feed/limit" / seqTypePath / uuidPath meta {
+                summary = "Event limits"
                 produces += ContentType.APPLICATION_JSON
                 returning(Status.OK)
             } bindContract Method.GET to { type, uuid ->
                 {
                     responseWith {
-                        feedLimit(seqType(type), uuid).toString()
+                        lookupFeedLimit(seqType(type), uuid).toString()
                     }
                 }
             }
 
+    private fun feedLookupRoute(): ContractRoute =
+            "/feed" / seqTypePath / uuidPath / offsetPath meta {
+                summary = "Events"
+                produces += ContentType.APPLICATION_JSON
+                queries += listOf(countQuery, thinFeedQuery)
+                returning(Status.OK, Lens.faultSequence to Example.faultSequence())
+            } bindContract Method.GET to { type, uuid, offset ->
+                { req ->
+                    responseWith(Lens.faultSequence) {
+                        lookupFaultSequence(
+                                seqType(type),
+                                uuid,
+                                offset,
+                                countQuery[req] ?: 0L,
+                                isSet(req, thinFeedQuery))
+                    }
+                }
+            }
 
-    //    private fun feedLookupRoute(): ContractRoute =
-//            "/feed" / Path.of("type")
-//
     private fun <I, O> bodyExchange(iLens: BiDiBodyLens<I>, oLens: BiDiBodyLens<O>, accept: (I) -> O): HttpHandler =
             { req ->
                 iLens[req]?.let {
@@ -188,6 +206,7 @@ class UnearthServer(
                                 lookupFaultsRoute(),
                                 lookupCauseRoute(),
                                 feedLimitsRoute(),
+                                feedLookupRoute(),
                                 printFaultRoute())
                     },
                     swaggerUiRoute(),
@@ -230,8 +249,17 @@ class UnearthServer(
     ): CauseDto =
             controller.lookupStack(CauseTypeId(pathUuid), fullStack, simpleTrace)
 
-    private fun feedLimit(type: SequenceType, uuid: UUID): Long =
+    private fun lookupFeedLimit(type: SequenceType, uuid: UUID): Long =
             controller.feedLimit(type, uuid)
+
+    private fun lookupFaultSequence(
+            type: SequenceType,
+            uuid: UUID,
+            offset: Long,
+            count: Long,
+            thin: Boolean
+    ): FaultSequence =
+            controller.faultSequence(type, uuid, offset, count, thin)
 
     private fun lookupThrowable(uuid: UUID): Throwable =
             controller.lookupFault(uuid)
@@ -299,9 +327,17 @@ class UnearthServer(
 
         private val simpleTrace = Query.boolean().optional("simpleTrace")
 
-        private val offset = Query.long().optional("offset")
+        private val offsetQuery = Query.long().optional("offset")
 
-        private val count = Query.long().optional("count")
+        private val countQuery = Query.long().optional("count")
+
+        private val thinFeedQuery = Query.boolean().optional("thin")
+
+        private val offsetPath = Path.long().of("offset")
+
+        private val seqTypePath = Path.string().of("type")
+
+        private val uuidPath = Path.uuid().of("uuid")
 
         private fun seqType(type: String) = SequenceType.valueOf(type.toUpperCase())
     }

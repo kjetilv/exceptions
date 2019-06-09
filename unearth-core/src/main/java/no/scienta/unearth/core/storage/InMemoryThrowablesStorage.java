@@ -20,16 +20,11 @@ package no.scienta.unearth.core.storage;
 import no.scienta.unearth.core.FaultFeed;
 import no.scienta.unearth.core.FaultStats;
 import no.scienta.unearth.core.FaultStorage;
-import no.scienta.unearth.munch.ids.Id;
-import no.scienta.unearth.munch.ids.Identifiable;
 import no.scienta.unearth.munch.data.CauseType;
 import no.scienta.unearth.munch.data.Fault;
 import no.scienta.unearth.munch.data.FaultEvent;
 import no.scienta.unearth.munch.data.FaultType;
-import no.scienta.unearth.munch.ids.CauseTypeId;
-import no.scienta.unearth.munch.ids.FaultEventId;
-import no.scienta.unearth.munch.ids.FaultId;
-import no.scienta.unearth.munch.ids.FaultTypeId;
+import no.scienta.unearth.munch.ids.*;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -54,11 +49,13 @@ public class InMemoryThrowablesStorage
     private final Map<CauseTypeId, CauseType> causeTypes = new HashMap<>();
 
 
-    private final Map<FaultTypeId, Collection<Fault>> typedFaults = new HashMap<>();
+    private final Collection<FaultEvent> faultEvents = new ArrayList<>();
 
-    private final Map<FaultTypeId, Collection<FaultEvent>> faultTypeEvents = new HashMap<>();
+    private final Map<FaultTypeId, Collection<Fault>> faultTypeFaults = new HashMap<>();
 
-    private final Map<FaultId, Collection<FaultEvent>> faultEvents = new HashMap<>();
+    private final Map<FaultTypeId, Collection<FaultEvent>> faultTypeFaultEvents = new HashMap<>();
+
+    private final Map<FaultId, Collection<FaultEvent>> faultFaultEvents = new HashMap<>();
 
 
     private final Object lock = new boolean[]{};
@@ -94,9 +91,10 @@ public class InMemoryThrowablesStorage
             put(this.faults, fault);
             faultType.getCauseTypes().forEach(put(this.causeTypes));
 
-            addTo(typedFaults, faultType.getId(), fault);
-            addTo(faultTypeEvents, faultType.getId(), faultEvent);
-            addTo(faultEvents, fault.getId(), faultEvent);
+            faultEvents.add(faultEvent);
+            addTo(faultTypeFaults, faultType.getId(), fault);
+            addTo(faultTypeFaultEvents, faultType.getId(), faultEvent);
+            addTo(faultFaultEvents, fault.getId(), faultEvent);
 
             return faultEvent;
         }
@@ -151,12 +149,12 @@ public class InMemoryThrowablesStorage
 
     @Override
     public Collection<FaultEvent> getEvents(FaultTypeId faultTypeId, Long offset, Long count) {
-        return listLookup(this.faultTypeEvents, faultTypeId, offset, count);
+        return listLookup(this.faultTypeFaultEvents, faultTypeId, offset, count);
     }
 
     @Override
     public Collection<FaultEvent> getEvents(FaultId faultId, Long offset, Long count) {
-        return listLookup(faultEvents, faultId, offset, count);
+        return listLookup(faultFaultEvents, faultId, offset, count);
     }
 
     @Override
@@ -175,18 +173,26 @@ public class InMemoryThrowablesStorage
     }
 
     @Override
-    public List<FaultEvent> feed(FaultTypeId id, long offset, int count) {
-        return feed(id, offset, count, this.faultTypeEvents, FaultEvent::getFaultTypeSequence);
+    public List<FaultEvent> feed(long offset, long count) {
+        return faultEvents.stream()
+            .filter(faultEvent -> faultEvent.getGlobalSequence() >= offset)
+            .limit(count)
+            .collect(Collectors.toUnmodifiableList());
     }
 
     @Override
-    public List<FaultEvent> feed(FaultId id, long offset, int count) {
-        return feed(id, offset, count, this.faultEvents, FaultEvent::getFaultSequence);
+    public List<FaultEvent> feed(FaultTypeId id, long offset, long count) {
+        return feed(id, offset, count, this.faultTypeFaultEvents, FaultEvent::getFaultTypeSequence);
+    }
+
+    @Override
+    public List<FaultEvent> feed(FaultId id, long offset, long count) {
+        return feed(id, offset, count, this.faultFaultEvents, FaultEvent::getFaultSequence);
     }
 
     @Override
     public Optional<FaultEvent> lastFaultEvent(FaultTypeId id) {
-        return streamLookup(faultTypeEvents, id)
+        return streamLookup(faultTypeFaultEvents, id)
             .max(Comparator.comparing(FaultEvent::getFaultTypeSequence));
     }
 
@@ -207,21 +213,21 @@ public class InMemoryThrowablesStorage
     }
 
     public Stream<FaultEvent> faultEvents(FaultTypeId id) {
-        return streamLookup(typedFaults, id).flatMap(fault ->
-            streamLookup(faultEvents, fault.getId()));
+        return streamLookup(faultTypeFaults, id).flatMap(fault ->
+            streamLookup(faultFaultEvents, fault.getId()));
     }
 
     private static <I extends Id, T> List<T> feed(
         I id,
         long offset,
-        int count,
+        long count,
         Map<I, Collection<T>> map,
         Function<T, Long> sequencer
     ) {
         return listLookup(map, id)
             .stream()
             .filter(specimen ->
-                sequencer.apply(specimen) > offset)
+                sequencer.apply(specimen) >= offset)
             .limit(count)
             .collect(Collectors.toUnmodifiableList());
     }

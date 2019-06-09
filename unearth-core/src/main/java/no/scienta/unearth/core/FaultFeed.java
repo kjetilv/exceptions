@@ -31,7 +31,9 @@ public interface FaultFeed {
 
     long limit(FaultId id);
 
-    List<FaultEvent> feed(FaultTypeId id, long offset, int count);
+    List<FaultEvent> feed(long offset, long count);
 
-    List<FaultEvent> feed(FaultId id, long offset, int count);
+    List<FaultEvent> feed(FaultTypeId id, long offset, long count);
+
+    List<FaultEvent> feed(FaultId id, long offset, long count);
 }

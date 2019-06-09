@@ -34,7 +34,7 @@ object Lens {
     val sequenceType: BiDiBodyLens<SequenceType> = Body.auto<SequenceType>().toLens()
 
     val faultSequence =
-            Body.auto<List<FaultSequence>>().toLens();
+            Body.auto<FaultSequence>().toLens();
 
     val faultEvent =
             Body.auto<FaultEventDto>().toLens()
