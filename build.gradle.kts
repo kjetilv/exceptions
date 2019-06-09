@@ -16,7 +16,7 @@ allprojects {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    group = "link.stuf.exceptions"
+    group = "no.scienta.unearth"
     version = "0.1.0-SNAPSHOT"
 
     repositories {

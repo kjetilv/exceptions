@@ -1,10 +1,10 @@
-rootProject.name = "exceptions"
+rootProject.name = "unearth"
 
-include("exceptions-client")
-include("exceptions-dto")
-include("exceptions-core")
-include("exceptions-munch")
-include("exceptions-micrometer")
-include("exceptions-server")
-include("exceptions-static")
+include("unearth-client")
+include("unearth-dto")
+include("unearth-core")
+include("unearth-munch")
+include("unearth-micrometer")
+include("unearth-server")
+include("unearth-static")
 
