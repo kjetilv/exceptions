@@ -18,7 +18,6 @@
 package no.scienta.unearth.server
 
 import no.scienta.unearth.dto.*
-import no.scienta.unearth.munch.util.Throwables
 import java.time.ZonedDateTime
 import java.util.*
 
@@ -26,9 +25,6 @@ object Example {
 
     private val random =
             Random()
-
-    fun uuid() =
-            UUID.randomUUID()
 
     fun submission() =
             Submission(
@@ -49,28 +45,29 @@ object Example {
     fun faultEventDtos(): FaultEventDto =
             faultEventDtos(uuid())
 
-    fun faultEventDtos(faultTypeId: UUID): FaultEventDto =
+    fun faultTypeDto() = uuid().let { id ->
+        FaultTypeDto(id, listOf(faultEventDtos(id)))
+    }
+
+    private fun faultEventDtos(faultTypeId: UUID): FaultEventDto =
             FaultEventDto(uuid(),
                     faultTypeId,
                     random.nextLong(),
                     random.nextLong(),
                     random.nextLong(),
                     ZonedDateTime.now(),
-                    wiredException())
+                    unearthedException())
 
-    fun faultTypeDto() = uuid().let { id ->
-        FaultTypeDto(id, listOf(faultEventDtos(id)))
-    }
-
-    fun wiredException(): UnearthedException =
+    private fun unearthedException(): UnearthedException =
             UnearthedException(
                     "mymy.such.a.BadClass",
                     "Bad class!",
+                    stacktraceId = uuid(),
                     stacktrace = stack())
 
-    fun exception(): Throwable = RuntimeException("Example throwable")
+    private fun uuid(): UUID = UUID.randomUUID()
 
-    fun exceptionOut(): String = Throwables.string(exception())
+    fun exception(): Throwable = RuntimeException("Example throwable")
 
     fun stack() = CauseDto(emptyList(), emptyList(), uuid())
 }

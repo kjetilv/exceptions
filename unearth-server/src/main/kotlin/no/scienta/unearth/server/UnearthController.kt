@@ -134,7 +134,7 @@ class UnearthController(
                 SequenceType.FAULT_TYPE -> feed.feed(FaultTypeId(uuid), offset, count)
                 SequenceType.FAULT -> feed.feed(FaultId(uuid), offset, count)
                 else -> feed.feed(offset, count)
-            }!!
+            } ?: emptyList()
 
     private fun unearthedException(
             dto: ChainedFault,
@@ -144,7 +144,8 @@ class UnearthController(
     ): UnearthedException = UnearthedException(
             className = dto.causeType.className,
             message = dto.message,
-            stacktrace = unearthedStack(dto.causeType, dto.causeType.id, fullStack, simpleTrace),
+            stacktrace = if (thin) null else unearthedStack(dto.causeType, dto.causeType.id, fullStack, simpleTrace),
+            stacktraceId = dto.causeType.hash,
             cause = dto.cause?.let { cause ->
                 unearthedException(cause, fullStack)
             })
