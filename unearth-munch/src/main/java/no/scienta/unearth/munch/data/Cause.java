@@ -46,14 +46,14 @@ public class Cause extends AbstractHashableIdentifiable<CauseId> {
         return message;
     }
 
-    Throwable toThrowable(Throwable t) {
+    ChainedFault chain(ChainedFault cause) {
+        return new ChainedFault(this.causeType, this.message, cause);
+    }
+
+    Throwable toChameleon(Throwable t) {
         Throwable exception = new ChameleonException(causeType.getClassName(), message, t);
         exception.setStackTrace(causeType.getStackTrace().toArray(StackTraceElement[]::new));
         return exception;
-    }
-
-    ThrowableDto toThrowableDto(ThrowableDto cause) {
-        return new ThrowableDto(this.causeType, this.message, cause);
     }
 
     @Override

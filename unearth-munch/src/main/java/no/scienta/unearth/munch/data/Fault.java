@@ -56,16 +56,18 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
         return causes;
     }
 
-    public ThrowableDto toThrowableDto() {
-        return Streams.reverse(causes)
-            .reduce(null, (dto, cause) -> cause.toThrowableDto(dto), noCombine());
+    public ChainedFault toChainedFault() {
+        return Streams.reverse(causes).reduce(
+            null,
+            (chainedFault, cause) ->
+                cause.chain(chainedFault), noCombine());
     }
 
-    public Throwable toThrowable() {
+    public Throwable toCameleon() {
         return Streams.reverse(causes)
             .reduce(null,
                 (t, cause) ->
-                    cause.toThrowable(t),
+                    cause.toChameleon(t),
                 noCombine());
     }
 

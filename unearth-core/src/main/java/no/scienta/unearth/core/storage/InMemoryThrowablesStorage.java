@@ -174,20 +174,17 @@ public class InMemoryThrowablesStorage
 
     @Override
     public List<FaultEvent> feed(long offset, long count) {
-        return faultEvents.stream()
-            .filter(faultEvent -> faultEvent.getGlobalSequence() >= offset)
-            .limit(count)
-            .collect(Collectors.toUnmodifiableList());
+        return globalFeed(offset, count);
     }
 
     @Override
     public List<FaultEvent> feed(FaultTypeId id, long offset, long count) {
-        return feed(id, offset, count, this.faultTypeFaultEvents, FaultEvent::getFaultTypeSequence);
+        return typedFeed(id, this.faultTypeFaultEvents, FaultEvent::getFaultTypeSequence, offset, count);
     }
 
     @Override
     public List<FaultEvent> feed(FaultId id, long offset, long count) {
-        return feed(id, offset, count, this.faultFaultEvents, FaultEvent::getFaultSequence);
+        return typedFeed(id, this.faultFaultEvents, FaultEvent::getFaultSequence, offset, count);
     }
 
     @Override
@@ -217,19 +214,32 @@ public class InMemoryThrowablesStorage
             streamLookup(faultFaultEvents, fault.getId()));
     }
 
-    private static <I extends Id, T> List<T> feed(
+    private List<FaultEvent> globalFeed(long offset, long count) {
+        return delimited(
+            faultEvents.stream()
+                .filter(faultEvent ->
+                    faultEvent.getGlobalSequence() >= offset),
+            count
+        ).collect(Collectors.toUnmodifiableList());
+    }
+
+    private static <I extends Id, T> List<T> typedFeed(
         I id,
-        long offset,
-        long count,
         Map<I, Collection<T>> map,
-        Function<T, Long> sequencer
+        Function<T, Long> sequencer,
+        long offset,
+        long count
     ) {
-        return listLookup(map, id)
-            .stream()
-            .filter(specimen ->
-                sequencer.apply(specimen) >= offset)
-            .limit(count)
-            .collect(Collectors.toUnmodifiableList());
+        return delimited(
+            listLookup(map, id).stream()
+                .filter(specimen ->
+                    sequencer.apply(specimen) >= offset),
+            count
+        ).collect(Collectors.toUnmodifiableList());
+    }
+
+    private static <T> Stream<T> delimited(Stream<T> candidates, long count) {
+        return count > 0 ? candidates.limit(count) : candidates;
     }
 
     private static <I extends Id> long getLimit(Map<I, AtomicLong> seq, I id) {

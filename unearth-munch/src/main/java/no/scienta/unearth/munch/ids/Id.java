@@ -41,8 +41,8 @@ public abstract class Id {
 
     private final UUID hash;
 
-    protected Id(UUID hash) {
-        this.hash = hash;
+    Id(UUID hash) {
+        this.hash = Objects.requireNonNull(hash);
     }
 
     public UUID getHash() {

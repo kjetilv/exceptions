@@ -121,20 +121,31 @@ class UnearthServer(
             }
 
     private fun feedLimitsRoute(): ContractRoute =
-            "/feed/limit" / seqTypePath / uuidPath meta {
+            "/feed/limit" / Lens.sequenceType / uuidPath meta {
                 summary = "Event limits"
                 produces += ContentType.APPLICATION_JSON
                 returning(Status.OK)
             } bindContract Method.GET to { type, uuid ->
                 {
                     responseWith {
-                        lookupFeedLimit(seqType(type), uuid).toString()
+                        lookupFeedLimit(type, uuid).toString()
                     }
                 }
             }
 
+    private fun feedLimitsGlobalRoute(): ContractRoute =
+            "/feed/limit" meta {
+                summary = "Event limits"
+                produces += ContentType.APPLICATION_JSON
+                returning(Status.OK)
+            } bindContract Method.GET to {
+                responseWith {
+                    lookupFeedLimit().toString()
+                }
+            }
+
     private fun feedLookupRoute(): ContractRoute =
-            "/feed" / seqTypePath / uuidPath / offsetPath meta {
+            "/feed" / Lens.sequenceType / uuidPath / offsetPath meta {
                 summary = "Events"
                 produces += ContentType.APPLICATION_JSON
                 queries += listOf(countQuery, thinFeedQuery)
@@ -143,7 +154,7 @@ class UnearthServer(
                 { req ->
                     responseWith(Lens.faultSequence) {
                         lookupFaultSequence(
-                                seqType(type),
+                                type,
                                 uuid,
                                 offset,
                                 countQuery[req] ?: 0L,
@@ -152,12 +163,29 @@ class UnearthServer(
                 }
             }
 
-    private fun <I, O> bodyExchange(iLens: BiDiBodyLens<I>, oLens: BiDiBodyLens<O>, accept: (I) -> O): HttpHandler =
+    private fun feedLookupGlobalRoute(): ContractRoute =
+            "/feed" / offsetPath meta {
+                summary = "Events"
+                produces += ContentType.APPLICATION_JSON
+                queries += listOf(countQuery, thinFeedQuery)
+                returning(Status.OK, Lens.faultSequence to Example.faultSequence())
+            } bindContract Method.GET to { offset ->
+                { req ->
+                    responseWith(Lens.faultSequence) {
+                        lookupFaultSequence(
+                                offset,
+                                countQuery[req] ?: 0L,
+                                isSet(req, thinFeedQuery))
+                    }
+                }
+            }
+
+    private fun <I, O> bodyExchange(inLens: BiDiBodyLens<I>, outLens: BiDiBodyLens<O>, accept: (I) -> O): HttpHandler =
             { req ->
-                iLens[req]?.let {
+                inLens[req]?.let {
                     accept(it)
                 }?.let {
-                    oLens.set(Response(Status.OK), it)
+                    outLens.set(Response(Status.OK), it)
                 } ?: Response(Status.BAD_REQUEST)
             }
 
@@ -197,7 +225,7 @@ class UnearthServer(
             .then(routes(
                     configuration.prefix bind contract {
                         renderer = OpenApi3(
-                                apiInfo = ApiInfo("Unearth CRUD", "v1"),
+                                apiInfo = ApiInfo("Unearth", "v1"),
                                 json = JSON)
                         descriptionPath = "/swagger.json"
                         routes += listOf(
@@ -205,6 +233,8 @@ class UnearthServer(
                                 lookupFaultRoute(),
                                 lookupFaultsRoute(),
                                 lookupCauseRoute(),
+                                feedLimitsGlobalRoute(),
+                                feedLookupGlobalRoute(),
                                 feedLimitsRoute(),
                                 feedLookupRoute(),
                                 printFaultRoute())
@@ -240,7 +270,7 @@ class UnearthServer(
             offset: Long?,
             count: Long?
     ): FaultTypeDto =
-            controller.lookupFaultType(FaultTypeId(uuid), fullStack)
+            controller.lookupFaultType(FaultTypeId(uuid), fullStack, offset, count)
 
     private fun lookupCause(
             pathUuid: UUID,
@@ -249,8 +279,16 @@ class UnearthServer(
     ): CauseDto =
             controller.lookupStack(CauseTypeId(pathUuid), fullStack, simpleTrace)
 
-    private fun lookupFeedLimit(type: SequenceType, uuid: UUID): Long =
-            controller.feedLimit(type, uuid)
+    private fun lookupFeedLimit(): Long = controller.feedLimit()
+
+    private fun lookupFeedLimit(type: SequenceType, uuid: UUID): Long = controller.feedLimit(type, uuid)
+
+    private fun lookupFaultSequence(
+            offset: Long,
+            count: Long,
+            thin: Boolean
+    ): FaultSequence =
+            controller.faultSequence(offset, count, thin)
 
     private fun lookupFaultSequence(
             type: SequenceType,
@@ -335,10 +373,6 @@ class UnearthServer(
 
         private val offsetPath = Path.long().of("offset")
 
-        private val seqTypePath = Path.string().of("type")
-
         private val uuidPath = Path.uuid().of("uuid")
-
-        private fun seqType(type: String) = SequenceType.valueOf(type.toUpperCase())
     }
 }

@@ -19,15 +19,15 @@ package no.scienta.unearth.munch.data;
 
 import java.util.function.Consumer;
 
-public class ThrowableDto extends AbstractHashable {
+public class ChainedFault extends AbstractHashable {
 
     private final String message;
 
     private final CauseType causeType;
 
-    private final ThrowableDto cause;
+    private final ChainedFault cause;
 
-    public ThrowableDto(CauseType causeType, String message, ThrowableDto cause) {
+    public ChainedFault(CauseType causeType, String message, ChainedFault cause) {
         this.message = message;
         this.causeType = causeType;
         this.cause = cause;
@@ -41,7 +41,7 @@ public class ThrowableDto extends AbstractHashable {
         return message;
     }
 
-    public ThrowableDto getCause() {
+    public ChainedFault getCause() {
         return cause;
     }
 

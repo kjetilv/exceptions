@@ -24,14 +24,21 @@ import no.scienta.unearth.munch.util.Throwables
 import no.scienta.unearth.server.JSON.auto
 import org.http4k.core.Body
 import org.http4k.core.ContentType.Companion.TEXT_PLAIN
-import org.http4k.lens.BiDiBodyLens
-import org.http4k.lens.string
+import org.http4k.lens.*
 
 object Lens {
 
     val submission = Body.auto<Submission>().toLens()
 
-    val sequenceType: BiDiBodyLens<SequenceType> = Body.auto<SequenceType>().toLens()
+    val sequenceType: PathLens<SequenceType> = PathLens(
+            meta = Meta(
+                    paramMeta = ParamMeta.StringParam,
+                    required = true,
+                    location = "path",
+                    name = "type",
+                    description = "Sequence type"
+            ),
+            get = { SequenceType.valueOf(it.toUpperCase()) });
 
     val faultSequence =
             Body.auto<FaultSequence>().toLens();

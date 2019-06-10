@@ -21,8 +21,8 @@ import no.scienta.unearth.core.*
 import no.scienta.unearth.core.handler.DefaultThrowablesHandler
 import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.data.CauseType
+import no.scienta.unearth.munch.data.ChainedFault
 import no.scienta.unearth.munch.data.FaultEvent
-import no.scienta.unearth.munch.data.ThrowableDto
 import no.scienta.unearth.munch.ids.CauseTypeId
 import no.scienta.unearth.munch.ids.FaultEventId
 import no.scienta.unearth.munch.ids.FaultId
@@ -60,7 +60,7 @@ class UnearthController(
                             event.faultTypeSequence,
                             event.time.atZone(ZoneId.of("UTC")),
                             unearthedException(
-                                    event.fault.toThrowableDto(), fullStack)
+                                    event.fault.toChainedFault(), fullStack)
                     )
                 }
         )
@@ -79,7 +79,7 @@ class UnearthController(
                         event.faultSequence,
                         event.faultTypeSequence,
                         event.time.atZone(ZoneId.of("UTC")),
-                        unearthedException(event.fault.toThrowableDto(), fullStack, simpleTrace))
+                        unearthedException(event.fault.toChainedFault(), fullStack, simpleTrace))
             }
 
     fun lookupStack(
@@ -90,38 +90,50 @@ class UnearthController(
             unearthedStack(storage.getStack(causeTypeId), causeTypeId.hash, fullStack, simpleTrace)
 
     fun lookupPrintable(eventId: FaultEventId): String =
-            Throwables.string(storage.getFaultEvent(eventId).fault.toThrowable())
+            Throwables.string(storage.getFaultEvent(eventId).fault.toCameleon())
 
     fun lookupFault(uuid: UUID): Throwable =
-            storage.getFault(storage.resolveFault(uuid)).toThrowable()
+            storage.getFault(storage.resolveFault(uuid)).toCameleon()
 
     fun feedLimit(type: SequenceType, uuid: UUID): Long =
             when (type) {
                 SequenceType.FAULT -> feed.limit(FaultId(uuid))
                 SequenceType.FAULT_TYPE -> feed.limit(FaultTypeId(uuid))
-                else -> feed.limit()
+                else -> feedLimit()
             }
 
+    fun feedLimit() = feed.limit()
+
     fun faultSequence(
-            type: SequenceType,
-            uuid: UUID,
             offset: Long,
             count: Long,
             thin: Boolean = false
-    ): FaultSequence = FaultSequence(
-            type,
-            events(type, uuid, offset, count).map { event ->
-                FaultEventDto(
-                        event.fault.hash,
-                        event.fault.faultType.hash,
-                        event.globalSequence,
-                        event.faultSequence,
-                        event.faultTypeSequence,
-                        event.time.atZone(ZoneId.systemDefault()),
-                        unearthedException(event.fault.toThrowableDto()))
-            })
+    ): FaultSequence =
+            faultSequence(SequenceType.GLOBAL, null, offset, count, thin)
 
-    private fun events(type: SequenceType, uuid: UUID, offset: Long, count: Long): List<FaultEvent> =
+    fun faultSequence(
+            type: SequenceType,
+            uuid: UUID?,
+            offset: Long,
+            count: Long,
+            thin: Boolean = false
+    ): FaultSequence =
+            FaultSequence(
+                    type,
+                    events(type, uuid, offset, count).map(toDto(thin)))
+
+    private fun toDto(thin: Boolean = false): (FaultEvent) -> FaultEventDto = { event ->
+        FaultEventDto(
+                event.fault.hash,
+                event.fault.faultType.hash,
+                event.globalSequence,
+                event.faultSequence,
+                event.faultTypeSequence,
+                event.time.atZone(ZoneId.systemDefault()),
+                unearthedException(event.fault.toChainedFault(), thin = thin))
+    }
+
+    private fun events(type: SequenceType, uuid: UUID?, offset: Long, count: Long): List<FaultEvent> =
             when (type) {
                 SequenceType.FAULT_TYPE -> feed.feed(FaultTypeId(uuid), offset, count)
                 SequenceType.FAULT -> feed.feed(FaultId(uuid), offset, count)
@@ -129,9 +141,10 @@ class UnearthController(
             }!!
 
     private fun unearthedException(
-            dto: ThrowableDto,
+            dto: ChainedFault,
             fullStack: Boolean = false,
-            simpleTrace: Boolean = false
+            simpleTrace: Boolean = false,
+            thin: Boolean = false
     ): UnearthedException = UnearthedException(
             className = dto.causeType.className,
             message = dto.message,
