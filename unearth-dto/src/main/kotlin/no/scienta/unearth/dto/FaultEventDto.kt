@@ -26,11 +26,11 @@ data class FaultEventDto(
 
         val faultTypeId: UUID,
 
-        val sequence: Long,
+        val seqNo: Long,
 
-        val faultSequence: Long,
+        val faultSeqNo: Long,
 
-        val faultTypeSequence: Long,
+        val faultTypeSeqNo: Long,
 
         val time: ZonedDateTime,
 

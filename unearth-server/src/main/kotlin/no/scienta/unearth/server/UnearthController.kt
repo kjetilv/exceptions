@@ -27,7 +27,6 @@ import no.scienta.unearth.munch.ids.CauseTypeId
 import no.scienta.unearth.munch.ids.FaultEventId
 import no.scienta.unearth.munch.ids.FaultId
 import no.scienta.unearth.munch.ids.FaultTypeId
-import no.scienta.unearth.munch.util.Throwables
 import java.time.ZoneId
 import java.util.*
 
@@ -82,15 +81,12 @@ class UnearthController(
                         unearthedException(event.fault.toChainedFault(), fullStack, simpleTrace))
             }
 
-    fun lookupStack(
+    fun lookupCause(
             causeTypeId: CauseTypeId,
             fullStack: Boolean = false,
             simpleTrace: Boolean = false
     ): CauseDto =
-            unearthedStack(storage.getStack(causeTypeId), causeTypeId.hash, fullStack, simpleTrace)
-
-    fun lookupPrintable(eventId: FaultEventId): String =
-            Throwables.string(storage.getFaultEvent(eventId).fault.toCameleon())
+            unearthedStack(storage.getStack(causeTypeId), causeTypeId, fullStack, simpleTrace)
 
     fun lookupFault(uuid: UUID): Throwable =
             storage.getFault(storage.resolveFault(uuid)).toCameleon()
@@ -148,19 +144,18 @@ class UnearthController(
     ): UnearthedException = UnearthedException(
             className = dto.causeType.className,
             message = dto.message,
-            stacktrace = unearthedStack(dto.causeType, dto.causeType.hash, fullStack, simpleTrace),
+            stacktrace = unearthedStack(dto.causeType, dto.causeType.id, fullStack, simpleTrace),
             cause = dto.cause?.let { cause ->
                 unearthedException(cause, fullStack)
             })
 
     private fun unearthedStack(
             throwableType: CauseType,
-            stacktraceRef: UUID,
+            causeTypeId: CauseTypeId,
             fullStack: Boolean = false,
             simpleTrace: Boolean = false
     ): CauseDto {
         return CauseDto(
-                throwableType.className,
                 if (fullStack)
                     wiredStackTrace(throwableType.stackTrace)
                 else
@@ -169,7 +164,7 @@ class UnearthController(
                     simpleStackTrace(throwableType.stackTrace)
                 else
                     emptyList(),
-                stacktraceRef)
+                causeTypeId.hash)
     }
 
     private fun wiredStackTrace(

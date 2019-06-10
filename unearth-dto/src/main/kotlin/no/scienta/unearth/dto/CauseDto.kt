@@ -21,10 +21,8 @@ import java.util.*
 
 data class CauseDto(
 
-        val className: String,
-
         val stacktrace: List<UnearthedStackTraceElement>?,
 
         val simpleTrace: List<String>,
 
-        val stacktraceRef: UUID)
+        val causeTypeId: UUID)

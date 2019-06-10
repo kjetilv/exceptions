@@ -111,7 +111,7 @@ class UnearthServer(
             "/fault-out" / uuidPath meta {
                 summary = "Print an exception"
                 produces += ContentType.TEXT_PLAIN
-                returning(Status.OK, Lens.string to Example.exceptionOut())
+                returning(Status.OK, Lens.exception to Example.exception())
             } bindContract Method.GET to { uuid ->
                 {
                     responseWith(Lens.exception, type = ContentType.TEXT_PLAIN) {
@@ -239,8 +239,9 @@ class UnearthServer(
                                 feedLookupRoute(),
                                 printFaultRoute())
                     },
-                    swaggerUiRoute(),
-                    swaggerReroute(configuration.prefix)))
+                    rerouteToSwagger("/doc", configuration.prefix),
+                    rerouteToSwagger("/", configuration.prefix),
+                    swaggerUiRoute(configuration.prefix)))
             .asServer(
                     NettyConfig(configuration.host, configuration.port)
             )
@@ -277,7 +278,7 @@ class UnearthServer(
             fullStack: Boolean = true,
             simpleTrace: Boolean = false
     ): CauseDto =
-            controller.lookupStack(CauseTypeId(pathUuid), fullStack, simpleTrace)
+            controller.lookupCause(CauseTypeId(pathUuid), fullStack, simpleTrace)
 
     private fun lookupFeedLimit(): Long = controller.feedLimit()
 
@@ -348,16 +349,27 @@ class UnearthServer(
                 }
             } ?: throw IllegalStateException("No swagger-ui webjar found")
 
-    private fun swaggerUiRoute(): RoutingHttpHandler = "/doc/{path}" bind Method.GET to {
-        Response(Status.OK).body(staticContent.read(it.path("path")))
+    private fun swaggerUiRoute(prefix: String): RoutingHttpHandler = "/doc/{path}" bind Method.GET to {
+        try {
+            Response(Status.OK).body(staticContent.read(it.path("path")))
+        } catch (e: Exception) {
+            logger.debug("Redirecting failed swagger-ui load: $it", e)
+            swaggerRedirect(prefix)
+        }
     }
 
-    private fun swaggerReroute(prefix: String): RoutingHttpHandler = "/" bind Method.GET to {
-        Response(Status.FOUND).header("Location", "/doc/index.html?url=$prefix/swagger.json")
-    }
+    private fun rerouteToSwagger(path: String, prefix: String): RoutingHttpHandler =
+            path bind Method.GET to { swaggerRedirect(prefix) }
+
+    private fun swaggerRedirect(prefix: String) =
+            Response(Status.FOUND).header("Location", "/doc/index.html?url=$prefix/swagger.json")
 
     private fun withContentType(toResponse1: Response, type: ContentType) =
             toResponse1.header("Content-Type", type.value)
+
+    override fun toString(): String {
+        return "${javaClass.simpleName}[$server]"
+    }
 
     companion object {
 

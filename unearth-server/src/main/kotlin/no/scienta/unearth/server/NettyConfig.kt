@@ -48,7 +48,7 @@ import org.http4k.server.ServerConfig
 import java.net.InetSocketAddress
 
 data class NettyConfig(
-        val host: String = listenAll,
+        val host: String = "0.0.0.0",
         val port: Int = 8080
 ) : ServerConfig {
 
@@ -89,12 +89,6 @@ data class NettyConfig(
 
         override fun port(): Int = address.port
 
-        override fun toString(): String =
-                "Netty @ http://${if (host == listenAll) "localhost" else address.hostName}:${address.port}"
-    }
-
-    companion object {
-
-        const val listenAll = "0.0.0.0"
+        override fun toString(): String = "Netty @ $host/$port"
     }
 }

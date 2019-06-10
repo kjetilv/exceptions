@@ -72,5 +72,5 @@ object Example {
 
     fun exceptionOut(): String = Throwables.string(exception())
 
-    fun stack() = CauseDto("foo.bar.BadException", emptyList(), emptyList(), uuid())
+    fun stack() = CauseDto(emptyList(), emptyList(), uuid())
 }

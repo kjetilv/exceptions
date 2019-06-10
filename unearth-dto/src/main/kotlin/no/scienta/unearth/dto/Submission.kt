@@ -27,11 +27,11 @@ data class Submission(
 
         val faultEventId: UUID,
 
-        val globalSeq: Long,
+        val globalSeqNo: Long,
 
-        val faultTypeSeq: Long,
+        val faultTypeSeqNo: Long,
 
-        val faultSeq: Long,
+        val faultSeqNo: Long,
 
         val loggable: Boolean
 )

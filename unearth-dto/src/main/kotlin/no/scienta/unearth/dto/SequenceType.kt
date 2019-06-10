@@ -21,9 +21,9 @@ enum class SequenceType(
         val seq: (FaultEventDto) -> Long
 ) : (FaultEventDto) -> Long {
 
-    GLOBAL(FaultEventDto::sequence),
-    FAULT_TYPE(FaultEventDto::faultTypeSequence),
-    FAULT(FaultEventDto::faultSequence);
+    GLOBAL(FaultEventDto::seqNo),
+    FAULT_TYPE(FaultEventDto::faultTypeSeqNo),
+    FAULT(FaultEventDto::faultSeqNo);
 
     override fun invoke(dto: FaultEventDto): Long = seq(dto)
 }

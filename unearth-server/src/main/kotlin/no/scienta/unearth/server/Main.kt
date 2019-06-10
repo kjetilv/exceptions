@@ -17,53 +17,6 @@
 
 package no.scienta.unearth.server
 
-import com.natpryce.konfig.*
-import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import no.scienta.unearth.core.storage.InMemoryThrowablesStorage
-import no.scienta.unearth.micrometer.MeteringThrowablesSensor
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-
 fun main() {
-
-    val config = systemProperties() overriding
-            EnvironmentVariables() overriding
-            ConfigurationProperties.fromResource("defaults.properties")
-
-    val serverApi = Key("server.api", stringType)
-
-    val serverHost = Key("server.host", stringType)
-
-    val serverPort = Key("server.port", intType)
-
-    val selfDiagnose = Key("unearth.self-diagnose", booleanType)
-
-    val logger: Logger = LoggerFactory.getLogger("unearth")
-
-    val storage = InMemoryThrowablesStorage()
-
-    val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
-
-    val controller = UnearthController(storage, storage, storage, sensor)
-
-    logger.info("Starting ...")
-
-    val server = UnearthServer(
-            UnearthConfig(
-                    prefix = config[serverApi],
-                    host = config[serverHost],
-                    port = config[serverPort],
-                    selfDiagnose = config[selfDiagnose]),
-            controller
-    ).start {
-        logger.info("Started $it")
-    }
-
-    Runtime.getRuntime().addShutdownHook(Thread({
-        server.stop {
-            logger.info("Stopped $it")
-        }
-    }, "Shutdown"))
+    Unearth()
 }
-
