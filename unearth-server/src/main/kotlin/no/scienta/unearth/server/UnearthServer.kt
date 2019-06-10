@@ -215,11 +215,6 @@ class UnearthServer(
         after(server)
     }
 
-    private val staticContent =
-            Thread.currentThread().contextClassLoader.let { cl ->
-                Statik(cl, "META-INF/resources/webjars/swagger-ui/".swaggerUi(cl))
-            }
-
     private val server = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
             .then(Filter(errors()))
             .then(routes(
@@ -330,28 +325,27 @@ class UnearthServer(
     private fun handledFailedResponse(e: Throwable): Response {
         val handle = controller.submit(e)
         logger.error("Failed: ${handle.faultEventId}", e)
-        return Response(Status.INTERNAL_SERVER_ERROR).body(handle.faultEventId.hash.toString())
+        return Lens.internalError.set(
+                withContentType(Response(Status.INTERNAL_SERVER_ERROR)),
+                UnearthInternalError(
+                        message = e.toString(),
+                        storedAs = handle.faultEventId.hash
+                ))
     }
 
     private fun simpleFailedResponse(e: Throwable): Response {
         val faultTypeId = FaultType.create(e).id
         logger.error("Failed: $faultTypeId", e)
-        return Response(Status.INTERNAL_SERVER_ERROR).body(faultTypeId.hash.toString())
+        return Lens.internalError.set(
+                Response(Status.INTERNAL_SERVER_ERROR),
+                UnearthInternalError(
+                        message = e.toString()
+                ))
     }
-
-    private fun String.swaggerUi(cl: ClassLoader): String =
-            cl.getResource(this)?.let { url ->
-                Pattern.compile("^.*swagger-ui-([\\d.]+).jar!.*$").matcher(url.toExternalForm()).let { matcher ->
-                    if (matcher.matches()) {
-                        return this + matcher.group(1) + "/"
-                    }
-                    throw java.lang.IllegalStateException("No swagger-ui version found: $url")
-                }
-            } ?: throw IllegalStateException("No swagger-ui webjar found")
 
     private fun swaggerUiRoute(prefix: String): RoutingHttpHandler = "/doc/{path}" bind Method.GET to {
         try {
-            Response(Status.OK).body(staticContent.read(it.path("path")))
+            Response(Status.OK).body(statik.read(it.path("path")))
         } catch (e: Exception) {
             logger.debug("Redirecting failed swagger-ui load: $it", e)
             swaggerRedirect(prefix)
@@ -364,8 +358,8 @@ class UnearthServer(
     private fun swaggerRedirect(prefix: String) =
             Response(Status.FOUND).header("Location", "/doc/index.html?url=$prefix/swagger.json")
 
-    private fun withContentType(toResponse1: Response, type: ContentType) =
-            toResponse1.header("Content-Type", type.value)
+    private fun withContentType(res: Response, type: ContentType = ContentType.APPLICATION_JSON) =
+            res.header("Content-Type", type.value)
 
     override fun toString(): String {
         return "${javaClass.simpleName}[$server]"
@@ -386,5 +380,22 @@ class UnearthServer(
         private val offsetPath = Path.long().of("offset")
 
         private val uuidPath = Path.uuid().of("uuid")
+
+        private val swaggerUiPattern = Pattern.compile("^.*swagger-ui-([\\d.]+).jar!.*$")
+
+        private val swaggerUiPrefix = "META-INF/resources/webjars/swagger-ui/"
+
+        private fun swaggerUi(classLoader: ClassLoader): String {
+            return classLoader.getResource(swaggerUiPrefix)?.let { url ->
+                swaggerUiPattern.matcher(url.toExternalForm()).let { matcher ->
+                    return if (matcher.matches())
+                        swaggerUiPrefix + matcher.group(1) + "/"
+                    else
+                        throw java.lang.IllegalStateException("No swagger-ui version found: $url")
+                }
+            } ?: throw IllegalStateException("No swagger-ui webjar found")
+        }
+
+        private val statik = Thread.currentThread().contextClassLoader.let { Statik(it, swaggerUi(it)) }
     }
 }

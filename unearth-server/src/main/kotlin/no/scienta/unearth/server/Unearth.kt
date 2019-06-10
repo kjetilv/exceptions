@@ -45,33 +45,37 @@ object Unearth : () -> Unit {
 
     private val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
 
-    private val controller = UnearthController(storage, storage, storage, sensor)
-
     override fun invoke() {
-        logger.info("Starting ...")
+        logger.info("Building ${UnearthServer::class.simpleName}...")
 
         val configuration = UnearthConfig(
                 prefix = config[serverApi],
                 host = config[serverHost],
                 port = config[serverPort],
                 selfDiagnose = config[selfDiagnose])
-        logger.info("Configured ...");
 
-        val unearthServer = UnearthServer(configuration, controller)
+        val unearthServer = UnearthServer(
+                configuration,
+                UnearthController(
+                        storage,
+                        storage,
+                        storage,
+                        sensor))
 
-        logger.info("Created $unearthServer");
+        logger.info("Created $unearthServer")
+        registerShutdown(unearthServer)
 
-        val server = unearthServer.start {
-            logger.info("Started $it")
+        unearthServer.start {
+            logger.info("Ready at http://${callableHost(configuration)}:${configuration.port}")
         }
+    }
 
+    private fun registerShutdown(server: UnearthServer) {
         Runtime.getRuntime().addShutdownHook(Thread({
             server.stop {
                 logger.info("Stopped $it")
             }
         }, "Shutdown"))
-
-        logger.info("Ready at http://${callableHost(configuration)}:${configuration.port}")
     }
 
     private fun callableHost(configuration: UnearthConfig): String =

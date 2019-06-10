@@ -17,7 +17,6 @@
 
 package no.scienta.unearth.server
 
-import io.swagger.v3.oas.models.OpenAPI
 import no.scienta.unearth.core.parser.ThrowableParser
 import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.util.Throwables
@@ -38,10 +37,10 @@ object Lens {
                     name = "type",
                     description = "Sequence type"
             ),
-            get = { SequenceType.valueOf(it.toUpperCase()) });
+            get = { SequenceType.valueOf(it.toUpperCase()) })
 
     val faultSequence =
-            Body.auto<FaultSequence>().toLens();
+            Body.auto<FaultSequence>().toLens()
 
     val faultEvent =
             Body.auto<FaultEventDto>().toLens()
@@ -64,7 +63,5 @@ object Lens {
     val cause =
             Body.auto<CauseDto>().toLens()
 
-    val swagger =
-            Body.auto<OpenAPI>().toLens()
-
+    val internalError = Body.auto<UnearthInternalError>().toLens()
 }
