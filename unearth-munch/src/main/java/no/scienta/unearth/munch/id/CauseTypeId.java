@@ -15,14 +15,13 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.munch.data;
+package no.scienta.unearth.munch.id;
 
 import java.util.UUID;
-import java.util.function.Consumer;
 
-public interface Hashable {
+public class CauseTypeId extends Id {
 
-    UUID getHash();
-
-    void hashTo(Consumer<byte[]> h);
+    public CauseTypeId(UUID hash) {
+        super(hash);
+    }
 }

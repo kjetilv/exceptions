@@ -17,7 +17,8 @@
 
 package no.scienta.unearth.munch.data;
 
-import no.scienta.unearth.munch.ids.FaultEventId;
+import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
+import no.scienta.unearth.munch.id.FaultEventId;
 
 import java.time.Instant;
 import java.time.ZoneId;

@@ -22,11 +22,12 @@ import no.scienta.unearth.core.handler.DefaultThrowablesHandler
 import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.data.CauseType
 import no.scienta.unearth.munch.data.ChainedFault
+import no.scienta.unearth.munch.data.Fault
 import no.scienta.unearth.munch.data.FaultEvent
-import no.scienta.unearth.munch.ids.CauseTypeId
-import no.scienta.unearth.munch.ids.FaultEventId
-import no.scienta.unearth.munch.ids.FaultId
-import no.scienta.unearth.munch.ids.FaultTypeId
+import no.scienta.unearth.munch.id.CauseTypeId
+import no.scienta.unearth.munch.id.FaultEventId
+import no.scienta.unearth.munch.id.FaultId
+import no.scienta.unearth.munch.id.FaultTypeId
 import no.scienta.unearth.munch.util.Throwables
 import java.time.ZoneId
 import java.util.*
@@ -39,9 +40,9 @@ class UnearthController(
 ) {
     private val handler: FaultHandler = DefaultThrowablesHandler(storage, sensor)
 
-    fun submit(t: Throwable?): HandlingPolicy = handler.handle(t)
+    fun submit(t: Throwable): HandlingPolicy = handler.handle(t)
 
-    fun submit(fault: FaultDto?): HandlingPolicy = TODO()
+    fun submit(fault: FaultDto): HandlingPolicy = handler.handle(toFault(fault))
 
     fun lookupFaultType(id: FaultTypeId,
                         fullStack: Boolean = false,
@@ -74,8 +75,6 @@ class UnearthController(
             simpleTrace: Boolean = false,
             printout: Printout = Printout.NONE
     ): FaultEventDto = storage.getFaultEvent(id).let { event ->
-        val exception =
-                unearthedException(event.fault.toChainedFault(), fullStack, simpleTrace)
         FaultEventDto(
                 event.id.hash,
                 event.fault.id.hash,
@@ -83,7 +82,7 @@ class UnearthController(
                 event.faultSequence,
                 event.faultTypeSequence,
                 event.time.atZone(ZoneId.of("UTC")),
-                exception,
+                unearthedException(event.fault.toChainedFault(), fullStack, simpleTrace),
                 when (printout) {
                     Printout.ORIGINAL -> Throwables.string(event.fault.toCameleon())
                     Printout.BOILDOWN -> "REDUCE: ${Throwables.string(event.fault.toCameleon())}"
@@ -124,6 +123,8 @@ class UnearthController(
             type,
             events(type, uuid, offset, count).map(toDto(thin)))
 
+    private fun toFault(fault: FaultDto): Fault = TODO("Haven't started accepting fault dto's yet!")
+
     private fun toDto(thin: Boolean = false): (FaultEvent) -> FaultEventDto = { event ->
         FaultEventDto(
                 event.fault.hash,
@@ -163,7 +164,7 @@ class UnearthController(
             simpleTrace: Boolean = false
     ): CauseDto = CauseDto(
             if (fullStack)
-                wiredStackTrace(throwableType.stackTrace)
+                stackTrace(throwableType.stackTrace)
             else
                 emptyList(),
             if (simpleTrace && !fullStack)
@@ -172,7 +173,9 @@ class UnearthController(
                 emptyList(),
             causeTypeId.hash)
 
-    private fun wiredStackTrace(
+    private fun simpleStackTrace(stackTrace: List<StackTraceElement>): List<String> = stackTrace.map { it.toString() }
+
+    private fun stackTrace(
             stackTrace: List<StackTraceElement>
     ): List<UnearthedStackTraceElement>? = stackTrace.map { element ->
         UnearthedStackTraceElement(
@@ -184,6 +187,4 @@ class UnearthController(
                 fileName = element.fileName,
                 lineNumber = element.lineNumber)
     }.toList()
-
-    private fun simpleStackTrace(stackTrace: List<StackTraceElement>): List<String> = stackTrace.map { it.toString() }
 }

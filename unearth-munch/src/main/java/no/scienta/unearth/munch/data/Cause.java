@@ -17,7 +17,9 @@
 
 package no.scienta.unearth.munch.data;
 
-import no.scienta.unearth.munch.ids.CauseId;
+import no.scienta.unearth.munch.ChameleonException;
+import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
+import no.scienta.unearth.munch.id.CauseId;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -40,6 +42,10 @@ public class Cause extends AbstractHashableIdentifiable<CauseId> {
 
     public CauseType getCauseType() {
         return causeType;
+    }
+
+    public Cause withCauseType(CauseType causeType) {
+        return new Cause(causeType, message);
     }
 
     public String getMessage() {

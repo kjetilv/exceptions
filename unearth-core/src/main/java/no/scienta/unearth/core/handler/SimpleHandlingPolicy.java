@@ -18,10 +18,10 @@
 package no.scienta.unearth.core.handler;
 
 import no.scienta.unearth.core.HandlingPolicy;
-import no.scienta.unearth.munch.ids.FaultTypeId;
+import no.scienta.unearth.munch.id.FaultTypeId;
 import no.scienta.unearth.munch.data.FaultEvent;
-import no.scienta.unearth.munch.ids.FaultEventId;
-import no.scienta.unearth.munch.ids.FaultId;
+import no.scienta.unearth.munch.id.FaultEventId;
+import no.scienta.unearth.munch.id.FaultId;
 
 class SimpleHandlingPolicy implements HandlingPolicy {
 

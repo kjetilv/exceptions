@@ -15,13 +15,13 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.munch.ids;
+package no.scienta.unearth.munch.id;
 
 import java.util.UUID;
 
-public class CauseTypeId extends Id {
+public class FaultTypeId extends Id {
 
-    public CauseTypeId(UUID hash) {
+    public FaultTypeId(UUID hash) {
         super(hash);
     }
 }

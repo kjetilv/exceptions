@@ -18,12 +18,16 @@
 package no.scienta.unearth.core.reducer;
 
 import no.scienta.unearth.core.ThrowablesReducer;
+import no.scienta.unearth.munch.data.Cause;
 import no.scienta.unearth.munch.data.CauseType;
+import no.scienta.unearth.munch.data.Fault;
+import no.scienta.unearth.munch.data.FaultType;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class SimpleThrowableReducer implements ThrowablesReducer {
 
@@ -40,12 +44,29 @@ public class SimpleThrowableReducer implements ThrowablesReducer {
     }
 
     @Override
-    public CauseType reduce(CauseType digest) {
-        return digest.withStacktrace(reducedStackTrace(digest));
+    public FaultType reduce(FaultType faultType) {
+        return faultType.withCauseTypes(
+            faultType.getCauseTypes().stream().map(this::reduce).collect(Collectors.toList()));
     }
 
-    private List<StackTraceElement> reducedStackTrace(CauseType current) {
-        List<StackTraceElement> stack = List.copyOf(current.getStackTrace());
+    @Override
+    public Fault reduce(Fault fault) {
+        return fault.withCauses(
+            fault.getCauses().stream().map(this::reduce).collect(Collectors.toList()));
+    }
+
+    @Override
+    public Cause reduce(Cause cause) {
+        return cause.withCauseType(
+            reduce(cause.getCauseType()));
+    }
+
+    @Override
+    public CauseType reduce(CauseType causeType) {
+        return causeType.withStacktrace(reduce(causeType.getStackTrace()));
+    }
+
+    private List<StackTraceElement> reduce(List<StackTraceElement> stack) {
         List<StackTraceElement> reducedStack = new ArrayList<>(stack.size());
         List<StackTraceElement> aggregated = new ArrayList<>();
         boolean aggregating = false;

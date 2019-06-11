@@ -17,9 +17,9 @@
 
 package no.scienta.unearth.core;
 
-import no.scienta.unearth.munch.ids.FaultTypeId;
+import no.scienta.unearth.munch.id.FaultTypeId;
 import no.scienta.unearth.munch.data.FaultEvent;
-import no.scienta.unearth.munch.ids.FaultId;
+import no.scienta.unearth.munch.id.FaultId;
 
 import java.util.List;
 

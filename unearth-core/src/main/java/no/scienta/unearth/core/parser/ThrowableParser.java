@@ -17,7 +17,7 @@
 
 package no.scienta.unearth.core.parser;
 
-import no.scienta.unearth.munch.data.ChameleonException;
+import no.scienta.unearth.munch.ChameleonException;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

@@ -17,7 +17,8 @@
 
 package no.scienta.unearth.munch.data;
 
-import no.scienta.unearth.munch.ids.FaultTypeId;
+import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
+import no.scienta.unearth.munch.id.FaultTypeId;
 import no.scienta.unearth.munch.util.Streams;
 
 import java.util.Collection;
@@ -42,19 +43,23 @@ public class FaultType extends AbstractHashableIdentifiable<FaultTypeId> {
         return new FaultType(causeTypes);
     }
 
+    public List<CauseType> getCauseTypes() {
+        return causeTypes;
+    }
+
+    public FaultType withCauseTypes(List<CauseType> causeTypes) {
+        return new FaultType(causeTypes);
+    }
+
+    int getCauseCount() {
+        return causeTypes.size();
+    }
+
     private FaultType(Collection<CauseType> causeTypes) {
         if (Objects.requireNonNull(causeTypes).isEmpty()) {
             throw new IllegalArgumentException("Expected one or more causes");
         }
         this.causeTypes = List.copyOf(causeTypes);
-    }
-
-    public List<CauseType> getCauseTypes() {
-        return causeTypes;
-    }
-
-    int getCauseCount() {
-        return causeTypes.size();
     }
 
     @Override

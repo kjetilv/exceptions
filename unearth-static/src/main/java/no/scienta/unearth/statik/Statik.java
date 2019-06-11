@@ -15,7 +15,24 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.server.statik;
+/*
+ *     This file is part of Unearth.
+ *
+ *     Unearth is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     Unearth is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package no.scienta.unearth.statik;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -26,24 +43,24 @@ public final class Statik {
 
     private final ClassLoader classLoader;
 
-    private final String preamble;
+    private final String prefix;
 
-    private final Map<String, String> cacheData = new ConcurrentHashMap<>();
+    private final Map<String, String> cache = new ConcurrentHashMap<>();
 
-    public Statik(ClassLoader classLoader, String preamble) {
+    public Statik(ClassLoader classLoader, String prefix) {
         this.classLoader = classLoader;
-        this.preamble = preamble;
+        this.prefix = prefix;
     }
 
     public String read(String path) {
-        return cacheData.computeIfAbsent(path, __ -> readPath(path));
+        return cache.computeIfAbsent(path, this::readPath);
     }
 
     private String readPath(String path) {
         byte[] buffer = new byte[8192];
-        try (InputStream in = classLoader.getResourceAsStream(preamble + path)) {
+        try (InputStream in = classLoader.getResourceAsStream(prefix + path)) {
             if (in == null) {
-                throw new IllegalArgumentException("No such path: [" + preamble + "]" + path);
+                throw new IllegalArgumentException("No such path: [" + prefix + "]" + path);
             }
             InputStream bin = new BufferedInputStream(in);
             try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {

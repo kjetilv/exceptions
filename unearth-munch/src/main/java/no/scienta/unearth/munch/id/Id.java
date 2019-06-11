@@ -32,30 +32,37 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.munch.data;
+package no.scienta.unearth.munch.id;
 
-import no.scienta.unearth.munch.ids.Id;
-import no.scienta.unearth.munch.ids.Identifiable;
-import no.scienta.unearth.munch.util.Memoizer;
-
+import java.util.Objects;
 import java.util.UUID;
-import java.util.function.Supplier;
 
-public abstract class AbstractHashableIdentifiable<I extends Id>
-    extends AbstractHashable
-    implements Identifiable<I> {
+public abstract class Id {
 
-    private final Supplier<I> id = Memoizer.get(() -> id(getHash()));
+    private final UUID hash;
 
-    @Override
-    public final I getId() {
-        return id.get();
+    Id(UUID hash) {
+        this.hash = Objects.requireNonNull(hash);
+    }
+
+    public UUID getHash() {
+        return hash;
     }
 
     @Override
-    protected final Object toStringIdentifier() {
-        return getId();
+    public boolean equals(Object o) {
+        return this == o || o instanceof Id && Objects.equals(hash, ((Id) o).hash);
     }
 
-    protected abstract I id(UUID hash);
+    @Override
+    public int hashCode() {
+        return 3 + 31 * hash.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        String s = getHash().toString();
+        int endIndex = s.indexOf("-");
+        return "{" + (endIndex < 0 ? s : s.substring(0, endIndex)) + "}";
+    }
 }

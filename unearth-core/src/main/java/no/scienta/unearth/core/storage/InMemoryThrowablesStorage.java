@@ -24,7 +24,7 @@ import no.scienta.unearth.munch.data.CauseType;
 import no.scienta.unearth.munch.data.Fault;
 import no.scienta.unearth.munch.data.FaultEvent;
 import no.scienta.unearth.munch.data.FaultType;
-import no.scienta.unearth.munch.ids.*;
+import no.scienta.unearth.munch.id.*;
 
 import java.time.Clock;
 import java.time.Duration;

@@ -20,6 +20,7 @@ package no.scienta.unearth.core.handler;
 import no.scienta.unearth.core.FaultHandler;
 import no.scienta.unearth.core.FaultSensor;
 import no.scienta.unearth.core.FaultStorage;
+import no.scienta.unearth.core.HandlingPolicy;
 import no.scienta.unearth.munch.data.Fault;
 import no.scienta.unearth.munch.data.FaultEvent;
 
@@ -38,8 +39,16 @@ public class DefaultThrowablesHandler implements FaultHandler {
     }
 
     @Override
+    public HandlingPolicy handle(Fault fault) {
+        return store(fault);
+    }
+
+    @Override
     public SimpleHandlingPolicy handle(Throwable throwable) {
-        Fault submitted = Fault.create(throwable);
+        return store(Fault.create(throwable));
+    }
+
+    private SimpleHandlingPolicy store(Fault submitted) {
         FaultEvent stored = storage.store(submitted);
         FaultEvent registered = sensor.registered(stored);
         return new SimpleHandlingPolicy(registered, stored.getFaultTypeSequence() == 0);

@@ -21,10 +21,10 @@ import no.scienta.unearth.munch.data.CauseType;
 import no.scienta.unearth.munch.data.Fault;
 import no.scienta.unearth.munch.data.FaultEvent;
 import no.scienta.unearth.munch.data.FaultType;
-import no.scienta.unearth.munch.ids.CauseTypeId;
-import no.scienta.unearth.munch.ids.FaultEventId;
-import no.scienta.unearth.munch.ids.FaultId;
-import no.scienta.unearth.munch.ids.FaultTypeId;
+import no.scienta.unearth.munch.id.CauseTypeId;
+import no.scienta.unearth.munch.id.FaultEventId;
+import no.scienta.unearth.munch.id.FaultId;
+import no.scienta.unearth.munch.id.FaultTypeId;
 
 import java.util.Collection;
 import java.util.UUID;

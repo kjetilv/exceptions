@@ -21,12 +21,12 @@ import no.scienta.unearth.core.HandlingPolicy
 import no.scienta.unearth.core.parser.ThrowableParser
 import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.data.FaultType
-import no.scienta.unearth.munch.ids.CauseTypeId
-import no.scienta.unearth.munch.ids.FaultEventId
-import no.scienta.unearth.munch.ids.FaultTypeId
+import no.scienta.unearth.munch.id.CauseTypeId
+import no.scienta.unearth.munch.id.FaultEventId
+import no.scienta.unearth.munch.id.FaultTypeId
 import no.scienta.unearth.munch.util.Throwables
 import no.scienta.unearth.server.JSON.auto
-import no.scienta.unearth.server.statik.Statik
+import no.scienta.unearth.statik.Statik
 import org.http4k.contract.contract
 import org.http4k.contract.div
 import org.http4k.contract.meta
@@ -124,6 +124,7 @@ class UnearthServer(
     private fun printFaultRoute() = "/fault/" / uuidPath meta {
         summary = "Print an exception"
         produces += ContentType.TEXT_PLAIN
+        queries += listOf(printout)
         returning(Status.OK, exception to Example.exception())
     } bindContract Method.GET to { uuid ->
         {
@@ -252,9 +253,9 @@ class UnearthServer(
                     NettyConfig(configuration.host, configuration.port)
             )
 
-    private fun submitPrintedException(throwable: Throwable?) = controller.submit(throwable).let(::submission)
+    private fun submitPrintedException(throwable: Throwable) = controller.submit(throwable).let(::submission)
 
-    private fun submitStructuredFault(throwable: FaultDto?) = controller.submit(throwable).let(::submission)
+    private fun submitStructuredFault(throwable: FaultDto) = controller.submit(throwable).let(::submission)
 
     private fun submission(it: HandlingPolicy) = Submission(
             it.faultTypeId.hash, it.faultId.hash, it.faultEventId.hash,
@@ -405,11 +406,21 @@ class UnearthServer(
 
         private val fault = Body.auto<FaultDto>().toLens()
 
+        private val reducedException: BiDiBodyLens<Throwable> = BiDiBodyLens(
+                metas = emptyList(),
+                contentType = ContentType.TEXT_PLAIN,
+                get = { msg ->
+                    ThrowableParser.parse(msg.body.payload)
+                },
+                setLens = { thr, msg ->
+                    msg.body(Throwables.string(thr))
+                })
+
         private val exception: BiDiBodyLens<Throwable> = BiDiBodyLens(
                 metas = emptyList(),
                 contentType = ContentType.TEXT_PLAIN,
                 get = { msg ->
-                    msg.let { ThrowableParser.parse(it.body.payload) }
+                    ThrowableParser.parse(msg.body.payload)
                 },
                 setLens = { thr, msg ->
                     msg.body(Throwables.string(thr))

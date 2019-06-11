@@ -17,7 +17,9 @@
 
 package no.scienta.unearth.munch.data;
 
-import no.scienta.unearth.munch.ids.CauseTypeId;
+import no.scienta.unearth.munch.ChameleonException;
+import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
+import no.scienta.unearth.munch.id.CauseTypeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

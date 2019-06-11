@@ -17,6 +17,8 @@
 
 package no.scienta.unearth.munch.data;
 
+import no.scienta.unearth.munch.base.AbstractHashable;
+
 import java.util.function.Consumer;
 
 public class ChainedFault extends AbstractHashable {

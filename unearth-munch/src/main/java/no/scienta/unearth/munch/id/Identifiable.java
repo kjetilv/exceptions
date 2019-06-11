@@ -15,13 +15,9 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.munch.ids;
+package no.scienta.unearth.munch.id;
 
-import java.util.UUID;
+public interface Identifiable<T extends Id> {
 
-public class FaultId extends Id {
-
-    public FaultId(UUID hash) {
-        super(hash);
-    }
+    T getId();
 }

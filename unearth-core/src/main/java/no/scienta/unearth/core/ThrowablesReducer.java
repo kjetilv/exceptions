@@ -17,9 +17,18 @@
 
 package no.scienta.unearth.core;
 
+import no.scienta.unearth.munch.data.Cause;
 import no.scienta.unearth.munch.data.CauseType;
+import no.scienta.unearth.munch.data.Fault;
+import no.scienta.unearth.munch.data.FaultType;
 
 public interface ThrowablesReducer {
 
-    CauseType reduce(CauseType digest);
+    Fault reduce(Fault fault);
+
+    FaultType reduce(FaultType faultType);
+
+    CauseType reduce(CauseType causeType);
+
+    Cause reduce(Cause cause);
 }

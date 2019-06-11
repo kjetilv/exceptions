@@ -17,7 +17,8 @@
 
 package no.scienta.unearth.munch.data;
 
-import no.scienta.unearth.munch.ids.FaultId;
+import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
+import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.util.Streams;
 
 import java.util.*;
@@ -54,6 +55,10 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
 
     public List<Cause> getCauses() {
         return causes;
+    }
+
+    public Fault withCauses(List<Cause> causes) {
+        return new Fault(faultType, causes);
     }
 
     public ChainedFault toChainedFault() {
