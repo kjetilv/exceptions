@@ -17,10 +17,11 @@
 
 package no.scienta.unearth.dto
 
-import java.util.*
+enum class Printout {
 
-data class FaultTypeDto(
+    NONE,
 
-        val faultTypeId: UUID,
+    ORIGINAL,
 
-        val occurrences: List<FaultEventDto>)
+    BOILDOWN
+}

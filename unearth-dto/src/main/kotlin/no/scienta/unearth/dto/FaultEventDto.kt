@@ -34,5 +34,7 @@ data class FaultEventDto(
 
         val time: ZonedDateTime,
 
-        val exception: UnearthedException
+        val cause: UnearthedException,
+
+        val printout: String? = null
 )

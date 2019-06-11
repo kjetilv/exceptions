@@ -25,4 +25,4 @@ data class FaultDto(
 
         val faultId: UUID,
 
-        val exceptions: List<FaultEventDto>)
+        val causes: List<FaultEventDto>)

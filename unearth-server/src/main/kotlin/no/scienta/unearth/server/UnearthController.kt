@@ -27,6 +27,7 @@ import no.scienta.unearth.munch.ids.CauseTypeId
 import no.scienta.unearth.munch.ids.FaultEventId
 import no.scienta.unearth.munch.ids.FaultId
 import no.scienta.unearth.munch.ids.FaultTypeId
+import no.scienta.unearth.munch.util.Throwables
 import java.time.ZoneId
 import java.util.*
 
@@ -38,7 +39,9 @@ class UnearthController(
 ) {
     private val handler: FaultHandler = DefaultThrowablesHandler(storage, sensor)
 
-    fun submit(throwableInBody: Throwable?): HandlingPolicy = handler.handle(throwableInBody)
+    fun submit(t: Throwable?): HandlingPolicy = handler.handle(t)
+
+    fun submit(fault: FaultDto?): HandlingPolicy = TODO()
 
     fun lookupFaultType(id: FaultTypeId,
                         fullStack: Boolean = false,
@@ -68,28 +71,33 @@ class UnearthController(
     fun lookupEvent(
             id: FaultEventId,
             fullStack: Boolean = false,
-            simpleTrace: Boolean = false
-    ): FaultEventDto =
-            storage.getFaultEvent(id).let { event ->
-                FaultEventDto(
-                        event.id.hash,
-                        event.fault.id.hash,
-                        event.globalSequence,
-                        event.faultSequence,
-                        event.faultTypeSequence,
-                        event.time.atZone(ZoneId.of("UTC")),
-                        unearthedException(event.fault.toChainedFault(), fullStack, simpleTrace))
-            }
+            simpleTrace: Boolean = false,
+            printout: Printout = Printout.NONE
+    ): FaultEventDto = storage.getFaultEvent(id).let { event ->
+        val exception =
+                unearthedException(event.fault.toChainedFault(), fullStack, simpleTrace)
+        FaultEventDto(
+                event.id.hash,
+                event.fault.id.hash,
+                event.globalSequence,
+                event.faultSequence,
+                event.faultTypeSequence,
+                event.time.atZone(ZoneId.of("UTC")),
+                exception,
+                when (printout) {
+                    Printout.ORIGINAL -> Throwables.string(event.fault.toCameleon())
+                    Printout.BOILDOWN -> "REDUCE: ${Throwables.string(event.fault.toCameleon())}"
+                    else -> null
+                })
+    }
 
     fun lookupCause(
             causeTypeId: CauseTypeId,
             fullStack: Boolean = false,
             simpleTrace: Boolean = false
-    ): CauseDto =
-            unearthedStack(storage.getStack(causeTypeId), causeTypeId, fullStack, simpleTrace)
+    ): CauseDto = unearthedStack(storage.getStack(causeTypeId), causeTypeId, fullStack, simpleTrace)
 
-    fun lookupFault(uuid: UUID): Throwable =
-            storage.getFault(storage.resolveFault(uuid)).toCameleon()
+    fun lookupFault(uuid: UUID): Throwable = storage.getFault(storage.resolveFault(uuid)).toCameleon()
 
     fun feedLimit(type: SequenceType, uuid: UUID): Long =
             when (type) {
@@ -104,8 +112,7 @@ class UnearthController(
             offset: Long,
             count: Long,
             thin: Boolean = false
-    ): FaultSequence =
-            faultSequence(SequenceType.GLOBAL, null, offset, count, thin)
+    ): FaultSequence = faultSequence(SequenceType.GLOBAL, null, offset, count, thin)
 
     fun faultSequence(
             type: SequenceType,
@@ -113,10 +120,9 @@ class UnearthController(
             offset: Long,
             count: Long,
             thin: Boolean = false
-    ): FaultSequence =
-            FaultSequence(
-                    type,
-                    events(type, uuid, offset, count).map(toDto(thin)))
+    ): FaultSequence = FaultSequence(
+            type,
+            events(type, uuid, offset, count).map(toDto(thin)))
 
     private fun toDto(thin: Boolean = false): (FaultEvent) -> FaultEventDto = { event ->
         FaultEventDto(
@@ -155,33 +161,29 @@ class UnearthController(
             causeTypeId: CauseTypeId,
             fullStack: Boolean = false,
             simpleTrace: Boolean = false
-    ): CauseDto {
-        return CauseDto(
-                if (fullStack)
-                    wiredStackTrace(throwableType.stackTrace)
-                else
-                    emptyList(),
-                if (simpleTrace && !fullStack)
-                    simpleStackTrace(throwableType.stackTrace)
-                else
-                    emptyList(),
-                causeTypeId.hash)
-    }
+    ): CauseDto = CauseDto(
+            if (fullStack)
+                wiredStackTrace(throwableType.stackTrace)
+            else
+                emptyList(),
+            if (simpleTrace && !fullStack)
+                simpleStackTrace(throwableType.stackTrace)
+            else
+                emptyList(),
+            causeTypeId.hash)
 
     private fun wiredStackTrace(
             stackTrace: List<StackTraceElement>
-    ): List<UnearthedStackTraceElement>? =
-            stackTrace.map { element ->
-                UnearthedStackTraceElement(
-                        classLoaderName = element.classLoaderName,
-                        moduleName = element.moduleName,
-                        moduleVersion = element.moduleVersion,
-                        declaringClass = element.className,
-                        methodName = element.methodName,
-                        fileName = element.fileName,
-                        lineNumber = element.lineNumber)
-            }.toList()
+    ): List<UnearthedStackTraceElement>? = stackTrace.map { element ->
+        UnearthedStackTraceElement(
+                classLoaderName = element.classLoaderName,
+                moduleName = element.moduleName,
+                moduleVersion = element.moduleVersion,
+                declaringClass = element.className,
+                methodName = element.methodName,
+                fileName = element.fileName,
+                lineNumber = element.lineNumber)
+    }.toList()
 
-    private fun simpleStackTrace(stackTrace: List<StackTraceElement>): List<String> =
-            stackTrace.map { it.toString() }
+    private fun simpleStackTrace(stackTrace: List<StackTraceElement>): List<String> = stackTrace.map { it.toString() }
 }
