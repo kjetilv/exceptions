@@ -28,6 +28,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+/**
+ * A fault has a {@link FaultType fault type} and a list of {@link Cause causes}.
+ */
 public class Fault extends AbstractHashableIdentifiable<FaultId> {
 
     public static Fault create(Throwable throwable) {

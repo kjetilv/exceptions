@@ -25,6 +25,9 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+/**
+ * A cause has a {@link CauseType cause type} and a given {@link #message message}.
+ */
 public class Cause extends AbstractHashableIdentifiable<CauseId> {
 
     private final CauseType causeType;
@@ -53,7 +56,7 @@ public class Cause extends AbstractHashableIdentifiable<CauseId> {
     }
 
     ChainedFault chain(ChainedFault cause) {
-        return new ChainedFault(this.causeType, this.message, cause);
+        return new ChainedFault(this, cause);
     }
 
     Throwable toChameleon(Throwable t) {

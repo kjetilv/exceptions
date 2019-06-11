@@ -21,35 +21,30 @@ import no.scienta.unearth.munch.base.AbstractHashable;
 
 import java.util.function.Consumer;
 
+/**
+ * A chained fault is a mirror image of an actual {@link Throwable}.
+ */
 public class ChainedFault extends AbstractHashable {
 
-    private final String message;
+    private final Cause cause;
 
-    private final CauseType causeType;
+    private final ChainedFault chainedCause;
 
-    private final ChainedFault cause;
-
-    public ChainedFault(CauseType causeType, String message, ChainedFault cause) {
-        this.message = message;
-        this.causeType = causeType;
+    ChainedFault(Cause cause, ChainedFault chainedCause) {
         this.cause = cause;
+        this.chainedCause = chainedCause;
     }
 
-    public CauseType getCauseType() {
-        return causeType;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public ChainedFault getCause() {
+    public Cause getCause() {
         return cause;
+    }
+
+    public ChainedFault getChainedCause() {
+        return chainedCause;
     }
 
     @Override
     public void hashTo(Consumer<byte[]> h) {
-        hashStrings(h, message);
-        hashHashables(h, causeType, cause);
+        hashHashables(h, cause, chainedCause);
     }
 }

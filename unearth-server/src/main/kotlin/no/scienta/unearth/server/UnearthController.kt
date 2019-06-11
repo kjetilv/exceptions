@@ -149,12 +149,13 @@ class UnearthController(
             simpleTrace: Boolean = false,
             thin: Boolean = false
     ): UnearthedException = UnearthedException(
-            className = dto.causeType.className,
-            message = dto.message,
-            stacktrace = if (thin) null else unearthedStack(dto.causeType, dto.causeType.id, fullStack, simpleTrace),
-            stacktraceId = dto.causeType.hash,
-            cause = dto.cause?.let { cause ->
-                unearthedException(cause, fullStack)
+            className = dto.cause.causeType.className,
+            message = dto.cause.message,
+            stacktrace = if (thin) null else
+                unearthedStack(dto.cause.causeType, dto.cause.causeType.id, fullStack, simpleTrace),
+            stacktraceId = dto.cause.causeType.hash,
+            cause = dto.chainedCause?.let {
+                unearthedException(it, fullStack)
             })
 
     private fun unearthedStack(
