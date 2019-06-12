@@ -17,16 +17,12 @@
 
 package no.scienta.unearth.dto
 
-import java.util.*
-
 data class UnearthedException(
 
         val className: String,
 
         val message: String?,
 
-        val stacktrace: CauseTypeDto?,
-
-        val stacktraceId : UUID?,
+        val causeType: CauseTypeDto?,
 
         val cause: UnearthedException? = null)

@@ -98,7 +98,11 @@ class UnearthServer(
     } bindContract Method.GET to { uuid ->
         { req ->
             responseWith(faultType) {
-                lookupFaultType(uuid, isSet(req, fullStack), offsetQuery[req], countQuery[req])
+                controller.lookupFaultTypeDto(FaultTypeId(uuid),
+                        fullStack =isSet(req, fullStack, true),
+                        simpleTrace = isSet(req, simpleTrace),
+                        offset = offsetQuery[req],
+                        count = countQuery[req])
             }
         }
     }
@@ -111,37 +115,35 @@ class UnearthServer(
     } bindContract Method.GET to { uuid ->
         { req ->
             responseWith(fault) {
-                lookupFault(uuid, isSet(req, fullStack, true), isSet(req, simpleTrace))
+                controller.lookupFaultDto(uuid, isSet(req, fullStack), isSet(req, simpleTrace))
             }
         }
     }
 
-    private fun lookupCauseRoute() = "/cause" / uuidPath meta {
+    private fun lookupCauseRoute() = "/cause-type" / uuidPath meta {
         summary = "Lookup a stack"
         queries += listOf(fullStack, simpleTrace)
         produces += ContentType.APPLICATION_JSON
-        returning(Status.OK, causeType to Example.stack())
+        returning(Status.OK, causeType to Example.causeTypeDto())
     } bindContract Method.GET to { uuid ->
         { req ->
             responseWith(causeType) {
-                lookupCauseType(
-                        uuid,
+                controller.lookupCauseTypeDto(CauseTypeId(uuid),
                         isSet(req, fullStack, true),
                         isSet(req, simpleTrace))
             }
         }
     }
 
-    private fun lookupCauseTypeRoute() = "/cause-type" / uuidPath meta {
+    private fun lookupCauseTypeRoute() = "/cause" / uuidPath meta {
         summary = "Lookup a stack"
         queries += listOf(fullStack, simpleTrace)
         produces += ContentType.APPLICATION_JSON
-        returning(Status.OK, causeType to Example.stack())
+        returning(Status.OK, causeType to Example.causeTypeDto())
     } bindContract Method.GET to { uuid ->
         { req ->
             responseWith(cause) {
-                lookupCause(
-                        uuid,
+                controller.lookupCauseDto(CauseId(uuid),
                         isSet(req, fullStack, true),
                         isSet(req, simpleTrace))
             }
@@ -156,7 +158,7 @@ class UnearthServer(
     } bindContract Method.GET to { uuid ->
         {
             responseWith(exception, type = ContentType.TEXT_PLAIN) {
-                lookupThrowable(uuid)
+                controller.lookupThrowable(uuid)
             }
         }
     }
@@ -298,33 +300,12 @@ class UnearthServer(
             it.globalSequence, it.faultTypeSequence, it.faultSequence,
             it.isLoggable)
 
-    private fun lookupFault(
-            uuid: UUID,
-            fullStack: Boolean = true,
-            simpleTrace: Boolean = false) = controller.lookupFaultDto(uuid, fullStack)
-
     private fun lookupFaultEvent(
             uuid: UUID,
             fullStack: Boolean = true,
             simpleTrace: Boolean = false,
             printout: Printout = Printout.NONE
     ) = controller.lookupFaultEventDto(FaultEventId(uuid), fullStack, simpleTrace, printout)
-
-    private fun lookupFaultType(
-            uuid: UUID,
-            fullStack: Boolean = true,
-            offset: Long?,
-            count: Long?) = controller.lookupFaultTypeDto(FaultTypeId(uuid), fullStack, offset, count)
-
-    private fun lookupCauseType(
-            pathUuid: UUID,
-            fullStack: Boolean = true,
-            simpleTrace: Boolean = false) = controller.lookupCauseTypeDto(CauseTypeId(pathUuid), fullStack, simpleTrace)
-
-    private fun lookupCause(
-            pathUuid: UUID,
-            fullStack: Boolean = true,
-            simpleTrace: Boolean = false) = controller.lookupCauseDto(CauseId(pathUuid), fullStack, simpleTrace)
 
     private fun lookupFeedLimit(): Long = controller.feedLimit()
 
@@ -341,8 +322,6 @@ class UnearthServer(
             offset: Long,
             count: Long,
             thin: Boolean) = controller.faultSequence(type, uuid, offset, count, thin)
-
-    private fun lookupThrowable(uuid: UUID): Throwable = controller.lookupThrowable(uuid)
 
     private fun errors(): (HttpHandler) -> (Request) -> Response =
             { next ->
@@ -507,18 +486,19 @@ class UnearthServer(
 
         internal fun faultEventDtos(): FaultEventDto = faultEventDtos(uuid())
 
-        internal fun faultTypeDto() = uuid().let { FaultTypeDto(it, listOf(faultEventDtos(it))) }
+        internal fun faultTypeDto() = uuid().let { FaultTypeDto(it, listOf(causeTypeDto())) }
 
-        internal fun exception(): Throwable = RuntimeException("Example throwable")
+        internal fun exception() = RuntimeException("Example throwable")
 
-        internal fun stack() = CauseTypeDto("BadStuffException", emptyList(), emptyList(), uuid())
+        internal fun causeDto() = uuid().let { CauseDto(it, causeTypeDto(), "Bad stuff") }
+
+        internal fun causeTypeDto() = CauseTypeDto("BadStuffException", emptyList(), emptyList(), uuid())
 
         private fun unearthedException(): UnearthedException =
                 UnearthedException(
                         "mymy.such.a.BadClass",
                         "Bad class!",
-                        stacktraceId = uuid(),
-                        stacktrace = stack())
+                        causeType = causeTypeDto())
 
         private fun uuid(): UUID = UUID.randomUUID()
 

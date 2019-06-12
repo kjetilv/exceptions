@@ -46,23 +46,20 @@ class UnearthController(
     ): FaultTypeDto {
         val faultTypeId = storage.resolveFaultType(id.hash)
         val faultType = storage.getFaultType(faultTypeId)
-        val events = storage.getEvents(faultTypeId, offset, count)
-        return FaultTypeDto(
-                faultType.id.hash,
-                faultType.causeTypes.map { causeTypeDto(it, fullStack, simpleTrace) },
-                events.toList().map { event ->
-                    FaultEventDto(
-                            event.id.hash,
-                            faultType.id.hash,
-                            event.globalSequence,
-                            event.faultSequence,
-                            event.faultTypeSequence,
-                            event.time.atZone(ZoneId.of("UTC")),
-                            unearthedException(
-                                    event.fault.toChainedFault(), fullStack)
-                    )
-                }
-        )
+        return FaultTypeDto(faultType.id.hash, faultType.causeTypes.map { causeTypeDto(it, fullStack, simpleTrace) })
+
+//        val events = storage.getEvents(faultTypeId, offset, count)
+//                events.toList().map { event ->
+//                    FaultEventDto(
+//                            event.id.hash,
+//                            faultType.id.hash,
+//                            event.globalSequence,
+//                            event.faultSequence,
+//                            event.faultTypeSequence,
+//                            event.time.atZone(ZoneId.of("UTC")),
+//                            unearthedException(
+//                                    event.fault.toChainedFault(), fullStack)
+//                    )
     }
 
     fun lookupFaultEventDto(
@@ -173,9 +170,8 @@ class UnearthController(
     ): UnearthedException = UnearthedException(
             className = dto.cause.causeType.className,
             message = dto.cause.message,
-            stacktrace = if (thin) null else
+            causeType = if (thin) null else
                 causeTypeDto(dto.cause.causeType, fullStack, simpleTrace),
-            stacktraceId = dto.cause.causeType.hash,
             cause = dto.chainedCause?.let {
                 unearthedException(it, fullStack)
             })

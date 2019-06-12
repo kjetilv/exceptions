@@ -23,6 +23,7 @@ data class FaultTypeDto(
 
         val faultTypeId: UUID,
 
-        val causeTypes: List<CauseTypeDto>,
-
-        val occurrences: List<FaultEventDto>)
+        val causeTypes: List<CauseTypeDto>)
+//        ,
+//
+//        val occurrences: List<FaultEventDto>)
