@@ -61,9 +61,9 @@ class UnearthServer(
         produces += ContentType.APPLICATION_JSON
         receiving(exception to Example.exception())
         returning(Status.OK, submission to Example.submission())
-    } bindContract Method.POST to bodyExchange(
-            exception, submission, ::submitPrintedException
-    )
+    } bindContract Method.POST to exchange(exception, submission) { throwable ->
+        submission(controller.submitRaw(throwable))
+    }
 
     private fun submitStructuredFaultRoute() = "/fault" meta {
         summary = "Submit an exception"
@@ -71,9 +71,9 @@ class UnearthServer(
         produces += ContentType.APPLICATION_JSON
         receiving(exception to Example.exception())
         returning(Status.OK, submission to Example.submission())
-    } bindContract Method.POST to bodyExchange(
-            fault, submission, ::submitStructuredFault
-    )
+    } bindContract Method.POST to exchange(fault, submission) { fault ->
+        submission(controller.submitFault(fault))
+    }
 
     private fun lookupFaultEventRoute() = "/fault-event" / uuidPath meta {
         summary = "Lookup a fault event"
@@ -82,9 +82,11 @@ class UnearthServer(
         returning(Status.OK, faultEvent to Example.faultEventDtos())
     } bindContract Method.GET to { uuid ->
         { req ->
-            responseWith(faultEvent) {
-                lookupFaultEvent(
-                        uuid, isSet(req, fullStack), isSet(req, simpleTrace), printout[req] ?: Printout.NONE
+            get(faultEvent) {
+                controller.lookupFaultEventDto(FaultEventId(uuid),
+                        isSet(req, fullStack),
+                        isSet(req, simpleTrace),
+                        printout[req] ?: Printout.NONE
                 )
             }
         }
@@ -97,9 +99,9 @@ class UnearthServer(
         returning(Status.OK, faultType to Example.faultTypeDto())
     } bindContract Method.GET to { uuid ->
         { req ->
-            responseWith(faultType) {
+            get(faultType) {
                 controller.lookupFaultTypeDto(FaultTypeId(uuid),
-                        fullStack =isSet(req, fullStack, true),
+                        fullStack = isSet(req, fullStack, true),
                         simpleTrace = isSet(req, simpleTrace),
                         offset = offsetQuery[req],
                         count = countQuery[req])
@@ -114,7 +116,7 @@ class UnearthServer(
         returning(Status.OK, faultType to Example.faultTypeDto())
     } bindContract Method.GET to { uuid ->
         { req ->
-            responseWith(fault) {
+            get(fault) {
                 controller.lookupFaultDto(uuid, isSet(req, fullStack), isSet(req, simpleTrace))
             }
         }
@@ -127,7 +129,7 @@ class UnearthServer(
         returning(Status.OK, causeType to Example.causeTypeDto())
     } bindContract Method.GET to { uuid ->
         { req ->
-            responseWith(causeType) {
+            get(causeType) {
                 controller.lookupCauseTypeDto(CauseTypeId(uuid),
                         isSet(req, fullStack, true),
                         isSet(req, simpleTrace))
@@ -139,10 +141,10 @@ class UnearthServer(
         summary = "Lookup a stack"
         queries += listOf(fullStack, simpleTrace)
         produces += ContentType.APPLICATION_JSON
-        returning(Status.OK, causeType to Example.causeTypeDto())
+        returning(Status.OK, cause to Example.causeDto())
     } bindContract Method.GET to { uuid ->
         { req ->
-            responseWith(cause) {
+            get(cause) {
                 controller.lookupCauseDto(CauseId(uuid),
                         isSet(req, fullStack, true),
                         isSet(req, simpleTrace))
@@ -157,7 +159,7 @@ class UnearthServer(
         returning(Status.OK, exception to Example.exception())
     } bindContract Method.GET to { uuid ->
         {
-            responseWith(exception, type = ContentType.TEXT_PLAIN) {
+            get(exception, type = ContentType.TEXT_PLAIN) {
                 controller.lookupThrowable(uuid)
             }
         }
@@ -169,8 +171,8 @@ class UnearthServer(
         returning(Status.OK)
     } bindContract Method.GET to { type, uuid ->
         {
-            responseWith {
-                lookupFeedLimit(type, uuid).toString()
+            get {
+                controller.feedLimit(type, uuid).toString()
             }
         }
     }
@@ -180,8 +182,8 @@ class UnearthServer(
         produces += ContentType.APPLICATION_JSON
         returning(Status.OK)
     } bindContract Method.GET to {
-        responseWith {
-            lookupFeedLimit().toString()
+        get {
+            controller.feedLimit().toString()
         }
     }
 
@@ -192,9 +194,8 @@ class UnearthServer(
         returning(Status.OK, faultSequence to Example.faultSequence())
     } bindContract Method.GET to { type, uuid, offset ->
         { req ->
-            responseWith(faultSequence) {
-                lookupFaultSequence(
-                        type,
+            get(faultSequence) {
+                controller.faultSequence(type,
                         uuid,
                         offset,
                         countQuery[req] ?: 0L,
@@ -210,16 +211,13 @@ class UnearthServer(
         returning(Status.OK, faultSequence to Example.faultSequence())
     } bindContract Method.GET to { offset ->
         { req ->
-            responseWith(faultSequence) {
-                lookupFaultSequence(
-                        offset,
-                        countQuery[req] ?: 0L,
-                        isSet(req, thinFeedQuery))
+            get(faultSequence) {
+                controller.faultSequence(offset, countQuery[req] ?: 0L, isSet(req, thinFeedQuery))
             }
         }
     }
 
-    private fun <I, O> bodyExchange(
+    private fun <I, O> exchange(
             inLens: BiDiBodyLens<I>,
             outLens: BiDiBodyLens<O>,
             accept: (I) -> O
@@ -234,13 +232,13 @@ class UnearthServer(
     private fun isSet(req: Request, lens: BiDiLens<Request, Boolean?>, defaultValue: Boolean = false) =
             lens[req] ?: defaultValue
 
-    private fun <O> responseWith(
+    private fun <O> get(
             outLens: BiDiBodyLens<O>,
             type: ContentType = ContentType.APPLICATION_JSON,
             result: () -> O
     ): Response = outLens.set(withContentType(Response(Status.OK), type), result())
 
-    private fun responseWith(
+    private fun get(
             type: ContentType = ContentType.APPLICATION_JSON,
             result: () -> String
     ): Response = withContentType(Response(Status.OK), type).body(result())
@@ -291,37 +289,10 @@ class UnearthServer(
                     NettyConfig(configuration.host, configuration.port)
             )
 
-    private fun submitPrintedException(throwable: Throwable) = controller.submitRaw(throwable).let(::submission)
-
-    private fun submitStructuredFault(throwable: FaultDto) = controller.submitFault(throwable).let(::submission)
-
-    private fun submission(it: HandlingPolicy) = Submission(
-            it.faultTypeId.hash, it.faultId.hash, it.faultEventId.hash,
-            it.globalSequence, it.faultTypeSequence, it.faultSequence,
-            it.isLoggable)
-
-    private fun lookupFaultEvent(
-            uuid: UUID,
-            fullStack: Boolean = true,
-            simpleTrace: Boolean = false,
-            printout: Printout = Printout.NONE
-    ) = controller.lookupFaultEventDto(FaultEventId(uuid), fullStack, simpleTrace, printout)
-
-    private fun lookupFeedLimit(): Long = controller.feedLimit()
-
-    private fun lookupFeedLimit(type: SequenceType, uuid: UUID): Long = controller.feedLimit(type, uuid)
-
-    private fun lookupFaultSequence(
-            offset: Long,
-            count: Long,
-            thin: Boolean) = controller.faultSequence(offset, count, thin)
-
-    private fun lookupFaultSequence(
-            type: SequenceType,
-            uuid: UUID,
-            offset: Long,
-            count: Long,
-            thin: Boolean) = controller.faultSequence(type, uuid, offset, count, thin)
+    private fun submission(handling: HandlingPolicy) = Submission(
+            handling.faultTypeId.hash, handling.faultId.hash, handling.faultEventId.hash,
+            handling.globalSequence, handling.faultTypeSequence, handling.faultSequence,
+            handling.isLoggable)
 
     private fun errors(): (HttpHandler) -> (Request) -> Response =
             { next ->
