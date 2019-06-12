@@ -48,29 +48,35 @@ object JSON : ConfigurableJackson(KotlinModule()
             .registerModule(forIds("api/v1", SimpleModule())))
 
 private fun forIds(prefix: String, simpleModule: SimpleModule): Module? {
-    val mapOf = mapOf(
+    mapOf(
             FaultEventId::class.java to "fault-event",
-            FaultTypeId::class.java to "fault-type",
-            FaultId::class.java to "fault",
             CauseTypeId::class.java to "cause-type",
             CauseId::class.java to "cause"
-    )
-    mapOf.forEach { (type, path) ->
+    ).forEach { (type, path) ->
         simpleModule.addSerializer<Id>(type, serializer(prefix, path))
+    }
+    mapOf(
+            FaultTypeId::class.java to "fault-type",
+            FaultId::class.java to "fault"
+    ).forEach { (type, path) ->
+        simpleModule.addSerializer<Id>(type, serializer(prefix, path, true))
     }
     return simpleModule
 }
 
-private fun <T : Id> serializer(prefix: String, path: String): JsonSerializer<T>? {
+private fun <T : Id> serializer(prefix: String, path: String, feed: Boolean = false): JsonSerializer<T>? {
     return object : JsonSerializer<T>() {
         override fun serialize(value: T?, gen: JsonGenerator?, serializers: SerializerProvider?) {
-            gen?.let {
-                value?.run {
-                    it.writeStartObject()
-                    it.writeStringField("id", "$hash")
-                    it.writeStringField("type", value.javaClass.simpleName)
-                    it.writeStringField("self", "/$prefix/$path/$hash")
-                    it.writeEndObject()
+            gen?.apply {
+                value?.let { id ->
+                    writeStartObject()
+                    writeStringField("id", id.hash.toString())
+                    writeStringField("type", value.javaClass.simpleName)
+                    writeStringField("link", "/$prefix/$path/${id.hash}")
+                    if (feed) {
+                        writeStringField("feed", "/$prefix/feed/$path/${id.hash}")
+                    }
+                    writeEndObject()
                 }
             }
         }

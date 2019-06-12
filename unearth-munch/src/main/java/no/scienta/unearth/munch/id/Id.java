@@ -61,8 +61,6 @@ public abstract class Id {
 
     @Override
     public String toString() {
-        String s = getHash().toString();
-        int endIndex = s.indexOf("-");
-        return "{" + (endIndex < 0 ? s : s.substring(0, endIndex)) + "}";
+        return getClass().getSimpleName() + "[" + getHash() + "]";
     }
 }

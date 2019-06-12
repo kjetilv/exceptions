@@ -26,4 +26,4 @@ data class FaultDto(
 
         val faultTypeId: FaultTypeId,
 
-        val causes: List<CauseTypeDto>)
+        val causes: List<CauseDto>)

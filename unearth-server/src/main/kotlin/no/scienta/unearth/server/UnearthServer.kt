@@ -61,16 +61,6 @@ class UnearthServer(
         submission(controller.submitRaw(throwable))
     }
 
-    private fun submitStructuredFaultRoute() = "/fault" meta {
-        summary = "Submit an exception"
-        consumes += ContentType.APPLICATION_JSON
-        produces += ContentType.APPLICATION_JSON
-        receiving(exception to Example.exception())
-        returning(Status.OK, submission to Example.submission())
-    } bindContract Method.POST to exchange(fault, submission) { fault ->
-        submission(controller.submitFault(fault))
-    }
-
     private fun lookupFaultEventRoute() = "/fault-event" / uuid(::FaultEventId) meta {
         summary = "Lookup a fault event"
         queries += listOf(fullStack, simpleTrace, printout)
@@ -113,7 +103,7 @@ class UnearthServer(
     } bindContract Method.GET to { faultId ->
         { req ->
             get(fault) {
-                controller.lookupFaultDto(faultId, isSet(req, fullStack), isSet(req, simpleTrace))
+                controller.lookupFaultDto(faultId, isSet(req, fullStack, true), isSet(req, simpleTrace))
             }
         }
     }
@@ -195,42 +185,49 @@ class UnearthServer(
         }
     }
 
-    private fun feedLookupFaultRoute() = "/feed/fault" / uuid(::FaultId) / offsetPath meta {
+    private fun feedLookupFaultRoute() = "/feed/fault" / uuid(::FaultId) meta {
         summary = "Events"
         produces += ContentType.APPLICATION_JSON
-        queries += listOf(countQuery, thinFeedQuery)
-        returning(Status.OK, faultSequence to Example.faultSequence())
-    } bindContract Method.GET to { faultId, offset ->
+        queries += listOf(offsetQuery, countQuery, thinFeedQuery)
+        returning(Status.OK, faultSequence to Example.faultSequence(::FaultId))
+    } bindContract Method.GET to { faultId ->
         { req ->
             get(faultSequence) {
-                controller.faultSequence(faultId, offset, countQuery[req] ?: 0L, isSet(req, thinFeedQuery))
+                controller.faultSequence(faultId,
+                        offsetQuery[req] ?: 0L,
+                        countQuery[req] ?: 0L,
+                        isSet(req, thinFeedQuery))
             }
         }
     }
 
-    private fun feedLookupFaultTypeRoute() = "/feed/fault-type" / uuid(::FaultTypeId) / offsetPath meta {
+    private fun feedLookupFaultTypeRoute() = "/feed/fault-type" / uuid(::FaultTypeId) meta {
         summary = "Events"
         produces += ContentType.APPLICATION_JSON
-        queries += listOf(countQuery, thinFeedQuery)
-        returning(Status.OK, faultSequence to Example.faultSequence())
-    } bindContract Method.GET to { faultTypeId, offset ->
+        queries += listOf(offsetQuery, countQuery, thinFeedQuery)
+        returning(Status.OK, faultSequence to Example.faultSequence(::FaultTypeId))
+    } bindContract Method.GET to { faultTypeId ->
         { req ->
             get(faultSequence) {
-                controller.faultSequence(faultTypeId, offset, countQuery[req] ?: 0L, isSet(req, thinFeedQuery))
+                controller.faultSequence(faultTypeId,
+                        offsetQuery[req] ?: 0L,
+                        countQuery[req] ?: 0L,
+                        isSet(req, thinFeedQuery))
             }
         }
     }
 
-    private fun feedLookupGlobalRoute() = "/feed" / offsetPath meta {
+    private fun feedLookupGlobalRoute() = "/feed" meta {
         summary = "Events"
         produces += ContentType.APPLICATION_JSON
-        queries += listOf(countQuery, thinFeedQuery)
+        queries += listOf(offsetQuery, countQuery, thinFeedQuery)
         returning(Status.OK, faultSequence to Example.faultSequence())
-    } bindContract Method.GET to { offset ->
-        { req ->
-            get(faultSequence) {
-                controller.faultSequenceGlobal(offset, countQuery[req] ?: 0L, isSet(req, thinFeedQuery))
-            }
+    } bindContract Method.GET to { req ->
+        get(faultSequence) {
+            controller.faultSequenceGlobal(
+                    offsetQuery[req] ?: 0L,
+                    countQuery[req] ?: 0L,
+                    isSet(req, thinFeedQuery))
         }
     }
 
@@ -289,8 +286,7 @@ class UnearthServer(
             descriptionPath = "/swagger.json"
 
             routes += listOf(
-                    submitPrintedExceptionRoute(),
-                    submitStructuredFaultRoute()
+                    submitPrintedExceptionRoute()
             )
             routes += listOf(
                     lookupFaultRoute(),
@@ -313,8 +309,12 @@ class UnearthServer(
     }
 
     private fun submission(handling: HandlingPolicy) = Submission(
-            handling.faultTypeId, handling.faultId, handling.faultEventId,
-            handling.globalSequence, handling.faultTypeSequence, handling.faultSequence,
+            handling.faultTypeId,
+            handling.faultId,
+            handling.faultEventId,
+            handling.globalSequence,
+            handling.faultTypeSequence,
+            handling.faultSequence,
             handling.isLoggable)
 
     private fun handleErrors(next: HttpHandler, req: Request): Response =
@@ -340,7 +340,7 @@ class UnearthServer(
                 withContentType(Response(Status.INTERNAL_SERVER_ERROR)),
                 UnearthInternalError(
                         message = e.toString(),
-                        storedAs = handle.faultEventId.hash
+                        storedAs = handle.faultEventId
                 ))
     }
 
@@ -386,22 +386,14 @@ class UnearthServer(
 
         private val thinFeedQuery = Query.boolean().optional("thin")
 
-        private val offsetPath = Path.long().of("offset")
-
         private fun <T : Id> uuid(read: (UUID) -> T) = PathLens(
                 meta = Meta(required = true, location = "path", paramMeta = ParamMeta.StringParam, name = "uuid"),
                 get = { uuid -> read(UUID.fromString(uuid)) }
         )
 
-        private val uuidPath = Path.uuid().of("uuid")
-
         private val swaggerUiPattern = Pattern.compile("^.*swagger-ui-([\\d.]+).jar!.*$")
 
         private const val swaggerUiPrefix = "META-INF/resources/webjars/swagger-ui/"
-
-        private val sequenceType: PathLens<SequenceType> = PathLens(
-                meta = Meta(false, "path", ParamMeta.StringParam, "type", "Sequence type"),
-                get = { SequenceType.valueOf(it.toUpperCase()) })
 
         private val printout: QueryLens<Printout?> = QueryLens(
                 meta = Meta(false, "path", ParamMeta.StringParam, "type", "Sequence type"),
@@ -474,17 +466,18 @@ class UnearthServer(
                 2000L + random.nextLong() % 1000,
                 random.nextBoolean())
 
-        internal fun faultSequence(): FaultSequence = FaultSequence(SequenceType.FAULT, listOf(faultEventDtos()))
+        internal fun faultSequence(id: ((UUID) -> Id)? = null): FaultSequence =
+                FaultSequence(id?.let { it(uuid()) }, SequenceType.FAULT, listOf(faultEventDtos()))
 
         internal fun faultEventDtos(): FaultEventDto = faultEventDtos(FaultTypeId(uuid()))
 
         internal fun faultTypeDto() = FaultTypeDto(FaultTypeId(uuid()), listOf(causeTypeDto()))
 
-        internal fun faultDto() = FaultDto(FaultId(uuid()), FaultTypeId(uuid()), listOf(causeTypeDto()));
+        internal fun faultDto() = FaultDto(FaultId(uuid()), FaultTypeId(uuid()), listOf(causeDto()));
 
         internal fun exception() = RuntimeException("Example throwable")
 
-        internal fun causeDto() = CauseDto(CauseId(uuid()), causeTypeDto(), "Bad stuff")
+        internal fun causeDto() = CauseDto(CauseId(uuid()), "Bad stuff", causeTypeDto())
 
         internal fun causeTypeDto() =
                 CauseTypeDto(CauseTypeId(uuid()), "BadStuffException", emptyList(), emptyList())

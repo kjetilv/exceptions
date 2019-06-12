@@ -17,9 +17,12 @@
 
 package no.scienta.unearth.dto
 
+import no.scienta.unearth.munch.id.Id
 import java.util.*
 
 data class FaultSequence(
+
+        val id: Id?,
 
         val sequenceType: SequenceType,
 

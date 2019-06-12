@@ -17,8 +17,11 @@
 
 package no.scienta.unearth.server
 
+import no.scienta.unearth.munch.id.FaultEventId
 import java.util.*
 
 data class UnearthInternalError(
+
         val message: String,
-        val storedAs: UUID? = null)
+
+        val storedAs: FaultEventId? = null)

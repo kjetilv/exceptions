@@ -20,11 +20,13 @@ package no.scienta.unearth.server
 import no.scienta.unearth.core.*
 import no.scienta.unearth.core.handler.DefaultThrowablesHandler
 import no.scienta.unearth.dto.*
-import no.scienta.unearth.munch.data.*
+import no.scienta.unearth.munch.data.Cause
+import no.scienta.unearth.munch.data.CauseType
+import no.scienta.unearth.munch.data.ChainedFault
+import no.scienta.unearth.munch.data.FaultEvent
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.util.Throwables
 import java.time.ZoneId
-import java.util.*
 
 class UnearthController(
         private val storage: FaultStorage,
@@ -36,16 +38,18 @@ class UnearthController(
 
     fun submitRaw(t: Throwable): HandlingPolicy = handler.handle(t)
 
-    fun submitFault(fault: FaultDto): HandlingPolicy = handler.handle(toFault(fault))
-
     fun lookupFaultTypeDto(id: FaultTypeId,
                            fullStack: Boolean = false,
                            simpleTrace: Boolean = false,
                            offset: Long? = null,
                            count: Long? = null
-    ): FaultTypeDto {
-        val faultType = storage.getFaultType(id)
-        return FaultTypeDto(faultType.id, faultType.causeTypes.map { causeTypeDto(it, fullStack, simpleTrace) })
+    ): FaultTypeDto = storage.getFaultType(id).let { faultType ->
+        FaultTypeDto(
+                faultType.id,
+                faultType.causeTypes.map {
+                    causeTypeDto(it, fullStack, simpleTrace)
+                })
+    }
 
 //        val events = storage.getEvents(faultTypeId, offset, count)
 //                events.toList().map { event ->
@@ -59,24 +63,18 @@ class UnearthController(
 //                            unearthedException(
 //                                    event.fault.toChainedFault(), fullStack)
 //                    )
-    }
 
     fun lookupFaultDto(
             faultId: FaultId,
             fullStack: Boolean = true,
             simpleTrace: Boolean = false
-    ) = storage.getFault(faultId).let { fault ->
+    ): FaultDto = storage.getFault(faultId).let { fault ->
         FaultDto(
                 id = fault.id,
                 faultTypeId = fault.faultType.id,
                 causes = fault.causes.map { cause ->
-                    causeTypeDto(
-                            cause.causeType,
-                            fullStack = fullStack,
-                            simpleTrace = simpleTrace
-                    )
-                }
-        )
+                    causeDto(cause, fullStack = fullStack, simpleTrace = simpleTrace)
+                })
     }
 
     fun lookupFaultEventDto(
@@ -84,20 +82,20 @@ class UnearthController(
             fullStack: Boolean = false,
             simpleTrace: Boolean = false,
             printout: Printout = Printout.NONE
-    ): FaultEventDto = storage.getFaultEvent(id).let { event ->
+    ): FaultEventDto = storage.getFaultEvent(id).let { faultEvent ->
         FaultEventDto(
-                event.id,
-                event.fault.id,
-                event.fault.faultType.id,
-                event.globalSequence,
-                event.faultSequence,
-                event.faultTypeSequence,
-                event.time.atZone(ZoneId.of("UTC")),
+                faultEvent.id,
+                faultEvent.fault.id,
+                faultEvent.fault.faultType.id,
+                faultEvent.globalSequence,
+                faultEvent.faultSequence,
+                faultEvent.faultTypeSequence,
+                faultEvent.time.atZone(ZoneId.of("UTC")),
                 emptyList(),
-                unearthedException(event.fault.toChainedFault(), fullStack, simpleTrace),
+                unearthedException(faultEvent.fault.toChainedFault(), fullStack, simpleTrace),
                 when (printout) {
-                    Printout.ORIGINAL -> Throwables.string(event.fault.toCameleon())
-                    Printout.BOILDOWN -> "REDUCE: ${Throwables.string(event.fault.toCameleon())}"
+                    Printout.ORIGINAL -> Throwables.string(faultEvent.fault.toCameleon())
+                    Printout.BOILDOWN -> "REDUCE: ${Throwables.string(faultEvent.fault.toCameleon())}"
                     else -> null
                 })
     }
@@ -124,20 +122,21 @@ class UnearthController(
 
     fun faultSequenceGlobal(offset: Long, count: Long, thin: Boolean = false): FaultSequence =
             FaultSequence(
+                    null,
                     SequenceType.GLOBAL,
                     feed.feed(offset, count).map(toDto(thin)))
 
     fun faultSequence(faultId: FaultId, offset: Long, count: Long, thin: Boolean = false): FaultSequence =
             FaultSequence(
+                    faultId,
                     SequenceType.FAULT,
                     feed.feed(faultId, offset, count).map(toDto(thin)))
 
     fun faultSequence(faultTypeId: FaultTypeId, offset: Long, count: Long, thin: Boolean = false): FaultSequence =
             FaultSequence(
+                    faultTypeId,
                     SequenceType.FAULT_TYPE,
                     feed.feed(faultTypeId, offset, count).map(toDto(thin)))
-
-    private fun toFault(fault: FaultDto): Fault = TODO("Haven't started accepting fault dto's yet!")
 
     private fun toDto(thin: Boolean = false): (FaultEvent) -> FaultEventDto = { event ->
         FaultEventDto(
@@ -184,12 +183,12 @@ class UnearthController(
 
     private fun causeDto(
             cause: Cause,
-            fullStack: Boolean = false,
+            fullStack: Boolean = true,
             simpleTrace: Boolean = false
     ): CauseDto = CauseDto(
             id = cause.id,
-            causeType = causeTypeDto(cause.causeType, fullStack, simpleTrace),
-            message = cause.message)
+            message = cause.message,
+            causeType = causeTypeDto(cause.causeType, fullStack, simpleTrace))
 
     private fun simpleStackTrace(stackTrace: List<StackTraceElement>): List<String> = stackTrace.map { it.toString() }
 

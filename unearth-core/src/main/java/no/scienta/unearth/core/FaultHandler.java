@@ -17,11 +17,7 @@
 
 package no.scienta.unearth.core;
 
-import no.scienta.unearth.munch.data.Fault;
-
 public interface FaultHandler {
 
     HandlingPolicy handle(Throwable throwable);
-
-    HandlingPolicy handle(Fault throwable);
 }

@@ -20,7 +20,6 @@ package no.scienta.unearth.core.handler;
 import no.scienta.unearth.core.FaultHandler;
 import no.scienta.unearth.core.FaultSensor;
 import no.scienta.unearth.core.FaultStorage;
-import no.scienta.unearth.core.HandlingPolicy;
 import no.scienta.unearth.munch.data.Fault;
 import no.scienta.unearth.munch.data.FaultEvent;
 
@@ -36,11 +35,6 @@ public class DefaultThrowablesHandler implements FaultHandler {
     ) {
         this.storage = storage;
         this.sensor = sensor;
-    }
-
-    @Override
-    public HandlingPolicy handle(Fault fault) {
-        return store(fault);
     }
 
     @Override
