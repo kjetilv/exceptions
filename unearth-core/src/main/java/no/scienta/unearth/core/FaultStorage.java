@@ -17,14 +17,8 @@
 
 package no.scienta.unearth.core;
 
-import no.scienta.unearth.munch.data.CauseType;
-import no.scienta.unearth.munch.data.Fault;
-import no.scienta.unearth.munch.data.FaultEvent;
-import no.scienta.unearth.munch.data.FaultType;
-import no.scienta.unearth.munch.id.CauseTypeId;
-import no.scienta.unearth.munch.id.FaultEventId;
-import no.scienta.unearth.munch.id.FaultId;
-import no.scienta.unearth.munch.id.FaultTypeId;
+import no.scienta.unearth.munch.data.*;
+import no.scienta.unearth.munch.id.*;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -53,7 +47,9 @@ public interface FaultStorage {
 
     Collection<FaultEvent> getEvents(FaultId faultId, Long offset, Long count);
 
-    FaultEvent getFaultEvent(FaultEventId specimenId);
+    FaultEvent getFaultEvent(FaultEventId faultEventId);
 
-    CauseType getStack(CauseTypeId stackId);
+    CauseType getCauseType(CauseTypeId causeTypeId);
+
+    Cause getCause(CauseId causeId);
 }

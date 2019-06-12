@@ -19,10 +19,12 @@ package no.scienta.unearth.dto
 
 import java.util.*
 
-data class FaultTypeDto(
+data class CauseTypeDto(
 
-        val faultTypeId: UUID,
+        val className: String,
 
-        val causeTypes: List<CauseTypeDto>,
+        val stacktrace: List<UnearthedStackTraceElement>?,
 
-        val occurrences: List<FaultEventDto>)
+        val simpleTrace: List<String>,
+
+        val causeTypeId: UUID)

@@ -44,10 +44,15 @@ final class Hasher {
 
     private static final String HASH = "MD5";
 
-    static Supplier<UUID> uuid(Hashable hashed) {
+    /**
+     * Takes a {@link Hashable hashable} and returns a supplier which computs its UUID
+     * @param hashable Hashable
+     * @return UUID supplier
+     */
+    static Supplier<UUID> uuid(Hashable hashable) {
         return Memoizer.get(() -> {
             MessageDigest md5 = md5();
-            hashed.hashTo(md5::update);
+            hashable.hashTo(md5::update);
             return UUID.nameUUIDFromBytes(md5.digest());
         });
     }

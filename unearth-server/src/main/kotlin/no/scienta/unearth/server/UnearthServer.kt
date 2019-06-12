@@ -21,6 +21,7 @@ import no.scienta.unearth.core.HandlingPolicy
 import no.scienta.unearth.core.parser.ThrowableParser
 import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.data.FaultType
+import no.scienta.unearth.munch.id.CauseId
 import no.scienta.unearth.munch.id.CauseTypeId
 import no.scienta.unearth.munch.id.FaultEventId
 import no.scienta.unearth.munch.id.FaultTypeId
@@ -74,33 +75,43 @@ class UnearthServer(
             fault, submission, ::submitStructuredFault
     )
 
-    private fun lookupFaultRoute() = "/fault" / uuidPath meta {
-        summary = "Lookup an exception"
+    private fun lookupFaultEventRoute() = "/fault-event" / uuidPath meta {
+        summary = "Lookup a fault event"
         queries += listOf(fullStack, simpleTrace, printout)
         produces += ContentType.APPLICATION_JSON
         returning(Status.OK, faultEvent to Example.faultEventDtos())
     } bindContract Method.GET to { uuid ->
         { req ->
             responseWith(faultEvent) {
-                lookupFault(
-                        uuid,
-                        isSet(req, fullStack),
-                        isSet(req, simpleTrace),
-                        printout[req] ?: Printout.NONE
+                lookupFaultEvent(
+                        uuid, isSet(req, fullStack), isSet(req, simpleTrace), printout[req] ?: Printout.NONE
                 )
             }
         }
     }
 
-    private fun lookupFaultsRoute() = "/fault-type" / uuidPath meta {
-        summary = "Lookup a fault type, with fault events"
+    private fun lookupFaultTypeRoute() = "/fault-type" / uuidPath meta {
+        summary = "Lookup a fault, with fault events"
         queries += listOf(fullStack, simpleTrace, offsetQuery, countQuery)
         produces += ContentType.APPLICATION_JSON
         returning(Status.OK, faultType to Example.faultTypeDto())
     } bindContract Method.GET to { uuid ->
         { req ->
             responseWith(faultType) {
-                lookupFaults(uuid, isSet(req, fullStack), offsetQuery[req], countQuery[req])
+                lookupFaultType(uuid, isSet(req, fullStack), offsetQuery[req], countQuery[req])
+            }
+        }
+    }
+
+    private fun lookupFaultRoute() = "/fault" / uuidPath meta {
+        summary = "Lookup a fault"
+        queries += listOf(fullStack, simpleTrace)
+        produces += ContentType.APPLICATION_JSON
+        returning(Status.OK, faultType to Example.faultTypeDto())
+    } bindContract Method.GET to { uuid ->
+        { req ->
+            responseWith(fault) {
+                lookupFault(uuid, isSet(req, fullStack, true), isSet(req, simpleTrace))
             }
         }
     }
@@ -109,7 +120,23 @@ class UnearthServer(
         summary = "Lookup a stack"
         queries += listOf(fullStack, simpleTrace)
         produces += ContentType.APPLICATION_JSON
-        returning(Status.OK, cause to Example.stack())
+        returning(Status.OK, causeType to Example.stack())
+    } bindContract Method.GET to { uuid ->
+        { req ->
+            responseWith(causeType) {
+                lookupCauseType(
+                        uuid,
+                        isSet(req, fullStack, true),
+                        isSet(req, simpleTrace))
+            }
+        }
+    }
+
+    private fun lookupCauseTypeRoute() = "/cause-type" / uuidPath meta {
+        summary = "Lookup a stack"
+        queries += listOf(fullStack, simpleTrace)
+        produces += ContentType.APPLICATION_JSON
+        returning(Status.OK, causeType to Example.stack())
     } bindContract Method.GET to { uuid ->
         { req ->
             responseWith(cause) {
@@ -121,7 +148,7 @@ class UnearthServer(
         }
     }
 
-    private fun printFaultRoute() = "/fault/" / uuidPath meta {
+    private fun printFaultRoute() = "/throwable/" / uuidPath meta {
         summary = "Print an exception"
         produces += ContentType.TEXT_PLAIN
         queries += listOf(printout)
@@ -234,17 +261,26 @@ class UnearthServer(
                                 apiInfo = ApiInfo("Unearth", "v1"),
                                 json = JSON)
                         descriptionPath = "/swagger.json"
+
                         routes += listOf(
                                 submitPrintedExceptionRoute(),
-                                submitStructuredFaultRoute(),
+                                submitStructuredFaultRoute()
+                        )
+                        routes += listOf(
                                 lookupFaultRoute(),
-                                lookupFaultsRoute(),
+                                lookupFaultTypeRoute(),
+                                lookupFaultEventRoute(),
                                 lookupCauseRoute(),
+                                lookupCauseTypeRoute()
+                        )
+                        routes += listOf(
                                 feedLimitsGlobalRoute(),
                                 feedLookupGlobalRoute(),
                                 feedLimitsRoute(),
-                                feedLookupRoute(),
-                                printFaultRoute())
+                                feedLookupRoute()
+                        )
+                        routes +=
+                                printFaultRoute()
                     },
                     rerouteToSwagger("/doc", configuration.prefix),
                     rerouteToSwagger("/", configuration.prefix),
@@ -253,9 +289,9 @@ class UnearthServer(
                     NettyConfig(configuration.host, configuration.port)
             )
 
-    private fun submitPrintedException(throwable: Throwable) = controller.submit(throwable).let(::submission)
+    private fun submitPrintedException(throwable: Throwable) = controller.submitRaw(throwable).let(::submission)
 
-    private fun submitStructuredFault(throwable: FaultDto) = controller.submit(throwable).let(::submission)
+    private fun submitStructuredFault(throwable: FaultDto) = controller.submitFault(throwable).let(::submission)
 
     private fun submission(it: HandlingPolicy) = Submission(
             it.faultTypeId.hash, it.faultId.hash, it.faultEventId.hash,
@@ -265,22 +301,30 @@ class UnearthServer(
     private fun lookupFault(
             uuid: UUID,
             fullStack: Boolean = true,
+            simpleTrace: Boolean = false) = controller.lookupFaultDto(uuid, fullStack)
+
+    private fun lookupFaultEvent(
+            uuid: UUID,
+            fullStack: Boolean = true,
             simpleTrace: Boolean = false,
             printout: Printout = Printout.NONE
-    ): FaultEventDto = controller.lookupEvent(FaultEventId(uuid), fullStack, simpleTrace, printout)
+    ) = controller.lookupFaultEventDto(FaultEventId(uuid), fullStack, simpleTrace, printout)
 
-    private fun lookupFaults(
+    private fun lookupFaultType(
             uuid: UUID,
             fullStack: Boolean = true,
             offset: Long?,
-            count: Long?
-    ): FaultTypeDto = controller.lookupFaultType(FaultTypeId(uuid), fullStack, offset, count)
+            count: Long?) = controller.lookupFaultTypeDto(FaultTypeId(uuid), fullStack, offset, count)
+
+    private fun lookupCauseType(
+            pathUuid: UUID,
+            fullStack: Boolean = true,
+            simpleTrace: Boolean = false) = controller.lookupCauseTypeDto(CauseTypeId(pathUuid), fullStack, simpleTrace)
 
     private fun lookupCause(
             pathUuid: UUID,
             fullStack: Boolean = true,
-            simpleTrace: Boolean = false
-    ): CauseDto = controller.lookupCause(CauseTypeId(pathUuid), fullStack, simpleTrace)
+            simpleTrace: Boolean = false) = controller.lookupCauseDto(CauseId(pathUuid), fullStack, simpleTrace)
 
     private fun lookupFeedLimit(): Long = controller.feedLimit()
 
@@ -289,18 +333,16 @@ class UnearthServer(
     private fun lookupFaultSequence(
             offset: Long,
             count: Long,
-            thin: Boolean
-    ): FaultSequence = controller.faultSequence(offset, count, thin)
+            thin: Boolean) = controller.faultSequence(offset, count, thin)
 
     private fun lookupFaultSequence(
             type: SequenceType,
             uuid: UUID,
             offset: Long,
             count: Long,
-            thin: Boolean
-    ): FaultSequence = controller.faultSequence(type, uuid, offset, count, thin)
+            thin: Boolean) = controller.faultSequence(type, uuid, offset, count, thin)
 
-    private fun lookupThrowable(uuid: UUID): Throwable = controller.lookupFault(uuid)
+    private fun lookupThrowable(uuid: UUID): Throwable = controller.lookupThrowable(uuid)
 
     private fun errors(): (HttpHandler) -> (Request) -> Response =
             { next ->
@@ -326,7 +368,7 @@ class UnearthServer(
             }
 
     private fun handledFailedResponse(e: Throwable): Response {
-        val handle = controller.submit(e)
+        val handle = controller.submitRaw(e)
         logger.error("Failed: ${handle.faultEventId}", e)
         return internalError.set(
                 withContentType(Response(Status.INTERNAL_SERVER_ERROR)),
@@ -389,11 +431,11 @@ class UnearthServer(
         private val submission = Body.auto<Submission>().toLens()
 
         private val sequenceType: PathLens<SequenceType> = PathLens(
-                meta = Meta(true, "path", ParamMeta.StringParam, "type", "Sequence type"),
+                meta = Meta(false, "path", ParamMeta.StringParam, "type", "Sequence type"),
                 get = { SequenceType.valueOf(it.toUpperCase()) })
 
         private val printout: QueryLens<Printout?> = QueryLens(
-                meta = Meta(true, "path", ParamMeta.StringParam, "type", "Sequence type"),
+                meta = Meta(false, "path", ParamMeta.StringParam, "type", "Sequence type"),
                 lensGet = { req ->
                     req.query("printout")?.let { s ->
                         Printout.valueOf(s.toUpperCase())
@@ -429,6 +471,8 @@ class UnearthServer(
         private val faultType = Body.auto<FaultTypeDto>().toLens()
 
         private val cause = Body.auto<CauseDto>().toLens()
+
+        private val causeType = Body.auto<CauseTypeDto>().toLens()
 
         private val internalError = Body.auto<UnearthInternalError>().toLens()
 
@@ -467,7 +511,7 @@ class UnearthServer(
 
         internal fun exception(): Throwable = RuntimeException("Example throwable")
 
-        internal fun stack() = CauseDto(emptyList(), emptyList(), uuid())
+        internal fun stack() = CauseTypeDto("BadStuffException", emptyList(), emptyList(), uuid())
 
         private fun unearthedException(): UnearthedException =
                 UnearthedException(

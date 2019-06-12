@@ -48,7 +48,10 @@ import java.util.function.Supplier;
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractHashable implements Hashable {
 
-    private final Supplier<UUID> supplier = Hasher.uuid(this);
+    /**
+     * A supplier which computes {@link Hashable this hashable's} uuid with a {@link Memoizer}.
+     */
+    private final Supplier<UUID> supplier = Memoizer.get(Hasher.uuid(this));
 
     private final Supplier<String> toString = Memoizer.get(() ->
         getClass().getSimpleName() + "[" + toStringIdentifier() + toStringContents() + "]");

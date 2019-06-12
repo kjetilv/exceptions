@@ -20,10 +20,7 @@ package no.scienta.unearth.core.storage;
 import no.scienta.unearth.core.FaultFeed;
 import no.scienta.unearth.core.FaultStats;
 import no.scienta.unearth.core.FaultStorage;
-import no.scienta.unearth.munch.data.CauseType;
-import no.scienta.unearth.munch.data.Fault;
-import no.scienta.unearth.munch.data.FaultEvent;
-import no.scienta.unearth.munch.data.FaultType;
+import no.scienta.unearth.munch.data.*;
 import no.scienta.unearth.munch.id.*;
 
 import java.time.Clock;
@@ -47,6 +44,8 @@ public class InMemoryThrowablesStorage
     private final Map<FaultEventId, FaultEvent> events = new HashMap<>();
 
     private final Map<CauseTypeId, CauseType> causeTypes = new HashMap<>();
+
+    private final Map<CauseId, Cause> causes = new HashMap<>();
 
 
     private final Collection<FaultEvent> faultEvents = new ArrayList<>();
@@ -90,6 +89,7 @@ public class InMemoryThrowablesStorage
             put(this.faultTypes, faultType);
             put(this.faults, fault);
             faultType.getCauseTypes().forEach(put(this.causeTypes));
+            faultEvent.getFault().getCauses().forEach(put(this.causes));
 
             faultEvents.add(faultEvent);
             addTo(faultTypeFaults, faultType.getId(), fault);
@@ -138,8 +138,13 @@ public class InMemoryThrowablesStorage
     }
 
     @Override
-    public CauseType getStack(CauseTypeId causeTypeId) {
+    public CauseType getCauseType(CauseTypeId causeTypeId) {
         return get("cause", causeTypeId, causeTypes);
+    }
+
+    @Override
+    public Cause getCause(CauseId causeId) {
+        return get("cause", causeId, causes);
     }
 
     @Override

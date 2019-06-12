@@ -25,8 +25,8 @@ data class UnearthedException(
 
         val message: String?,
 
-        val stacktrace: CauseDto?,
+        val stacktrace: CauseTypeDto?,
 
-        val stacktraceId : UUID,
+        val stacktraceId : UUID?,
 
         val cause: UnearthedException? = null)

@@ -62,6 +62,9 @@ public abstract class AbstractHashableIdentifiable<I extends Id>
     extends AbstractHashable
     implements Identifiable<I> {
 
+    /**
+     * A supplier which computes {@link Identifiable this identifiable's} {@link Id id} once-only.
+     */
     private final Supplier<I> id = Memoizer.get(() -> id(getHash()));
 
     @Override
