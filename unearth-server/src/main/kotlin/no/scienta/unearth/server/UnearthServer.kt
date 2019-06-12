@@ -21,10 +21,7 @@ import no.scienta.unearth.core.HandlingPolicy
 import no.scienta.unearth.core.parser.ThrowableParser
 import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.data.FaultType
-import no.scienta.unearth.munch.id.CauseId
-import no.scienta.unearth.munch.id.CauseTypeId
-import no.scienta.unearth.munch.id.FaultEventId
-import no.scienta.unearth.munch.id.FaultTypeId
+import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.util.Throwables
 import no.scienta.unearth.server.JSON.auto
 import no.scienta.unearth.statik.Statik
@@ -43,7 +40,6 @@ import org.http4k.routing.path
 import org.http4k.routing.routes
 import org.http4k.server.Http4kServer
 import org.http4k.server.asServer
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.ZonedDateTime
 import java.util.*
@@ -53,7 +49,7 @@ class UnearthServer(
         private val configuration: UnearthConfig = UnearthConfig(),
         val controller: UnearthController
 ) {
-    private val logger: Logger = LoggerFactory.getLogger(UnearthServer::class.java)
+    private val logger = LoggerFactory.getLogger(UnearthServer::class.java)
 
     private fun submitPrintedExceptionRoute() = "/throwable" meta {
         summary = "Submit an exception"
@@ -217,15 +213,11 @@ class UnearthServer(
         }
     }
 
-    private fun <I, O> exchange(
-            inLens: BiDiBodyLens<I>,
-            outLens: BiDiBodyLens<O>,
-            accept: (I) -> O
-    ) = { req: Request ->
-        inLens[req]?.let {
+    private fun <I, O> exchange(inl: BiDiBodyLens<I>, outl: BiDiBodyLens<O>, accept: (I) -> O): HttpHandler = { req ->
+        inl[req]?.let {
             accept(it)
         }?.let {
-            outLens.set(Response(Status.OK), it)
+            outl.set(Response(Status.OK), it)
         } ?: Response(Status.BAD_REQUEST)
     }
 
@@ -254,52 +246,53 @@ class UnearthServer(
     }
 
     private val server = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
-            .then(Filter(errors()))
+            .then(Filter { nextHandler ->
+                { request ->
+                    handleErrors(nextHandler, request)
+                }
+            })
             .then(routes(
-                    configuration.prefix bind contract {
-                        renderer = OpenApi3(
-                                apiInfo = ApiInfo("Unearth", "v1"),
-                                json = JSON)
-                        descriptionPath = "/swagger.json"
-
-                        routes += listOf(
-                                submitPrintedExceptionRoute(),
-                                submitStructuredFaultRoute()
-                        )
-                        routes += listOf(
-                                lookupFaultRoute(),
-                                lookupFaultTypeRoute(),
-                                lookupFaultEventRoute(),
-                                lookupCauseRoute(),
-                                lookupCauseTypeRoute()
-                        )
-                        routes += listOf(
-                                feedLimitsGlobalRoute(),
-                                feedLookupGlobalRoute(),
-                                feedLimitsRoute(),
-                                feedLookupRoute()
-                        )
-                        routes +=
-                                printFaultRoute()
-                    },
                     rerouteToSwagger("/doc", configuration.prefix),
                     rerouteToSwagger("/", configuration.prefix),
-                    swaggerUiRoute(configuration.prefix)))
-            .asServer(
-                    NettyConfig(configuration.host, configuration.port)
+                    swaggerUiRoute(configuration.prefix),
+                    app())
             )
+            .asServer(
+                    NettyConfig(configuration.host, configuration.port))
+
+    private fun app(): RoutingHttpHandler {
+        return configuration.prefix bind contract {
+            renderer = OpenApi3(
+                    apiInfo = ApiInfo("Unearth", "v1"),
+                    json = JSON)
+            descriptionPath = "/swagger.json"
+
+            routes += listOf(
+                    submitPrintedExceptionRoute(),
+                    submitStructuredFaultRoute()
+            )
+            routes += listOf(
+                    lookupFaultRoute(),
+                    lookupFaultTypeRoute(),
+                    lookupFaultEventRoute(),
+                    lookupCauseRoute(),
+                    lookupCauseTypeRoute()
+            )
+            routes += listOf(
+                    feedLimitsGlobalRoute(),
+                    feedLookupGlobalRoute(),
+                    feedLimitsRoute(),
+                    feedLookupRoute()
+            )
+            routes +=
+                    printFaultRoute()
+        }
+    }
 
     private fun submission(handling: HandlingPolicy) = Submission(
-            handling.faultTypeId.hash, handling.faultId.hash, handling.faultEventId.hash,
+            handling.faultTypeId, handling.faultId, handling.faultEventId,
             handling.globalSequence, handling.faultTypeSequence, handling.faultSequence,
             handling.isLoggable)
-
-    private fun errors(): (HttpHandler) -> (Request) -> Response =
-            { next ->
-                { req ->
-                    handleErrors(next, req)
-                }
-            }
 
     private fun handleErrors(next: HttpHandler, req: Request): Response =
             try {
@@ -378,8 +371,6 @@ class UnearthServer(
 
         private const val swaggerUiPrefix = "META-INF/resources/webjars/swagger-ui/"
 
-        private val submission = Body.auto<Submission>().toLens()
-
         private val sequenceType: PathLens<SequenceType> = PathLens(
                 meta = Meta(false, "path", ParamMeta.StringParam, "type", "Sequence type"),
                 get = { SequenceType.valueOf(it.toUpperCase()) })
@@ -391,12 +382,6 @@ class UnearthServer(
                         Printout.valueOf(s.toUpperCase())
                     }
                 })
-
-        private val faultSequence = Body.auto<FaultSequence>().toLens()
-
-        private val faultEvent = Body.auto<FaultEventDto>().toLens()
-
-        private val fault = Body.auto<FaultDto>().toLens()
 
         private val reducedException: BiDiBodyLens<Throwable> = BiDiBodyLens(
                 metas = emptyList(),
@@ -417,6 +402,14 @@ class UnearthServer(
                 setLens = { thr, msg ->
                     msg.body(Throwables.string(thr))
                 })
+
+        private val submission = Body.auto<Submission>().toLens()
+
+        private val faultSequence = Body.auto<FaultSequence>().toLens()
+
+        private val faultEvent = Body.auto<FaultEventDto>().toLens()
+
+        private val fault = Body.auto<FaultDto>().toLens()
 
         private val faultType = Body.auto<FaultTypeDto>().toLens()
 
@@ -445,9 +438,9 @@ class UnearthServer(
         private val random = Random()
 
         internal fun submission() = Submission(
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                UUID.randomUUID(),
+                FaultTypeId(UUID.randomUUID()),
+                FaultId(UUID.randomUUID()),
+                FaultEventId(UUID.randomUUID()),
                 random.nextLong() % 1000,
                 1000L + random.nextLong() % 1000,
                 2000L + random.nextLong() % 1000,
@@ -455,15 +448,16 @@ class UnearthServer(
 
         internal fun faultSequence(): FaultSequence = FaultSequence(SequenceType.FAULT, listOf(faultEventDtos()))
 
-        internal fun faultEventDtos(): FaultEventDto = faultEventDtos(uuid())
+        internal fun faultEventDtos(): FaultEventDto = faultEventDtos(FaultTypeId(uuid()))
 
-        internal fun faultTypeDto() = uuid().let { FaultTypeDto(it, listOf(causeTypeDto())) }
+        internal fun faultTypeDto() = FaultTypeDto(FaultTypeId(uuid()), listOf(causeTypeDto()))
 
         internal fun exception() = RuntimeException("Example throwable")
 
-        internal fun causeDto() = uuid().let { CauseDto(it, causeTypeDto(), "Bad stuff") }
+        internal fun causeDto() = CauseDto(CauseId(uuid()), causeTypeDto(), "Bad stuff")
 
-        internal fun causeTypeDto() = CauseTypeDto("BadStuffException", emptyList(), emptyList(), uuid())
+        internal fun causeTypeDto() =
+                CauseTypeDto(CauseTypeId(uuid()), "BadStuffException", emptyList(), emptyList())
 
         private fun unearthedException(): UnearthedException =
                 UnearthedException(
@@ -473,12 +467,15 @@ class UnearthServer(
 
         private fun uuid(): UUID = UUID.randomUUID()
 
-        private fun faultEventDtos(faultTypeId: UUID): FaultEventDto = FaultEventDto(uuid(),
+        private fun faultEventDtos(faultTypeId: FaultTypeId): FaultEventDto = FaultEventDto(
+                FaultEventId(uuid()),
+                FaultId(uuid()),
                 faultTypeId,
                 random.nextLong(),
                 random.nextLong(),
                 random.nextLong(),
                 ZonedDateTime.now(),
+                emptyList(),
                 unearthedException())
     }
 }

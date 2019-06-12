@@ -17,14 +17,14 @@
 
 package no.scienta.unearth.dto
 
-import java.util.*
+import no.scienta.unearth.munch.id.CauseTypeId
 
 data class CauseTypeDto(
+
+        val id: CauseTypeId,
 
         val className: String,
 
         val stacktrace: List<UnearthedStackTraceElement>?,
 
-        val simpleTrace: List<String>,
-
-        val causeTypeId: UUID)
+        val simpleTrace: List<String>)

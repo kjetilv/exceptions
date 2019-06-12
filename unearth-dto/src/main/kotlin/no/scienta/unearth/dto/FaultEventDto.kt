@@ -17,14 +17,18 @@
 
 package no.scienta.unearth.dto
 
+import no.scienta.unearth.munch.id.FaultEventId
+import no.scienta.unearth.munch.id.FaultId
+import no.scienta.unearth.munch.id.FaultTypeId
 import java.time.ZonedDateTime
-import java.util.*
 
 data class FaultEventDto(
 
-        val faultId: UUID,
+        val id: FaultEventId,
 
-        val faultTypeId: UUID,
+        val faultId: FaultId,
+
+        val faultTypeId: FaultTypeId,
 
         val seqNo: Long,
 
@@ -34,7 +38,9 @@ data class FaultEventDto(
 
         val time: ZonedDateTime,
 
-        val cause: UnearthedException,
+        val causes: List<CauseDto>,
+
+        val exception: UnearthedException,
 
         val printout: String? = null
 )

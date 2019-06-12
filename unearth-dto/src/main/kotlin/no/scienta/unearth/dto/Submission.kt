@@ -17,15 +17,17 @@
 
 package no.scienta.unearth.dto
 
-import java.util.*
+import no.scienta.unearth.munch.id.FaultEventId
+import no.scienta.unearth.munch.id.FaultId
+import no.scienta.unearth.munch.id.FaultTypeId
 
 data class Submission(
 
-        val faultTypeId: UUID,
+        val faultTypeId: FaultTypeId,
 
-        val faultId: UUID,
+        val faultId: FaultId,
 
-        val faultEventId: UUID,
+        val faultEventId: FaultEventId,
 
         val globalSeqNo: Long,
 

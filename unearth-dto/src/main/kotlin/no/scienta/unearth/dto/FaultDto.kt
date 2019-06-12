@@ -17,12 +17,13 @@
 
 package no.scienta.unearth.dto
 
-import java.util.*
+import no.scienta.unearth.munch.id.FaultId
+import no.scienta.unearth.munch.id.FaultTypeId
 
 data class FaultDto(
 
-        val faultTypeId: UUID,
+        val id: FaultId,
 
-        val faultId: UUID,
+        val faultTypeId: FaultTypeId,
 
         val causes: List<CauseTypeDto>)

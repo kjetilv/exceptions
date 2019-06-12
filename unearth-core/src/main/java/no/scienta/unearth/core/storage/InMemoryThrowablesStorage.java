@@ -101,33 +101,6 @@ public class InMemoryThrowablesStorage
     }
 
     @Override
-    public FaultTypeId resolveFaultType(UUID uuid) {
-        if (faultTypes.containsKey(new FaultTypeId(uuid))) {
-            return new FaultTypeId(uuid);
-        }
-        if (faults.containsKey(new FaultId(uuid))) {
-            return faults.get(new FaultId(uuid)).getFaultType().getId();
-        }
-        if (events.containsKey(new FaultEventId(uuid))) {
-            FaultEvent throwableSpecimen = events.get(new FaultEventId(uuid));
-            return throwableSpecimen.getFault().getFaultType().getId();
-        }
-        throw new IllegalStateException("No such fault type or fault: " + uuid);
-    }
-
-    @Override
-    public FaultId resolveFault(UUID uuid) {
-        if (faults.containsKey(new FaultId(uuid))) {
-            return new FaultId(uuid);
-        }
-        if (events.containsKey(new FaultEventId(uuid))) {
-            FaultEvent throwableSpecimen = events.get(new FaultEventId(uuid));
-            return throwableSpecimen.getFault().getId();
-        }
-        throw new IllegalStateException("No such fault type or fault: " + uuid);
-    }
-
-    @Override
     public FaultType getFaultType(FaultTypeId faultTypeId) {
         return get("faultType", faultTypeId, faultTypes);
     }

@@ -21,15 +21,10 @@ import no.scienta.unearth.munch.data.*;
 import no.scienta.unearth.munch.id.*;
 
 import java.util.Collection;
-import java.util.UUID;
 
 public interface FaultStorage {
 
     FaultEvent store(Fault fault);
-
-    FaultTypeId resolveFaultType(UUID id);
-
-    FaultId resolveFault(UUID id);
 
     Fault getFault(FaultId faultId);
 
