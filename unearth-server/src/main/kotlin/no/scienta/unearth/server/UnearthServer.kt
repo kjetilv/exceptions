@@ -71,15 +71,15 @@ class UnearthServer(
         submission(controller.submitFault(fault))
     }
 
-    private fun lookupFaultEventRoute() = "/fault-event" / uuidPath meta {
+    private fun lookupFaultEventRoute() = "/fault-event" / uuid(::FaultEventId) meta {
         summary = "Lookup a fault event"
         queries += listOf(fullStack, simpleTrace, printout)
         produces += ContentType.APPLICATION_JSON
         returning(Status.OK, faultEvent to Example.faultEventDtos())
-    } bindContract Method.GET to { uuid ->
+    } bindContract Method.GET to { faultEventId ->
         { req ->
             get(faultEvent) {
-                controller.lookupFaultEventDto(FaultEventId(uuid),
+                controller.lookupFaultEventDto(faultEventId,
                         isSet(req, fullStack),
                         isSet(req, simpleTrace),
                         printout[req] ?: Printout.NONE
@@ -88,15 +88,15 @@ class UnearthServer(
         }
     }
 
-    private fun lookupFaultTypeRoute() = "/fault-type" / uuidPath meta {
+    private fun lookupFaultTypeRoute() = "/fault-type" / uuid(::FaultTypeId) meta {
         summary = "Lookup a fault, with fault events"
         queries += listOf(fullStack, simpleTrace, offsetQuery, countQuery)
         produces += ContentType.APPLICATION_JSON
         returning(Status.OK, faultType to Example.faultTypeDto())
-    } bindContract Method.GET to { uuid ->
+    } bindContract Method.GET to { faultTypeId ->
         { req ->
             get(faultType) {
-                controller.lookupFaultTypeDto(FaultTypeId(uuid),
+                controller.lookupFaultTypeDto(faultTypeId,
                         fullStack = isSet(req, fullStack, true),
                         simpleTrace = isSet(req, simpleTrace),
                         offset = offsetQuery[req],
@@ -105,70 +105,82 @@ class UnearthServer(
         }
     }
 
-    private fun lookupFaultRoute() = "/fault" / uuidPath meta {
+    private fun lookupFaultRoute() = "/fault" / uuid(::FaultId) meta {
         summary = "Lookup a fault"
         queries += listOf(fullStack, simpleTrace)
         produces += ContentType.APPLICATION_JSON
-        returning(Status.OK, faultType to Example.faultTypeDto())
-    } bindContract Method.GET to { uuid ->
+        returning(Status.OK, fault to Example.faultDto())
+    } bindContract Method.GET to { faultId ->
         { req ->
             get(fault) {
-                controller.lookupFaultDto(uuid, isSet(req, fullStack), isSet(req, simpleTrace))
+                controller.lookupFaultDto(faultId, isSet(req, fullStack), isSet(req, simpleTrace))
             }
         }
     }
 
-    private fun lookupCauseRoute() = "/cause-type" / uuidPath meta {
+    private fun lookupCauseRoute() = "/cause-type" / uuid(::CauseTypeId) meta {
         summary = "Lookup a stack"
         queries += listOf(fullStack, simpleTrace)
         produces += ContentType.APPLICATION_JSON
         returning(Status.OK, causeType to Example.causeTypeDto())
-    } bindContract Method.GET to { uuid ->
+    } bindContract Method.GET to { causeTypeId ->
         { req ->
             get(causeType) {
-                controller.lookupCauseTypeDto(CauseTypeId(uuid),
+                controller.lookupCauseTypeDto(causeTypeId,
                         isSet(req, fullStack, true),
                         isSet(req, simpleTrace))
             }
         }
     }
 
-    private fun lookupCauseTypeRoute() = "/cause" / uuidPath meta {
+    private fun lookupCauseTypeRoute() = "/cause" / uuid(::CauseId) meta {
         summary = "Lookup a stack"
         queries += listOf(fullStack, simpleTrace)
         produces += ContentType.APPLICATION_JSON
         returning(Status.OK, cause to Example.causeDto())
-    } bindContract Method.GET to { uuid ->
+    } bindContract Method.GET to { causeId ->
         { req ->
             get(cause) {
-                controller.lookupCauseDto(CauseId(uuid),
+                controller.lookupCauseDto(causeId,
                         isSet(req, fullStack, true),
                         isSet(req, simpleTrace))
             }
         }
     }
 
-    private fun printFaultRoute() = "/throwable/" / uuidPath meta {
+    private fun printFaultRoute() = "/throwable" / uuid(::FaultId) meta {
         summary = "Print an exception"
         produces += ContentType.TEXT_PLAIN
         queries += listOf(printout)
         returning(Status.OK, exception to Example.exception())
-    } bindContract Method.GET to { uuid ->
+    } bindContract Method.GET to { faultId ->
         {
             get(exception, type = ContentType.TEXT_PLAIN) {
-                controller.lookupThrowable(uuid)
+                controller.lookupThrowable(faultId)
             }
         }
     }
 
-    private fun feedLimitsRoute() = "/feed/limit" / sequenceType / uuidPath meta {
-        summary = "Event limits"
+    private fun feedLimitsFaultRoute() = "/feed/limit/fault" / uuid(::FaultId) meta {
+        summary = "Event limits for a fault"
         produces += ContentType.APPLICATION_JSON
         returning(Status.OK)
-    } bindContract Method.GET to { type, uuid ->
+    } bindContract Method.GET to { faultId ->
         {
             get {
-                controller.feedLimit(type, uuid).toString()
+                controller.feedLimitFault(faultId).toString()
+            }
+        }
+    }
+
+    private fun feedLimitsFaultTypeRoute() = "/feed/limit/fault-type" / uuid(::FaultTypeId) meta {
+        summary = "Event limits for a fault type"
+        produces += ContentType.APPLICATION_JSON
+        returning(Status.OK)
+    } bindContract Method.GET to { faultId ->
+        {
+            get {
+                controller.feedLimitFaultType(faultId).toString()
             }
         }
     }
@@ -179,23 +191,32 @@ class UnearthServer(
         returning(Status.OK)
     } bindContract Method.GET to {
         get {
-            controller.feedLimit().toString()
+            controller.feedLimitGlobal().toString()
         }
     }
 
-    private fun feedLookupRoute() = "/feed" / sequenceType / uuidPath / offsetPath meta {
+    private fun feedLookupFaultRoute() = "/feed/fault" / uuid(::FaultId) / offsetPath meta {
         summary = "Events"
         produces += ContentType.APPLICATION_JSON
         queries += listOf(countQuery, thinFeedQuery)
         returning(Status.OK, faultSequence to Example.faultSequence())
-    } bindContract Method.GET to { type, uuid, offset ->
+    } bindContract Method.GET to { faultId, offset ->
         { req ->
             get(faultSequence) {
-                controller.faultSequence(type,
-                        uuid,
-                        offset,
-                        countQuery[req] ?: 0L,
-                        isSet(req, thinFeedQuery))
+                controller.faultSequence(faultId, offset, countQuery[req] ?: 0L, isSet(req, thinFeedQuery))
+            }
+        }
+    }
+
+    private fun feedLookupFaultTypeRoute() = "/feed/fault-type" / uuid(::FaultTypeId) / offsetPath meta {
+        summary = "Events"
+        produces += ContentType.APPLICATION_JSON
+        queries += listOf(countQuery, thinFeedQuery)
+        returning(Status.OK, faultSequence to Example.faultSequence())
+    } bindContract Method.GET to { faultTypeId, offset ->
+        { req ->
+            get(faultSequence) {
+                controller.faultSequence(faultTypeId, offset, countQuery[req] ?: 0L, isSet(req, thinFeedQuery))
             }
         }
     }
@@ -208,7 +229,7 @@ class UnearthServer(
     } bindContract Method.GET to { offset ->
         { req ->
             get(faultSequence) {
-                controller.faultSequence(offset, countQuery[req] ?: 0L, isSet(req, thinFeedQuery))
+                controller.faultSequenceGlobal(offset, countQuery[req] ?: 0L, isSet(req, thinFeedQuery))
             }
         }
     }
@@ -280,9 +301,11 @@ class UnearthServer(
             )
             routes += listOf(
                     feedLimitsGlobalRoute(),
+                    feedLimitsFaultRoute(),
+                    feedLimitsFaultTypeRoute(),
                     feedLookupGlobalRoute(),
-                    feedLimitsRoute(),
-                    feedLookupRoute()
+                    feedLookupFaultRoute(),
+                    feedLookupFaultTypeRoute()
             )
             routes +=
                     printFaultRoute()
@@ -364,6 +387,11 @@ class UnearthServer(
         private val thinFeedQuery = Query.boolean().optional("thin")
 
         private val offsetPath = Path.long().of("offset")
+
+        private fun <T : Id> uuid(read: (UUID) -> T) = PathLens(
+                meta = Meta(required = true, location = "path", paramMeta = ParamMeta.StringParam, name = "uuid"),
+                get = { uuid -> read(UUID.fromString(uuid)) }
+        )
 
         private val uuidPath = Path.uuid().of("uuid")
 
@@ -451,6 +479,8 @@ class UnearthServer(
         internal fun faultEventDtos(): FaultEventDto = faultEventDtos(FaultTypeId(uuid()))
 
         internal fun faultTypeDto() = FaultTypeDto(FaultTypeId(uuid()), listOf(causeTypeDto()))
+
+        internal fun faultDto() = FaultDto(FaultId(uuid()), FaultTypeId(uuid()), listOf(causeTypeDto()));
 
         internal fun exception() = RuntimeException("Example throwable")
 

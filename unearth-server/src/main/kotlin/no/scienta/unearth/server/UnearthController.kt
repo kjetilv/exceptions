@@ -62,10 +62,10 @@ class UnearthController(
     }
 
     fun lookupFaultDto(
-            uuid: UUID,
+            faultId: FaultId,
             fullStack: Boolean = true,
             simpleTrace: Boolean = false
-    ) = storage.getFault(FaultId(uuid)).let { fault ->
+    ) = storage.getFault(faultId).let { fault ->
         FaultDto(
                 id = fault.id,
                 faultTypeId = fault.faultType.id,
@@ -114,32 +114,28 @@ class UnearthController(
             simpleTrace: Boolean = false
     ): CauseDto = causeDto(storage.getCause(causeId), fullStack, simpleTrace)
 
-    fun lookupThrowable(uuid: UUID): Throwable = storage.getFault(FaultId(uuid)).toCameleon()
+    fun lookupThrowable(faultId: FaultId): Throwable = storage.getFault(faultId).toCameleon()
 
-    fun feedLimit(type: SequenceType, uuid: UUID): Long =
-            when (type) {
-                SequenceType.FAULT -> feed.limit(FaultId(uuid))
-                SequenceType.FAULT_TYPE -> feed.limit(FaultTypeId(uuid))
-                else -> feedLimit()
-            }
+    fun feedLimitFault(faultId: FaultId): Long = feed.limit(faultId)
 
-    fun feedLimit() = feed.limit()
+    fun feedLimitFaultType(faultTypeId: FaultTypeId): Long = feed.limit(faultTypeId)
 
-    fun faultSequence(
-            offset: Long,
-            count: Long,
-            thin: Boolean = false
-    ): FaultSequence = faultSequence(SequenceType.GLOBAL, null, offset, count, thin)
+    fun feedLimitGlobal() = feed.limit()
 
-    fun faultSequence(
-            type: SequenceType,
-            uuid: UUID?,
-            offset: Long,
-            count: Long,
-            thin: Boolean = false
-    ): FaultSequence = FaultSequence(
-            type,
-            events(type, uuid, offset, count).map(toDto(thin)))
+    fun faultSequenceGlobal(offset: Long, count: Long, thin: Boolean = false): FaultSequence =
+            FaultSequence(
+                    SequenceType.GLOBAL,
+                    feed.feed(offset, count).map(toDto(thin)))
+
+    fun faultSequence(faultId: FaultId, offset: Long, count: Long, thin: Boolean = false): FaultSequence =
+            FaultSequence(
+                    SequenceType.FAULT,
+                    feed.feed(faultId, offset, count).map(toDto(thin)))
+
+    fun faultSequence(faultTypeId: FaultTypeId, offset: Long, count: Long, thin: Boolean = false): FaultSequence =
+            FaultSequence(
+                    SequenceType.FAULT_TYPE,
+                    feed.feed(faultTypeId, offset, count).map(toDto(thin)))
 
     private fun toFault(fault: FaultDto): Fault = TODO("Haven't started accepting fault dto's yet!")
 
@@ -155,13 +151,6 @@ class UnearthController(
                 emptyList(),
                 unearthedException(event.fault.toChainedFault(), thin = thin))
     }
-
-    private fun events(type: SequenceType, uuid: UUID?, offset: Long, count: Long): List<FaultEvent> =
-            when (type) {
-                SequenceType.FAULT_TYPE -> feed.feed(FaultTypeId(uuid), offset, count)
-                SequenceType.FAULT -> feed.feed(FaultId(uuid), offset, count)
-                else -> feed.feed(offset, count)
-            } ?: emptyList()
 
     private fun unearthedException(
             dto: ChainedFault,
