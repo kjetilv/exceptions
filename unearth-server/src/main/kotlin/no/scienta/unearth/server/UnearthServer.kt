@@ -75,7 +75,7 @@ class UnearthServer(
         summary = "Lookup a fault event"
         queries += listOf(fullStack, printStack)
         produces += ContentType.APPLICATION_JSON
-        returning(Status.OK, faultEvent to Swagger.faultEventDtos())
+        returning(Status.OK, faultEvent to Swagger.faultEventDto())
     } bindContract Method.GET to { faultEventId ->
         { req ->
             get(faultEvent) {

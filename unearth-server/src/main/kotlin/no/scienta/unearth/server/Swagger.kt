@@ -36,17 +36,23 @@ object Swagger {
             random.nextBoolean())
 
     internal fun faultSequence(id: ((UUID) -> Id)? = null): FaultSequence =
-            FaultSequence(id?.let { it(uuid()) }, SequenceType.FAULT, listOf(faultEventDtos()))
-
-    internal fun faultEventDtos(): FaultEventDto = faultEventDtos(FaultTypeId(uuid()))
+            FaultSequence(id?.let { it(uuid()) }, SequenceType.FAULT, listOf(faultEventDto()))
 
     internal fun faultTypeDto() = FaultTypeDto(FaultTypeId(uuid()), listOf(causeTypeDto()))
 
-    internal fun faultDto() = FaultDto(FaultId(uuid()), FaultTypeId(uuid()), listOf(causeDto()));
+    internal fun faultDto() = FaultDto(FaultId(uuid()), FaultTypeId(uuid()), listOf(causeDto()))
 
     internal fun exception() = RuntimeException("Example throwable")
 
     internal fun causeDto() = CauseDto(CauseId(uuid()), "Bad stuff", causeTypeDto())
+
+    internal fun faultEventDto(): FaultEventDto = FaultEventDto(
+            FaultEventId(uuid()),
+            faultDto(),
+            ZonedDateTime.now(),
+            random.nextInt().toLong(),
+            random.nextInt().toLong(),
+            random.nextInt().toLong())
 
     internal fun causeTypeDto() =
             CauseTypeDto(CauseTypeId(uuid()), "BadStuffException", emptyList(), emptyList())
@@ -58,16 +64,6 @@ object Swagger {
                     causeType = causeTypeDto())
 
     private fun uuid(): UUID = UUID.randomUUID()
-
-    private fun faultEventDtos(faultTypeId: FaultTypeId): FaultEventDto = FaultEventDto(
-            FaultEventId(uuid()),
-            FaultId(uuid()),
-            faultTypeId,
-            random.nextLong(),
-            random.nextLong(),
-            random.nextLong(),
-            ZonedDateTime.now(),
-            listOf(causeDto(), causeDto()))
 
     fun limit(): Long = random.nextInt().toLong()
 }

@@ -17,7 +17,7 @@
 
 package no.scienta.unearth.dto
 
-data class UnearthedStackTraceElement(
+data class StackTraceElementDto(
 
         val classLoaderName: String?,
 

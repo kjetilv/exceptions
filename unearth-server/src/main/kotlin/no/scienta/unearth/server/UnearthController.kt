@@ -20,10 +20,7 @@ package no.scienta.unearth.server
 import no.scienta.unearth.core.*
 import no.scienta.unearth.core.handler.DefaultThrowablesHandler
 import no.scienta.unearth.dto.*
-import no.scienta.unearth.munch.data.Cause
-import no.scienta.unearth.munch.data.CauseType
-import no.scienta.unearth.munch.data.ChainedFault
-import no.scienta.unearth.munch.data.FaultEvent
+import no.scienta.unearth.munch.data.*
 import no.scienta.unearth.munch.id.*
 import java.time.ZoneId
 
@@ -54,22 +51,13 @@ class UnearthController(
             faultId: FaultId,
             fullStack: Boolean = true,
             printStack: Boolean = false
-    ): FaultDto = storage.getFault(faultId).let { fault ->
-        FaultDto(
-                id = fault.id,
-                faultTypeId = fault.faultType.id,
-                causes = fault.causes.map { cause ->
-                    causeDto(cause, fullStack = fullStack, printStack = printStack)
-                })
-    }
+    ): FaultDto = faultDto(storage.getFault(faultId), fullStack, printStack)
 
     fun lookupFaultEventDto(
             id: FaultEventId,
             fullStack: Boolean = false,
             printStack: Boolean = false
-    ): FaultEventDto = storage.getFaultEvent(id).let { faultEvent ->
-        faultEventDto(faultEvent, fullStack, printStack)
-    }
+    ): FaultEventDto = faultEventDto(storage.getFaultEvent(id), fullStack, printStack)
 
     private fun faultEventDto(
             faultEvent: FaultEvent,
@@ -77,15 +65,11 @@ class UnearthController(
             printStack: Boolean = false
     ): FaultEventDto = FaultEventDto(
             faultEvent.id,
-            faultEvent.fault.id,
-            faultEvent.fault.faultType.id,
+            faultDto(faultEvent.fault, fullStack, printStack),
+            faultEvent.time.atZone(ZoneId.of("UTC")),
             faultEvent.globalSequence,
             faultEvent.faultSequence,
-            faultEvent.faultTypeSequence,
-            faultEvent.time.atZone(ZoneId.of("UTC")),
-            faultEvent.fault.causes.map {
-                causeDto(it, fullStack, printStack)
-            })
+            faultEvent.faultTypeSequence)
 
     fun lookupCauseTypeDto(
             causeTypeId: CauseTypeId,
@@ -158,6 +142,15 @@ class UnearthController(
                 unearthedException(it, fullStack)
             })
 
+    private fun faultDto(fault: Fault, fullStack: Boolean, printStack: Boolean): FaultDto {
+        return FaultDto(
+                id = fault.id,
+                faultTypeId = fault.faultType.id,
+                causes = fault.causes.map { cause ->
+                    causeDto(cause, fullStack = fullStack, printStack = printStack)
+                })
+    }
+
     private fun causeTypeDto(
             causeType: CauseType,
             fullStack: Boolean = false,
@@ -187,8 +180,8 @@ class UnearthController(
 
     private fun stackTrace(
             stackTrace: List<StackTraceElement>
-    ): List<UnearthedStackTraceElement>? = stackTrace.map { element ->
-        UnearthedStackTraceElement(
+    ): List<StackTraceElementDto>? = stackTrace.map { element ->
+        StackTraceElementDto(
                 classLoaderName = element.classLoaderName,
                 moduleName = element.moduleName,
                 moduleVersion = element.moduleVersion,

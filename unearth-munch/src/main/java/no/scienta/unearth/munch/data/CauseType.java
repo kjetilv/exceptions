@@ -20,10 +20,7 @@ package no.scienta.unearth.munch.data;
 import no.scienta.unearth.munch.ChameleonException;
 import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
 import no.scienta.unearth.munch.id.CauseTypeId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,13 +34,9 @@ import java.util.stream.Collectors;
  */
 public class CauseType extends AbstractHashableIdentifiable<CauseTypeId> {
 
-    private static final Logger log = LoggerFactory.getLogger(CauseType.class);
-
     public static CauseType create(Throwable throwable) {
         return new CauseType(className(throwable), copy(throwable.getStackTrace()));
     }
-
-    private static final Field formatField = formatField();
 
     private final String className;
 
@@ -74,27 +67,15 @@ public class CauseType extends AbstractHashableIdentifiable<CauseTypeId> {
     }
 
     private static List<StackTraceElement> copy(StackTraceElement[] stackTrace) {
-        return Arrays.stream(stackTrace).map(orig ->
-            withFormat(orig, new StackTraceElement(
-                orig.getClassLoaderName(),
-                orig.getModuleName(),
-                orig.getModuleVersion(),
-                orig.getClassName(),
-                orig.getMethodName(),
-                orig.getFileName(),
-                orig.getLineNumber()
-            ))).collect(Collectors.toUnmodifiableList());
-    }
-
-    private static StackTraceElement withFormat(StackTraceElement original, StackTraceElement copy) {
-        if (formatField != null) {
-            try {
-                formatField.set(copy, formatField.get(original));
-            } catch (IllegalAccessException e) {
-                log.info("Could not replicate format field: " + original, e);
-            }
-        }
-        return copy;
+        return Arrays.stream(stackTrace).map(orig -> new StackTraceElement(
+                        orig.getClassLoaderName(),
+                        orig.getModuleName(),
+                        orig.getModuleVersion(),
+                        orig.getClassName(),
+                        orig.getMethodName(),
+                        orig.getFileName(),
+                        orig.getLineNumber()
+                    )).collect(Collectors.toUnmodifiableList());
     }
 
     private static String className(Throwable throwable) {
@@ -102,17 +83,6 @@ public class CauseType extends AbstractHashableIdentifiable<CauseTypeId> {
             return ((ChameleonException) throwable).getProxiedClassName();
         }
         return throwable.getClass().getName();
-    }
-
-    private static Field formatField() {
-        try {
-            Field field = StackTraceElement.class.getDeclaredField("format");
-            field.setAccessible(true);
-            return field;
-        } catch (NoSuchFieldException e) {
-            log.error("Could not find 'format' field", e);
-            return null;
-        }
     }
 
     @Override
