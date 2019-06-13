@@ -25,6 +25,7 @@ import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.util.Throwables
 import no.scienta.unearth.server.JSON.auto
 import no.scienta.unearth.statik.Statik
+import org.http4k.asString
 import org.http4k.contract.contract
 import org.http4k.contract.div
 import org.http4k.contract.meta
@@ -67,7 +68,7 @@ class UnearthServer(
         receiving(exception to Swagger.exception())
         returning(Status.OK, submission to Swagger.submission())
     } bindContract Method.POST to exchange(exception, submission) { throwable ->
-        submission(controller.submitRaw(throwable))
+        submission(controller submitRaw throwable)
     }
 
     private fun lookupFaultEventRoute() = "/fault-event" / uuid(::FaultEventId) meta {
@@ -95,8 +96,8 @@ class UnearthServer(
         { req ->
             get(faultType) {
                 controller.lookupFaultTypeDto(faultTypeId,
-                        fullStack = fullStack[req] ?: false,
-                        printStack = printStack[req] ?: false)
+                        fullStack[req] ?: false,
+                        printStack[req] ?: false)
             }
         }
     }
@@ -109,7 +110,9 @@ class UnearthServer(
     } bindContract Method.GET to { faultId ->
         { req ->
             get(fault) {
-                controller.lookupFaultDto(faultId, fullStack[req] ?: false, printStack[req] ?: false)
+                controller.lookupFaultDto(faultId,
+                        fullStack[req] ?: false,
+                        printStack[req] ?: false)
             }
         }
     }
@@ -144,53 +147,40 @@ class UnearthServer(
         }
     }
 
-    private fun feedLimitsFaultRoute() = "/feed/fault/limit" / uuid(::FaultId) meta {
-        summary = "Event limits for a fault"
+    private fun feedLimitsGlobalRoute() = "/feed/limit" meta {
+        summary = "Event limits global"
         produces += ContentType.APPLICATION_JSON
-        returning(Status.OK)
-    } bindContract Method.GET to { faultId ->
-        {
-            get {
-                controller.feedLimitFault(faultId).toString()
-            }
+        returning(Status.OK, limit to Swagger.limit())
+    } bindContract Method.GET to {
+        get(limit) {
+            controller.feedLimitGlobal()
         }
     }
+
+    private fun feedLookupGlobalRoute() = "/feed" meta {
+        summary = "Events global"
+        produces += ContentType.APPLICATION_JSON
+        queries += listOf(offsetQuery, countQuery, fullStack, printStack)
+        returning(Status.OK, faultSequence to Swagger.faultSequence())
+    } bindContract Method.GET to { req ->
+        get(faultSequence) {
+            controller.faultSequenceGlobal(
+                    offsetQuery[req] ?: 0L,
+                    countQuery[req] ?: 0L,
+                    fullStack[req] ?: false,
+                    printStack[req] ?: false)
+        }
+    }
+
 
     private fun feedLimitsFaultTypeRoute() = "/feed/fault-type/limit" / uuid(::FaultTypeId) meta {
         summary = "Event limits for a fault type"
         produces += ContentType.APPLICATION_JSON
-        returning(Status.OK)
+        returning(Status.OK, limit to Swagger.limit())
     } bindContract Method.GET to { faultId ->
         {
-            get {
-                controller.feedLimitFaultType(faultId).toString()
-            }
-        }
-    }
-
-    private fun feedLimitsGlobalRoute() = "/feed/limit" meta {
-        summary = "Event limits global"
-        produces += ContentType.APPLICATION_JSON
-        returning(Status.OK)
-    } bindContract Method.GET to {
-        get {
-            controller.feedLimitGlobal().toString()
-        }
-    }
-
-    private fun feedLookupFaultRoute() = "/feed/fault" / uuid(::FaultId) meta {
-        summary = "Events for a fault"
-        produces += ContentType.APPLICATION_JSON
-        queries += listOf(offsetQuery, countQuery, fullStack, printStack)
-        returning(Status.OK, faultSequence to Swagger.faultSequence(::FaultId))
-    } bindContract Method.GET to { faultId ->
-        { req ->
-            get(faultSequence) {
-                controller.faultSequence(faultId,
-                        offsetQuery[req] ?: 0L,
-                        countQuery[req] ?: 0L,
-                        fullStack[req] ?: false,
-                        printStack[req] ?: false)
+            get(limit) {
+                controller feedLimitFaultType faultId
             }
         }
     }
@@ -212,18 +202,32 @@ class UnearthServer(
         }
     }
 
-    private fun feedLookupGlobalRoute() = "/feed" meta {
-        summary = "Events global"
+    private fun feedLimitsFaultRoute() = "/feed/fault/limit" / uuid(::FaultId) meta {
+        summary = "Event limits for a fault"
+        produces += ContentType.APPLICATION_JSON
+        returning(Status.OK, limit to Swagger.limit())
+    } bindContract Method.GET to { faultId ->
+        {
+            get(limit) {
+                controller feedLimitFault faultId
+            }
+        }
+    }
+
+    private fun feedLookupFaultRoute() = "/feed/fault" / uuid(::FaultId) meta {
+        summary = "Events for a fault"
         produces += ContentType.APPLICATION_JSON
         queries += listOf(offsetQuery, countQuery, fullStack, printStack)
-        returning(Status.OK, faultSequence to Swagger.faultSequence())
-    } bindContract Method.GET to { req ->
-        get(faultSequence) {
-            controller.faultSequenceGlobal(
-                    offsetQuery[req] ?: 0L,
-                    countQuery[req] ?: 0L,
-                    fullStack[req] ?: false,
-                    printStack[req] ?: false)
+        returning(Status.OK, faultSequence to Swagger.faultSequence(::FaultId))
+    } bindContract Method.GET to { faultId ->
+        { req ->
+            get(faultSequence) {
+                controller.faultSequence(faultId,
+                        offsetQuery[req] ?: 0L,
+                        countQuery[req] ?: 0L,
+                        fullStack[req] ?: false,
+                        printStack[req] ?: false)
+            }
         }
     }
 
@@ -234,7 +238,7 @@ class UnearthServer(
     } bindContract Method.GET to { faultId ->
         {
             get(exception, type = ContentType.TEXT_PLAIN) {
-                controller.lookupThrowable(faultId)
+                controller lookupThrowable faultId
             }
         }
     }
@@ -246,7 +250,7 @@ class UnearthServer(
     } bindContract Method.GET to { faultId ->
         {
             get(exception, type = ContentType.TEXT_PLAIN) {
-                controller.lookupThrowableRedux(faultId)
+                controller lookupThrowableRedux faultId
             }
         }
     }
@@ -269,11 +273,6 @@ class UnearthServer(
             type: ContentType = ContentType.APPLICATION_JSON,
             result: () -> O
     ): Response = outLens.set(withContentType(Response(Status.OK), type), result())
-
-    private fun get(
-            type: ContentType = ContentType.APPLICATION_JSON,
-            result: () -> String
-    ): Response = withContentType(Response(Status.OK), type).body(result())
 
     private val server = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
             .then(Filter { nextHandler ->
@@ -405,7 +404,8 @@ class UnearthServer(
                 get = { uuid -> read(UUID.fromString(uuid)) }
         )
 
-        private val swaggerUiPattern = Pattern.compile("^.*swagger-ui-([\\d.]+).jar!.*$")
+        private val swaggerUiPattern =
+                Pattern.compile("^.*swagger-ui-([\\d.]+).jar!.*$")
 
         private const val swaggerUiPrefix = "META-INF/resources/webjars/swagger-ui/"
 
@@ -418,6 +418,13 @@ class UnearthServer(
                 setLens = { thr, msg ->
                     msg.body(Throwables.string(thr))
                 })
+
+        private val limit: BiDiBodyLens<Long> = BiDiBodyLens(
+                metas = emptyList(),
+                contentType = ContentType.TEXT_PLAIN,
+                get = { msg -> java.lang.Long.parseLong(msg.body.payload.asString()) },
+                setLens = { v, msg -> msg.body(v.toString()) }
+        )
 
         private val submission = Body.auto<Submission>().toLens()
 

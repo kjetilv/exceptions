@@ -36,7 +36,7 @@ class UnearthController(
 ) {
     private val handler: FaultHandler = DefaultThrowablesHandler(storage, sensor)
 
-    fun submitRaw(t: Throwable): HandlingPolicy = handler.handle(t)
+    infix fun submitRaw(t: Throwable): HandlingPolicy = handler.handle(t)
 
     fun lookupFaultTypeDto(
             id: FaultTypeId,
@@ -99,13 +99,13 @@ class UnearthController(
             printStack: Boolean = false
     ): CauseDto = causeDto(storage.getCause(causeId), fullStack, printStack)
 
-    fun lookupThrowable(faultId: FaultId): Throwable = storage.getFault(faultId).toCameleon()
+    infix fun lookupThrowable(faultId: FaultId): Throwable = storage.getFault(faultId).toCameleon()
 
-    fun lookupThrowableRedux(faultId: FaultId): Throwable = reducer.reduce(storage.getFault(faultId)).toCameleon()
+    infix fun lookupThrowableRedux(faultId: FaultId): Throwable = reducer.reduce(storage.getFault(faultId)).toCameleon()
 
-    fun feedLimitFault(faultId: FaultId): Long = feed.limit(faultId)
+    infix fun feedLimitFault(faultId: FaultId): Long = feed.limit(faultId)
 
-    fun feedLimitFaultType(faultTypeId: FaultTypeId): Long = feed.limit(faultTypeId)
+    infix fun feedLimitFaultType(faultTypeId: FaultTypeId): Long = feed.limit(faultTypeId)
 
     fun feedLimitGlobal() = feed.limit()
 

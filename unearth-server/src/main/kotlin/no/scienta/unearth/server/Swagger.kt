@@ -68,4 +68,6 @@ object Swagger {
             random.nextLong(),
             ZonedDateTime.now(),
             listOf(causeDto(), causeDto()))
+
+    fun limit(): Long = random.nextInt().toLong()
 }
