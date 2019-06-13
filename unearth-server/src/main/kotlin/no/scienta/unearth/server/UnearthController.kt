@@ -87,46 +87,49 @@ class UnearthController(
 
     infix fun lookupThrowableRedux(faultId: FaultId): Throwable = reducer.reduce(storage.getFault(faultId)).toCameleon()
 
-    infix fun feedLimitFault(faultId: FaultId): Long = feed.limit(faultId)
+    infix fun feedLimit(faultId: FaultId): Long = feed.limit(faultId)
 
-    infix fun feedLimitFaultType(faultTypeId: FaultTypeId): Long = feed.limit(faultTypeId)
+    infix fun feedLimit(faultTypeId: FaultTypeId): Long = feed.limit(faultTypeId)
 
-    fun feedLimitGlobal() = feed.limit()
+    fun feedLimit() = feed.limit()
 
-    fun faultSequenceGlobal(
+    fun feed(
             offset: Long,
             count: Long,
             fullStack: Boolean = false,
             printStack: Boolean = false
-    ): FaultSequence = FaultSequence(
+    ): FaultEventSequence = FaultEventSequence(
             null,
             SequenceType.GLOBAL,
-            feed.feed(offset, count).map { faultEventDto(it, fullStack, printStack) }
-    )
+            feed.feed(offset, count).map {
+                faultEventDto(it, fullStack, printStack)
+            })
 
-    fun faultSequence(
+    fun feed(
             faultId: FaultId,
             offset: Long,
             count: Long,
             fullStack: Boolean = false,
             printStack: Boolean = false
-    ): FaultSequence = FaultSequence(
+    ): FaultEventSequence = FaultEventSequence(
             faultId,
             SequenceType.FAULT,
-            feed.feed(faultId, offset, count).map { faultEventDto(it, fullStack, printStack) }
-    )
+            feed.feed(faultId, offset, count).map {
+                faultEventDto(it, fullStack, printStack)
+            })
 
-    fun faultSequence(
+    fun feed(
             faultTypeId: FaultTypeId,
             offset: Long,
             count: Long,
             fullStack: Boolean = false,
             printStack: Boolean = false
-    ): FaultSequence = FaultSequence(
+    ): FaultEventSequence = FaultEventSequence(
             faultTypeId,
             SequenceType.FAULT_TYPE,
-            feed.feed(faultTypeId, offset, count).map { faultEventDto(it, fullStack, printStack) }
-    )
+            feed.feed(faultTypeId, offset, count).map {
+                faultEventDto(it, fullStack, printStack)
+            })
 
     private fun unearthedException(
             dto: ChainedFault,

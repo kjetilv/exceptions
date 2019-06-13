@@ -20,7 +20,6 @@ package no.scienta.unearth.client;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.module.kotlin.KotlinModule;
 import no.scienta.unearth.dto.Submission;
 import no.scienta.unearth.munch.util.Throwables;
 
@@ -44,7 +43,7 @@ import static java.net.http.HttpClient.Redirect.NEVER;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class UnearthClient {
+class UnearthClient {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(30);
 
@@ -81,7 +80,6 @@ public class UnearthClient {
             .build();
         this.objectMapper = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-            .registerModule(new KotlinModule())
             .registerModule(new Jdk8Module());
     }
 

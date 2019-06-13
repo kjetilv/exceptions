@@ -35,8 +35,8 @@ object Swagger {
             2000L + random.nextLong() % 1000,
             random.nextBoolean())
 
-    internal fun faultSequence(id: ((UUID) -> Id)? = null): FaultSequence =
-            FaultSequence(id?.let { it(uuid()) }, SequenceType.FAULT, listOf(faultEventDto()))
+    internal fun faultSequence(id: ((UUID) -> Id)? = null): FaultEventSequence =
+            FaultEventSequence(id?.let { it(uuid()) }, SequenceType.FAULT, listOf(faultEventDto()))
 
     internal fun faultTypeDto() = FaultTypeDto(FaultTypeId(uuid()), listOf(causeTypeDto()))
 
