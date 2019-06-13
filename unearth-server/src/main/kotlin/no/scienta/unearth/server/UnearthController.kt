@@ -25,7 +25,6 @@ import no.scienta.unearth.munch.data.CauseType
 import no.scienta.unearth.munch.data.ChainedFault
 import no.scienta.unearth.munch.data.FaultEvent
 import no.scienta.unearth.munch.id.*
-import no.scienta.unearth.munch.util.Throwables
 import java.time.ZoneId
 
 class UnearthController(
@@ -52,19 +51,6 @@ class UnearthController(
                 })
     }
 
-//        val events = storage.getEvents(faultTypeId, offset, count)
-//                events.toList().map { event ->
-//                    FaultEventDto(
-//                            event.id.hash,
-//                            faultType.id.hash,
-//                            event.globalSequence,
-//                            event.faultSequence,
-//                            event.faultTypeSequence,
-//                            event.time.atZone(ZoneId.of("UTC")),
-//                            unearthedException(
-//                                    event.fault.toChainedFault(), fullStack)
-//                    )
-
     fun lookupFaultDto(
             faultId: FaultId,
             fullStack: Boolean = true,
@@ -81,25 +67,26 @@ class UnearthController(
     fun lookupFaultEventDto(
             id: FaultEventId,
             fullStack: Boolean = false,
-            simpleTrace: Boolean = false,
-            printout: Printout = Printout.NONE
+            simpleTrace: Boolean = false
     ): FaultEventDto = storage.getFaultEvent(id).let { faultEvent ->
-        FaultEventDto(
-                faultEvent.id,
-                faultEvent.fault.id,
-                faultEvent.fault.faultType.id,
-                faultEvent.globalSequence,
-                faultEvent.faultSequence,
-                faultEvent.faultTypeSequence,
-                faultEvent.time.atZone(ZoneId.of("UTC")),
-                faultEvent.fault.causes.map { causeDto(it) },
-                unearthedException(faultEvent.fault.toChainedFault(), fullStack, simpleTrace),
-                when (printout) {
-                    Printout.ORIGINAL -> Throwables.string(faultEvent.fault.toCameleon())
-                    Printout.BOILDOWN -> "REDUCE: ${Throwables.string(faultEvent.fault.toCameleon())}"
-                    else -> null
-                })
+        faultEventDto(faultEvent, fullStack, simpleTrace)
     }
+
+    private fun faultEventDto(
+            faultEvent: FaultEvent,
+            fullStack: Boolean = false,
+            simpleTrace: Boolean = false
+    ): FaultEventDto = FaultEventDto(
+            faultEvent.id,
+            faultEvent.fault.id,
+            faultEvent.fault.faultType.id,
+            faultEvent.globalSequence,
+            faultEvent.faultSequence,
+            faultEvent.faultTypeSequence,
+            faultEvent.time.atZone(ZoneId.of("UTC")),
+            faultEvent.fault.causes.map {
+                causeDto(it, fullStack, simpleTrace)
+            })
 
     fun lookupCauseTypeDto(
             causeTypeId: CauseTypeId,
@@ -123,36 +110,40 @@ class UnearthController(
 
     fun feedLimitGlobal() = feed.limit()
 
-    fun faultSequenceGlobal(offset: Long, count: Long, thin: Boolean = false): FaultSequence =
-            FaultSequence(
-                    null,
-                    SequenceType.GLOBAL,
-                    feed.feed(offset, count).map(toDto(thin)))
+    fun faultSequenceGlobal(
+            offset: Long,
+            count: Long,
+            fullStack: Boolean = false,
+            simpleTrace: Boolean = false
+    ): FaultSequence = FaultSequence(
+            null,
+            SequenceType.GLOBAL,
+            feed.feed(offset, count).map { faultEventDto(it, fullStack, simpleTrace) }
+    )
 
-    fun faultSequence(faultId: FaultId, offset: Long, count: Long, thin: Boolean = false): FaultSequence =
-            FaultSequence(
-                    faultId,
-                    SequenceType.FAULT,
-                    feed.feed(faultId, offset, count).map(toDto(thin)))
+    fun faultSequence(
+            faultId: FaultId,
+            offset: Long,
+            count: Long,
+            fullStack: Boolean = false,
+            simpleTrace: Boolean = false
+    ): FaultSequence = FaultSequence(
+            faultId,
+            SequenceType.FAULT,
+            feed.feed(faultId, offset, count).map { faultEventDto(it, fullStack, simpleTrace) }
+    )
 
-    fun faultSequence(faultTypeId: FaultTypeId, offset: Long, count: Long, thin: Boolean = false): FaultSequence =
-            FaultSequence(
-                    faultTypeId,
-                    SequenceType.FAULT_TYPE,
-                    feed.feed(faultTypeId, offset, count).map(toDto(thin)))
-
-    private fun toDto(thin: Boolean = false): (FaultEvent) -> FaultEventDto = { event ->
-        FaultEventDto(
-                event.id,
-                event.fault.id,
-                event.fault.faultType.id,
-                event.globalSequence,
-                event.faultSequence,
-                event.faultTypeSequence,
-                event.time.atZone(ZoneId.systemDefault()),
-                emptyList(),
-                unearthedException(event.fault.toChainedFault(), thin = thin))
-    }
+    fun faultSequence(
+            faultTypeId: FaultTypeId,
+            offset: Long,
+            count: Long,
+            fullStack: Boolean = false,
+            simpleTrace: Boolean = false
+    ): FaultSequence = FaultSequence(
+            faultTypeId,
+            SequenceType.FAULT_TYPE,
+            feed.feed(faultTypeId, offset, count).map { faultEventDto(it, fullStack, simpleTrace) }
+    )
 
     private fun unearthedException(
             dto: ChainedFault,

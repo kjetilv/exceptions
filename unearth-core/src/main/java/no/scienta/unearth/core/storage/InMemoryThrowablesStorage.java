@@ -78,13 +78,14 @@ public class InMemoryThrowablesStorage
     @Override
     public FaultEvent store(Fault fault) {
         synchronized (lock) {
-            FaultEvent faultEvent = storedNew(this.events,
+            FaultEvent faultEvent = stored(this.events,
                 new FaultEvent(
                     fault,
                     Instant.now(clock),
                     globalSequence.getAndIncrement(),
                     increment(this.faultTypeSequence, fault.getFaultType().getId()),
-                    increment(this.faultSequence, fault.getId())));
+                    increment(this.faultSequence, fault.getId()))
+            );
             FaultType faultType = fault.getFaultType();
             put(this.faultTypes, faultType);
             put(this.faults, fault);
@@ -260,7 +261,7 @@ public class InMemoryThrowablesStorage
         map.putIfAbsent(t.getId(), t);
     }
 
-    private static <I extends Id, T extends Identifiable<I>> T storedNew(Map<I, T> map, T t) {
+    private static <I extends Id, T extends Identifiable<I>> T stored(Map<I, T> map, T t) {
         T existing = map.putIfAbsent(t.getId(), t);
         if (existing != null) {
             throw new IllegalStateException("Already stored: " + existing.getId());

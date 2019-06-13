@@ -67,6 +67,5 @@ object Swagger {
             random.nextLong(),
             random.nextLong(),
             ZonedDateTime.now(),
-            emptyList(),
-            unearthedException())
+            listOf(causeDto(), causeDto()))
 }

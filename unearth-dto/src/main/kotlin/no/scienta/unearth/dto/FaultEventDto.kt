@@ -38,9 +38,5 @@ data class FaultEventDto(
 
         val time: ZonedDateTime,
 
-        val causes: List<CauseDto>,
-
-        val exception: UnearthedException,
-
-        val printout: String? = null
+        val causes: List<CauseDto>
 )
