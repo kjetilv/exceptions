@@ -17,8 +17,10 @@
 
 package no.scienta.unearth.server
 
+import no.scienta.unearth.dto.Submission
+
 data class UnearthInternalError(
 
         val message: String,
 
-        val selfDiagnose: SelfDiagnose? = null)
+        val submission: Submission? = null)

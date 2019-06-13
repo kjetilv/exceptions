@@ -38,44 +38,43 @@ class UnearthController(
 
     fun submitRaw(t: Throwable): HandlingPolicy = handler.handle(t)
 
-    fun lookupFaultTypeDto(id: FaultTypeId,
-                           fullStack: Boolean = false,
-                           simpleTrace: Boolean = false,
-                           offset: Long? = null,
-                           count: Long? = null
+    fun lookupFaultTypeDto(
+            id: FaultTypeId,
+            fullStack: Boolean = false,
+            printStack: Boolean = false
     ): FaultTypeDto = storage.getFaultType(id).let { faultType ->
         FaultTypeDto(
                 faultType.id,
                 faultType.causeTypes.map {
-                    causeTypeDto(it, fullStack, simpleTrace)
+                    causeTypeDto(it, fullStack, printStack)
                 })
     }
 
     fun lookupFaultDto(
             faultId: FaultId,
             fullStack: Boolean = true,
-            simpleTrace: Boolean = false
+            printStack: Boolean = false
     ): FaultDto = storage.getFault(faultId).let { fault ->
         FaultDto(
                 id = fault.id,
                 faultTypeId = fault.faultType.id,
                 causes = fault.causes.map { cause ->
-                    causeDto(cause, fullStack = fullStack, simpleTrace = simpleTrace)
+                    causeDto(cause, fullStack = fullStack, printStack = printStack)
                 })
     }
 
     fun lookupFaultEventDto(
             id: FaultEventId,
             fullStack: Boolean = false,
-            simpleTrace: Boolean = false
+            printStack: Boolean = false
     ): FaultEventDto = storage.getFaultEvent(id).let { faultEvent ->
-        faultEventDto(faultEvent, fullStack, simpleTrace)
+        faultEventDto(faultEvent, fullStack, printStack)
     }
 
     private fun faultEventDto(
             faultEvent: FaultEvent,
             fullStack: Boolean = false,
-            simpleTrace: Boolean = false
+            printStack: Boolean = false
     ): FaultEventDto = FaultEventDto(
             faultEvent.id,
             faultEvent.fault.id,
@@ -85,20 +84,20 @@ class UnearthController(
             faultEvent.faultTypeSequence,
             faultEvent.time.atZone(ZoneId.of("UTC")),
             faultEvent.fault.causes.map {
-                causeDto(it, fullStack, simpleTrace)
+                causeDto(it, fullStack, printStack)
             })
 
     fun lookupCauseTypeDto(
             causeTypeId: CauseTypeId,
             fullStack: Boolean = false,
-            simpleTrace: Boolean = false
-    ): CauseTypeDto = causeTypeDto(storage.getCauseType(causeTypeId), fullStack, simpleTrace)
+            printStack: Boolean = false
+    ): CauseTypeDto = causeTypeDto(storage.getCauseType(causeTypeId), fullStack, printStack)
 
     fun lookupCauseDto(
             causeId: CauseId,
             fullStack: Boolean = false,
-            simpleTrace: Boolean = false
-    ): CauseDto = causeDto(storage.getCause(causeId), fullStack, simpleTrace)
+            printStack: Boolean = false
+    ): CauseDto = causeDto(storage.getCause(causeId), fullStack, printStack)
 
     fun lookupThrowable(faultId: FaultId): Throwable = storage.getFault(faultId).toCameleon()
 
@@ -114,11 +113,11 @@ class UnearthController(
             offset: Long,
             count: Long,
             fullStack: Boolean = false,
-            simpleTrace: Boolean = false
+            printStack: Boolean = false
     ): FaultSequence = FaultSequence(
             null,
             SequenceType.GLOBAL,
-            feed.feed(offset, count).map { faultEventDto(it, fullStack, simpleTrace) }
+            feed.feed(offset, count).map { faultEventDto(it, fullStack, printStack) }
     )
 
     fun faultSequence(
@@ -126,11 +125,11 @@ class UnearthController(
             offset: Long,
             count: Long,
             fullStack: Boolean = false,
-            simpleTrace: Boolean = false
+            printStack: Boolean = false
     ): FaultSequence = FaultSequence(
             faultId,
             SequenceType.FAULT,
-            feed.feed(faultId, offset, count).map { faultEventDto(it, fullStack, simpleTrace) }
+            feed.feed(faultId, offset, count).map { faultEventDto(it, fullStack, printStack) }
     )
 
     fun faultSequence(
@@ -138,23 +137,23 @@ class UnearthController(
             offset: Long,
             count: Long,
             fullStack: Boolean = false,
-            simpleTrace: Boolean = false
+            printStack: Boolean = false
     ): FaultSequence = FaultSequence(
             faultTypeId,
             SequenceType.FAULT_TYPE,
-            feed.feed(faultTypeId, offset, count).map { faultEventDto(it, fullStack, simpleTrace) }
+            feed.feed(faultTypeId, offset, count).map { faultEventDto(it, fullStack, printStack) }
     )
 
     private fun unearthedException(
             dto: ChainedFault,
             fullStack: Boolean = false,
-            simpleTrace: Boolean = false,
+            printStack: Boolean = false,
             thin: Boolean = false
     ): UnearthedException = UnearthedException(
             className = dto.cause.causeType.className,
             message = dto.cause.message,
             causeType = if (thin) null else
-                causeTypeDto(dto.cause.causeType, fullStack, simpleTrace),
+                causeTypeDto(dto.cause.causeType, fullStack, printStack),
             cause = dto.chainedCause?.let {
                 unearthedException(it, fullStack)
             })
@@ -162,7 +161,7 @@ class UnearthController(
     private fun causeTypeDto(
             causeType: CauseType,
             fullStack: Boolean = false,
-            simpleTrace: Boolean = false
+            printStack: Boolean = false
     ): CauseTypeDto = CauseTypeDto(
             causeType.id,
             causeType.className,
@@ -170,7 +169,7 @@ class UnearthController(
                 stackTrace(causeType.stackTrace)
             else
                 emptyList(),
-            if (simpleTrace && !fullStack)
+            if (printStack && !fullStack)
                 simpleStackTrace(causeType.stackTrace)
             else
                 emptyList())
@@ -178,11 +177,11 @@ class UnearthController(
     private fun causeDto(
             cause: Cause,
             fullStack: Boolean = true,
-            simpleTrace: Boolean = false
+            printStack: Boolean = false
     ): CauseDto = CauseDto(
             id = cause.id,
             message = cause.message,
-            causeType = causeTypeDto(cause.causeType, fullStack, simpleTrace))
+            causeType = causeTypeDto(cause.causeType, fullStack, printStack))
 
     private fun simpleStackTrace(stackTrace: List<StackTraceElement>): List<String> = stackTrace.map { it.toString() }
 

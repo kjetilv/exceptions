@@ -72,7 +72,7 @@ class UnearthServer(
 
     private fun lookupFaultEventRoute() = "/fault-event" / uuid(::FaultEventId) meta {
         summary = "Lookup a fault event"
-        queries += listOf(fullStack, simpleTrace)
+        queries += listOf(fullStack, printStack)
         produces += ContentType.APPLICATION_JSON
         returning(Status.OK, faultEvent to Swagger.faultEventDtos())
     } bindContract Method.GET to { faultEventId ->
@@ -80,7 +80,7 @@ class UnearthServer(
             get(faultEvent) {
                 controller.lookupFaultEventDto(faultEventId,
                         fullStack[req] ?: false,
-                        simpleTrace[req] ?: false
+                        printStack[req] ?: false
                 )
             }
         }
@@ -88,60 +88,58 @@ class UnearthServer(
 
     private fun lookupFaultTypeRoute() = "/fault-type" / uuid(::FaultTypeId) meta {
         summary = "Lookup a fault type"
-        queries += listOf(fullStack, simpleTrace, offsetQuery, countQuery)
+        queries += listOf(fullStack, printStack, offsetQuery, countQuery)
         produces += ContentType.APPLICATION_JSON
         returning(Status.OK, faultType to Swagger.faultTypeDto())
     } bindContract Method.GET to { faultTypeId ->
         { req ->
             get(faultType) {
                 controller.lookupFaultTypeDto(faultTypeId,
-                        fullStack = fullStack[req] ?: true,
-                        simpleTrace = simpleTrace[req] ?: false,
-                        offset = offsetQuery[req],
-                        count = countQuery[req])
+                        fullStack = fullStack[req] ?: false,
+                        printStack = printStack[req] ?: false)
             }
         }
     }
 
     private fun lookupFaultRoute() = "/fault" / uuid(::FaultId) meta {
         summary = "Lookup a fault"
-        queries += listOf(fullStack, simpleTrace)
+        queries += listOf(fullStack, printStack)
         produces += ContentType.APPLICATION_JSON
         returning(Status.OK, fault to Swagger.faultDto())
     } bindContract Method.GET to { faultId ->
         { req ->
             get(fault) {
-                controller.lookupFaultDto(faultId, fullStack[req] ?: true, simpleTrace[req] ?: false)
+                controller.lookupFaultDto(faultId, fullStack[req] ?: false, printStack[req] ?: false)
             }
         }
     }
 
     private fun lookupCauseRoute() = "/cause-type" / uuid(::CauseTypeId) meta {
         summary = "Lookup a cause type"
-        queries += listOf(fullStack, simpleTrace)
+        queries += listOf(fullStack, printStack)
         produces += ContentType.APPLICATION_JSON
         returning(Status.OK, causeType to Swagger.causeTypeDto())
     } bindContract Method.GET to { causeTypeId ->
         { req ->
             get(causeType) {
                 controller.lookupCauseTypeDto(causeTypeId,
-                        fullStack[req] ?: true,
-                        simpleTrace[req] ?: false)
+                        fullStack[req] ?: false,
+                        printStack[req] ?: false)
             }
         }
     }
 
     private fun lookupCauseTypeRoute() = "/cause" / uuid(::CauseId) meta {
         summary = "Lookup a cause"
-        queries += listOf(fullStack, simpleTrace)
+        queries += listOf(fullStack, printStack)
         produces += ContentType.APPLICATION_JSON
         returning(Status.OK, cause to Swagger.causeDto())
     } bindContract Method.GET to { causeId ->
         { req ->
             get(cause) {
                 controller.lookupCauseDto(causeId,
-                        fullStack[req] ?: true,
-                        simpleTrace[req] ?: false)
+                        fullStack[req] ?: false,
+                        printStack[req] ?: false)
             }
         }
     }
@@ -183,7 +181,7 @@ class UnearthServer(
     private fun feedLookupFaultRoute() = "/feed/fault" / uuid(::FaultId) meta {
         summary = "Events for a fault"
         produces += ContentType.APPLICATION_JSON
-        queries += listOf(offsetQuery, countQuery, fullStack, simpleTrace)
+        queries += listOf(offsetQuery, countQuery, fullStack, printStack)
         returning(Status.OK, faultSequence to Swagger.faultSequence(::FaultId))
     } bindContract Method.GET to { faultId ->
         { req ->
@@ -192,7 +190,7 @@ class UnearthServer(
                         offsetQuery[req] ?: 0L,
                         countQuery[req] ?: 0L,
                         fullStack[req] ?: false,
-                        simpleTrace[req] ?: false)
+                        printStack[req] ?: false)
             }
         }
     }
@@ -200,7 +198,7 @@ class UnearthServer(
     private fun feedLookupFaultTypeRoute() = "/feed/fault-type" / uuid(::FaultTypeId) meta {
         summary = "Events for a fault type"
         produces += ContentType.APPLICATION_JSON
-        queries += listOf(offsetQuery, countQuery, fullStack, simpleTrace)
+        queries += listOf(offsetQuery, countQuery, fullStack, printStack)
         returning(Status.OK, faultSequence to Swagger.faultSequence(::FaultTypeId))
     } bindContract Method.GET to { faultTypeId ->
         { req ->
@@ -209,7 +207,7 @@ class UnearthServer(
                         offsetQuery[req] ?: 0L,
                         countQuery[req] ?: 0L,
                         fullStack[req] ?: false,
-                        simpleTrace[req] ?: false)
+                        printStack[req] ?: false)
             }
         }
     }
@@ -217,7 +215,7 @@ class UnearthServer(
     private fun feedLookupGlobalRoute() = "/feed" meta {
         summary = "Events global"
         produces += ContentType.APPLICATION_JSON
-        queries += listOf(offsetQuery, countQuery, fullStack, simpleTrace)
+        queries += listOf(offsetQuery, countQuery, fullStack, printStack)
         returning(Status.OK, faultSequence to Swagger.faultSequence())
     } bindContract Method.GET to { req ->
         get(faultSequence) {
@@ -225,7 +223,7 @@ class UnearthServer(
                     offsetQuery[req] ?: 0L,
                     countQuery[req] ?: 0L,
                     fullStack[req] ?: false,
-                    simpleTrace[req] ?: false)
+                    printStack[req] ?: false)
         }
     }
 
@@ -356,12 +354,8 @@ class UnearthServer(
                 withContentType(Response(Status.INTERNAL_SERVER_ERROR)),
                 UnearthInternalError(
                         message = e.toString(),
-                        selfDiagnose = SelfDiagnose(
-                                faultTypeId = handle.faultTypeId,
-                                faultId = handle.faultId,
-                                faultEventId = handle.faultEventId
-                        )
-                ))
+                        submission = submission(handle)))
+
     }
 
     private fun simpleFailedResponse(e: Throwable): Response {
@@ -394,13 +388,17 @@ class UnearthServer(
 
     companion object {
 
-        private val fullStack = Query.boolean().optional("fullStack")
+        private val fullStack =
+                Query.boolean().optional("fullStack", "Provide a fully destructured stack")
 
-        private val simpleTrace = Query.boolean().optional("simpleTrace")
+        private val printStack =
+                Query.boolean().optional("printStack", "Provide a list of printed stacktrace elements")
 
-        private val offsetQuery = Query.long().optional("offset")
+        private val offsetQuery =
+                Query.long().optional("offset", "Start point in feed")
 
-        private val countQuery = Query.long().optional("count")
+        private val countQuery =
+                Query.long().optional("count", "No. of elements to retrieve from start point in feed")
 
         private fun <T : Id> uuid(read: (UUID) -> T) = PathLens(
                 meta = Meta(required = true, location = "path", paramMeta = ParamMeta.StringParam, name = "uuid"),
