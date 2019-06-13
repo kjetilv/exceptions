@@ -43,7 +43,7 @@ public class Packages implements Predicate<StackTraceElement>, UnaryOperator<Sta
     }
 
     public static Packages removed(String... packages) {
-        return new Packages(Packages::shorten,  packages);
+        return new Packages(Packages::shorten, packages);
     }
 
     private final boolean none;
@@ -99,13 +99,17 @@ public class Packages implements Predicate<StackTraceElement>, UnaryOperator<Sta
         }
         return Optional.of(ste.getClassName())
             .flatMap(this::packageName)
-            .map(shortPrefixes::get)
-            .map(prefix ->
+            .flatMap(packageName ->
+                shortPrefixes.entrySet().stream()
+                    .filter(e ->
+                        packageName.startsWith(e.getKey()))
+                    .findFirst())
+            .map(e ->
                 new StackTraceElement(
                     ste.getClassLoaderName(),
                     ste.getModuleName(),
                     ste.getModuleVersion(),
-                    ste.getClassName(),
+                    e.getValue() + ste.getClassName().substring(e.getKey().length()),
                     ste.getMethodName(),
                     ste.getFileName(),
                     ste.getLineNumber()))

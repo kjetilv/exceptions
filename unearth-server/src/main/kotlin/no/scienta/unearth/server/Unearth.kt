@@ -20,6 +20,8 @@ package no.scienta.unearth.server
 import com.natpryce.konfig.*
 import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import no.scienta.unearth.core.reducer.Packages
+import no.scienta.unearth.core.reducer.SimpleFaultReducer
 import no.scienta.unearth.core.storage.InMemoryThrowablesStorage
 import no.scienta.unearth.micrometer.MeteringThrowablesSensor
 import org.slf4j.Logger
@@ -45,6 +47,11 @@ object Unearth : () -> Unit {
 
     private val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
 
+    private val reducer = SimpleFaultReducer(
+                Packages.shortened("no.scienta"),
+                Packages.moderateShortened("org.http4k", "io.netty"),
+                Packages.none())
+
     override fun invoke() {
         logger.info("Building ${UnearthServer::class.simpleName}...")
 
@@ -60,7 +67,8 @@ object Unearth : () -> Unit {
                         storage,
                         storage,
                         storage,
-                        sensor))
+                        sensor,
+                        reducer))
 
         logger.info("Created $unearthServer")
         registerShutdown(unearthServer)

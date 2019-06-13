@@ -17,7 +17,7 @@
 
 package no.scienta.unearth.core.reducer;
 
-import no.scienta.unearth.core.ThrowablesReducer;
+import no.scienta.unearth.core.FaultReducer;
 import no.scienta.unearth.munch.data.Cause;
 import no.scienta.unearth.munch.data.CauseType;
 import no.scienta.unearth.munch.data.Fault;
@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class SimpleThrowableReducer implements ThrowablesReducer {
+public class SimpleFaultReducer implements FaultReducer {
 
     private final Packages display;
 
@@ -37,7 +37,7 @@ public class SimpleThrowableReducer implements ThrowablesReducer {
 
     private final Packages remove;
 
-    public SimpleThrowableReducer(Packages display, Packages aggregate, Packages remove) {
+    public SimpleFaultReducer(Packages display, Packages aggregate, Packages remove) {
         this.display = display;
         this.aggregate = aggregate;
         this.remove = remove;
@@ -71,20 +71,20 @@ public class SimpleThrowableReducer implements ThrowablesReducer {
         List<StackTraceElement> aggregated = new ArrayList<>();
         boolean aggregating = false;
         for (StackTraceElement element : stack) {
-            if (display.test(element)) {
+            if (display != null && display.test(element)) {
                 if (aggregating) {
                     reducedStack.addAll(aggregateElements(aggregated));
                     aggregated.clear();
                     aggregating = false;
                 }
                 reducedStack.add(display.apply(element));
-            } else if (remove.test(element)) {
+            } else if (remove != null && remove.test(element)) {
                 if (aggregating) {
                     reducedStack.addAll(aggregateElements(aggregated));
                     aggregated.clear();
                     aggregating = false;
                 }
-            } else if (aggregate.test(element)) {
+            } else if (aggregate != null && aggregate.test(element)) {
                 aggregating = true;
                 aggregated.add(aggregate.apply(element));
             } else {

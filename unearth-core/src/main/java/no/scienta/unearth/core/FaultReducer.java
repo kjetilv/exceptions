@@ -15,10 +15,20 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.server
+package no.scienta.unearth.core;
 
-data class UnearthInternalError(
+import no.scienta.unearth.munch.data.Cause;
+import no.scienta.unearth.munch.data.CauseType;
+import no.scienta.unearth.munch.data.Fault;
+import no.scienta.unearth.munch.data.FaultType;
 
-        val message: String,
+public interface FaultReducer {
 
-        val selfDiagnose: SelfDiagnose? = null)
+    Fault reduce(Fault fault);
+
+    FaultType reduce(FaultType faultType);
+
+    CauseType reduce(CauseType causeType);
+
+    Cause reduce(Cause cause);
+}

@@ -15,20 +15,16 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.core;
+package no.scienta.unearth.server
 
-import no.scienta.unearth.munch.data.Cause;
-import no.scienta.unearth.munch.data.CauseType;
-import no.scienta.unearth.munch.data.Fault;
-import no.scienta.unearth.munch.data.FaultType;
+import no.scienta.unearth.munch.id.FaultEventId
+import no.scienta.unearth.munch.id.FaultId
+import no.scienta.unearth.munch.id.FaultTypeId
 
-public interface ThrowablesReducer {
+data class SelfDiagnose(
 
-    Fault reduce(Fault fault);
+        val faultTypeId: FaultTypeId? = null,
 
-    FaultType reduce(FaultType faultType);
+        val faultId: FaultId? = null,
 
-    CauseType reduce(CauseType causeType);
-
-    Cause reduce(Cause cause);
-}
+        val faultEventId: FaultEventId? = null)

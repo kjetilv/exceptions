@@ -18,6 +18,8 @@
 package no.scienta.unearth.server
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import no.scienta.unearth.core.reducer.Packages
+import no.scienta.unearth.core.reducer.SimpleFaultReducer
 import no.scienta.unearth.core.storage.InMemoryThrowablesStorage
 import no.scienta.unearth.micrometer.MeteringThrowablesSensor
 import no.scienta.unearth.dto.Submission
@@ -35,8 +37,13 @@ fun main() {
 
     val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
 
+    val reducer = SimpleFaultReducer(
+            Packages.shortened("no.scienta"),
+            Packages.none(),
+            Packages.removed("org.springframework"))
+
     val server = UnearthServer(
-            controller = UnearthController(storage, storage, storage, sensor))
+            controller = UnearthController(storage, storage, storage, sensor, reducer))
 
     val lookupLens = Body.auto<FaultTypeDto>().toLens()
 

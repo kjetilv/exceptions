@@ -22,6 +22,7 @@ import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class Throwables {
 
@@ -31,6 +32,10 @@ public class Throwables {
 
     public static String string(Throwable throwable) {
         return new String(bytes(throwable), StandardCharsets.UTF_8);
+    }
+
+    public static String join(Throwable e, String sep) {
+        return Streams.causes(e).map(Objects::toString).collect(Collectors.joining(sep));
     }
 
     private static byte[] bytes(Throwable throwable) {

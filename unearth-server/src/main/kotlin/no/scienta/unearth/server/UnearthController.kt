@@ -32,7 +32,8 @@ class UnearthController(
         private val storage: FaultStorage,
         private val feed: FaultFeed,
         private val stats: FaultStats,
-        sensor: FaultSensor
+        sensor: FaultSensor,
+        val reducer: FaultReducer
 ) {
     private val handler: FaultHandler = DefaultThrowablesHandler(storage, sensor)
 
@@ -91,7 +92,7 @@ class UnearthController(
                 faultEvent.faultSequence,
                 faultEvent.faultTypeSequence,
                 faultEvent.time.atZone(ZoneId.of("UTC")),
-                emptyList(),
+                faultEvent.fault.causes.map { causeDto(it) },
                 unearthedException(faultEvent.fault.toChainedFault(), fullStack, simpleTrace),
                 when (printout) {
                     Printout.ORIGINAL -> Throwables.string(faultEvent.fault.toCameleon())
@@ -113,6 +114,8 @@ class UnearthController(
     ): CauseDto = causeDto(storage.getCause(causeId), fullStack, simpleTrace)
 
     fun lookupThrowable(faultId: FaultId): Throwable = storage.getFault(faultId).toCameleon()
+
+    fun lookupThrowableRedux(faultId: FaultId): Throwable = reducer.reduce(storage.getFault(faultId)).toCameleon()
 
     fun feedLimitFault(faultId: FaultId): Long = feed.limit(faultId)
 
