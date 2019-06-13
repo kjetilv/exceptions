@@ -27,4 +27,4 @@ data class CauseTypeDto(
 
         val stacktrace: List<UnearthedStackTraceElement>?,
 
-        val simpleTrace: List<String>)
+        val simpleTrace: List<String>?)

@@ -19,12 +19,13 @@ package no.scienta.unearth.server
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.core.TreeNode
+import com.fasterxml.jackson.databind.*
 import com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES
 import com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
-import com.fasterxml.jackson.databind.JsonSerializer
-import com.fasterxml.jackson.databind.Module
-import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.databind.node.ValueNode
 import com.fasterxml.jackson.databind.util.StdDateFormat
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
@@ -33,35 +34,49 @@ import no.scienta.unearth.munch.id.*
 import org.http4k.format.ConfigurableJackson
 import org.http4k.format.asConfigurable
 import org.http4k.format.withStandardMappings
+import java.util.*
 
 object JSON : ConfigurableJackson(KotlinModule()
-            .asConfigurable()
-            .withStandardMappings()
-            .done()
-            .disableDefaultTyping()
-            .setDateFormat(StdDateFormat())
-            .setDefaultPropertyInclusion(JsonInclude.Include.NON_EMPTY)
-            .configure(FAIL_ON_UNKNOWN_PROPERTIES, true)
-            .configure(FAIL_ON_IGNORED_PROPERTIES, true)
-            .registerModule(Jdk8Module())
-            .registerModule(JavaTimeModule())
-            .registerModule(forIds("api/v1", SimpleModule())))
+        .asConfigurable()
+        .withStandardMappings()
+        .done()
+        .disableDefaultTyping()
+        .setDateFormat(StdDateFormat())
+        .setDefaultPropertyInclusion(JsonInclude.Include.NON_EMPTY)
+        .configure(FAIL_ON_UNKNOWN_PROPERTIES, true)
+        .configure(FAIL_ON_IGNORED_PROPERTIES, true)
+        .registerModule(Jdk8Module())
+        .registerModule(JavaTimeModule())
+        .registerModule(forIds("api/v1")))
 
-private fun forIds(prefix: String, simpleModule: SimpleModule): Module? {
-    mapOf(
-            FaultEventId::class.java to "fault-event",
-            CauseTypeId::class.java to "cause-type",
-            CauseId::class.java to "cause"
-    ).forEach { (type, path) ->
-        simpleModule.addSerializer<Id>(type, serializer(prefix, path))
+private fun forIds(prefix: String): Module =
+        SimpleModule().apply {
+            addSerializer(FaultId::class.java, serializer(prefix, "fault", true))
+            addDeserializer(FaultId::class.java, deserializer(::FaultId))
+
+            addSerializer(FaultTypeId::class.java, serializer(prefix, "fault-type", true))
+            addDeserializer(FaultTypeId::class.java, deserializer(::FaultTypeId))
+
+            addSerializer(FaultEventId::class.java, serializer(prefix, "fault-event", false))
+            addDeserializer(FaultEventId::class.java, deserializer(::FaultEventId))
+
+            addSerializer(CauseTypeId::class.java, serializer(prefix, "cause-type", false))
+            addDeserializer(CauseTypeId::class.java, deserializer(::CauseTypeId))
+
+            addSerializer(CauseId::class.java, serializer(prefix, "cause", false))
+            addDeserializer(CauseId::class.java, deserializer(::CauseId))
+}
+
+private fun <T : Id> deserializer(id: (UUID) -> T): JsonDeserializer<T>? {
+    return object : JsonDeserializer<T>() {
+        override fun deserialize(p: JsonParser?, ctxt: DeserializationContext?): T {
+            return p?.readValueAsTree<TreeNode>()?.let { tree ->
+                tree.get("id")?.let { idNode ->
+                    id(UUID.fromString((idNode as ValueNode).textValue()))
+                }
+            } ?: throw IllegalArgumentException("Could not parse Id")
+        }
     }
-    mapOf(
-            FaultTypeId::class.java to "fault-type",
-            FaultId::class.java to "fault"
-    ).forEach { (type, path) ->
-        simpleModule.addSerializer<Id>(type, serializer(prefix, path, true))
-    }
-    return simpleModule
 }
 
 private fun <T : Id> serializer(prefix: String, path: String, feed: Boolean = false): JsonSerializer<T>? {

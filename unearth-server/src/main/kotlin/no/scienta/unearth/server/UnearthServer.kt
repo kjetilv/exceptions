@@ -50,6 +50,16 @@ class UnearthServer(
 ) {
     private val logger = LoggerFactory.getLogger(UnearthServer::class.java)
 
+    fun start(after: (Http4kServer) -> Unit = {}): UnearthServer = apply {
+        server.start()
+        after(server)
+    }
+
+    fun stop(after: (Http4kServer) -> Unit = {}): UnearthServer = apply {
+        server.stop()
+        after(server)
+    }
+
     private fun submitPrintedExceptionRoute() = "/throwable" meta {
         summary = "Submit an exception"
         consumes += ContentType.TEXT_PLAIN
@@ -262,16 +272,6 @@ class UnearthServer(
             type: ContentType = ContentType.APPLICATION_JSON,
             result: () -> String
     ): Response = withContentType(Response(Status.OK), type).body(result())
-
-    fun start(after: (Http4kServer) -> Unit = {}): UnearthServer = apply {
-        server.start()
-        after(server)
-    }
-
-    fun stop(after: (Http4kServer) -> Unit = {}): UnearthServer = apply {
-        server.stop()
-        after(server)
-    }
 
     private val server = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
             .then(Filter { nextHandler ->

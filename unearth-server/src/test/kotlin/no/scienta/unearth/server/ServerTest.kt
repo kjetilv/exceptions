@@ -28,8 +28,7 @@ import org.http4k.client.ApacheClient
 import org.http4k.core.Body
 import org.http4k.core.Method
 import org.http4k.core.Request
-import org.http4k.format.Jackson
-import org.http4k.format.Jackson.auto
+import no.scienta.unearth.server.JSON.auto
 
 fun main() {
 
@@ -107,13 +106,15 @@ fun main() {
 
     val client = ApacheClient()
 
-    val target1 = client(Request(Method.POST, "http://localhost:8080/submit").body(input))
+    val target1 = client(Request(Method.POST, "http://localhost:8080/api/v1/throwable").body(input))
+
     val submission = submitLens.extract(target1)
 
-    println(Jackson.asJsonString(submission))
+    println(JSON.asJsonString(submission))
 
-    val uri = "http://localhost:8080/lookup/${submission.faultTypeId}"
-    val target = client(Request(Method.GET, uri))
+    val uri = "http://localhost:8080/api/v1/fault-type/${submission.faultTypeId.hash}"
+    val request = Request(Method.GET, uri)
+    val target = client(request)
 
     if (target.status.successful) {
         val exc = lookupLens.extract(target)
@@ -121,5 +122,6 @@ fun main() {
     } else {
         println(target.toMessage())
     }
+
     server.stop()
 }
