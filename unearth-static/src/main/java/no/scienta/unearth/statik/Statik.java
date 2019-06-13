@@ -37,6 +37,7 @@ package no.scienta.unearth.statik;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class Statik {
@@ -52,15 +53,15 @@ public final class Statik {
         this.prefix = prefix;
     }
 
-    public String read(String path) {
-        return cache.computeIfAbsent(path, this::readPath);
+    public Optional<String> read(String path) {
+        return Optional.ofNullable(cache.computeIfAbsent(path, this::readPath));
     }
 
     private String readPath(String path) {
         byte[] buffer = new byte[8192];
         try (InputStream in = classLoader.getResourceAsStream(prefix + path)) {
             if (in == null) {
-                throw new IllegalArgumentException("No such path: [" + prefix + "]" + path);
+                return null;
             }
             InputStream bin = new BufferedInputStream(in);
             try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {

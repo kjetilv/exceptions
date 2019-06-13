@@ -61,7 +61,7 @@ class UnearthServer(
         after(server)
     }
 
-    private fun submitPrintedExceptionRoute() = "/throwable" meta {
+    private fun submitExceptionRoute() = "/throwable" meta {
         summary = "Submit an exception"
         consumes += ContentType.TEXT_PLAIN
         produces += ContentType.APPLICATION_JSON
@@ -295,29 +295,24 @@ class UnearthServer(
                     apiInfo = ApiInfo("Unearth", "v1"),
                     json = JSON)
             descriptionPath = "/swagger.json"
-
-            routes += listOf(
-                    submitPrintedExceptionRoute()
-            )
+            routes +=
+                    submitExceptionRoute()
             routes += listOf(
                     lookupFaultRoute(),
                     lookupFaultTypeRoute(),
                     lookupFaultEventRoute(),
                     lookupCauseRoute(),
-                    lookupCauseTypeRoute()
-            )
+                    lookupCauseTypeRoute())
             routes += listOf(
                     feedLimitsGlobalRoute(),
                     feedLimitsFaultRoute(),
                     feedLimitsFaultTypeRoute(),
                     feedLookupGlobalRoute(),
                     feedLookupFaultRoute(),
-                    feedLookupFaultTypeRoute()
-            )
+                    feedLookupFaultTypeRoute())
             routes += listOf(
                     printFaultRoute(),
-                    printFaultReduxRoute()
-            )
+                    printFaultReduxRoute())
         }
     }
 
@@ -367,9 +362,13 @@ class UnearthServer(
 
     private fun swaggerUiRoute(prefix: String): RoutingHttpHandler = "/doc/{path}" bind Method.GET to {
         try {
-            Response(Status.OK).body(statik.read(it.path("path")))
+            statik.read(it.path("path")).map { file ->
+                Response(Status.OK).body(file)
+            }.orElseGet { ->
+                swaggerRedirect(prefix)
+            }
         } catch (e: Exception) {
-            logger.debug("Redirecting failed swagger-ui load: $it", e)
+            logger.warn("Redirecting failed swagger-ui load: $it", e)
             swaggerRedirect(prefix)
         }
     }
