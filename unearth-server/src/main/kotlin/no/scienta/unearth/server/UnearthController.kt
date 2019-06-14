@@ -35,15 +35,15 @@ class UnearthController(
 
     infix fun submitRaw(t: Throwable): HandlingPolicy = handler.handle(t)
 
-    fun lookupFaultTypeDto(
-            id: FaultTypeId,
+    fun lookupFaultStrandDto(
+            id: FaultStrandId,
             fullStack: Boolean = false,
             printStack: Boolean = false
-    ): FaultTypeDto = storage.getFaultType(id).let { faultType ->
-        FaultTypeDto(
-                faultType.id,
-                faultType.causeTypes.map {
-                    causeTypeDto(it, fullStack, printStack)
+    ): FaultStrandDto = storage.getFaultStrand(id).let { faultStrand ->
+        FaultStrandDto(
+                faultStrand.id,
+                faultStrand.causeStrands.map {
+                    causeStrandDto(it, fullStack, printStack)
                 })
     }
 
@@ -67,15 +67,15 @@ class UnearthController(
             faultEvent.id,
             faultDto(faultEvent.fault, fullStack, printStack),
             faultEvent.time.atZone(ZoneId.of("UTC")),
-            faultEvent.globalSequence,
-            faultEvent.faultSequence,
-            faultEvent.faultTypeSequence)
+            faultEvent.globalSequenceNo,
+            faultEvent.faultSequenceNo,
+            faultEvent.faultStrandSequenceNo)
 
-    fun lookupCauseTypeDto(
-            causeTypeId: CauseTypeId,
+    fun lookupCauseStrandDto(
+            causeStrandId: CauseStrandId,
             fullStack: Boolean = false,
             printStack: Boolean = false
-    ): CauseTypeDto = causeTypeDto(storage.getCauseType(causeTypeId), fullStack, printStack)
+    ): CauseStrandDto = causeStrandDto(storage.getCauseStrand(causeStrandId), fullStack, printStack)
 
     fun lookupCauseDto(
             causeId: CauseId,
@@ -89,7 +89,7 @@ class UnearthController(
 
     infix fun feedLimit(faultId: FaultId): Long = feed.limit(faultId)
 
-    infix fun feedLimit(faultTypeId: FaultTypeId): Long = feed.limit(faultTypeId)
+    infix fun feedLimit(faultStrandId: FaultStrandId): Long = feed.limit(faultStrandId)
 
     fun feedLimit() = feed.limit()
 
@@ -119,15 +119,15 @@ class UnearthController(
             })
 
     fun feed(
-            faultTypeId: FaultTypeId,
+            faultStrandId: FaultStrandId,
             offset: Long,
             count: Long,
             fullStack: Boolean = false,
             printStack: Boolean = false
     ): FaultEventSequence = FaultEventSequence(
-            faultTypeId,
-            SequenceType.FAULT_TYPE,
-            feed.feed(faultTypeId, offset, count).map {
+            faultStrandId,
+            SequenceType.FAULT_STRAND,
+            feed.feed(faultStrandId, offset, count).map {
                 faultEventDto(it, fullStack, printStack)
             })
 
@@ -137,10 +137,10 @@ class UnearthController(
             printStack: Boolean = false,
             thin: Boolean = false
     ): UnearthedException = UnearthedException(
-            className = dto.cause.causeType.className,
+            className = dto.cause.causeStrand.className,
             message = dto.cause.message,
-            causeType = if (thin) null else
-                causeTypeDto(dto.cause.causeType, fullStack, printStack),
+            causeStrand = if (thin) null else
+                causeStrandDto(dto.cause.causeStrand, fullStack, printStack),
             cause = dto.chainedCause?.let {
                 unearthedException(it, fullStack)
             })
@@ -148,25 +148,25 @@ class UnearthController(
     private fun faultDto(fault: Fault, fullStack: Boolean, printStack: Boolean): FaultDto {
         return FaultDto(
                 id = fault.id,
-                faultTypeId = fault.faultType.id,
+                faultStrandId = fault.faultStrand.id,
                 causes = fault.causes.map { cause ->
                     causeDto(cause, fullStack = fullStack, printStack = printStack)
                 })
     }
 
-    private fun causeTypeDto(
-            causeType: CauseType,
+    private fun causeStrandDto(
+            causeStrand: CauseStrand,
             fullStack: Boolean = false,
             printStack: Boolean = false
-    ): CauseTypeDto = CauseTypeDto(
-            causeType.id,
-            causeType.className,
+    ): CauseStrandDto = CauseStrandDto(
+            causeStrand.id,
+            causeStrand.className,
             if (fullStack)
-                stackTrace(causeType.stackTrace)
+                stackTrace(causeStrand.stackTrace)
             else
                 emptyList(),
             if (printStack && !fullStack)
-                simpleStackTrace(causeType.stackTrace)
+                simpleStackTrace(causeStrand.stackTrace)
             else
                 emptyList())
 
@@ -177,7 +177,7 @@ class UnearthController(
     ): CauseDto = CauseDto(
             id = cause.id,
             message = cause.message,
-            causeType = causeTypeDto(cause.causeType, fullStack, printStack))
+            causeStrand = causeStrandDto(cause.causeStrand, fullStack, printStack))
 
     private fun simpleStackTrace(stackTrace: List<StackTraceElement>): List<String> = stackTrace.map { it.toString() }
 

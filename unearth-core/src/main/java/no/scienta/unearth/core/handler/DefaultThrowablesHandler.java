@@ -45,6 +45,6 @@ public class DefaultThrowablesHandler implements FaultHandler {
     private SimpleHandlingPolicy store(Fault submitted) {
         FaultEvent stored = storage.store(submitted);
         FaultEvent registered = sensor.registered(stored);
-        return new SimpleHandlingPolicy(registered, stored.getFaultTypeSequence() == 0);
+        return new SimpleHandlingPolicy(registered, stored.getFaultStrandSequenceNo() == 0);
     }
 }

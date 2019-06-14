@@ -39,20 +39,20 @@ public class InMemoryThrowablesStorage
 
     private final Map<FaultId, Fault> faults = new HashMap<>();
 
-    private final Map<FaultTypeId, FaultType> faultTypes = new HashMap<>();
+    private final Map<FaultStrandId, FaultStrand> faultStrands = new HashMap<>();
 
     private final Map<FaultEventId, FaultEvent> events = new HashMap<>();
 
-    private final Map<CauseTypeId, CauseType> causeTypes = new HashMap<>();
+    private final Map<CauseStrandId, CauseStrand> causeStrands = new HashMap<>();
 
     private final Map<CauseId, Cause> causes = new HashMap<>();
 
 
     private final Collection<FaultEvent> faultEvents = new ArrayList<>();
 
-    private final Map<FaultTypeId, Collection<Fault>> faultTypeFaults = new HashMap<>();
+    private final Map<FaultStrandId, Collection<Fault>> faultStrandFaults = new HashMap<>();
 
-    private final Map<FaultTypeId, Collection<FaultEvent>> faultTypeFaultEvents = new HashMap<>();
+    private final Map<FaultStrandId, Collection<FaultEvent>> faultStrandFaultEvents = new HashMap<>();
 
     private final Map<FaultId, Collection<FaultEvent>> faultFaultEvents = new HashMap<>();
 
@@ -61,7 +61,7 @@ public class InMemoryThrowablesStorage
 
     private final AtomicLong globalSequence = new AtomicLong();
 
-    private final Map<FaultTypeId, AtomicLong> faultTypeSequence = new LinkedHashMap<>();
+    private final Map<FaultStrandId, AtomicLong> faultStrandSequence = new LinkedHashMap<>();
 
     private final Map<FaultId, AtomicLong> faultSequence = new LinkedHashMap<>();
 
@@ -83,18 +83,18 @@ public class InMemoryThrowablesStorage
                     fault,
                     Instant.now(clock),
                     globalSequence.getAndIncrement(),
-                    increment(this.faultTypeSequence, fault.getFaultType().getId()),
+                    increment(this.faultStrandSequence, fault.getFaultStrand().getId()),
                     increment(this.faultSequence, fault.getId()))
             );
-            FaultType faultType = fault.getFaultType();
-            put(this.faultTypes, faultType);
+            FaultStrand faultStrand = fault.getFaultStrand();
+            put(this.faultStrands, faultStrand);
             put(this.faults, fault);
-            faultType.getCauseTypes().forEach(put(this.causeTypes));
+            faultStrand.getCauseStrands().forEach(put(this.causeStrands));
             faultEvent.getFault().getCauses().forEach(put(this.causes));
 
             faultEvents.add(faultEvent);
-            addTo(faultTypeFaults, faultType.getId(), fault);
-            addTo(faultTypeFaultEvents, faultType.getId(), faultEvent);
+            addTo(faultStrandFaults, faultStrand.getId(), fault);
+            addTo(faultStrandFaultEvents, faultStrand.getId(), faultEvent);
             addTo(faultFaultEvents, fault.getId(), faultEvent);
 
             return faultEvent;
@@ -102,18 +102,18 @@ public class InMemoryThrowablesStorage
     }
 
     @Override
-    public FaultType getFaultType(FaultTypeId faultTypeId) {
-        return get("faultType", faultTypeId, faultTypes);
+    public FaultStrand getFaultStrand(FaultStrandId faultStrandId) {
+        return get("faultStrand", faultStrandId, faultStrands);
     }
 
     @Override
-    public Fault getFault(FaultId faultTypeId) {
-        return get("fault", faultTypeId, faults);
+    public Fault getFault(FaultId faultStrandId) {
+        return get("fault", faultStrandId, faults);
     }
 
     @Override
-    public CauseType getCauseType(CauseTypeId causeTypeId) {
-        return get("cause", causeTypeId, causeTypes);
+    public CauseStrand getCauseStrand(CauseStrandId causeStrandId) {
+        return get("cause", causeStrandId, causeStrands);
     }
 
     @Override
@@ -127,8 +127,8 @@ public class InMemoryThrowablesStorage
     }
 
     @Override
-    public Collection<FaultEvent> getEvents(FaultTypeId faultTypeId, Long offset, Long count) {
-        return listLookup(this.faultTypeFaultEvents, faultTypeId, offset, count);
+    public Collection<FaultEvent> getEvents(FaultStrandId faultStrandId, Long offset, Long count) {
+        return listLookup(this.faultStrandFaultEvents, faultStrandId, offset, count);
     }
 
     @Override
@@ -142,8 +142,8 @@ public class InMemoryThrowablesStorage
     }
 
     @Override
-    public long limit(FaultTypeId id) {
-        return getLimit(this.faultTypeSequence, id);
+    public long limit(FaultStrandId id) {
+        return getLimit(this.faultStrandSequence, id);
     }
 
     @Override
@@ -157,28 +157,28 @@ public class InMemoryThrowablesStorage
     }
 
     @Override
-    public List<FaultEvent> feed(FaultTypeId id, long offset, long count) {
-        return typedFeed(id, this.faultTypeFaultEvents, FaultEvent::getFaultTypeSequence, offset, count);
+    public List<FaultEvent> feed(FaultStrandId id, long offset, long count) {
+        return typedFeed(id, this.faultStrandFaultEvents, FaultEvent::getFaultStrandSequenceNo, offset, count);
     }
 
     @Override
     public List<FaultEvent> feed(FaultId id, long offset, long count) {
-        return typedFeed(id, this.faultFaultEvents, FaultEvent::getFaultSequence, offset, count);
+        return typedFeed(id, this.faultFaultEvents, FaultEvent::getFaultSequenceNo, offset, count);
     }
 
     @Override
-    public Optional<FaultEvent> lastFaultEvent(FaultTypeId id) {
-        return streamLookup(faultTypeFaultEvents, id)
-            .max(Comparator.comparing(FaultEvent::getFaultTypeSequence));
+    public Optional<FaultEvent> lastFaultEvent(FaultStrandId id) {
+        return streamLookup(faultStrandFaultEvents, id)
+            .max(Comparator.comparing(FaultEvent::getFaultStrandSequenceNo));
     }
 
     @Override
-    public long faultEventCount(FaultTypeId id, Instant sinceTime, Duration during) {
+    public long faultEventCount(FaultStrandId id, Instant sinceTime, Duration during) {
         return getEvents(id).size();
     }
 
     @Override
-    public Stream<FaultEvent> faultEvents(FaultTypeId id, Instant sinceTime, Duration period) {
+    public Stream<FaultEvent> faultEvents(FaultStrandId id, Instant sinceTime, Duration period) {
         return faultEvents(id);
     }
 
@@ -188,8 +188,8 @@ public class InMemoryThrowablesStorage
                 new IllegalArgumentException("No such " + type + ": " + id));
     }
 
-    public Stream<FaultEvent> faultEvents(FaultTypeId id) {
-        return streamLookup(faultTypeFaults, id).flatMap(fault ->
+    public Stream<FaultEvent> faultEvents(FaultStrandId id) {
+        return streamLookup(faultStrandFaults, id).flatMap(fault ->
             streamLookup(faultFaultEvents, fault.getId()));
     }
 
@@ -197,7 +197,7 @@ public class InMemoryThrowablesStorage
         return delimited(
             faultEvents.stream()
                 .filter(faultEvent ->
-                    faultEvent.getGlobalSequence() >= offset),
+                    faultEvent.getGlobalSequenceNo() >= offset),
             count
         ).collect(Collectors.toUnmodifiableList());
     }

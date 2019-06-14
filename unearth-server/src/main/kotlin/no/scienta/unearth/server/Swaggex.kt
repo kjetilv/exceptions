@@ -22,12 +22,12 @@ import no.scienta.unearth.munch.id.*
 import java.time.ZonedDateTime
 import java.util.*
 
-object Swagger {
+object Swaggex {
 
     private val random = Random()
 
     internal fun submission() = Submission(
-            FaultTypeId(UUID.randomUUID()),
+            FaultStrandId(UUID.randomUUID()),
             FaultId(UUID.randomUUID()),
             FaultEventId(UUID.randomUUID()),
             random.nextLong() % 1000,
@@ -38,13 +38,13 @@ object Swagger {
     internal fun faultSequence(id: ((UUID) -> Id)? = null): FaultEventSequence =
             FaultEventSequence(id?.let { it(uuid()) }, SequenceType.FAULT, listOf(faultEventDto()))
 
-    internal fun faultTypeDto() = FaultTypeDto(FaultTypeId(uuid()), listOf(causeTypeDto()))
+    internal fun faultStrandDto() = FaultStrandDto(FaultStrandId(uuid()), listOf(causeStrandDto()))
 
-    internal fun faultDto() = FaultDto(FaultId(uuid()), FaultTypeId(uuid()), listOf(causeDto()))
+    internal fun faultDto() = FaultDto(FaultId(uuid()), FaultStrandId(uuid()), listOf(causeDto()))
 
     internal fun exception() = RuntimeException("Example throwable")
 
-    internal fun causeDto() = CauseDto(CauseId(uuid()), "Bad stuff", causeTypeDto())
+    internal fun causeDto() = CauseDto(CauseId(uuid()), "Bad stuff", causeStrandDto())
 
     internal fun faultEventDto(): FaultEventDto = FaultEventDto(
             FaultEventId(uuid()),
@@ -54,14 +54,14 @@ object Swagger {
             random.nextInt().toLong(),
             random.nextInt().toLong())
 
-    internal fun causeTypeDto() =
-            CauseTypeDto(CauseTypeId(uuid()), "BadStuffException", emptyList(), emptyList())
+    internal fun causeStrandDto() =
+            CauseStrandDto(CauseStrandId(uuid()), "BadStuffException", emptyList(), emptyList())
 
     private fun unearthedException(): UnearthedException =
             UnearthedException(
                     "mymy.such.a.BadClass",
                     "Bad class!",
-                    causeType = causeTypeDto())
+                    causeStrand = causeStrandDto())
 
     private fun uuid(): UUID = UUID.randomUUID()
 

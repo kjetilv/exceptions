@@ -29,31 +29,31 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * A fault has a {@link FaultType fault type} and a list of {@link Cause causes}.
+ * A fault has a {@link FaultStrand fault strand} and a list of {@link Cause causes}.
  */
 public class Fault extends AbstractHashableIdentifiable<FaultId> {
 
     public static Fault create(Throwable throwable) {
-        return new Fault(FaultType.create(throwable), causes(throwable));
+        return new Fault(FaultStrand.create(throwable), causes(throwable));
     }
 
-    private final FaultType faultType;
+    private final FaultStrand faultStrand;
 
     private final List<Cause> causes;
 
-    private Fault(FaultType faultType, Collection<Cause> causes) {
-        this.faultType = Objects.requireNonNull(faultType);
+    private Fault(FaultStrand faultStrand, Collection<Cause> causes) {
+        this.faultStrand = Objects.requireNonNull(faultStrand);
         this.causes = causes == null || causes.isEmpty()
             ? Collections.emptyList()
             : List.copyOf(causes);
-        if (this.faultType.getCauseCount() != this.causes.size()) {
+        if (this.faultStrand.getCauseCount() != this.causes.size()) {
             throw new IllegalStateException(
-                "Expected same arity: " + this.faultType.getCauseTypes().size() + "/" + this.causes.size());
+                "Expected same arity: " + this.faultStrand.getCauseStrands().size() + "/" + this.causes.size());
         }
     }
 
-    public FaultType getFaultType() {
-        return faultType;
+    public FaultStrand getFaultStrand() {
+        return faultStrand;
     }
 
     public List<Cause> getCauses() {
@@ -61,7 +61,7 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
     }
 
     public Fault withCauses(List<Cause> causes) {
-        return new Fault(faultType, causes);
+        return new Fault(faultStrand, causes);
     }
 
     public ChainedFault toChainedFault() {
@@ -102,12 +102,12 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
 
     @Override
     protected String toStringBody() {
-        return "faultType:" + faultType + ": " + causes.size();
+        return "faultStrand:" + faultStrand + ": " + causes.size();
     }
 
     @Override
     public void hashTo(Consumer<byte[]> h) {
-        hashHashables(h, faultType);
+        hashHashables(h, faultStrand);
         hashHashables(h, causes);
     }
 }

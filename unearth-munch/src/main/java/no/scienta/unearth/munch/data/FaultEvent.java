@@ -33,11 +33,11 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
 
     private final long time;
 
-    private final long globalSequence;
+    private final long globalSequenceNo;
 
-    private final long faultTypeSequence;
+    private final long faultStrandSequenceNo;
 
-    private final long faultSequence;
+    private final long faultSequenceNo;
 
     FaultEvent(Fault fault) {
         this(fault, null, null, null, null);
@@ -46,15 +46,15 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
     public FaultEvent(
         Fault fault,
         Instant time,
-        Long globalSequence,
-        Long faultTypeSequence,
-        Long faultSequence
+        Long globalSequenceNo,
+        Long faultStrandSequenceNo,
+        Long faultSequenceNo
     ) {
         this.fault = Objects.requireNonNull(fault);
         this.time = Objects.requireNonNull(time).toEpochMilli();
-        this.globalSequence = Objects.requireNonNull(globalSequence);
-        this.faultTypeSequence = Objects.requireNonNull(faultTypeSequence);
-        this.faultSequence = Objects.requireNonNull(faultSequence);
+        this.globalSequenceNo = Objects.requireNonNull(globalSequenceNo);
+        this.faultStrandSequenceNo = Objects.requireNonNull(faultStrandSequenceNo);
+        this.faultSequenceNo = Objects.requireNonNull(faultSequenceNo);
     }
 
     public Fault getFault() {
@@ -65,16 +65,16 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
         return Instant.ofEpochMilli(time);
     }
 
-    public Long getGlobalSequence() {
-        return globalSequence;
+    public Long getGlobalSequenceNo() {
+        return globalSequenceNo;
     }
 
-    public Long getFaultTypeSequence() {
-        return faultTypeSequence;
+    public Long getFaultStrandSequenceNo() {
+        return faultStrandSequenceNo;
     }
 
-    public Long getFaultSequence() {
-        return faultSequence;
+    public Long getFaultSequenceNo() {
+        return faultSequenceNo;
     }
 
     @Override
@@ -86,13 +86,13 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
     protected String toStringBody() {
         String time = getTime().atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_ZONED_DATE_TIME);
         return fault.getId() + "@" + time +
-            " g#" + globalSequence + " ft#" + faultTypeSequence + " f#" + faultSequence;
+            " g#" + globalSequenceNo + " ft#" + faultStrandSequenceNo + " f#" + faultSequenceNo;
     }
 
     @Override
     public void hashTo(Consumer<byte[]> h) {
         hashHashables(h, fault);
-        hashLongs(h, time, faultSequence, faultTypeSequence, globalSequence);
+        hashLongs(h, time, faultSequenceNo, faultStrandSequenceNo, globalSequenceNo);
     }
 }
 

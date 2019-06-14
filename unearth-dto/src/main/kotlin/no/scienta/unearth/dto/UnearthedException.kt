@@ -23,6 +23,6 @@ data class UnearthedException(
 
         val message: String?,
 
-        val causeType: CauseTypeDto?,
+        val causeStrand: CauseStrandDto?,
 
         val cause: UnearthedException? = null)

@@ -17,11 +17,11 @@
 
 package no.scienta.unearth.dto
 
-import no.scienta.unearth.munch.id.CauseTypeId
+import no.scienta.unearth.munch.id.CauseStrandId
 
-data class CauseTypeDto(
+data class CauseStrandDto(
 
-        val id: CauseTypeId,
+        val id: CauseStrandId,
 
         val className: String,
 

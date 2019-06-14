@@ -19,21 +19,21 @@ package no.scienta.unearth.dto
 
 import no.scienta.unearth.munch.id.FaultEventId
 import no.scienta.unearth.munch.id.FaultId
-import no.scienta.unearth.munch.id.FaultTypeId
+import no.scienta.unearth.munch.id.FaultStrandId
 
 data class Submission(
 
-        val faultTypeId: FaultTypeId,
+        val faultStrandId: FaultStrandId,
 
         val faultId: FaultId,
 
         val faultEventId: FaultEventId,
 
-        val globalSeqNo: Long,
+        val globalSequenceNo: Long,
 
-        val faultTypeSeqNo: Long,
+        val faultStrandSequenceNo: Long,
 
-        val faultSeqNo: Long,
+        val faultSequenceNo: Long,
 
         val loggable: Boolean
 )

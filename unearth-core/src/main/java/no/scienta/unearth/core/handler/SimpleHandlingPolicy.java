@@ -18,7 +18,7 @@
 package no.scienta.unearth.core.handler;
 
 import no.scienta.unearth.core.HandlingPolicy;
-import no.scienta.unearth.munch.id.FaultTypeId;
+import no.scienta.unearth.munch.id.FaultStrandId;
 import no.scienta.unearth.munch.data.FaultEvent;
 import no.scienta.unearth.munch.id.FaultEventId;
 import no.scienta.unearth.munch.id.FaultId;
@@ -35,8 +35,8 @@ class SimpleHandlingPolicy implements HandlingPolicy {
     }
 
     @Override
-    public FaultTypeId getFaultTypeId() {
-        return faultEvent.getFault().getFaultType().getId();
+    public FaultStrandId getFaultStrandId() {
+        return faultEvent.getFault().getFaultStrand().getId();
     }
 
     public FaultId getFaultId() {
@@ -55,16 +55,16 @@ class SimpleHandlingPolicy implements HandlingPolicy {
 
     @Override
     public long getGlobalSequence() {
-        return faultEvent.getGlobalSequence();
+        return faultEvent.getGlobalSequenceNo();
     }
 
     @Override
     public long getFaultSequence() {
-        return faultEvent.getFaultSequence();
+        return faultEvent.getFaultSequenceNo();
     }
 
     @Override
-    public long getFaultTypeSequence() {
-        return faultEvent.getFaultTypeSequence();
+    public long getFaultStrandSequence() {
+        return faultEvent.getFaultStrandSequenceNo();
     }
 }

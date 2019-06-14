@@ -18,7 +18,7 @@
 package no.scienta.unearth.munch.data;
 
 import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
-import no.scienta.unearth.munch.id.FaultTypeId;
+import no.scienta.unearth.munch.id.FaultStrandId;
 import no.scienta.unearth.munch.util.Streams;
 
 import java.util.Collection;
@@ -29,53 +29,53 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * A fault type consists of a list of {@link CauseType cause types}.
+ * A fault strand consists of a list of {@link CauseStrand cause strand}.
  */
-public class FaultType extends AbstractHashableIdentifiable<FaultTypeId> {
+public class FaultStrand extends AbstractHashableIdentifiable<FaultStrandId> {
 
-    private final List<CauseType> causeTypes;
+    private final List<CauseStrand> causeStrands;
 
-    public static FaultType create(Throwable throwable) {
+    public static FaultStrand create(Throwable throwable) {
         List<Cause> causes = Streams.reverse(
             Streams.causes(throwable).map(Cause::create)
         ).collect(Collectors.toList());
-        List<CauseType> causeTypes = causes.stream().map(Cause::getCauseType).collect(Collectors.toList());
-        return new FaultType(causeTypes);
+        List<CauseStrand> causeStrands = causes.stream().map(Cause::getCauseStrand).collect(Collectors.toList());
+        return new FaultStrand(causeStrands);
     }
 
-    public List<CauseType> getCauseTypes() {
-        return causeTypes;
+    public List<CauseStrand> getCauseStrands() {
+        return causeStrands;
     }
 
-    public FaultType withCauseTypes(List<CauseType> causeTypes) {
-        return new FaultType(causeTypes);
+    public FaultStrand withCauseStrands(List<CauseStrand> causeStrands) {
+        return new FaultStrand(causeStrands);
     }
 
     int getCauseCount() {
-        return causeTypes.size();
+        return causeStrands.size();
     }
 
-    private FaultType(Collection<CauseType> causeTypes) {
-        if (Objects.requireNonNull(causeTypes).isEmpty()) {
+    private FaultStrand(Collection<CauseStrand> causeStrands) {
+        if (Objects.requireNonNull(causeStrands).isEmpty()) {
             throw new IllegalArgumentException("Expected one or more causes");
         }
-        this.causeTypes = List.copyOf(causeTypes);
+        this.causeStrands = List.copyOf(causeStrands);
     }
 
     @Override
     protected String toStringBody() {
         return "(" +
-            causeTypes.stream().map(Objects::toString).collect(Collectors.joining(" <= ")) +
+            causeStrands.stream().map(Objects::toString).collect(Collectors.joining(" <= ")) +
             ")";
     }
 
     @Override
     public void hashTo(Consumer<byte[]> h) {
-        hashHashables(h, causeTypes);
+        hashHashables(h, causeStrands);
     }
 
     @Override
-    protected FaultTypeId id(UUID hash) {
-        return new FaultTypeId(hash);
+    protected FaultStrandId id(UUID hash) {
+        return new FaultStrandId(hash);
     }
 }

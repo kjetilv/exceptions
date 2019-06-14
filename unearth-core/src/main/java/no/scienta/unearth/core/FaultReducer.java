@@ -18,17 +18,17 @@
 package no.scienta.unearth.core;
 
 import no.scienta.unearth.munch.data.Cause;
-import no.scienta.unearth.munch.data.CauseType;
+import no.scienta.unearth.munch.data.CauseStrand;
 import no.scienta.unearth.munch.data.Fault;
-import no.scienta.unearth.munch.data.FaultType;
+import no.scienta.unearth.munch.data.FaultStrand;
 
 public interface FaultReducer {
 
     Fault reduce(Fault fault);
 
-    FaultType reduce(FaultType faultType);
+    FaultStrand reduce(FaultStrand faultStrand);
 
-    CauseType reduce(CauseType causeType);
+    CauseStrand reduce(CauseStrand causeStrand);
 
     Cause reduce(Cause cause);
 }

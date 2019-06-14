@@ -17,7 +17,7 @@
 
 package no.scienta.unearth.munch;
 
-import no.scienta.unearth.munch.data.CauseType;
+import no.scienta.unearth.munch.data.CauseStrand;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -27,7 +27,7 @@ public class ThrowableStackTest {
 
     @Test
     public void can_hash() {
-        CauseType digest = CauseType.create(new Exception());
+        CauseStrand digest = CauseStrand.create(new Exception());
 
         UUID hash = digest.getHash();
 

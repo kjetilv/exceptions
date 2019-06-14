@@ -19,7 +19,7 @@ package no.scienta.unearth.munch.data;
 
 import no.scienta.unearth.munch.ChameleonException;
 import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
-import no.scienta.unearth.munch.id.CauseTypeId;
+import no.scienta.unearth.munch.id.CauseStrandId;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -30,19 +30,19 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * A cause type consists of a stacktrace and an exception class name.
+ * A cause strand consists of a stacktrace and an exception class name.
  */
-public class CauseType extends AbstractHashableIdentifiable<CauseTypeId> {
+public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
 
-    public static CauseType create(Throwable throwable) {
-        return new CauseType(className(throwable), copy(throwable.getStackTrace()));
+    public static CauseStrand create(Throwable throwable) {
+        return new CauseStrand(className(throwable), copy(throwable.getStackTrace()));
     }
 
     private final String className;
 
     private final List<StackTraceElement> stackTrace;
 
-    private CauseType(String className, List<StackTraceElement> stackTrace) {
+    private CauseStrand(String className, List<StackTraceElement> stackTrace) {
         this.className = className;
         this.stackTrace = stackTrace == null || stackTrace.isEmpty()
             ? Collections.emptyList()
@@ -54,16 +54,16 @@ public class CauseType extends AbstractHashableIdentifiable<CauseTypeId> {
     }
 
     @Override
-    protected CauseTypeId id(UUID hash) {
-        return new CauseTypeId(hash);
+    protected CauseStrandId id(UUID hash) {
+        return new CauseStrandId(hash);
     }
 
     public String getClassName() {
         return className;
     }
 
-    public CauseType withStacktrace(List<StackTraceElement> stackTrace) {
-        return new CauseType(className, stackTrace);
+    public CauseStrand withStacktrace(List<StackTraceElement> stackTrace) {
+        return new CauseStrand(className, stackTrace);
     }
 
     private static List<StackTraceElement> copy(StackTraceElement[] stackTrace) {

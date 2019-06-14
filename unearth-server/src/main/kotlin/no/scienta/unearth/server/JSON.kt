@@ -54,14 +54,14 @@ private fun forIds(prefix: String): Module =
             addSerializer(FaultId::class.java, serializer(prefix, "fault", true))
             addDeserializer(FaultId::class.java, deserializer(::FaultId))
 
-            addSerializer(FaultTypeId::class.java, serializer(prefix, "fault-type", true))
-            addDeserializer(FaultTypeId::class.java, deserializer(::FaultTypeId))
+            addSerializer(FaultStrandId::class.java, serializer(prefix, "fault-strand", true))
+            addDeserializer(FaultStrandId::class.java, deserializer(::FaultStrandId))
 
             addSerializer(FaultEventId::class.java, serializer(prefix, "fault-event", false))
             addDeserializer(FaultEventId::class.java, deserializer(::FaultEventId))
 
-            addSerializer(CauseTypeId::class.java, serializer(prefix, "cause-type", false))
-            addDeserializer(CauseTypeId::class.java, deserializer(::CauseTypeId))
+            addSerializer(CauseStrandId::class.java, serializer(prefix, "cause-strand", false))
+            addDeserializer(CauseStrandId::class.java, deserializer(::CauseStrandId))
 
             addSerializer(CauseId::class.java, serializer(prefix, "cause", false))
             addDeserializer(CauseId::class.java, deserializer(::CauseId))

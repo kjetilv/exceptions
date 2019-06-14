@@ -19,9 +19,9 @@ package no.scienta.unearth.munch.id;
 
 import java.util.UUID;
 
-public class CauseTypeId extends Id {
+public class CauseStrandId extends Id {
 
-    public CauseTypeId(UUID hash) {
+    public CauseStrandId(UUID hash) {
         super(hash);
     }
 }

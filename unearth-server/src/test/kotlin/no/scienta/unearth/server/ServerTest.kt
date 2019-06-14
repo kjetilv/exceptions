@@ -23,7 +23,7 @@ import no.scienta.unearth.core.reducer.SimpleFaultReducer
 import no.scienta.unearth.core.storage.InMemoryThrowablesStorage
 import no.scienta.unearth.micrometer.MeteringThrowablesSensor
 import no.scienta.unearth.dto.Submission
-import no.scienta.unearth.dto.FaultTypeDto
+import no.scienta.unearth.dto.FaultStrandDto
 import org.http4k.client.ApacheClient
 import org.http4k.core.Body
 import org.http4k.core.Method
@@ -44,7 +44,7 @@ fun main() {
     val server = UnearthServer(
             controller = UnearthController(storage, storage, storage, sensor, reducer))
 
-    val lookupLens = Body.auto<FaultTypeDto>().toLens()
+    val lookupLens = Body.auto<FaultStrandDto>().toLens()
 
     val submitLens = Body.auto<Submission>().toLens()
 
@@ -112,7 +112,7 @@ fun main() {
 
     println(JSON.asJsonString(submission))
 
-    val uri = "http://localhost:8080/api/v1/fault-type/${submission.faultTypeId.hash}"
+    val uri = "http://localhost:8080/api/v1/fault-strand/${submission.faultStrandId.hash}"
     val request = Request(Method.GET, uri)
     val target = client(request)
 

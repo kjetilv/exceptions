@@ -17,7 +17,7 @@
 
 package no.scienta.unearth.core;
 
-import no.scienta.unearth.munch.id.FaultTypeId;
+import no.scienta.unearth.munch.id.FaultStrandId;
 import no.scienta.unearth.munch.data.FaultEvent;
 import no.scienta.unearth.munch.id.FaultId;
 
@@ -27,13 +27,13 @@ public interface FaultFeed {
 
     long limit();
 
-    long limit(FaultTypeId id);
+    long limit(FaultStrandId id);
 
     long limit(FaultId id);
 
     List<FaultEvent> feed(long offset, long count);
 
-    List<FaultEvent> feed(FaultTypeId id, long offset, long count);
+    List<FaultEvent> feed(FaultStrandId id, long offset, long count);
 
     List<FaultEvent> feed(FaultId id, long offset, long count);
 }

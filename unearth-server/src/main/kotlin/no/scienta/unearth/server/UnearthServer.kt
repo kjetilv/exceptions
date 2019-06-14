@@ -20,7 +20,7 @@ package no.scienta.unearth.server
 import no.scienta.unearth.core.HandlingPolicy
 import no.scienta.unearth.core.parser.ThrowableParser
 import no.scienta.unearth.dto.*
-import no.scienta.unearth.munch.data.FaultType
+import no.scienta.unearth.munch.data.FaultStrand
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.util.Throwables
 import no.scienta.unearth.server.JSON.auto
@@ -75,17 +75,29 @@ class UnearthServer(
         summary = "Submit an exception"
         consumes += TEXT_PLAIN
         produces += APPLICATION_JSON
-        receiving(exception to Swagger.exception())
-        returning(OK, submission to Swagger.submission())
+        receiving(exception to Swaggex.exception())
+        returning(OK, submission to Swaggex.submission())
     } bindContract POST to exchange(exception, submission) { throwable ->
         submission(controller submitRaw throwable)
+    }
+
+    private fun retrieveExceptionRoute() = "/throwable" / uuid(::FaultId) meta {
+        summary = "Print an exception"
+        produces += TEXT_PLAIN
+        returning(OK, exception to Swaggex.exception())
+    } bindContract GET to { faultId ->
+        {
+            get(exception, type = TEXT_PLAIN) {
+                controller lookupThrowable faultId
+            }
+        }
     }
 
     private fun lookupFaultEventRoute() = "/fault-event" / uuid(::FaultEventId) meta {
         summary = "Lookup a fault event"
         queries += listOf(fullStack, printStack)
         produces += APPLICATION_JSON
-        returning(OK, faultEvent to Swagger.faultEventDto())
+        returning(OK, faultEvent to Swaggex.faultEventDto())
     } bindContract GET to { faultEventId ->
         { req ->
             get(faultEvent) {
@@ -97,15 +109,15 @@ class UnearthServer(
         }
     }
 
-    private fun lookupFaultTypeRoute() = "/fault-type" / uuid(::FaultTypeId) meta {
-        summary = "Lookup a fault type"
+    private fun lookupFaultStrandRoute() = "/fault-strand" / uuid(::FaultStrandId) meta {
+        summary = "Lookup a fault strand"
         queries += listOf(fullStack, printStack, offsetQuery, countQuery)
         produces += APPLICATION_JSON
-        returning(OK, faultType to Swagger.faultTypeDto())
-    } bindContract GET to { faultTypeId ->
+        returning(OK, faultStrand to Swaggex.faultStrandDto())
+    } bindContract GET to { faultStrandId ->
         { req ->
-            get(faultType) {
-                controller.lookupFaultTypeDto(faultTypeId,
+            get(faultStrand) {
+                controller.lookupFaultStrandDto(faultStrandId,
                         fullStack[req] ?: false,
                         printStack[req] ?: false)
             }
@@ -116,7 +128,7 @@ class UnearthServer(
         summary = "Lookup a fault"
         queries += listOf(fullStack, printStack)
         produces += APPLICATION_JSON
-        returning(OK, fault to Swagger.faultDto())
+        returning(OK, fault to Swaggex.faultDto())
     } bindContract GET to { faultId ->
         { req ->
             get(fault) {
@@ -127,26 +139,26 @@ class UnearthServer(
         }
     }
 
-    private fun lookupCauseRoute() = "/cause-type" / uuid(::CauseTypeId) meta {
-        summary = "Lookup a cause type"
+    private fun lookupCauseStrandRoute() = "/cause-strand" / uuid(::CauseStrandId) meta {
+        summary = "Lookup a cause strand"
         queries += listOf(fullStack, printStack)
         produces += APPLICATION_JSON
-        returning(OK, causeType to Swagger.causeTypeDto())
-    } bindContract GET to { causeTypeId ->
+        returning(OK, causeStrand to Swaggex.causeStrandDto())
+    } bindContract GET to { causeStrandId ->
         { req ->
-            get(causeType) {
-                controller.lookupCauseTypeDto(causeTypeId,
+            get(causeStrand) {
+                controller.lookupCauseStrandDto(causeStrandId,
                         fullStack[req] ?: false,
                         printStack[req] ?: false)
             }
         }
     }
 
-    private fun lookupCauseTypeRoute() = "/cause" / uuid(::CauseId) meta {
+    private fun lookupCauseRoute() = "/cause" / uuid(::CauseId) meta {
         summary = "Lookup a cause"
         queries += listOf(fullStack, printStack)
         produces += APPLICATION_JSON
-        returning(OK, cause to Swagger.causeDto())
+        returning(OK, cause to Swaggex.causeDto())
     } bindContract GET to { causeId ->
         { req ->
             get(cause) {
@@ -160,7 +172,7 @@ class UnearthServer(
     private fun feedLimitsGlobalRoute() = "/feed/limit" meta {
         summary = "Event limits global"
         produces += APPLICATION_JSON
-        returning(OK, limit to Swagger.limit())
+        returning(OK, limit to Swaggex.limit())
     } bindContract GET to {
         get(limit) {
             controller.feedLimit()
@@ -171,7 +183,7 @@ class UnearthServer(
         summary = "Events global"
         produces += APPLICATION_JSON
         queries += listOf(offsetQuery, countQuery, fullStack, printStack)
-        returning(OK, faultSequence to Swagger.faultSequence())
+        returning(OK, faultSequence to Swaggex.faultSequence())
     } bindContract GET to { req ->
         get(faultSequence) {
             controller.feed(
@@ -183,10 +195,10 @@ class UnearthServer(
     }
 
 
-    private fun feedLimitsFaultTypeRoute() = "/feed/fault-type/limit" / uuid(::FaultTypeId) meta {
-        summary = "Event limits for a fault type"
+    private fun feedLimitsFaultStrandRoute() = "/feed/fault-strand/limit" / uuid(::FaultStrandId) meta {
+        summary = "Event limits for a fault strand"
         produces += APPLICATION_JSON
-        returning(OK, limit to Swagger.limit())
+        returning(OK, limit to Swaggex.limit())
     } bindContract GET to { faultId ->
         {
             get(limit) {
@@ -195,15 +207,15 @@ class UnearthServer(
         }
     }
 
-    private fun feedLookupFaultTypeRoute() = "/feed/fault-type" / uuid(::FaultTypeId) meta {
-        summary = "Events for a fault type"
+    private fun feedLookupFaultStrandRoute() = "/feed/fault-strand" / uuid(::FaultStrandId) meta {
+        summary = "Events for a fault strand"
         produces += APPLICATION_JSON
         queries += listOf(offsetQuery, countQuery, fullStack, printStack)
-        returning(OK, faultSequence to Swagger.faultSequence(::FaultTypeId))
-    } bindContract GET to { faultTypeId ->
+        returning(OK, faultSequence to Swaggex.faultSequence(::FaultStrandId))
+    } bindContract GET to { faultStrandId ->
         { req ->
             get(faultSequence) {
-                controller.feed(faultTypeId,
+                controller.feed(faultStrandId,
                         offsetQuery[req] ?: 0L,
                         countQuery[req] ?: 0L,
                         fullStack[req] ?: false,
@@ -215,7 +227,7 @@ class UnearthServer(
     private fun feedLimitsFaultRoute() = "/feed/fault/limit" / uuid(::FaultId) meta {
         summary = "Event limits for a fault"
         produces += APPLICATION_JSON
-        returning(OK, limit to Swagger.limit())
+        returning(OK, limit to Swaggex.limit())
     } bindContract GET to { faultId ->
         {
             get(limit) {
@@ -228,7 +240,7 @@ class UnearthServer(
         summary = "Events for a fault"
         produces += APPLICATION_JSON
         queries += listOf(offsetQuery, countQuery, fullStack, printStack)
-        returning(OK, faultSequence to Swagger.faultSequence(::FaultId))
+        returning(OK, faultSequence to Swaggex.faultSequence(::FaultId))
     } bindContract GET to { faultId ->
         { req ->
             get(faultSequence) {
@@ -241,22 +253,10 @@ class UnearthServer(
         }
     }
 
-    private fun printFaultRoute() = "/throwable" / uuid(::FaultId) meta {
-        summary = "Print an exception"
-        produces += TEXT_PLAIN
-        returning(OK, exception to Swagger.exception())
-    } bindContract GET to { faultId ->
-        {
-            get(exception, type = TEXT_PLAIN) {
-                controller lookupThrowable faultId
-            }
-        }
-    }
-
     private fun printFaultReduxRoute() = "/throwable-redux" / uuid(::FaultId) meta {
         summary = "Print an exception"
         produces += TEXT_PLAIN
-        returning(OK, exception to Swagger.exception())
+        returning(OK, exception to Swaggex.exception())
     } bindContract GET to { faultId ->
         {
             get(exception, type = TEXT_PLAIN) {
@@ -309,29 +309,29 @@ class UnearthServer(
                     submitExceptionRoute()
             routes += listOf(
                     lookupFaultRoute(),
-                    lookupFaultTypeRoute(),
+                    lookupFaultStrandRoute(),
                     lookupFaultEventRoute(),
                     lookupCauseRoute(),
-                    lookupCauseTypeRoute())
+                    lookupCauseStrandRoute())
             routes += listOf(
                     feedLimitsGlobalRoute(),
                     feedLimitsFaultRoute(),
-                    feedLimitsFaultTypeRoute(),
+                    feedLimitsFaultStrandRoute(),
                     feedLookupGlobalRoute(),
                     feedLookupFaultRoute(),
-                    feedLookupFaultTypeRoute())
+                    feedLookupFaultStrandRoute())
             routes += listOf(
-                    printFaultRoute(),
+                    retrieveExceptionRoute(),
                     printFaultReduxRoute())
         }
     }
 
     private fun submission(handling: HandlingPolicy) = Submission(
-            handling.faultTypeId,
+            handling.faultStrandId,
             handling.faultId,
             handling.faultEventId,
             handling.globalSequence,
-            handling.faultTypeSequence,
+            handling.faultStrandSequence,
             handling.faultSequence,
             handling.isLoggable)
 
@@ -363,8 +363,8 @@ class UnearthServer(
     }
 
     private fun simpleFailedResponse(e: Throwable): Response {
-        val faultTypeId = FaultType.create(e).id
-        logger.error("Failed: $faultTypeId", e)
+        val faultStrandId = FaultStrand.create(e).id
+        logger.error("Failed: $faultStrandId", e)
         return internalError.set(
                 Response(INTERNAL_SERVER_ERROR),
                 UnearthlyError(Throwables.join(e, " <= ")))
@@ -446,11 +446,11 @@ class UnearthServer(
 
         private val fault = Body.auto<FaultDto>().toLens()
 
-        private val faultType = Body.auto<FaultTypeDto>().toLens()
+        private val faultStrand = Body.auto<FaultStrandDto>().toLens()
 
         private val cause = Body.auto<CauseDto>().toLens()
 
-        private val causeType = Body.auto<CauseTypeDto>().toLens()
+        private val causeStrand = Body.auto<CauseStrandDto>().toLens()
 
         private val internalError = Body.auto<UnearthlyError>().toLens()
 

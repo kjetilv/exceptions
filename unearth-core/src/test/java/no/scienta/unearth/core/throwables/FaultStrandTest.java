@@ -17,7 +17,7 @@
 
 package no.scienta.unearth.core.throwables;
 
-import no.scienta.unearth.munch.data.FaultType;
+import no.scienta.unearth.munch.data.FaultStrand;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -25,24 +25,24 @@ import java.io.IOException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
-public class FaultTypeTest {
+public class FaultStrandTest {
 
     @Test
     public void hash() {
-        FaultType d1 = newFaultType(); FaultType d2 = newFaultType();
+        FaultStrand d1 = newFaultStrand(); FaultStrand d2 = newFaultStrand();
         assertEquals(d1.getHash(), d2.getHash());
     }
 
-    private FaultType newFaultType() {
+    private FaultStrand newFaultStrand() {
         Throwable cause = new Throwable();
         Throwable cause1 = new Throwable(cause);
-        return FaultType.create(new Throwable(cause1));
+        return FaultStrand.create(new Throwable(cause1));
     }
 
     @Test
     public void hash2() {
-        FaultType digest1 = newFaultType();
-        FaultType digest2 = newFaultType();
+        FaultStrand digest1 = newFaultStrand();
+        FaultStrand digest2 = newFaultStrand();
         assertNotEquals(digest1.getHash(), digest2.getHash());
     }
 

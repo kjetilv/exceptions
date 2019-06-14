@@ -26,29 +26,29 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
- * A cause has a {@link CauseType cause type} and a given {@link #message message}.
+ * A cause has a {@link CauseStrand cause strand} and a given {@link #message message}.
  */
 public class Cause extends AbstractHashableIdentifiable<CauseId> {
 
-    private final CauseType causeType;
+    private final CauseStrand causeStrand;
 
     private final String message;
 
     static Cause create(Throwable cause) {
-        return new Cause(CauseType.create(cause), cause.getMessage());
+        return new Cause(CauseStrand.create(cause), cause.getMessage());
     }
 
-    private Cause(CauseType causeType, String message) {
-        this.causeType = Objects.requireNonNull(causeType);
+    private Cause(CauseStrand causeStrand, String message) {
+        this.causeStrand = Objects.requireNonNull(causeStrand);
         this.message = message;
     }
 
-    public CauseType getCauseType() {
-        return causeType;
+    public CauseStrand getCauseStrand() {
+        return causeStrand;
     }
 
-    public Cause withCauseType(CauseType causeType) {
-        return new Cause(causeType, message);
+    public Cause withCauseStrand(CauseStrand causeStrand) {
+        return new Cause(causeStrand, message);
     }
 
     public String getMessage() {
@@ -60,8 +60,8 @@ public class Cause extends AbstractHashableIdentifiable<CauseId> {
     }
 
     Throwable toChameleon(Throwable t) {
-        Throwable exception = new ChameleonException(causeType.getClassName(), message, t);
-        exception.setStackTrace(causeType.getStackTrace().toArray(StackTraceElement[]::new));
+        Throwable exception = new ChameleonException(causeStrand.getClassName(), message, t);
+        exception.setStackTrace(causeStrand.getStackTrace().toArray(StackTraceElement[]::new));
         return exception;
     }
 
@@ -72,12 +72,12 @@ public class Cause extends AbstractHashableIdentifiable<CauseId> {
 
     @Override
     protected String toStringBody() {
-        return "causeType:" + causeType + " message:" + message;
+        return "causeStrand:" + causeStrand + " message:" + message;
     }
 
     @Override
     public void hashTo(Consumer<byte[]> h) {
-        hashHashables(h, causeType);
+        hashHashables(h, causeStrand);
         hashString(h, message);
     }
 }

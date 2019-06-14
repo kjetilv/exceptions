@@ -17,13 +17,13 @@
 
 package no.scienta.unearth.core;
 
-import no.scienta.unearth.munch.id.FaultTypeId;
+import no.scienta.unearth.munch.id.FaultStrandId;
 import no.scienta.unearth.munch.id.FaultEventId;
 import no.scienta.unearth.munch.id.FaultId;
 
 public interface HandlingPolicy {
 
-    FaultTypeId getFaultTypeId();
+    FaultStrandId getFaultStrandId();
 
     FaultId getFaultId();
 
@@ -33,7 +33,7 @@ public interface HandlingPolicy {
 
     long getGlobalSequence();
 
-    long getFaultTypeSequence();
+    long getFaultStrandSequence();
 
     long getFaultSequence();
 }

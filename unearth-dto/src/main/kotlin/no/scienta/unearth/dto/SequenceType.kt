@@ -22,7 +22,7 @@ enum class SequenceType(
 ) : (FaultEventDto) -> Long {
 
     GLOBAL(FaultEventDto::sequenceNo),
-    FAULT_TYPE(FaultEventDto::faultTypeSequenceNo),
+    FAULT_STRAND(FaultEventDto::faultStrandSequenceNo),
     FAULT(FaultEventDto::faultSequenceNo);
 
     override fun invoke(dto: FaultEventDto): Long = seq(dto)

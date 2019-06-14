@@ -19,9 +19,9 @@ package no.scienta.unearth.core.reducer;
 
 import no.scienta.unearth.core.FaultReducer;
 import no.scienta.unearth.munch.data.Cause;
-import no.scienta.unearth.munch.data.CauseType;
+import no.scienta.unearth.munch.data.CauseStrand;
 import no.scienta.unearth.munch.data.Fault;
-import no.scienta.unearth.munch.data.FaultType;
+import no.scienta.unearth.munch.data.FaultStrand;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,9 +44,9 @@ public class SimpleFaultReducer implements FaultReducer {
     }
 
     @Override
-    public FaultType reduce(FaultType faultType) {
-        return faultType.withCauseTypes(
-            faultType.getCauseTypes().stream().map(this::reduce).collect(Collectors.toList()));
+    public FaultStrand reduce(FaultStrand faultStrand) {
+        return faultStrand.withCauseStrands(
+            faultStrand.getCauseStrands().stream().map(this::reduce).collect(Collectors.toList()));
     }
 
     @Override
@@ -57,13 +57,13 @@ public class SimpleFaultReducer implements FaultReducer {
 
     @Override
     public Cause reduce(Cause cause) {
-        return cause.withCauseType(
-            reduce(cause.getCauseType()));
+        return cause.withCauseStrand(
+            reduce(cause.getCauseStrand()));
     }
 
     @Override
-    public CauseType reduce(CauseType causeType) {
-        return causeType.withStacktrace(reduce(causeType.getStackTrace()));
+    public CauseStrand reduce(CauseStrand causeStrand) {
+        return causeStrand.withStacktrace(reduce(causeStrand.getStackTrace()));
     }
 
     private List<StackTraceElement> reduce(List<StackTraceElement> stack) {

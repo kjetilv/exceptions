@@ -48,10 +48,10 @@ public class IdModule extends SimpleModule {
 
     public Module addDefaults() {
         return add(FaultId.class, FaultId::new)
-            .add(FaultTypeId.class, FaultTypeId::new)
+            .add(FaultStrandId.class, FaultStrandId::new)
             .add(FaultEventId.class, FaultEventId::new)
             .add(CauseId.class, CauseId::new)
-            .add(CauseTypeId.class, CauseTypeId::new);
+            .add(CauseStrandId.class, CauseStrandId::new);
     }
 
     private static <T extends Id> JsonDeserializer<T> deserializer(Function<UUID, T> toId) {

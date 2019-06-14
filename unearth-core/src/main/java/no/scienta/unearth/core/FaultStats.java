@@ -17,7 +17,7 @@
 
 package no.scienta.unearth.core;
 
-import no.scienta.unearth.munch.id.FaultTypeId;
+import no.scienta.unearth.munch.id.FaultStrandId;
 import no.scienta.unearth.munch.data.FaultEvent;
 
 import java.time.Duration;
@@ -27,25 +27,25 @@ import java.util.stream.Stream;
 
 public interface FaultStats {
 
-    Optional<FaultEvent> lastFaultEvent(FaultTypeId id);
+    Optional<FaultEvent> lastFaultEvent(FaultStrandId id);
 
-    default long faultEventCount(FaultTypeId id) {
+    default long faultEventCount(FaultStrandId id) {
         return faultEventCount(id, null);
     }
 
-    default long faultEventCount(FaultTypeId id, Instant sinceTime) {
+    default long faultEventCount(FaultStrandId id, Instant sinceTime) {
         return faultEventCount(id, sinceTime, null);
     }
 
-    long faultEventCount(FaultTypeId id, Instant sinceTime, Duration during);
+    long faultEventCount(FaultStrandId id, Instant sinceTime, Duration during);
 
-    default Stream<FaultEvent> faultEvents(FaultTypeId id) {
+    default Stream<FaultEvent> faultEvents(FaultStrandId id) {
         return faultEvents(id, null);
     }
 
-    default Stream<FaultEvent> faultEvents(FaultTypeId id, Instant sinceTime) {
+    default Stream<FaultEvent> faultEvents(FaultStrandId id, Instant sinceTime) {
         return faultEvents(id, sinceTime, null);
     }
 
-    Stream<FaultEvent> faultEvents(FaultTypeId id, Instant sinceTime, Duration period);
+    Stream<FaultEvent> faultEvents(FaultStrandId id, Instant sinceTime, Duration period);
 }

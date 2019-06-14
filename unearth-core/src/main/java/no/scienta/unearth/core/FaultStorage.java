@@ -28,13 +28,13 @@ public interface FaultStorage {
 
     Fault getFault(FaultId faultId);
 
-    FaultType getFaultType(FaultTypeId digestId);
+    FaultStrand getFaultStrand(FaultStrandId faultStrandId);
 
-    default Collection<FaultEvent> getEvents(FaultTypeId faultTypeId) {
-        return getEvents(faultTypeId, null, null);
+    default Collection<FaultEvent> getEvents(FaultStrandId faultStrandId) {
+        return getEvents(faultStrandId, null, null);
     }
 
-    Collection<FaultEvent> getEvents(FaultTypeId faultTypeId, Long offset, Long count);
+    Collection<FaultEvent> getEvents(FaultStrandId faultStrandId, Long offset, Long count);
 
     default Collection<FaultEvent> getEvents(FaultId faultId) {
         return getEvents(faultId, null, null);
@@ -44,7 +44,7 @@ public interface FaultStorage {
 
     FaultEvent getFaultEvent(FaultEventId faultEventId);
 
-    CauseType getCauseType(CauseTypeId causeTypeId);
+    CauseStrand getCauseStrand(CauseStrandId causeStrandId);
 
     Cause getCause(CauseId causeId);
 }

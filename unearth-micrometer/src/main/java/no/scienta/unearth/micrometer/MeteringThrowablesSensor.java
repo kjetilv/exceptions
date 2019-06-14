@@ -21,7 +21,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import no.scienta.unearth.core.FaultSensor;
-import no.scienta.unearth.munch.data.FaultType;
+import no.scienta.unearth.munch.data.FaultStrand;
 import no.scienta.unearth.munch.data.FaultEvent;
 import no.scienta.unearth.munch.data.Fault;
 
@@ -43,36 +43,36 @@ public class MeteringThrowablesSensor implements FaultSensor {
     public FaultEvent registered(FaultEvent faultEvent) {
         Fault fault = faultEvent.getFault();
         faultCounter(fault).count();
-        FaultType faultType = fault.getFaultType();
-        faultTypeCounter(faultType).count();
-        faultCounter(faultType, fault, faultEvent).count();
+        FaultStrand faultStrand = fault.getFaultStrand();
+        faultStrandCounter(faultStrand).count();
+        faultCounter(faultStrand, fault, faultEvent).count();
         return faultEvent;
     }
 
-    private Counter faultTypeCounter(FaultType faultType) {
-        return metrics.counter(UNEARTH, Collections.singleton(faultTypeTag(faultType)));
+    private Counter faultStrandCounter(FaultStrand faultStrand) {
+        return metrics.counter(UNEARTH, Collections.singleton(faultStrandTag(faultStrand)));
     }
 
     private Counter faultCounter(Fault fault) {
         return metrics.counter(UNEARTH, Collections.singleton(faultTag(fault)));
     }
 
-    private Counter faultCounter(FaultType faultType, Fault fault, FaultEvent faultEvent) {
+    private Counter faultCounter(FaultStrand faultStrand, Fault fault, FaultEvent faultEvent) {
         return metrics.counter(
-            UNEARTH + "-" + faultType.getHash(),
-            Arrays.asList(faultTypeTag(faultType), faultEventTag(faultEvent)));
+            UNEARTH + "-" + faultStrand.getHash(),
+            Arrays.asList(faultStrandTag(faultStrand), faultEventTag(faultEvent)));
     }
 
-    private Tag faultTypeTag(FaultType faultType) {
-        return faultTypeTag(faultType.getHash());
+    private Tag faultStrandTag(FaultStrand faultStrand) {
+        return faultStrandTag(faultStrand.getHash());
     }
 
     private Tag faultTag(Fault fault) {
         return faultTag(fault.getHash());
     }
 
-    private Tag faultTypeTag(UUID hash) {
-        return Tag.of(FAULT_TYPE, hash.toString());
+    private Tag faultStrandTag(UUID hash) {
+        return Tag.of(FAULT_STRAND, hash.toString());
     }
 
     private Tag faultTag(UUID hash) {
@@ -83,7 +83,7 @@ public class MeteringThrowablesSensor implements FaultSensor {
         return Tag.of(FAULT_EVENT, faultEvent.getHash().toString());
     }
 
-    private static final String FAULT_TYPE = "faul-type";
+    private static final String FAULT_STRAND = "faul-type";
 
     private static final String FAULT = "fault";
 

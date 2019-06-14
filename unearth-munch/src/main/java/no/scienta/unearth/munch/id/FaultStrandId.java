@@ -19,9 +19,9 @@ package no.scienta.unearth.munch.id;
 
 import java.util.UUID;
 
-public class FaultTypeId extends Id {
+public class FaultStrandId extends Id {
 
-    public FaultTypeId(UUID hash) {
+    public FaultStrandId(UUID hash) {
         super(hash);
     }
 }

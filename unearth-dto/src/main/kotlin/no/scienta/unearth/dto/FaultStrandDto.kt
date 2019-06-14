@@ -17,10 +17,10 @@
 
 package no.scienta.unearth.dto
 
-import no.scienta.unearth.munch.id.FaultTypeId
+import no.scienta.unearth.munch.id.FaultStrandId
 
-data class FaultTypeDto(
+data class FaultStrandDto(
 
-        val id: FaultTypeId,
+        val id: FaultStrandId,
 
-        val causeTypes: List<CauseTypeDto>)
+        val causeStrands: List<CauseStrandDto>)

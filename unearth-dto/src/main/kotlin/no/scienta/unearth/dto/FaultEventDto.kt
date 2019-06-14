@@ -32,4 +32,4 @@ data class FaultEventDto(
 
         val faultSequenceNo: Long,
 
-        val faultTypeSequenceNo: Long)
+        val faultStrandSequenceNo: Long)
