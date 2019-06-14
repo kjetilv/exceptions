@@ -18,11 +18,16 @@
 package no.scienta.unearth.client;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import no.scienta.unearth.dto.Submission;
+import no.scienta.unearth.munch.json.IdModule;
 import no.scienta.unearth.munch.util.Throwables;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.CookieHandler;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -34,16 +39,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Flow;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.*;
+import java.util.function.Function;
 
 import static java.net.http.HttpClient.Redirect.NEVER;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-class UnearthClient {
+@SuppressWarnings("WeakerAccess")
+public class UnearthClient {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(30);
 
@@ -53,19 +57,11 @@ class UnearthClient {
 
     private final ObjectMapper objectMapper;
 
-    static UnearthClient connect(int port) {
-        return new UnearthClient(port);
-    }
-
-    static UnearthClient connect(URI uri) {
+    public static UnearthClient connect(URI uri) {
         return new UnearthClient(uri);
     }
 
-    private UnearthClient(int port) {
-        this(URI.create("http://localhost:" + port));
-    }
-
-    private UnearthClient(URI uri) {
+    public UnearthClient(URI uri) {
         this.uri = Objects.requireNonNull(uri);
         this.client = HttpClient.newBuilder()
             .followRedirects(NEVER)
@@ -80,23 +76,46 @@ class UnearthClient {
             .build();
         this.objectMapper = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-            .registerModule(new Jdk8Module());
+            .registerModule(new Jdk8Module())
+            .registerModule(new IdModule()
+                .addDefaults());
     }
 
-    CompletableFuture<Submission> submit(Throwable throwable) {
-        return client.sendAsync(
-            HttpRequest.newBuilder().POST(new ThrowablePublisher(throwable))
-                .timeout(TIMEOUT)
-                .uri(uri)
-                .build(),
-            HttpResponse.BodyHandlers.ofString()
-        ).thenApply((HttpResponse<String> res) -> {
-            try {
-                return objectMapper.readerFor(Submission.class).readValue(res.body());
-            } catch (Exception e) {
-                throw new IllegalStateException("Failed to read " + Submission.class, e);
-            }
-        });
+    public String print(Submission obj) {
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Failed to write: " + obj, e);
+        }
+    }
+
+    public Submission submit(InputStream inputStream) {
+        return publish(new ThrowablePublisher(inputStream));
+    }
+
+    public Submission submit(Throwable throwable) {
+        return publish(new ThrowablePublisher(throwable));
+    }
+
+    private Submission publish(ThrowablePublisher throwablePublisher) {
+        try {
+            Function<HttpResponse<String>, Submission> httpResponseObjectFunction = (HttpResponse<String> res) -> {
+                try {
+                    return objectMapper.readerFor(Submission.class).readValue(res.body());
+                } catch (Exception e) {
+                    throw new IllegalStateException("Failed to read " + Submission.class, e);
+                }
+            };
+            return client.sendAsync(
+                HttpRequest.newBuilder().POST(throwablePublisher)
+                    .timeout(TIMEOUT)
+                    .uri(uri)
+                    .build(),
+                HttpResponse.BodyHandlers.ofString()
+            ).thenApply(httpResponseObjectFunction).get();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to publish", e);
+        }
     }
 
     private static class NoCookieHandler extends CookieHandler {
@@ -113,18 +132,46 @@ class UnearthClient {
 
     private static class ThrowablePublisher implements HttpRequest.BodyPublisher {
 
-        private final Throwable throwable;
-
         private final ByteBuffer bytes;
 
         ThrowablePublisher(Throwable throwable) {
-            this.throwable = throwable;
-            this.bytes = Throwables.byteBuffer(throwable);
+            this(Throwables.byteBuffer(throwable));
+        }
+
+        ThrowablePublisher(InputStream stream) {
+            this(read(stream));
+        }
+
+        ThrowablePublisher(ByteBuffer bytes) {
+            this.bytes = bytes;
         }
 
         @Override
         public long contentLength() {
             return bytes.limit();
+        }
+
+        private static ByteBuffer read(InputStream stream) {
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                byte[] buffer = new byte[8192];
+                while (true) {
+                    int read;
+                    try {
+                        read = stream.read(buffer);
+                    } catch (IOException e) {
+                        throw new IllegalStateException("Could not read", e);
+                    }
+                    if (read > 0) {
+                        baos.write(buffer, 0, read);
+                    }
+                    if (read < 0) {
+                        baos.flush();
+                        return ByteBuffer.wrap(baos.toByteArray());
+                    }
+                }
+            } catch (IOException e) {
+                throw new IllegalStateException("Could not read/close", e);
+            }
         }
 
         @Override

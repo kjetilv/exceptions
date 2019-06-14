@@ -38,7 +38,7 @@ fun main() {
 
     val reducer = SimpleFaultReducer(
             Packages.shortened("no.scienta"),
-            Packages.none(),
+            Packages.all(),
             Packages.removed("org.springframework"))
 
     val server = UnearthServer(

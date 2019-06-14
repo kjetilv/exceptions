@@ -1,0 +1,19 @@
+org.springframework.context.ApplicationContextException: Unable to start embedded container; nested exception is java.lang.NoSuchMethodError: org.apache.tomcat.util.scan.StandardJarScanner.setJarScanFilter2(Lorg/apache/tomcat/JarScanFilter;)V
+    at org.springframework.boot.context.embedded.EmbeddedWebApplicationContext.onRefresh(EmbeddedWebApplicationContext.java:133)
+    at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:474)
+    at org.springframework.boot.context.embedded.EmbeddedWebApplicationContext.refresh(EmbeddedWebApplicationContext.java:118)
+    at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:687)
+    at org.springframework.boot.SpringApplication.run(SpringApplication.java:321)
+    at org.springframework.boot.SpringApplication.run(SpringApplication.java:967)
+    at org.springframework.boot.SpringApplication.run(SpringApplication.java:956)
+    at com.avada.base.Application.main(Application.java:15)
+Caused by: java.lang.NoSuchMethodError: org.apache.tomcat.util.scan.StandardJarScanner.setJarScanFilter(Lorg/apache/tomcat/JarScanFilter;)V
+    at org.springframework.boot.context.embedded.tomcat.SkipPatternJarScanner$Tomcat8TldSkipSetter.setSkipPattern(SkipPatternJarScanner.java:106)
+    at org.springframework.boot.context.embedded.tomcat.SkipPatternJarScanner.setPatternToTomcat8SkipFilter(SkipPatternJarScanner.java:61)
+    at org.springframework.boot.context.embedded.tomcat.SkipPatternJarScanner.<init>(SkipPatternJarScanner.java:56)
+    at org.springframework.boot.context.embedded.tomcat.SkipPatternJarScanner.apply(SkipPatternJarScanner.java:87)
+    at org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletContainerFactory.prepareContext(TomcatEmbeddedServletContainerFactory.java:168)
+    at org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletContainerFactory.getEmbeddedServletContainer(TomcatEmbeddedServletContainerFactory.java:154)
+    at org.springframework.boot.context.embedded.EmbeddedWebApplicationContext.createEmbeddedServletContainer(EmbeddedWebApplicationContext.java:157)
+    at org.springframework.boot.context.embedded.EmbeddedWebApplicationContext.onRefresh(EmbeddedWebApplicationContext.java:130)
+    ... 7 more
