@@ -36,8 +36,8 @@ import org.http4k.core.ContentType.Companion.APPLICATION_JSON
 import org.http4k.core.ContentType.Companion.TEXT_PLAIN
 import org.http4k.core.Method.GET
 import org.http4k.core.Method.POST
-import org.http4k.core.Status.Companion.OK
 import org.http4k.core.Status.Companion.INTERNAL_SERVER_ERROR
+import org.http4k.core.Status.Companion.OK
 import org.http4k.filter.CorsPolicy
 import org.http4k.filter.ServerFilters
 import org.http4k.lens.*
@@ -48,7 +48,11 @@ import org.http4k.routing.routes
 import org.http4k.server.Http4kServer
 import org.http4k.server.asServer
 import org.slf4j.LoggerFactory
+import java.io.File
+import java.net.URI
+import java.net.URL
 import java.util.*
+import java.util.jar.JarFile
 import java.util.regex.Pattern
 
 class UnearthServer(
@@ -412,7 +416,10 @@ class UnearthServer(
         private val swaggerUiPattern =
                 Pattern.compile("^.*swagger-ui-([\\d.]+).jar!.*$")
 
-        private const val swaggerUiPrefix = "META-INF/resources/webjars/swagger-ui/"
+        private val swaggerUiJarPattern =
+                Pattern.compile("^.*swagger-ui/([\\d.]+)/.*$")
+
+        private const val swaggerUiPrefix = "META-INF/resources/webjars/swagger-ui"
 
         private val exception: BiDiBodyLens<Throwable> = BiDiBodyLens(
                 metas = emptyList(),
@@ -451,11 +458,30 @@ class UnearthServer(
             return classLoader.getResource(swaggerUiPrefix)?.let { url ->
                 swaggerUiPattern.matcher(url.toExternalForm()).let { matcher ->
                     return if (matcher.matches())
-                        swaggerUiPrefix + matcher.group(1) + "/"
+                        swaggerUiPrefix + "/" + matcher.group(1) + "/"
                     else
-                        throw java.lang.IllegalStateException("No swagger-ui version found: $url")
+                        jarSearch(url) ?: throw java.lang.IllegalStateException("No swagger-ui version found: $url")
                 }
             } ?: throw IllegalStateException("No swagger-ui webjar found")
+        }
+
+        private fun jarSearch(url: URL): String? =
+                jarFile(url).entries().toList().filter { entry ->
+                    entry.name.contains("swagger-ui") && entry.name.contains("index.html")
+                }.map { entry ->
+                    swaggerUiJarPattern.matcher(entry.name)
+                }.filter { matcher ->
+                    matcher.matches()
+                }.map { matcher ->
+                    swaggerUiPrefix + "/" + matcher.group(1) + "/"
+                }.first()
+
+        private fun jarFile(url: URL): JarFile {
+            val form = url.toExternalForm()
+            val idx = form.indexOf("!")
+            val substring =
+                    form.substring(0, idx).substring(form.substring(0, idx).indexOf(":") + 1)
+            return JarFile(File(URI.create(substring).toURL().file))
         }
 
         private val statik = Thread.currentThread().contextClassLoader.let { Statik(it, swaggerUi(it)) }
