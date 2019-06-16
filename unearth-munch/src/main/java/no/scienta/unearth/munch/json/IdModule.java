@@ -29,12 +29,13 @@ import no.scienta.unearth.munch.id.*;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 
-@SuppressWarnings("WeakerAccess")
 public class IdModule extends SimpleModule {
 
+    @SuppressWarnings("WeakerAccess")
     @SafeVarargs
     public final <T extends Id> IdModule add(
         Class<T> idClass,
@@ -56,11 +57,20 @@ public class IdModule extends SimpleModule {
 
     private static <T extends Id> JsonDeserializer<T> deserializer(Function<UUID, T> toId) {
         return new JsonDeserializer<>() {
+
             @Override
             public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-                TreeNode treeNode = p.readValueAsTree();
-                String uuid = ((ValueNode) treeNode.get("id")).textValue();
-                return toId.apply(UUID.fromString(uuid));
+                TreeNode node = p.readValueAsTree();
+                return Optional.ofNullable(node)
+                    .map(treeNode ->
+                        treeNode.get("id"))
+                    .filter(ValueNode.class::isInstance)
+                    .map(ValueNode.class::cast)
+                    .map(ValueNode::textValue)
+                    .map(UUID::fromString)
+                    .map(toId)
+                    .orElseThrow(() ->
+                        new IllegalArgumentException("Not a valid ID node: " + node));
             }
         };
     }
@@ -68,8 +78,10 @@ public class IdModule extends SimpleModule {
     @SafeVarargs
     private static <T extends Id> JsonSerializer<T> serializer(Function<Id, Map.Entry<String, String>>... fields) {
         return new JsonSerializer<>() {
+
             @Override
-            public void serialize(T value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            public void serialize(T value, JsonGenerator gen, SerializerProvider serializers)
+                throws IOException {
                 gen.writeStartObject();
                 gen.writeStringField("id", value.getHash().toString());
                 Arrays.stream(fields).forEach(field -> {

@@ -22,7 +22,6 @@ import no.scienta.unearth.dto.Submission;
 import java.io.FileInputStream;
 import java.net.URI;
 import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
 
 public class SubmitMain {
 

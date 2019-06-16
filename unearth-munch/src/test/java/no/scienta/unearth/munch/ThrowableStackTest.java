@@ -17,7 +17,7 @@
 
 package no.scienta.unearth.munch;
 
-import no.scienta.unearth.munch.data.CauseStrand;
+import no.scienta.unearth.munch.model.CauseStrand;
 import org.junit.Assert;
 import org.junit.Test;
 

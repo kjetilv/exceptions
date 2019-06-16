@@ -20,7 +20,7 @@ package no.scienta.unearth.core.storage;
 import no.scienta.unearth.core.FaultFeed;
 import no.scienta.unearth.core.FaultStats;
 import no.scienta.unearth.core.FaultStorage;
-import no.scienta.unearth.munch.data.*;
+import no.scienta.unearth.munch.model.*;
 import no.scienta.unearth.munch.id.*;
 
 import java.time.Clock;

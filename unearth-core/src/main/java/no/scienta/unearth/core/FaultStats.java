@@ -18,7 +18,7 @@
 package no.scienta.unearth.core;
 
 import no.scienta.unearth.munch.id.FaultStrandId;
-import no.scienta.unearth.munch.data.FaultEvent;
+import no.scienta.unearth.munch.model.FaultEvent;
 
 import java.time.Duration;
 import java.time.Instant;

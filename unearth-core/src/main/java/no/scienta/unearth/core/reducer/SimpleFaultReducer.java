@@ -18,10 +18,10 @@
 package no.scienta.unearth.core.reducer;
 
 import no.scienta.unearth.core.FaultReducer;
-import no.scienta.unearth.munch.data.Cause;
-import no.scienta.unearth.munch.data.CauseStrand;
-import no.scienta.unearth.munch.data.Fault;
-import no.scienta.unearth.munch.data.FaultStrand;
+import no.scienta.unearth.munch.model.Cause;
+import no.scienta.unearth.munch.model.CauseStrand;
+import no.scienta.unearth.munch.model.Fault;
+import no.scienta.unearth.munch.model.FaultStrand;
 
 import java.util.ArrayList;
 import java.util.Collection;

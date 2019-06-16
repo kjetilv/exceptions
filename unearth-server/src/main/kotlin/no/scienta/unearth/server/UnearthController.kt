@@ -20,7 +20,7 @@ package no.scienta.unearth.server
 import no.scienta.unearth.core.*
 import no.scienta.unearth.core.handler.DefaultThrowablesHandler
 import no.scienta.unearth.dto.*
-import no.scienta.unearth.munch.data.*
+import no.scienta.unearth.munch.model.*
 import no.scienta.unearth.munch.id.*
 import java.time.ZoneId
 

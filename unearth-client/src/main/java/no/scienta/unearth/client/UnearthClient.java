@@ -23,17 +23,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import no.scienta.unearth.dto.Submission;
 import no.scienta.unearth.munch.json.IdModule;
-import no.scienta.unearth.munch.util.Throwables;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.CookieHandler;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -77,11 +73,10 @@ public class UnearthClient {
         this.objectMapper = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
             .registerModule(new Jdk8Module())
-            .registerModule(new IdModule()
-                .addDefaults());
+            .registerModule(new IdModule().addDefaults());
     }
 
-    public String print(Submission obj) {
+    public String print(Object obj) {
         try {
             return objectMapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
@@ -127,56 +122,6 @@ public class UnearthClient {
         @Override
         public void put(URI uri, Map<String, List<String>> responseHeaders) {
 
-        }
-    }
-
-    private static class ThrowablePublisher implements HttpRequest.BodyPublisher {
-
-        private final ByteBuffer bytes;
-
-        ThrowablePublisher(Throwable throwable) {
-            this(Throwables.byteBuffer(throwable));
-        }
-
-        ThrowablePublisher(InputStream stream) {
-            this(read(stream));
-        }
-
-        ThrowablePublisher(ByteBuffer bytes) {
-            this.bytes = bytes;
-        }
-
-        @Override
-        public long contentLength() {
-            return bytes.limit();
-        }
-
-        private static ByteBuffer read(InputStream stream) {
-            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                byte[] buffer = new byte[8192];
-                while (true) {
-                    int read;
-                    try {
-                        read = stream.read(buffer);
-                    } catch (IOException e) {
-                        throw new IllegalStateException("Could not read", e);
-                    }
-                    if (read > 0) {
-                        baos.write(buffer, 0, read);
-                    }
-                    if (read < 0) {
-                        baos.flush();
-                        return ByteBuffer.wrap(baos.toByteArray());
-                    }
-                }
-            } catch (IOException e) {
-                throw new IllegalStateException("Could not read/close", e);
-            }
-        }
-
-        @Override
-        public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
-            subscriber.onNext(bytes);
         }
     }
 }

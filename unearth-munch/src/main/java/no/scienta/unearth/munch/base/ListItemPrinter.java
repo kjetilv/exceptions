@@ -15,20 +15,11 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.core;
+package no.scienta.unearth.munch.base;
 
-import no.scienta.unearth.munch.model.Cause;
-import no.scienta.unearth.munch.model.CauseStrand;
-import no.scienta.unearth.munch.model.Fault;
-import no.scienta.unearth.munch.model.FaultStrand;
+public interface ListItemPrinter<T> {
 
-public interface FaultReducer {
+    String print(int levels, T item);
 
-    Fault reduce(Fault fault);
-
-    FaultStrand reduce(FaultStrand faultStrand);
-
-    CauseStrand reduce(CauseStrand causeStrand);
-
-    Cause reduce(Cause cause);
+    String printGroup(int level, String group, int groupSize);
 }

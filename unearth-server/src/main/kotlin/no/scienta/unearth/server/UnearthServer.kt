@@ -20,7 +20,7 @@ package no.scienta.unearth.server
 import no.scienta.unearth.core.HandlingPolicy
 import no.scienta.unearth.core.parser.ThrowableParser
 import no.scienta.unearth.dto.*
-import no.scienta.unearth.munch.data.FaultStrand
+import no.scienta.unearth.munch.model.FaultStrand
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.util.Throwables
 import no.scienta.unearth.server.JSON.auto
@@ -71,199 +71,203 @@ class UnearthServer(
         after(server)
     }
 
-    private fun submitExceptionRoute() = "/throwable" meta {
-        summary = "Submit an exception"
-        consumes += TEXT_PLAIN
-        produces += APPLICATION_JSON
-        receiving(exception to Swaggex.exception())
-        returning(OK, submission to Swaggex.submission())
-    } bindContract POST to exchange(exception, submission) { throwable ->
-        submission(controller submitRaw throwable)
-    }
-
-    private fun retrieveExceptionRoute() = "/throwable" / uuid(::FaultId) meta {
-        summary = "Print an exception"
-        produces += TEXT_PLAIN
-        returning(OK, exception to Swaggex.exception())
-    } bindContract GET to { faultId ->
-        {
-            get(exception, type = TEXT_PLAIN) {
-                controller lookupThrowable faultId
+    private fun submitExceptionRoute() =
+            "/throwable" meta {
+                summary = "Submit an exception"
+                consumes += TEXT_PLAIN
+                produces += APPLICATION_JSON
+                receiving(exception to Swaggex.exception())
+                returning(OK, submission to Swaggex.submission())
+            } bindContract POST to exchange(exception, submission) { throwable ->
+                submission(controller submitRaw throwable)
             }
-        }
-    }
 
-    private fun lookupFaultEventRoute() = "/fault-event" / uuid(::FaultEventId) meta {
-        summary = "Lookup a fault event"
-        queries += listOf(fullStack, printStack)
-        produces += APPLICATION_JSON
-        returning(OK, faultEvent to Swaggex.faultEventDto())
-    } bindContract GET to { faultEventId ->
-        { req ->
-            get(faultEvent) {
-                controller.lookupFaultEventDto(faultEventId,
-                        fullStack[req] ?: false,
-                        printStack[req] ?: false
-                )
+    private fun retrieveExceptionRoute() =
+            "/throwable" / uuid(::FaultId) meta {
+                summary = "Print an exception"
+                produces += TEXT_PLAIN
+                returning(OK, exception to Swaggex.exception())
+            } bindContract GET to { faultId ->
+                simpleGet(exception, type = TEXT_PLAIN) {
+                    controller lookupThrowable faultId
+                }
             }
-        }
-    }
 
-    private fun lookupFaultStrandRoute() = "/fault-strand" / uuid(::FaultStrandId) meta {
-        summary = "Lookup a fault strand"
-        queries += listOf(fullStack, printStack, offsetQuery, countQuery)
-        produces += APPLICATION_JSON
-        returning(OK, faultStrand to Swaggex.faultStrandDto())
-    } bindContract GET to { faultStrandId ->
-        { req ->
-            get(faultStrand) {
-                controller.lookupFaultStrandDto(faultStrandId,
-                        fullStack[req] ?: false,
-                        printStack[req] ?: false)
+    private fun retrieveExceptionReduxRoute() =
+            "/throwable-redux" / uuid(::FaultId) meta {
+                summary = "Print an exception"
+                produces += TEXT_PLAIN
+                returning(OK, exception to Swaggex.exception())
+            } bindContract GET to { faultId ->
+                simpleGet(exception, type = TEXT_PLAIN) {
+                    controller lookupThrowableRedux faultId
+                }
             }
-        }
-    }
 
-    private fun lookupFaultRoute() = "/fault" / uuid(::FaultId) meta {
-        summary = "Lookup a fault"
-        queries += listOf(fullStack, printStack)
-        produces += APPLICATION_JSON
-        returning(OK, fault to Swaggex.faultDto())
-    } bindContract GET to { faultId ->
-        { req ->
-            get(fault) {
-                controller.lookupFaultDto(faultId,
-                        fullStack[req] ?: false,
-                        printStack[req] ?: false)
+    private fun faultEventRoute() =
+            "/fault-event" / uuid(::FaultEventId) meta {
+                summary = "Lookup a fault event"
+                queries += listOf(fullStack, printStack)
+                produces += APPLICATION_JSON
+                returning(OK, faultEvent to Swaggex.faultEventDto())
+            } bindContract GET to { faultEventId ->
+                { req ->
+                    get(faultEvent) {
+                        controller.lookupFaultEventDto(faultEventId,
+                                fullStack[req] ?: false,
+                                printStack[req] ?: false
+                        )
+                    }
+                }
             }
-        }
-    }
 
-    private fun lookupCauseStrandRoute() = "/cause-strand" / uuid(::CauseStrandId) meta {
-        summary = "Lookup a cause strand"
-        queries += listOf(fullStack, printStack)
-        produces += APPLICATION_JSON
-        returning(OK, causeStrand to Swaggex.causeStrandDto())
-    } bindContract GET to { causeStrandId ->
-        { req ->
-            get(causeStrand) {
-                controller.lookupCauseStrandDto(causeStrandId,
-                        fullStack[req] ?: false,
-                        printStack[req] ?: false)
+    private fun faultStrandRoute() =
+            "/fault-strand" / uuid(::FaultStrandId) meta {
+                summary = "Lookup a fault strand"
+                queries += listOf(fullStack, printStack, offsetQuery, countQuery)
+                produces += APPLICATION_JSON
+                returning(OK, faultStrand to Swaggex.faultStrandDto())
+            } bindContract GET to { faultStrandId ->
+                { req ->
+                    get(faultStrand) {
+                        controller.lookupFaultStrandDto(faultStrandId,
+                                fullStack[req] ?: false,
+                                printStack[req] ?: false)
+                    }
+                }
             }
-        }
-    }
 
-    private fun lookupCauseRoute() = "/cause" / uuid(::CauseId) meta {
-        summary = "Lookup a cause"
-        queries += listOf(fullStack, printStack)
-        produces += APPLICATION_JSON
-        returning(OK, cause to Swaggex.causeDto())
-    } bindContract GET to { causeId ->
-        { req ->
-            get(cause) {
-                controller.lookupCauseDto(causeId,
-                        fullStack[req] ?: false,
-                        printStack[req] ?: false)
+    private fun faultRoute() =
+            "/fault" / uuid(::FaultId) meta {
+                summary = "Lookup a fault"
+                queries += listOf(fullStack, printStack)
+                produces += APPLICATION_JSON
+                returning(OK, fault to Swaggex.faultDto())
+            } bindContract GET to { faultId ->
+                { req ->
+                    get(fault) {
+                        controller.lookupFaultDto(faultId,
+                                fullStack[req] ?: false,
+                                printStack[req] ?: false)
+                    }
+                }
             }
-        }
-    }
 
-    private fun feedLimitsGlobalRoute() = "/feed/limit" meta {
-        summary = "Event limits global"
-        produces += APPLICATION_JSON
-        returning(OK, limit to Swaggex.limit())
-    } bindContract GET to {
-        get(limit) {
-            controller.feedLimit()
-        }
-    }
-
-    private fun feedLookupGlobalRoute() = "/feed" meta {
-        summary = "Events global"
-        produces += APPLICATION_JSON
-        queries += listOf(offsetQuery, countQuery, fullStack, printStack)
-        returning(OK, faultSequence to Swaggex.faultSequence())
-    } bindContract GET to { req ->
-        get(faultSequence) {
-            controller.feed(
-                    offsetQuery[req] ?: 0L,
-                    countQuery[req] ?: 0L,
-                    fullStack[req] ?: false,
-                    printStack[req] ?: false)
-        }
-    }
-
-
-    private fun feedLimitsFaultStrandRoute() = "/feed/fault-strand/limit" / uuid(::FaultStrandId) meta {
-        summary = "Event limits for a fault strand"
-        produces += APPLICATION_JSON
-        returning(OK, limit to Swaggex.limit())
-    } bindContract GET to { faultId ->
-        {
-            get(limit) {
-                controller feedLimit faultId
+    private fun causeStrandRoute() =
+            "/cause-strand" / uuid(::CauseStrandId) meta {
+                summary = "Lookup a cause strand"
+                queries += listOf(fullStack, printStack)
+                produces += APPLICATION_JSON
+                returning(OK, causeStrand to Swaggex.causeStrandDto())
+            } bindContract GET to { causeStrandId ->
+                { req ->
+                    get(causeStrand) {
+                        controller.lookupCauseStrandDto(causeStrandId,
+                                fullStack[req] ?: false,
+                                printStack[req] ?: false)
+                    }
+                }
             }
-        }
-    }
 
-    private fun feedLookupFaultStrandRoute() = "/feed/fault-strand" / uuid(::FaultStrandId) meta {
-        summary = "Events for a fault strand"
-        produces += APPLICATION_JSON
-        queries += listOf(offsetQuery, countQuery, fullStack, printStack)
-        returning(OK, faultSequence to Swaggex.faultSequence(::FaultStrandId))
-    } bindContract GET to { faultStrandId ->
-        { req ->
-            get(faultSequence) {
-                controller.feed(faultStrandId,
-                        offsetQuery[req] ?: 0L,
-                        countQuery[req] ?: 0L,
-                        fullStack[req] ?: false,
-                        printStack[req] ?: false)
+    private fun causeRoute() =
+            "/cause" / uuid(::CauseId) meta {
+                summary = "Lookup a cause"
+                queries += listOf(fullStack, printStack)
+                produces += APPLICATION_JSON
+                returning(OK, cause to Swaggex.causeDto())
+            } bindContract GET to { causeId ->
+                { req ->
+                    get(cause) {
+                        controller.lookupCauseDto(causeId,
+                                fullStack[req] ?: false,
+                                printStack[req] ?: false)
+                    }
+                }
             }
-        }
-    }
 
-    private fun feedLimitsFaultRoute() = "/feed/fault/limit" / uuid(::FaultId) meta {
-        summary = "Event limits for a fault"
-        produces += APPLICATION_JSON
-        returning(OK, limit to Swaggex.limit())
-    } bindContract GET to { faultId ->
-        {
-            get(limit) {
-                controller feedLimit faultId
+    private fun globalLimit() =
+            "/feed/limit" meta {
+                summary = "Event limits global"
+                produces += APPLICATION_JSON
+                returning(OK, limit to Swaggex.limit())
+            } bindContract GET to simpleGet(limit) {
+                controller.feedLimit()
             }
-        }
-    }
 
-    private fun feedLookupFaultRoute() = "/feed/fault" / uuid(::FaultId) meta {
-        summary = "Events for a fault"
-        produces += APPLICATION_JSON
-        queries += listOf(offsetQuery, countQuery, fullStack, printStack)
-        returning(OK, faultSequence to Swaggex.faultSequence(::FaultId))
-    } bindContract GET to { faultId ->
-        { req ->
-            get(faultSequence) {
-                controller.feed(faultId,
-                        offsetQuery[req] ?: 0L,
-                        countQuery[req] ?: 0L,
-                        fullStack[req] ?: false,
-                        printStack[req] ?: false)
+    private fun globalFeedRoute() =
+            "/feed" meta {
+                summary = "Events global"
+                produces += APPLICATION_JSON
+                queries += listOf(offsetQuery, countQuery, fullStack, printStack)
+                returning(OK, faultSequence to Swaggex.faultSequence())
+            } bindContract GET to { req ->
+                get(faultSequence) {
+                    controller.feed(
+                            offsetQuery[req] ?: 0L,
+                            countQuery[req] ?: 0L,
+                            fullStack[req] ?: false,
+                            printStack[req] ?: false)
+                }
             }
-        }
-    }
 
-    private fun printFaultReduxRoute() = "/throwable-redux" / uuid(::FaultId) meta {
-        summary = "Print an exception"
-        produces += TEXT_PLAIN
-        returning(OK, exception to Swaggex.exception())
-    } bindContract GET to { faultId ->
-        {
-            get(exception, type = TEXT_PLAIN) {
-                controller lookupThrowableRedux faultId
+
+    private fun faultStrandLimit() =
+            "/feed/fault-strand/limit" / uuid(::FaultStrandId) meta {
+                summary = "Event limits for a fault strand"
+                produces += APPLICATION_JSON
+                returning(OK, limit to Swaggex.limit())
+            } bindContract GET to { faultId ->
+                simpleGet(limit) {
+                    controller feedLimit faultId
+                }
             }
-        }
-    }
+
+    private fun feedLookupFaultStrandRoute() =
+            "/feed/fault-strand" / uuid(::FaultStrandId) meta {
+                summary = "Events for a fault strand"
+                produces += APPLICATION_JSON
+                queries += listOf(offsetQuery, countQuery, fullStack, printStack)
+                returning(OK, faultSequence to Swaggex.faultSequence(::FaultStrandId))
+            } bindContract GET to { faultStrandId ->
+                { req ->
+                    get(faultSequence) {
+                        controller.feed(faultStrandId,
+                                offsetQuery[req] ?: 0L,
+                                countQuery[req] ?: 0L,
+                                fullStack[req] ?: false,
+                                printStack[req] ?: false)
+                    }
+                }
+            }
+
+    private fun feedLimitsFaultRoute() =
+            "/feed/fault/limit" / uuid(::FaultId) meta {
+                summary = "Event limits for a fault"
+                produces += APPLICATION_JSON
+                returning(OK, limit to Swaggex.limit())
+            } bindContract GET to { faultId ->
+                simpleGet(limit) {
+                    controller feedLimit faultId
+                }
+            }
+
+    private fun feedLookupFaultRoute() =
+            "/feed/fault" / uuid(::FaultId) meta {
+                summary = "Events for a fault"
+                produces += APPLICATION_JSON
+                queries += listOf(offsetQuery, countQuery, fullStack, printStack)
+                returning(OK, faultSequence to Swaggex.faultSequence(::FaultId))
+            } bindContract GET to { faultId ->
+                { req ->
+                    get(faultSequence) {
+                        controller.feed(faultId,
+                                offsetQuery[req] ?: 0L,
+                                countQuery[req] ?: 0L,
+                                fullStack[req] ?: false,
+                                printStack[req] ?: false)
+                    }
+                }
+            }
 
     @Suppress("SameParameterValue")
     private fun <I, O> exchange(
@@ -284,19 +288,25 @@ class UnearthServer(
             result: () -> O
     ): Response = outLens.set(withContentType(Response(OK), type), result())
 
+    private fun <O> simpleGet(
+            outLens: BiDiBodyLens<O>,
+            type: ContentType = APPLICATION_JSON,
+            result: () -> O
+    ): (Request) -> Response = {
+        outLens.set(withContentType(Response(OK), type), result())
+    }
+
     private val server = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
             .then(Filter { nextHandler ->
                 { request ->
                     handleErrors(nextHandler, request)
                 }
-            })
-            .then(routes(
+            }).then(routes(
                     rerouteToSwagger("/doc", configuration.prefix),
                     rerouteToSwagger("/", configuration.prefix),
                     swaggerUiRoute(configuration.prefix),
                     app())
-            )
-            .asServer(
+            ).asServer(
                     NettyConfig(configuration.host, configuration.port))
 
     private fun app(): RoutingHttpHandler {
@@ -308,21 +318,21 @@ class UnearthServer(
             routes +=
                     submitExceptionRoute()
             routes += listOf(
-                    lookupFaultRoute(),
-                    lookupFaultStrandRoute(),
-                    lookupFaultEventRoute(),
-                    lookupCauseRoute(),
-                    lookupCauseStrandRoute())
+                    faultRoute(),
+                    faultStrandRoute(),
+                    faultEventRoute(),
+                    causeRoute(),
+                    causeStrandRoute())
             routes += listOf(
-                    feedLimitsGlobalRoute(),
+                    globalLimit(),
                     feedLimitsFaultRoute(),
-                    feedLimitsFaultStrandRoute(),
-                    feedLookupGlobalRoute(),
+                    faultStrandLimit(),
+                    globalFeedRoute(),
                     feedLookupFaultRoute(),
                     feedLookupFaultStrandRoute())
             routes += listOf(
                     retrieveExceptionRoute(),
-                    printFaultReduxRoute())
+                    retrieveExceptionReduxRoute())
         }
     }
 

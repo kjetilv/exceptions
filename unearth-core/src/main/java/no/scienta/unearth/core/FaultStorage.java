@@ -17,7 +17,7 @@
 
 package no.scienta.unearth.core;
 
-import no.scienta.unearth.munch.data.*;
+import no.scienta.unearth.munch.model.*;
 import no.scienta.unearth.munch.id.*;
 
 import java.util.Collection;

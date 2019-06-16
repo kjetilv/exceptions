@@ -20,8 +20,8 @@ package no.scienta.unearth.core.handler;
 import no.scienta.unearth.core.FaultHandler;
 import no.scienta.unearth.core.FaultSensor;
 import no.scienta.unearth.core.FaultStorage;
-import no.scienta.unearth.munch.data.Fault;
-import no.scienta.unearth.munch.data.FaultEvent;
+import no.scienta.unearth.munch.model.Fault;
+import no.scienta.unearth.munch.model.FaultEvent;
 
 public class DefaultThrowablesHandler implements FaultHandler {
 

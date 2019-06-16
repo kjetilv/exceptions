@@ -21,9 +21,9 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import no.scienta.unearth.core.FaultSensor;
-import no.scienta.unearth.munch.data.FaultStrand;
-import no.scienta.unearth.munch.data.FaultEvent;
-import no.scienta.unearth.munch.data.Fault;
+import no.scienta.unearth.munch.model.FaultStrand;
+import no.scienta.unearth.munch.model.FaultEvent;
+import no.scienta.unearth.munch.model.Fault;
 
 import java.util.Arrays;
 import java.util.Collections;

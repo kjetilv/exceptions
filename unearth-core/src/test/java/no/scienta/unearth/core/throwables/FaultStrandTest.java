@@ -17,7 +17,7 @@
 
 package no.scienta.unearth.core.throwables;
 
-import no.scienta.unearth.munch.data.FaultStrand;
+import no.scienta.unearth.munch.model.FaultStrand;
 import org.junit.Test;
 
 import java.io.IOException;
