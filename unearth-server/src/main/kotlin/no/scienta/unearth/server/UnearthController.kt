@@ -142,7 +142,7 @@ class UnearthController(
                         StackTraceReshaper.SHORTEN_CLASSNAME)
         return causeChainDto(
                 storage.getFault(faultId).toCauseChain()
-                        .withPrintout(stackTraceReshaper::prettified))
+                        .withPrintout(stackTraceReshaper))
     }
 
     private fun causeChainDto(

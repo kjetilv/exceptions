@@ -27,15 +27,23 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class StackTraceReshaper {
+public class StackTraceReshaper implements Function<CauseChain, List<String>> {
+
+    public static StackTraceReshaper create() {
+        return new StackTraceReshaper(null, null, null, null, null);
+    }
 
     public static BiFunction<Collection<String>, CauseFrame, CauseFrame> SHORTEN_CLASSNAME =
         StackTraceReshaper::shortenClassname;
 
+    public static Function<CauseFrame, CauseFrame> SHORTEN_ALL_CLASSNAME =
+        StackTraceReshaper::shortenClassName;
+
     public static CauseFrame shortenClassname(Collection<String> group, CauseFrame causeFrame) {
-        if (group == null) {
-            return causeFrame;
-        }
+        return group == null ? causeFrame : shortenClassName(causeFrame);
+    }
+
+    private static CauseFrame shortenClassName(CauseFrame causeFrame) {
         String className = causeFrame.className();
         int dot = className.lastIndexOf(".");
         String shortened = Stream.concat(
@@ -55,10 +63,6 @@ public class StackTraceReshaper {
     private final Function<CauseFrame, Optional<Collection<String>>> grouper;
 
     private final BiFunction<Collection<String>, List<CauseFrame>, Optional<String>> squasher;
-
-    public static StackTraceReshaper create() {
-        return new StackTraceReshaper(null, null, null, null, null);
-    }
 
     private StackTraceReshaper(
         Function<CauseFrame, Optional<Collection<String>>> grouper,
@@ -100,34 +104,18 @@ public class StackTraceReshaper {
 
     @SafeVarargs
     public final StackTraceReshaper reshape(BiFunction<Collection<String>, CauseFrame, CauseFrame>... reshapers) {
-        return new StackTraceReshaper(
-            grouper,
-            groupPrinter,
-            framePrinter,
-            added(Arrays.stream(reshapers)),
-            squasher);
+        return new StackTraceReshaper(grouper, groupPrinter, framePrinter, added(Arrays.stream(reshapers)), squasher);
     }
 
     @SafeVarargs
     public final StackTraceReshaper reshapeAll(Function<CauseFrame, CauseFrame>... reshapers) {
-        return new StackTraceReshaper(
-            grouper,
-            groupPrinter,
-            framePrinter,
-            added(Arrays.stream(reshapers).map(StackTraceReshaper::forAllGroups)),
-            squasher);
+        List<BiFunction<Collection<String>, CauseFrame, CauseFrame>> added =
+            added(Arrays.stream(reshapers).map(StackTraceReshaper::all));
+        return new StackTraceReshaper(grouper, groupPrinter, framePrinter, added, squasher);
     }
 
-    private Function<CauseFrame, CauseFrame> reshape(Collection<String> group) {
-        return causeFrame -> reshapers.stream().reduce(
-            causeFrame,
-            (cf, reshaper) -> reshaper.apply(group, cf),
-            (cf1, cf2) -> {
-                throw new IllegalStateException("No combine: " + cf1 + "/" + cf2);
-            });
-    }
-
-    public List<String> prettified(CauseChain causeChain) {
+    @Override
+    public List<String> apply(CauseChain causeChain) {
         List<CauseFrame> causeFrames = causeChain.getCauseFrames();
         GroupedList<Collection<String>, CauseFrame> groupedList =
             GroupedList.group(causeFrames, grouper);
@@ -146,6 +134,15 @@ public class StackTraceReshaper {
             }
         });
         return list;
+    }
+
+    private Function<CauseFrame, CauseFrame> reshape(Collection<String> group) {
+        return causeFrame -> reshapers.stream().reduce(
+            causeFrame,
+            (cf, reshaper) -> reshaper.apply(group, cf),
+            (cf1, cf2) -> {
+                throw new IllegalStateException("No combine: " + cf1 + "/" + cf2);
+            });
     }
 
     private List<BiFunction<Collection<String>, CauseFrame, CauseFrame>> added(
@@ -170,7 +167,7 @@ public class StackTraceReshaper {
 
     private static final String INDENT = "  ";
 
-    private static BiFunction<Collection<String>, CauseFrame, CauseFrame> forAllGroups(Function<CauseFrame, CauseFrame> fun) {
+    private static BiFunction<Collection<String>, CauseFrame, CauseFrame> all(Function<CauseFrame, CauseFrame> fun) {
         return (group, causeFrame) -> fun.apply(causeFrame);
     }
 }

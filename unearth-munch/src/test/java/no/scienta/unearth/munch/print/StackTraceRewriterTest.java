@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 
-@SuppressWarnings("unchecked")
 public class StackTraceRewriterTest {
 
     @Test
@@ -48,7 +47,7 @@ public class StackTraceRewriterTest {
                 cf.defaultPrint(sb.append("--  ")));
 
         Fault fault = Fault.create(new Throwable());
-        CauseChain causeChain = fault.toCauseChain().withPrintout(stackTraceReshaper::prettified);
+        CauseChain causeChain = fault.toCauseChain().withPrintout(stackTraceReshaper);
 
         causeChain.getPrintout().forEach(System.out::println);
     }
