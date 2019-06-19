@@ -24,6 +24,10 @@ import java.util.function.Function;
 
 public class CauseFrame extends AbstractHashable {
 
+    public static Function<CauseFrame, CauseFrame> UNSET_MODULE_INFO = CauseFrame::unsetModuleInfo;
+
+    public static Function<CauseFrame, CauseFrame> UNSET_CLASSLOADER = CauseFrame::unsetClassLoader;
+
     private final String classLoader;
 
     private final String module;

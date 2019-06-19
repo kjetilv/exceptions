@@ -18,6 +18,7 @@
 package no.scienta.unearth.munch.print;
 
 import no.scienta.unearth.munch.base.GroupedList;
+import no.scienta.unearth.munch.model.CauseChain;
 import no.scienta.unearth.munch.model.CauseFrame;
 
 import java.util.*;
@@ -28,7 +29,13 @@ import java.util.stream.Stream;
 
 public class StackTraceReshaper {
 
-    public static CauseFrame shortenClassname(CauseFrame causeFrame) {
+    public static BiFunction<Collection<String>, CauseFrame, CauseFrame> SHORTEN_CLASSNAME =
+        StackTraceReshaper::shortenClassname;
+
+    public static CauseFrame shortenClassname(Collection<String> group, CauseFrame causeFrame) {
+        if (group == null) {
+            return causeFrame;
+        }
         String className = causeFrame.className();
         int dot = className.lastIndexOf(".");
         String shortened = Stream.concat(
@@ -39,7 +46,7 @@ public class StackTraceReshaper {
         return causeFrame.className(shortened);
     }
 
-    private final List<Function<CauseFrame, CauseFrame>> reshapers;
+    private final List<BiFunction<Collection<String>, CauseFrame, CauseFrame>> reshapers;
 
     private final BiFunction<String, Integer, String> groupPrinter;
 
@@ -57,14 +64,14 @@ public class StackTraceReshaper {
         Function<CauseFrame, Optional<Collection<String>>> grouper,
         BiFunction<String, Integer, String> groupDisplay,
         BiFunction<StringBuilder, CauseFrame, StringBuilder> framePrinter,
-        List<Function<CauseFrame, CauseFrame>> reshapers,
+        List<BiFunction<Collection<String>, CauseFrame, CauseFrame>> reshapers,
         BiFunction<Collection<String>, List<CauseFrame>, Optional<String>> squasher
     ) {
         this.grouper = grouper == null
             ? causeFrame -> Optional.empty()
             : grouper;
         this.groupPrinter = groupDisplay == null
-            ? (group, size) -> group + ":" + size
+            ? (group, size) -> group
             : groupDisplay;
         this.reshapers = reshapers == null || reshapers.isEmpty()
             ? Collections.emptyList()
@@ -92,46 +99,59 @@ public class StackTraceReshaper {
     }
 
     @SafeVarargs
-    public final StackTraceReshaper reshape(Function<CauseFrame, CauseFrame>... reshapers) {
+    public final StackTraceReshaper reshape(BiFunction<Collection<String>, CauseFrame, CauseFrame>... reshapers) {
         return new StackTraceReshaper(
             grouper,
             groupPrinter,
             framePrinter,
-            added(reshapers),
+            added(Arrays.stream(reshapers)),
             squasher);
     }
 
-    private CauseFrame reshape(CauseFrame causeFrame) {
-        return reshapers.stream().reduce(
+    @SafeVarargs
+    public final StackTraceReshaper reshapeAll(Function<CauseFrame, CauseFrame>... reshapers) {
+        return new StackTraceReshaper(
+            grouper,
+            groupPrinter,
+            framePrinter,
+            added(Arrays.stream(reshapers).map(StackTraceReshaper::forAllGroups)),
+            squasher);
+    }
+
+    private Function<CauseFrame, CauseFrame> reshape(Collection<String> group) {
+        return causeFrame -> reshapers.stream().reduce(
             causeFrame,
-            (cf, reshaper) -> reshaper.apply(cf),
+            (cf, reshaper) -> reshaper.apply(group, cf),
             (cf1, cf2) -> {
                 throw new IllegalStateException("No combine: " + cf1 + "/" + cf2);
             });
     }
 
-    public List<String> prettified(List<CauseFrame> stackTrace) {
+    public List<String> prettified(CauseChain causeChain) {
+        List<CauseFrame> causeFrames = causeChain.getCauseFrames();
         GroupedList<Collection<String>, CauseFrame> groupedList =
-            GroupedList.group(stackTrace, grouper);
+            GroupedList.group(causeFrames, grouper);
         List<String> list = new ArrayList<>();
-        groupedList.forEach((names, causeFrames) -> {
+        groupedList.forEach((names, frames) -> {
             if (names != null) {
                 list.add(printGroup(names, names.size()));
             }
             if (names == null || squasher == null) {
-                causeFrames.stream()
-                    .map(this::reshape)
+                frames.stream()
+                    .map(reshape(names))
                     .map(item ->
                         print(names != null, item)).forEach(list::add);
             } else {
-                squasher.apply(names, causeFrames).ifPresent(list::add);
+                squasher.apply(names, frames).ifPresent(list::add);
             }
         });
         return list;
     }
 
-    private List<Function<CauseFrame, CauseFrame>> added(Function<CauseFrame, CauseFrame>[] reshapers) {
-        return Stream.concat(this.reshapers.stream(), Arrays.stream(reshapers)).collect(Collectors.toList());
+    private List<BiFunction<Collection<String>, CauseFrame, CauseFrame>> added(
+        Stream<BiFunction<Collection<String>, CauseFrame, CauseFrame>> reshapers
+    ) {
+        return Stream.concat(this.reshapers.stream(), reshapers).collect(Collectors.toList());
     }
 
     private String print(boolean grouped, CauseFrame item) {
@@ -149,4 +169,8 @@ public class StackTraceReshaper {
     }
 
     private static final String INDENT = "  ";
+
+    private static BiFunction<Collection<String>, CauseFrame, CauseFrame> forAllGroups(Function<CauseFrame, CauseFrame> fun) {
+        return (group, causeFrame) -> fun.apply(causeFrame);
+    }
 }

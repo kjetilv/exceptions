@@ -35,7 +35,7 @@ public class CauseChain extends AbstractHashable {
 
     private final String message;
 
-    private final List<String> printedCauseFrames;
+    private final List<String> printout;
 
     private final List<CauseFrame> causeFrames;
 
@@ -45,18 +45,13 @@ public class CauseChain extends AbstractHashable {
         this(cause, chainedCause, null);
     }
 
-    private CauseChain(Cause cause, CauseChain chainedCause, List<String> printedCauseFrames) {
+    private CauseChain(Cause cause, CauseChain chainedCause, List<String> printout) {
         this.cause = cause;
         this.message = cause.getMessage();
         this.className = cause.getCauseStrand().getClassName();
-
-        this.printedCauseFrames =
-            printedCauseFrames == null || printedCauseFrames.isEmpty()
-                ? Collections.emptyList()
-                : List.copyOf(printedCauseFrames);
-        this.causeFrames =
-            List.copyOf(cause.getCauseStrand().getCauseFrames());
-
+        this.causeFrames = List.copyOf(cause.getCauseStrand().getCauseFrames());
+        this.printout =
+            printout == null || printout.isEmpty() ? Collections.emptyList() : List.copyOf(printout);
         this.chainedCause = chainedCause;
     }
 
@@ -80,15 +75,18 @@ public class CauseChain extends AbstractHashable {
         return causeFrames;
     }
 
-    public List<String> getPrintedCauseFrames() {
-        return printedCauseFrames;
+    public List<String> getPrintout() {
+        return printout;
     }
 
-    public CauseChain rewriteStackTrace(Function<List<CauseFrame>, List<String>> writer) {
+    public CauseChain withPrintout(Function<CauseChain, List<String>> writer) {
+        List<String> printout = writer.apply(this);
         return new CauseChain(
             cause,
-            chainedCause == null ? null : chainedCause.rewriteStackTrace(writer),
-            writer.apply(causeFrames));
+            chainedCause == null
+                ? null
+                : chainedCause.withPrintout(writer),
+            printout);
     }
 
     @Override

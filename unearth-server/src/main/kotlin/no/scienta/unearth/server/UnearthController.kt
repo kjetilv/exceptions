@@ -135,10 +135,14 @@ class UnearthController(
     fun rewriteThrowable(faultId: FaultId, groups: Collection<String>?): CauseChainDto {
         val stackTraceReshaper = StackTraceReshaper.create()
                 .group(PackageGrouper(Collections.singleton(groups)))
-                .reshape({ cf -> StackTraceReshaper.shortenClassname(cf) })
+                .reshapeAll(
+                        CauseFrame.UNSET_CLASSLOADER,
+                        CauseFrame.UNSET_MODULE_INFO)
+                .reshape(
+                        StackTraceReshaper.SHORTEN_CLASSNAME)
         return causeChainDto(
                 storage.getFault(faultId).toCauseChain()
-                        .rewriteStackTrace(stackTraceReshaper::prettified))
+                        .withPrintout(stackTraceReshaper::prettified))
     }
 
     private fun causeChainDto(
@@ -149,7 +153,7 @@ class UnearthController(
     ): CauseChainDto = CauseChainDto(
             className = chain.className,
             message = chain.message,
-            printedCauseFrames = if (chain.printedCauseFrames.isEmpty()) null else chain.printedCauseFrames,
+            printedCauseFrames = if (chain.printout.isEmpty()) null else chain.printout,
             causeStrand = if (thin) null else
                 causeStrandDto(chain.cause.causeStrand, fullStack, printStack),
             cause = chain.causeChain?.let {

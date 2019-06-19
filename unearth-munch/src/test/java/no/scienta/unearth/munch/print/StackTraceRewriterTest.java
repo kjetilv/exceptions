@@ -31,22 +31,25 @@ public class StackTraceRewriterTest {
 
     @Test
     public void test() {
-        StackTraceReshaper stackTraceRewriter = StackTraceReshaper.create()
+        StackTraceReshaper stackTraceReshaper = StackTraceReshaper.create()
             .group(new PackageGrouper(
                 Arrays.asList(
                     Collections.singleton("org.gradle"),
                     Collections.singleton("org.junit"),
                     Arrays.asList("java", "jdk", "com.sun"))))
-            .squasher((group, causeFrames) -> Optional.empty())
-            .reshape(
+            .squasher((group, causeFrames) ->
+                Optional.of("  * (" + causeFrames.size() + ")"))
+            .reshapeAll(
                 CauseFrame::unsetClassLoader,
-                CauseFrame::unsetModuleInfo,
-                StackTraceReshaper::shortenClassname
-            );
+                CauseFrame::unsetModuleInfo)
+            .reshape(
+                StackTraceReshaper::shortenClassname)
+            .framePrinter((sb, cf) ->
+                cf.defaultPrint(sb.append("--  ")));
 
         Fault fault = Fault.create(new Throwable());
-        CauseChain causeChain = fault.toCauseChain().rewriteStackTrace(stackTraceRewriter::prettified);
+        CauseChain causeChain = fault.toCauseChain().withPrintout(stackTraceReshaper::prettified);
 
-        causeChain.getPrintedCauseFrames().forEach(System.out::println);
+        causeChain.getPrintout().forEach(System.out::println);
     }
 }
