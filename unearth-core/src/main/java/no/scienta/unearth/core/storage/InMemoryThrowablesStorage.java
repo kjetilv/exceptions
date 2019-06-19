@@ -211,8 +211,7 @@ public class InMemoryThrowablesStorage
     ) {
         return delimited(
             listLookup(map, id).stream()
-                .filter(specimen ->
-                    sequencer.apply(specimen) >= offset),
+                .filter(t -> sequencer.apply(t) >= offset),
             count
         ).collect(Collectors.toUnmodifiableList());
     }
