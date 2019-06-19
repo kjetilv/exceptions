@@ -30,7 +30,7 @@ public class StackTraceRewriterTest {
 
     @Test
     public void test() {
-        StackTraceReshaper stackTraceReshaper = StackTraceReshaper.create()
+        CauseChainRenderer causeChainRenderer = new CauseChainRenderer()
             .group(new PackageGrouper(
                 Arrays.asList(
                     Collections.singleton("org.gradle"),
@@ -42,12 +42,12 @@ public class StackTraceRewriterTest {
                 CauseFrame::unsetClassLoader,
                 CauseFrame::unsetModuleInfo)
             .reshape(
-                StackTraceReshaper::shortenClassname)
+                CauseChainRenderer::shortenClassname)
             .framePrinter((sb, cf) ->
                 cf.defaultPrint(sb.append("--  ")));
 
         Fault fault = Fault.create(new Throwable());
-        CauseChain causeChain = fault.toCauseChain().withPrintout(stackTraceReshaper);
+        CauseChain causeChain = fault.toCauseChain().withPrintout(causeChainRenderer);
 
         causeChain.getPrintout().forEach(System.out::println);
     }

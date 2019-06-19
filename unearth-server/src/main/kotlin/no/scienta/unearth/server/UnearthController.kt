@@ -23,7 +23,7 @@ import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.model.*
 import no.scienta.unearth.munch.print.PackageGrouper
-import no.scienta.unearth.munch.print.StackTraceReshaper
+import no.scienta.unearth.munch.print.CauseChainRenderer
 import java.time.ZoneId
 import java.util.*
 
@@ -31,8 +31,7 @@ class UnearthController(
         private val storage: FaultStorage,
         private val feed: FaultFeed,
         private val stats: FaultStats,
-        sensor: FaultSensor,
-        val reducer: FaultReducer
+        sensor: FaultSensor
 ) {
     private val handler: FaultHandler = DefaultThrowablesHandler(storage, sensor)
 
@@ -133,16 +132,16 @@ class UnearthController(
             faultEvent.faultStrandSequenceNo)
 
     fun rewriteThrowable(faultId: FaultId, groups: Collection<String>?): CauseChainDto {
-        val stackTraceReshaper = StackTraceReshaper.create()
+        val causeChainRenderer = CauseChainRenderer()
                 .group(PackageGrouper(Collections.singleton(groups)))
                 .reshapeAll(
                         CauseFrame.UNSET_CLASSLOADER,
                         CauseFrame.UNSET_MODULE_INFO)
                 .reshape(
-                        StackTraceReshaper.SHORTEN_CLASSNAME)
+                        CauseChainRenderer.SHORTEN_CLASSNAME)
         return causeChainDto(
                 storage.getFault(faultId).toCauseChain()
-                        .withPrintout(stackTraceReshaper))
+                        .withPrintout(causeChainRenderer))
     }
 
     private fun causeChainDto(

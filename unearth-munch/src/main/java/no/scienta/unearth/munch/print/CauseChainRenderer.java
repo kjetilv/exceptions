@@ -27,17 +27,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class StackTraceReshaper implements Function<CauseChain, List<String>> {
-
-    public static StackTraceReshaper create() {
-        return new StackTraceReshaper(null, null, null, null, null);
-    }
+public class CauseChainRenderer implements Function<CauseChain, List<String>> {
 
     public static BiFunction<Collection<String>, CauseFrame, CauseFrame> SHORTEN_CLASSNAME =
-        StackTraceReshaper::shortenClassname;
+        CauseChainRenderer::shortenClassname;
 
     public static Function<CauseFrame, CauseFrame> SHORTEN_ALL_CLASSNAME =
-        StackTraceReshaper::shortenClassName;
+        CauseChainRenderer::shortenClassName;
 
     public static CauseFrame shortenClassname(Collection<String> group, CauseFrame causeFrame) {
         return group == null ? causeFrame : shortenClassName(causeFrame);
@@ -64,7 +60,11 @@ public class StackTraceReshaper implements Function<CauseChain, List<String>> {
 
     private final BiFunction<Collection<String>, List<CauseFrame>, Optional<String>> squasher;
 
-    private StackTraceReshaper(
+    public CauseChainRenderer() {
+        this(null, null, null, null, null);
+    }
+
+    private CauseChainRenderer(
         Function<CauseFrame, Optional<Collection<String>>> grouper,
         BiFunction<String, Integer, String> groupDisplay,
         BiFunction<StringBuilder, CauseFrame, StringBuilder> framePrinter,
@@ -86,32 +86,32 @@ public class StackTraceReshaper implements Function<CauseChain, List<String>> {
         this.squasher = squasher;
     }
 
-    public StackTraceReshaper groupPrinter(BiFunction<String, Integer, String> groupDisplay) {
-        return new StackTraceReshaper(grouper, groupPrinter, framePrinter, reshapers, squasher);
+    public CauseChainRenderer groupPrinter(BiFunction<String, Integer, String> groupDisplay) {
+        return new CauseChainRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher);
     }
 
-    public StackTraceReshaper framePrinter(BiFunction<StringBuilder, CauseFrame, StringBuilder> framePrinter) {
-        return new StackTraceReshaper(grouper, groupPrinter, framePrinter, reshapers, squasher);
+    public CauseChainRenderer framePrinter(BiFunction<StringBuilder, CauseFrame, StringBuilder> framePrinter) {
+        return new CauseChainRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher);
     }
 
-    public StackTraceReshaper group(Function<CauseFrame, Optional<Collection<String>>> grouper) {
-        return new StackTraceReshaper(grouper, groupPrinter, framePrinter, reshapers, squasher);
+    public CauseChainRenderer group(Function<CauseFrame, Optional<Collection<String>>> grouper) {
+        return new CauseChainRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher);
     }
 
-    public StackTraceReshaper squasher(BiFunction<Collection<String>, List<CauseFrame>, Optional<String>> squasher) {
-        return new StackTraceReshaper(grouper, groupPrinter, framePrinter, reshapers, squasher);
-    }
-
-    @SafeVarargs
-    public final StackTraceReshaper reshape(BiFunction<Collection<String>, CauseFrame, CauseFrame>... reshapers) {
-        return new StackTraceReshaper(grouper, groupPrinter, framePrinter, added(Arrays.stream(reshapers)), squasher);
+    public CauseChainRenderer squasher(BiFunction<Collection<String>, List<CauseFrame>, Optional<String>> squasher) {
+        return new CauseChainRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher);
     }
 
     @SafeVarargs
-    public final StackTraceReshaper reshapeAll(Function<CauseFrame, CauseFrame>... reshapers) {
+    public final CauseChainRenderer reshape(BiFunction<Collection<String>, CauseFrame, CauseFrame>... reshapers) {
+        return new CauseChainRenderer(grouper, groupPrinter, framePrinter, added(Arrays.stream(reshapers)), squasher);
+    }
+
+    @SafeVarargs
+    public final CauseChainRenderer reshapeAll(Function<CauseFrame, CauseFrame>... reshapers) {
         List<BiFunction<Collection<String>, CauseFrame, CauseFrame>> added =
-            added(Arrays.stream(reshapers).map(StackTraceReshaper::all));
-        return new StackTraceReshaper(grouper, groupPrinter, framePrinter, added, squasher);
+            added(Arrays.stream(reshapers).map(CauseChainRenderer::all));
+        return new CauseChainRenderer(grouper, groupPrinter, framePrinter, added, squasher);
     }
 
     @Override
