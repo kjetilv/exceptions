@@ -25,8 +25,6 @@ import java.util.*;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 /**
  * A fault has a {@link FaultStrand fault strand} and a list of {@link Cause causes}.
@@ -64,7 +62,7 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
         return new Fault(faultStrand, causes);
     }
 
-    public ChainedFault toChainedFault() {
+    public CauseChain toCauseChain() {
         return Streams.reverse(causes).reduce(
             null,
             (chainedFault, cause) ->
@@ -77,12 +75,6 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
                 (t, cause) ->
                     cause.toChameleon(t),
                 noCombine());
-    }
-
-    private Stream<Integer> reversedRange(List<?> elements) {
-        return IntStream.range(0, elements.size())
-            .map(i -> elements.size() - i - 1)
-            .boxed();
     }
 
     private static List<Cause> causes(Throwable throwable) {

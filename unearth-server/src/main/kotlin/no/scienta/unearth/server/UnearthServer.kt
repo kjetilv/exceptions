@@ -20,8 +20,8 @@ package no.scienta.unearth.server
 import no.scienta.unearth.core.HandlingPolicy
 import no.scienta.unearth.core.parser.ThrowableParser
 import no.scienta.unearth.dto.*
-import no.scienta.unearth.munch.model.FaultStrand
 import no.scienta.unearth.munch.id.*
+import no.scienta.unearth.munch.model.FaultStrand
 import no.scienta.unearth.munch.util.Throwables
 import no.scienta.unearth.server.JSON.auto
 import no.scienta.unearth.statik.Statik
@@ -96,11 +96,14 @@ class UnearthServer(
     private fun retrieveExceptionReduxRoute() =
             "/throwable-redux" / uuid(::FaultId) meta {
                 summary = "Print an exception"
-                produces += TEXT_PLAIN
-                returning(OK, exception to Swaggex.exception())
+                produces += APPLICATION_JSON
+                queries += groupsQuery
+                returning(OK, causeChain to Swaggex.causeChainDto())
             } bindContract GET to { faultId ->
-                simpleGet(exception, type = TEXT_PLAIN) {
-                    controller lookupThrowableRedux faultId
+                { req ->
+                    get(causeChain) {
+                        controller.rewriteThrowable(faultId, groupsQuery[req])
+                    }
                 }
             }
 
@@ -210,7 +213,6 @@ class UnearthServer(
                 }
             }
 
-
     private fun faultStrandLimit() =
             "/feed/fault-strand/limit" / uuid(::FaultStrandId) meta {
                 summary = "Event limits for a fault strand"
@@ -221,6 +223,7 @@ class UnearthServer(
                     controller feedLimit faultId
                 }
             }
+
 
     private fun feedLookupFaultStrandRoute() =
             "/feed/fault-strand" / uuid(::FaultStrandId) meta {
@@ -399,7 +402,7 @@ class UnearthServer(
     private fun swaggerRedirect(prefix: String) =
             Response(Status.FOUND).header("Location", "/doc/index.html?url=$prefix/swagger.json")
 
-    private fun withContentType(res: Response, type: ContentType = APPLICATION_JSON) =
+    private fun withContentType(res: Response, type: ContentType = APPLICATION_JSON): Response =
             res.header("Content-Type", type.value)
 
     override fun toString(): String = "${javaClass.simpleName}[$server]"
@@ -417,6 +420,9 @@ class UnearthServer(
 
         private val countQuery =
                 Query.long().optional("count", "No. of elements to retrieve from start point in feed")
+
+        private val groupsQuery =
+                Query.string().multi.optional("group", "Group to collapse")
 
         private fun <T : Id> uuid(read: (UUID) -> T) = PathLens(
                 meta = Meta(required = true, location = "path", paramMeta = ParamMeta.StringParam, name = "uuid"),
@@ -459,6 +465,8 @@ class UnearthServer(
         private val faultStrand = Body.auto<FaultStrandDto>().toLens()
 
         private val cause = Body.auto<CauseDto>().toLens()
+
+        private val causeChain = Body.auto<CauseChainDto>().toLens()
 
         private val causeStrand = Body.auto<CauseStrandDto>().toLens()
 

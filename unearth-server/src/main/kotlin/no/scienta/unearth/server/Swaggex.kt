@@ -57,8 +57,8 @@ object Swaggex {
     internal fun causeStrandDto() =
             CauseStrandDto(CauseStrandId(uuid()), "BadStuffException", emptyList(), emptyList())
 
-    private fun unearthedException(): UnearthedException =
-            UnearthedException(
+    internal fun causeChainDto(): CauseChainDto =
+            CauseChainDto(
                     "mymy.such.a.BadClass",
                     "Bad class!",
                     causeStrand = causeStrandDto())

@@ -17,6 +17,8 @@
 
 package no.scienta.unearth.core.reducer;
 
+import no.scienta.unearth.munch.model.CauseFrame;
+
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -24,7 +26,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class Packages implements Predicate<StackTraceElement>, UnaryOperator<StackTraceElement> {
+public class Packages implements Predicate<CauseFrame>, UnaryOperator<CauseFrame> {
 
     public static Packages all() {
         return new Packages(null);
@@ -86,18 +88,18 @@ public class Packages implements Predicate<StackTraceElement>, UnaryOperator<Sta
     }
 
     @Override
-    public boolean test(StackTraceElement stackTraceElement) {
+    public boolean test(CauseFrame stackTraceElement) {
         return !none && (
-            prefixes.isEmpty() || prefixes.stream().anyMatch(stackTraceElement.getClassName()::startsWith)
+            prefixes.isEmpty() || prefixes.stream().anyMatch(stackTraceElement.className()::startsWith)
         );
     }
 
     @Override
-    public StackTraceElement apply(StackTraceElement ste) {
+    public CauseFrame apply(CauseFrame ste) {
         if (shortPrefixes.isEmpty()) {
             return ste;
         }
-        return Optional.of(ste.getClassName())
+        return Optional.of(ste.className())
             .flatMap(this::packageName)
             .flatMap(packageName ->
                 shortPrefixes.entrySet().stream()
@@ -105,14 +107,15 @@ public class Packages implements Predicate<StackTraceElement>, UnaryOperator<Sta
                         packageName.startsWith(e.getKey()))
                     .findFirst())
             .map(e ->
-                new StackTraceElement(
-                    ste.getClassLoaderName(),
-                    ste.getModuleName(),
-                    ste.getModuleVersion(),
-                    e.getValue() + ste.getClassName().substring(e.getKey().length()),
-                    ste.getMethodName(),
-                    ste.getFileName(),
-                    ste.getLineNumber()))
+                new CauseFrame(
+                    ste.classLoader(),
+                    ste.module(),
+                    ste.moduleVer(),
+                    e.getValue() + ste.className().substring(e.getKey().length()),
+                    ste.method(),
+                    ste.file(),
+                    ste.line(),
+                    ste.naytiv()))
             .orElse(ste);
     }
 

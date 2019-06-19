@@ -15,13 +15,12 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.dto
+package no.scienta.unearth.munch.print;
 
-enum class Printout {
+import no.scienta.unearth.munch.model.CauseFrame;
 
-    NONE,
+@FunctionalInterface
+public interface CauseFramePrinter {
 
-    ORIGINAL,
-
-    BOILDOWN
+    StringBuilder print(StringBuilder sb, CauseFrame causeFrame);
 }

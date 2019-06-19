@@ -21,7 +21,6 @@ import no.scienta.unearth.munch.ChameleonException;
 import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
 import no.scienta.unearth.munch.id.CauseStrandId;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -35,22 +34,22 @@ import java.util.stream.Collectors;
 public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
 
     public static CauseStrand create(Throwable throwable) {
-        return new CauseStrand(className(throwable), copy(throwable.getStackTrace()));
+        return new CauseStrand(className(throwable), causeFrames(throwable.getStackTrace()));
     }
 
     private final String className;
 
-    private final List<StackTraceElement> stackTrace;
+    private final List<CauseFrame> causeFrames;
 
-    private CauseStrand(String className, List<StackTraceElement> stackTrace) {
+    private CauseStrand(String className, List<CauseFrame> stackFrames) {
         this.className = className;
-        this.stackTrace = stackTrace == null || stackTrace.isEmpty()
+        this.causeFrames = stackFrames == null || stackFrames.isEmpty()
             ? Collections.emptyList()
-            : List.copyOf(stackTrace);
+            : List.copyOf(stackFrames);
     }
 
-    public List<StackTraceElement> getStackTrace() {
-        return stackTrace;
+    public List<CauseFrame> getCauseFrames() {
+        return causeFrames;
     }
 
     @Override
@@ -62,20 +61,21 @@ public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
         return className;
     }
 
-    public CauseStrand withStacktrace(List<StackTraceElement> stackTrace) {
-        return new CauseStrand(className, stackTrace);
+    public CauseStrand withCauseFrames(List<CauseFrame> causeFrames) {
+        return new CauseStrand(className, causeFrames);
     }
 
-    private static List<StackTraceElement> copy(StackTraceElement[] stackTrace) {
-        return Arrays.stream(stackTrace).map(orig -> new StackTraceElement(
-                        orig.getClassLoaderName(),
-                        orig.getModuleName(),
-                        orig.getModuleVersion(),
-                        orig.getClassName(),
-                        orig.getMethodName(),
-                        orig.getFileName(),
-                        orig.getLineNumber()
-                    )).collect(Collectors.toUnmodifiableList());
+    private static List<CauseFrame> causeFrames(StackTraceElement[] stackTrace) {
+        return Arrays.stream(stackTrace).map(ste -> new CauseFrame(
+            ste.getClassLoaderName(),
+            ste.getModuleName(),
+            ste.getModuleVersion(),
+            ste.getClassName(),
+            ste.getMethodName(),
+            ste.getFileName(),
+            ste.getLineNumber(),
+            ste.isNativeMethod()
+        )).collect(Collectors.toUnmodifiableList());
     }
 
     private static String className(Throwable throwable) {
@@ -88,14 +88,13 @@ public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
     @Override
     protected String toStringBody() {
         int dotIndex = className.lastIndexOf(".");
-        return (dotIndex >= 0 ? className.substring(dotIndex + 1) : className) + " <" + stackTrace.size() + ">";
+        return (dotIndex >= 0 ? className.substring(dotIndex + 1) : className) + " <" + causeFrames.size() + ">";
     }
 
     @Override
     public void hashTo(Consumer<byte[]> h) {
-        h.accept(this.className.getBytes(StandardCharsets.UTF_8));
-        for (StackTraceElement el : this.stackTrace) {
-            h.accept(el.toString().getBytes(StandardCharsets.UTF_8));
-        }
+        hashString(h, this.className);
+        hashHashables(h, this.causeFrames);
     }
+
 }

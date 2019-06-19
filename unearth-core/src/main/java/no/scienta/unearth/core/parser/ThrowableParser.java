@@ -18,6 +18,7 @@
 package no.scienta.unearth.core.parser;
 
 import no.scienta.unearth.munch.ChameleonException;
+import no.scienta.unearth.munch.model.CauseFrame;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -51,12 +52,12 @@ public class ThrowableParser {
                 int endIndex = causeIndex >= causeIndices.size() - 1
                     ? lines.size()
                     : causeIndices.get(causeIndex + 1);
-                StackTraceElement[] parsed = parsed(
+                CauseFrame[] parsedStackTrace = parsed(
                     lines,
                     causeIndices.get(causeIndex) + 1,
                     endIndex);
-                String s = exceptionHeading(lines, causeIndices, causeIndex);
-                return new ParsedThrowable(s, parsed);
+                String exceptionHeading = exceptionHeading(lines, causeIndices, causeIndex);
+                return new ParsedThrowable(exceptionHeading, parsedStackTrace);
             }).collect(Collectors.toCollection(ArrayList::new));
             Collections.reverse(parsedThrowables);
             Throwable cause = null;
@@ -75,14 +76,14 @@ public class ThrowableParser {
         return line.startsWith(CAUSED_BY) ? line.substring(CAUSED_BY.length()) : line;
     }
 
-    private static StackTraceElement[] parsed(List<String> lines, int startIndex, int endIndex) {
+    private static CauseFrame[] parsed(List<String> lines, int startIndex, int endIndex) {
         return lines.subList(startIndex, endIndex).stream().flatMap(line ->
             Stream.of(StackTraceEntry.values()).flatMap(type ->
                 reconstructed(type, line)))
-            .toArray(StackTraceElement[]::new);
+            .toArray(CauseFrame[]::new);
     }
 
-    private static Stream<StackTraceElement> reconstructed(StackTraceEntry pattern, String line) {
+    private static Stream<CauseFrame> reconstructed(StackTraceEntry pattern, String line) {
         String[] matches = pattern.parts(line);
         return matches.length == 0
             ? Stream.empty()
@@ -97,9 +98,9 @@ public class ThrowableParser {
 
         private final String exceptionHeading;
 
-        private final StackTraceElement[] parsedStackTrace;
+        private final CauseFrame[] parsedStackTrace;
 
-        private ParsedThrowable(String exceptionHeading, StackTraceElement[] parsedStackTrace) {
+        private ParsedThrowable(String exceptionHeading, CauseFrame[] parsedStackTrace) {
             this.exceptionHeading = exceptionHeading;
             this.parsedStackTrace = parsedStackTrace;
         }
@@ -109,7 +110,9 @@ public class ThrowableParser {
             String exceptionName = split[0];
             String message = split[1];
             ChameleonException chameleonException = new ChameleonException(exceptionName, message, caused);
-            chameleonException.setStackTrace(parsedStackTrace);
+            chameleonException.setStackTrace(Arrays.stream(parsedStackTrace)
+                .map(CauseFrame::toStackTraceElement)
+                .toArray(StackTraceElement[]::new));
             return chameleonException;
         }
     }
@@ -131,21 +134,22 @@ public class ThrowableParser {
                 "[" + parser + " => " + (parts == null ? null : Arrays.asList(parts)) + "]";
         }
 
-        Stream<StackTraceElement> reconstruct() {
+        Stream<CauseFrame> reconstruct() {
             if (parser == StackTraceEntry.MORE) {
                 return Stream.empty();
             }
             try {
                 Integer lineNumber = parser.lineNo(parts);
                 String file = parser.file(parts);
-                return Stream.of(new StackTraceElement(
+                return Stream.of(new CauseFrame(
                     null,
                     parser.module(parts),
                     parser.moduleVersion(parts),
                     parser.className(parts),
                     parser.method(parts),
                     file == null ? parser.otherSource(parts) : file,
-                    lineNumber == null ? -1 : lineNumber
+                    lineNumber == null ? -1 : lineNumber,
+                    parser.isNativeMethod()
                 ));
             } catch (Exception e) {
                 throw new IllegalStateException(this + " failed to reconstruct", e);

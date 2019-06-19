@@ -34,10 +34,12 @@
 
 package no.scienta.unearth.munch.base;
 
+import no.scienta.unearth.munch.model.CauseFrame;
 import no.scienta.unearth.munch.util.Memoizer;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
@@ -51,10 +53,32 @@ public abstract class AbstractHashable implements Hashable {
     /**
      * A supplier which computes {@link Hashable this hashable's} uuid with a {@link Memoizer}.
      */
-    private final Supplier<UUID> supplier = Memoizer.get(Hasher.uuid(this));
+    private final Supplier<UUID> supplier = Memoizer.get(uuid(this));
 
     private final Supplier<String> toString = Memoizer.get(() ->
         getClass().getSimpleName() + "[" + toStringIdentifier() + toStringContents() + "]");
+
+    /**
+     * Takes a {@link Hashable hashable} and returns a supplier which computs its UUID
+     *
+     * @param hashable Hashable
+     * @return UUID supplier
+     */
+    private static Supplier<UUID> uuid(Hashable hashable) {
+        return Memoizer.get(() -> {
+            MessageDigest md5 = md5();
+            hashable.hashTo(md5::update);
+            return UUID.nameUUIDFromBytes(md5.digest());
+        });
+    }
+
+    private static MessageDigest md5() {
+        try {
+            return MessageDigest.getInstance(HASH);
+        } catch (Exception e) {
+            throw new IllegalStateException("Expected " + HASH + " implementation", e);
+        }
+    }
 
     protected final void hashString(Consumer<byte[]> hash, String string) {
         hashStrings(hash, string);
@@ -76,9 +100,7 @@ public abstract class AbstractHashable implements Hashable {
     }
 
     protected final void hashHashables(Consumer<byte[]> h, Collection<? extends Hashable> hasheds) {
-        hasheds.stream()
-            .filter(Objects::nonNull)
-            .forEach(hashable -> hashable.hashTo(h));
+        hasheds.forEach(hasherTo(h));
     }
 
     protected final void hashLongs(Consumer<byte[]> hash, long... values) {
@@ -97,10 +119,18 @@ public abstract class AbstractHashable implements Hashable {
         return null;
     }
 
+    protected Consumer<Hashable> hasherTo(Consumer<byte[]> h) {
+        return hashable -> {
+            if (hashable != null) hashable.hashTo(h);
+        };
+    }
+
     private String toStringContents() {
         String body = toStringBody();
         return body == null || body.isBlank() ? "" : " " + body.trim();
     }
+
+    private static final String HASH = "MD5";
 
     @Override
     public final UUID getHash() {

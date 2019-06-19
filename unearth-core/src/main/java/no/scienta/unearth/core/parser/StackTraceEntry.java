@@ -23,9 +23,8 @@ import java.util.stream.IntStream;
 enum StackTraceEntry implements StackTraceElementPicker {
 
     NATIVE_METHOD_WITH_VERSIONED_MODULE(
-        Pattern.compile("^\\s*at\\s([\\w.]*)@([\\w\\d.]*)/([\\w.]*)\\(([\\w\\s]*)\\)$")
+        Pattern.compile("^\\s*at\\s([\\w.]*)@([\\w\\d.]*)/([\\w.]*)\\(([\\w\\s]*)\\)$"), true
     ) {
-
         @Override
         public String module(String... parts) {
             return parts[0];
@@ -52,8 +51,9 @@ enum StackTraceEntry implements StackTraceElementPicker {
         }
     },
 
-    NATIVE_METHOD_WITH_MODULE(Pattern.compile("^\\s*at\\s([\\w.]*)/([\\w.]*)\\(([\\w\\s]*)\\)$")) {
-
+    NATIVE_METHOD_WITH_MODULE(
+        Pattern.compile("^\\s*at\\s([\\w.]*)/([\\w.]*)\\(([\\w\\s]*)\\)$"), true
+    ) {
         @Override
         public String module(String... parts) {
             return parts[0];
@@ -75,8 +75,9 @@ enum StackTraceEntry implements StackTraceElementPicker {
         }
     },
 
-    BASIC_NATIVE_METHOD(Pattern.compile("^\\s*at\\s([$\\w.]*)\\(([\\w\\s]*)\\)$")) {
-
+    BASIC_NATIVE_METHOD(
+        Pattern.compile("^\\s*at\\s([$\\w.]*)\\(([\\w\\s]*)\\)$"), true
+    ) {
         @Override
         public String className(String... parts) {
             return StackTraceEntry.getClassName(parts[0]);
@@ -96,7 +97,6 @@ enum StackTraceEntry implements StackTraceElementPicker {
     WITH_VERSIONED_MODULE(
         Pattern.compile("^\\s*at\\s([\\w.]*)@([\\w\\d.]*)/([$\\w.]*)\\(([$\\w.]*):(\\d*)\\)$")
     ) {
-
         @Override
         public String module(String... parts) {
             return parts[0];
@@ -131,7 +131,6 @@ enum StackTraceEntry implements StackTraceElementPicker {
     WITH_MODULE(
         Pattern.compile("^\\s*at\\s([\\w.]*)/([$\\w.]*)\\(([$\\w.]*):(\\d*)\\)$")
     ) {
-
         @Override
         public String module(String... parts) {
             return parts[0];
@@ -158,8 +157,9 @@ enum StackTraceEntry implements StackTraceElementPicker {
         }
     },
 
-    BASIC(Pattern.compile("^\\s*at\\s([$\\w.]*)\\(([$\\w.]*):(\\d*)\\)$")) {
-
+    BASIC(
+        Pattern.compile("^\\s*at\\s([$\\w.]*)\\(([$\\w.]*):(\\d*)\\)$")
+    ) {
         @Override
         public String className(String... parts) {
             return StackTraceEntry.getClassName(parts[0]);
@@ -181,8 +181,9 @@ enum StackTraceEntry implements StackTraceElementPicker {
         }
     },
 
-    MORE(Pattern.compile("^\\s*...\\s*(\\d*)\\s*more$")) {
-
+    MORE(
+        Pattern.compile("^\\s*...\\s*(\\d*)\\s*more$")
+    ) {
         @Override
         public Integer more(String... parts) {
             return Integer.parseInt(parts[0]);
@@ -193,8 +194,19 @@ enum StackTraceEntry implements StackTraceElementPicker {
 
     private Pattern pattern;
 
+    private final boolean nativeMethod;
+
     StackTraceEntry(Pattern pattern) {
+        this(pattern, false);
+    }
+
+    StackTraceEntry(Pattern pattern, boolean nativeMethod) {
         this.pattern = pattern;
+        this.nativeMethod = nativeMethod;
+    }
+
+    public boolean isNativeMethod() {
+        return nativeMethod;
     }
 
     String[] parts(String line) {

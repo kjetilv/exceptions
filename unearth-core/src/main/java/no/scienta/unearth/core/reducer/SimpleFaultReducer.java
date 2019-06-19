@@ -18,10 +18,7 @@
 package no.scienta.unearth.core.reducer;
 
 import no.scienta.unearth.core.FaultReducer;
-import no.scienta.unearth.munch.model.Cause;
-import no.scienta.unearth.munch.model.CauseStrand;
-import no.scienta.unearth.munch.model.Fault;
-import no.scienta.unearth.munch.model.FaultStrand;
+import no.scienta.unearth.munch.model.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -63,14 +60,14 @@ public class SimpleFaultReducer implements FaultReducer {
 
     @Override
     public CauseStrand reduce(CauseStrand causeStrand) {
-        return causeStrand.withStacktrace(reduce(causeStrand.getStackTrace()));
+        return causeStrand.withCauseFrames(reduce(causeStrand.getCauseFrames()));
     }
 
-    private List<StackTraceElement> reduce(List<StackTraceElement> stack) {
-        List<StackTraceElement> reducedStack = new ArrayList<>(stack.size());
-        List<StackTraceElement> aggregated = new ArrayList<>();
+    private List<CauseFrame> reduce(List<CauseFrame> stack) {
+        List<CauseFrame> reducedStack = new ArrayList<>(stack.size());
+        List<CauseFrame> aggregated = new ArrayList<>();
         boolean aggregating = false;
-        for (StackTraceElement element : stack) {
+        for (CauseFrame element : stack) {
             if (display != null && display.test(element)) {
                 if (aggregating) {
                     reducedStack.addAll(aggregateElements(aggregated));
@@ -94,17 +91,21 @@ public class SimpleFaultReducer implements FaultReducer {
         return reducedStack;
     }
 
-    private Collection<StackTraceElement> aggregateElements(List<StackTraceElement> aggregated) {
+    private Collection<CauseFrame> aggregateElements(List<CauseFrame> aggregated) {
         return Collections.singleton(
-            new StackTraceElement(
+            new CauseFrame(
+                null,
+                null,
+                null,
                 commonPrefix(aggregated) + ".*",
                 "[" + aggregated.size() + " calls]",
                 null,
-                -1));
+                -1,
+                false));
     }
 
-    private String commonPrefix(List<StackTraceElement> aggregated) {
-        return aggregated.stream().map(StackTraceElement::getClassName).reduce(this::commonPrefix).orElse("");
+    private String commonPrefix(List<CauseFrame> aggregated) {
+        return aggregated.stream().map(CauseFrame::className).reduce(this::commonPrefix).orElse("");
     }
 
     private String commonPrefix(String p1, String p2) {

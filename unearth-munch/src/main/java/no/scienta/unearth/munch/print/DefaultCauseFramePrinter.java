@@ -15,14 +15,14 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.dto
+package no.scienta.unearth.munch.print;
 
-data class UnearthedException(
+import no.scienta.unearth.munch.model.CauseFrame;
 
-        val className: String,
+public class DefaultCauseFramePrinter implements CauseFramePrinter {
 
-        val message: String?,
-
-        val causeStrand: CauseStrandDto?,
-
-        val cause: UnearthedException? = null)
+    @Override
+    public StringBuilder print(StringBuilder sb, CauseFrame causeFrame) {
+        return causeFrame.defaultPrint(sb);
+    }
+}

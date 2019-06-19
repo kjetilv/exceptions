@@ -20,9 +20,12 @@ package no.scienta.unearth.server
 import no.scienta.unearth.core.*
 import no.scienta.unearth.core.handler.DefaultThrowablesHandler
 import no.scienta.unearth.dto.*
-import no.scienta.unearth.munch.model.*
 import no.scienta.unearth.munch.id.*
+import no.scienta.unearth.munch.model.*
+import no.scienta.unearth.munch.print.PackageGrouper
+import no.scienta.unearth.munch.print.StackTraceReshaper
 import java.time.ZoneId
+import java.util.*
 
 class UnearthController(
         private val storage: FaultStorage,
@@ -59,18 +62,6 @@ class UnearthController(
             printStack: Boolean = false
     ): FaultEventDto = faultEventDto(storage.getFaultEvent(id), fullStack, printStack)
 
-    private fun faultEventDto(
-            faultEvent: FaultEvent,
-            fullStack: Boolean = false,
-            printStack: Boolean = false
-    ): FaultEventDto = FaultEventDto(
-            faultEvent.id,
-            faultDto(faultEvent.fault, fullStack, printStack),
-            faultEvent.time.atZone(ZoneId.of("UTC")),
-            faultEvent.globalSequenceNo,
-            faultEvent.faultSequenceNo,
-            faultEvent.faultStrandSequenceNo)
-
     fun lookupCauseStrandDto(
             causeStrandId: CauseStrandId,
             fullStack: Boolean = false,
@@ -84,8 +75,6 @@ class UnearthController(
     ): CauseDto = causeDto(storage.getCause(causeId), fullStack, printStack)
 
     infix fun lookupThrowable(faultId: FaultId): Throwable = storage.getFault(faultId).toCameleon()
-
-    infix fun lookupThrowableRedux(faultId: FaultId): Throwable = reducer.reduce(storage.getFault(faultId)).toCameleon()
 
     infix fun feedLimit(faultId: FaultId): Long = feed.limit(faultId)
 
@@ -131,18 +120,40 @@ class UnearthController(
                 faultEventDto(it, fullStack, printStack)
             })
 
-    private fun unearthedException(
-            dto: ChainedFault,
+    private fun faultEventDto(
+            faultEvent: FaultEvent,
+            fullStack: Boolean = false,
+            printStack: Boolean = false
+    ): FaultEventDto = FaultEventDto(
+            faultEvent.id,
+            faultDto(faultEvent.fault, fullStack, printStack),
+            faultEvent.time.atZone(ZoneId.of("UTC")),
+            faultEvent.globalSequenceNo,
+            faultEvent.faultSequenceNo,
+            faultEvent.faultStrandSequenceNo)
+
+    fun rewriteThrowable(faultId: FaultId, groups: Collection<String>?): CauseChainDto {
+        val stackTraceReshaper = StackTraceReshaper.create()
+                .group(PackageGrouper(Collections.singleton(groups)))
+                .reshape({ cf -> StackTraceReshaper.shortenClassname(cf) })
+        return causeChainDto(
+                storage.getFault(faultId).toCauseChain()
+                        .rewriteStackTrace(stackTraceReshaper::prettified))
+    }
+
+    private fun causeChainDto(
+            chain: CauseChain,
             fullStack: Boolean = false,
             printStack: Boolean = false,
             thin: Boolean = false
-    ): UnearthedException = UnearthedException(
-            className = dto.cause.causeStrand.className,
-            message = dto.cause.message,
+    ): CauseChainDto = CauseChainDto(
+            className = chain.className,
+            message = chain.message,
+            printedCauseFrames = if (chain.printedCauseFrames.isEmpty()) null else chain.printedCauseFrames,
             causeStrand = if (thin) null else
-                causeStrandDto(dto.cause.causeStrand, fullStack, printStack),
-            cause = dto.chainedCause?.let {
-                unearthedException(it, fullStack)
+                causeStrandDto(chain.cause.causeStrand, fullStack, printStack),
+            cause = chain.causeChain?.let {
+                causeChainDto(it, fullStack)
             })
 
     private fun faultDto(fault: Fault, fullStack: Boolean, printStack: Boolean): FaultDto {
@@ -162,11 +173,11 @@ class UnearthController(
             causeStrand.id,
             causeStrand.className,
             if (fullStack)
-                stackTrace(causeStrand.stackTrace)
+                stackTrace(causeStrand.causeFrames)
             else
                 emptyList(),
             if (printStack && !fullStack)
-                simpleStackTrace(causeStrand.stackTrace)
+                simpleStackTrace(causeStrand.causeFrames)
             else
                 emptyList())
 
@@ -179,18 +190,18 @@ class UnearthController(
             message = cause.message,
             causeStrand = causeStrandDto(cause.causeStrand, fullStack, printStack))
 
-    private fun simpleStackTrace(stackTrace: List<StackTraceElement>): List<String> = stackTrace.map { it.toString() }
+    private fun simpleStackTrace(stackTrace: List<CauseFrame>): List<String> = stackTrace.map { it.toString() }
 
     private fun stackTrace(
-            stackTrace: List<StackTraceElement>
+            stackTrace: List<CauseFrame>
     ): List<StackTraceElementDto>? = stackTrace.map { element ->
         StackTraceElementDto(
-                classLoaderName = element.classLoaderName,
-                moduleName = element.moduleName,
-                moduleVersion = element.moduleVersion,
-                declaringClass = element.className,
-                methodName = element.methodName,
-                fileName = element.fileName,
-                lineNumber = element.lineNumber)
+                classLoaderName = element.classLoader(),
+                moduleName = element.module(),
+                moduleVersion = element.moduleVer(),
+                declaringClass = element.className(),
+                methodName = element.method(),
+                fileName = element.file(),
+                lineNumber = element.line())
     }.toList()
 }

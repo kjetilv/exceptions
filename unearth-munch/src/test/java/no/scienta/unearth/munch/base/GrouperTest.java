@@ -20,12 +20,20 @@ package no.scienta.unearth.munch.base;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.function.Function;
 
 public class GrouperTest {
 
     @Test
     public void groupTest() {
-        GroupedListItem<String> group = Grouper.group(
+        Function<String, Optional<Collection<String>>> stringOptionalFunction =
+            s -> s.startsWith("zot.x") ? Optional.of(Collections.singleton("zot.x"))
+                : s.startsWith("zot") ? Optional.of(Collections.singleton("zot"))
+                : Optional.empty();
+        GroupedList<Collection<String>, String> group = GroupedList.group(
             Arrays.asList(
                 "foo.bar",
                 "foo.zot",
@@ -41,10 +49,11 @@ public class GrouperTest {
                 "bar.zip",
                 "bar.zip"
             ),
-            s -> s.startsWith("zot.x") ? "zot.x"
-                : s.startsWith("zot") ? "zot"
-                : null
+            stringOptionalFunction
         );
-        group.printList(new SimpleStringListItemPrinter()).forEach(System.out::println);
+        group.forEach((strings, strings2) ->{
+            System.out.println(strings);
+            strings2.stream().map(s -> s + "  ").forEach(System.out::println);
+        });
     }
 }

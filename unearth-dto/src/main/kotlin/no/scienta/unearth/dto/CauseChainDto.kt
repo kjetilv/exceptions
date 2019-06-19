@@ -15,11 +15,16 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.munch.base;
+package no.scienta.unearth.dto
 
-public interface ListItemPrinter<T> {
+data class CauseChainDto(
 
-    String print(int levels, T item);
+        val className: String,
 
-    String printGroup(int level, String group, int groupSize);
-}
+        val message: String?,
+
+        val printedCauseFrames: List<String>? = null,
+
+        val causeStrand: CauseStrandDto? = null,
+
+        val cause: CauseChainDto? = null)
