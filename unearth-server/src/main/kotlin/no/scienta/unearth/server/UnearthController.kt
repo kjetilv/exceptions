@@ -22,8 +22,8 @@ import no.scienta.unearth.core.handler.DefaultThrowablesHandler
 import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.model.*
-import no.scienta.unearth.munch.print.PackageGrouper
 import no.scienta.unearth.munch.print.CauseChainRenderer
+import no.scienta.unearth.munch.print.PackageGrouper
 import java.time.ZoneId
 import java.util.*
 
@@ -137,11 +137,11 @@ class UnearthController(
                 .reshapeAll(
                         CauseFrame.UNSET_CLASSLOADER,
                         CauseFrame.UNSET_MODULE_INFO)
-                .reshape(
-                        CauseChainRenderer.SHORTEN_CLASSNAME)
-        return causeChainDto(
-                storage.getFault(faultId).toCauseChain()
-                        .withPrintout(causeChainRenderer))
+                        .reshape(
+                                CauseChainRenderer.SHORTEN_CLASSNAME)
+                        return causeChainDto(
+                                storage.getFault(faultId).toCauseChain()
+                                        .withPrintout(causeChainRenderer))
     }
 
     private fun causeChainDto(

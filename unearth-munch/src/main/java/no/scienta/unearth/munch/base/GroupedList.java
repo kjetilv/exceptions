@@ -38,25 +38,23 @@ public class GroupedList<G, T> {
         return groupedList;
     }
 
-    void add(T item) {
-        add(null, item);
-    }
-
-    void add(G groupRef, T item) {
-        if (groups.isEmpty() && groupRef == null) {
-            addGroup(base());
-        } else if (!currentGroup().hasRef(groupRef)) {
-            addGroup(group(groupRef));
-        }
-        currentGroup().add(item);
-    }
-
     public void forEach(BiConsumer<G, List<T>> groupAction) {
         groups().forEach(group ->
             groupAction.accept(group.ref(), group.items()));
     }
 
-    public List<Group<G, T>> groups() {
+    private void add(T item) {
+        add(null, item);
+    }
+
+    private void add(G groupRef, T item) {
+        if (groups.isEmpty() || !currentGroup().hasRef(groupRef)) {
+            addGroup(group(groupRef));
+        }
+        currentGroup().add(item);
+    }
+
+    private List<Group<G, T>> groups() {
         return List.copyOf(groups);
     }
 
@@ -76,7 +74,7 @@ public class GroupedList<G, T> {
         return group(null);
     }
 
-    public static final class Group<G, T> {
+    private static final class Group<G, T> {
 
         private final G ref;
 

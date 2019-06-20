@@ -19,9 +19,7 @@ package no.scienta.unearth.munch.print;
 
 import no.scienta.unearth.munch.model.CauseFrame;
 
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -30,7 +28,9 @@ public class PackageGrouper implements Function<CauseFrame, Optional<Collection<
     private final Collection<Collection<String>> groups;
 
     public PackageGrouper(Collection<Collection<String>> groups) {
-        this.groups = groups;
+        this.groups = groups == null || groups.isEmpty() || groups.stream().allMatch(g -> g == null || g.isEmpty())
+            ? Collections.emptyList()
+            : List.copyOf(groups);
     }
 
     @Override
