@@ -386,39 +386,42 @@ class UnearthServer(
             response: Response? = null,
             status: Status? = INTERNAL_SERVER_ERROR
     ): Response {
-        val handle = controller.submitRaw(error)
-        logger.error("Failed: ${handle.faultEventId}", error)
+        val handle = try {
+            controller.submitRaw(error)
+        } catch (e: Exception) {
+            logger.error("Failed to submit self-diagnosed error", e)
+            null;
+        }
+        logger.error("Failed: ${handle?.faultEventId ?: "unknown"}", error)
         return internalError.set(
-                withContentType((response ?: (status?.let { Response(it) } ?: Response(INTERNAL_SERVER_ERROR) ))
-                        .header("X-Fault-SeqNo", handle.faultSequence.toString())
-                        .header("X-FaultStrand-SeqNo", handle.faultStrandSequence.toString())
-                        .header("X-SeqNo", handle.globalSequence.toString())
-                        .header("X-Fault-Id", handle.faultId.toHashString())
-                        .header("X-Fault-Strand-Id", handle.faultStrandId.toHashString())
-                        .header("X-Fault-Event-Id", handle.faultEventId.toHashString())),
+                withContentType((response ?: (status?.let { Response(it) } ?: Response(INTERNAL_SERVER_ERROR)))
+                        .header("X-Fault-SeqNo", handle?.faultSequence?.toString() ?: "-1")
+                        .header("X-FaultStrand-SeqNo", handle?.faultStrandSequence?.toString() ?: "-1")
+                        .header("X-SeqNo", handle?.globalSequence?.toString() ?: "-1")
+                        .header("X-Fault-Id", handle?.faultId?.toHashString() ?: "-")
+                        .header("X-Fault-Strand-Id", handle?.faultStrandId?.toHashString() ?: "-")
+                        .header("X-Fault-Event-Id", handle?.faultEventId?.toHashString() ?: "-")),
                 unearthlyError(error, handle))
     }
 
     private fun simpleFailedResponse(e: Throwable): Response {
-        val fault = Fault.create(e)
-        logger.error("Failed: Fault id ${fault.id.hash}, fault strand ${fault.faultStrand.id.hash}", e)
+        val fault = try {
+            Fault.create(e)
+        } catch (e: Exception) {
+            logger.error("Failed to analyze failure", e);
+            null
+        }
+        logger.error("Failed: Fault id ${fault?.id?.hash ?: "unknown"}, " +
+                "fault strand ${fault?.faultStrand?.id?.hash ?: "unknown"}", e)
         return internalError.set(
                 Response(INTERNAL_SERVER_ERROR)
-                        .header("X-Fault-Id", fault.id.toString())
-                        .header("X-FaultStrand-Id", fault.faultStrand.id.toString()),
+                        .header("X-Fault-Id", fault?.id?.toString() ?: "Unknown")
+                        .header("X-FaultStrand-Id", fault?.faultStrand?.id?.toString() ?: "Unknown"),
                 simpleUnearthlyError(e))
     }
 
-    private fun unearthlyError(e: Throwable, handle: HandlingPolicy): UnearthlyError {
-        return try {
-            UnearthlyError(
-                    message = e.toString(),
-                    submission = submission(handle))
-        } catch (e2: Throwable) {
-            logger.error("Failed to provide error for $e", e2)
-            UnearthlyError(message = "Error processing failed")
-        }
-    }
+    private fun unearthlyError(e: Throwable, handle: HandlingPolicy?) =
+            UnearthlyError(message = e.toString(), submission = handle?.let(::submission))
 
     private fun simpleUnearthlyError(e: Throwable) =
             try {
