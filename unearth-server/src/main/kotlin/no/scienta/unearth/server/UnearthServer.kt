@@ -390,7 +390,7 @@ class UnearthServer(
             controller.submitRaw(error)
         } catch (e: Exception) {
             logger.error("Failed to submit self-diagnosed error", e)
-            null;
+            null
         }
         logger.error("Failed: ${handle?.faultEventId ?: "unknown"}", error)
         return internalError.set(
@@ -408,7 +408,7 @@ class UnearthServer(
         val fault = try {
             Fault.create(e)
         } catch (e: Exception) {
-            logger.error("Failed to analyze failure", e);
+            logger.error("Failed to analyze failure", e)
             null
         }
         logger.error("Failed: Fault id ${fault?.id?.hash ?: "unknown"}, " +
