@@ -185,7 +185,7 @@ public class InMemoryThrowablesStorage
     private <I extends Id, T> T get(String type, I id, Map<I, T> map) {
         return Optional.ofNullable(map.get(id))
             .orElseThrow(() ->
-                new IllegalArgumentException("No such " + type + ": " + id));
+                new IllegalArgumentException("No such " + type + ": " + id.getHash().toString()));
     }
 
     public Stream<FaultEvent> faultEvents(FaultStrandId id) {

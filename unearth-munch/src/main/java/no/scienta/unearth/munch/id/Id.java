@@ -49,6 +49,10 @@ public abstract class Id {
         return hash;
     }
 
+    public String toHashString() {
+        return hash.toString();
+    }
+
     @Override
     public boolean equals(Object o) {
         return this == o || o instanceof Id && Objects.equals(hash, ((Id) o).hash);

@@ -132,16 +132,16 @@ class UnearthController(
             faultEvent.faultStrandSequenceNo)
 
     fun rewriteThrowable(faultId: FaultId, groups: Collection<String>?): CauseChainDto {
-        val causeChainRenderer = CauseChainRenderer()
-                .group(PackageGrouper(Collections.singleton(groups)))
-                .reshapeAll(
-                        CauseFrame.UNSET_CLASSLOADER,
-                        CauseFrame.UNSET_MODULE_INFO)
-                        .reshape(
-                                CauseChainRenderer.SHORTEN_CLASSNAME)
-                        return causeChainDto(
-                                storage.getFault(faultId).toCauseChain()
-                                        .withPrintout(causeChainRenderer))
+        return causeChainDto(storage.getFault(faultId).toCauseChain()
+                .withPrintout(CauseChainRenderer()
+                        .group(PackageGrouper(Collections.singleton(groups)))
+                        .squasher { group, causeFrames ->
+                            Optional.of("  * (${causeFrames.size})")
+                        }
+                        .reshapeAll(
+                                CauseFrame.UNSET_CLASSLOADER,
+                                CauseFrame.UNSET_MODULE_INFO).reshape(
+                                CauseChainRenderer.SHORTEN_CLASSNAME)))
     }
 
     private fun causeChainDto(

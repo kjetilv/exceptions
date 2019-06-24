@@ -23,6 +23,6 @@ data class CauseDto(
 
         val id: CauseId,
 
-        val message: String,
+        val message: String?,
 
         val causeStrand: CauseStrandDto)

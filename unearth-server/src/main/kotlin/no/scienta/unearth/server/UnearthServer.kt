@@ -21,7 +21,7 @@ import no.scienta.unearth.core.HandlingPolicy
 import no.scienta.unearth.core.parser.ThrowableParser
 import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.id.*
-import no.scienta.unearth.munch.model.FaultStrand
+import no.scienta.unearth.munch.model.Fault
 import no.scienta.unearth.munch.util.Throwables
 import no.scienta.unearth.server.JSON.auto
 import no.scienta.unearth.statik.Statik
@@ -59,7 +59,6 @@ class UnearthServer(
         private val configuration: UnearthConfig = UnearthConfig(),
         val controller: UnearthController
 ) {
-    private val logger = LoggerFactory.getLogger(UnearthServer::class.java)
 
     fun start(after: (Http4kServer) -> Unit = {}): UnearthServer = apply {
         server.start()
@@ -299,45 +298,46 @@ class UnearthServer(
         outLens.set(withContentType(Response(OK), type), result())
     }
 
-    private val server = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
-            .then(Filter { nextHandler ->
-                { request ->
-                    handleErrors(nextHandler, request)
-                }
-            }).then(routes(
-                    rerouteToSwagger("/doc", configuration.prefix),
-                    rerouteToSwagger("/", configuration.prefix),
-                    swaggerUiRoute(configuration.prefix),
-                    app())
-            ).asServer(
-                    NettyConfig(configuration.host, configuration.port))
+    private val server = cors()
+            .then(errorHandler())
+            .then(appRoutes())
+            .asServer(NettyConfig(configuration.host, configuration.port))
 
-    private fun app(): RoutingHttpHandler {
-        return configuration.prefix bind contract {
-            renderer = OpenApi3(
-                    apiInfo = ApiInfo("Unearth", "v1", "Taking exceptions seriously"),
-                    json = JSON)
-            descriptionPath = "/swagger.json"
-            routes +=
-                    submitExceptionRoute()
-            routes += listOf(
-                    faultRoute(),
-                    faultStrandRoute(),
-                    faultEventRoute(),
-                    causeRoute(),
-                    causeStrandRoute())
-            routes += listOf(
-                    globalLimit(),
-                    feedLimitsFaultRoute(),
-                    faultStrandLimit(),
-                    globalFeedRoute(),
-                    feedLookupFaultRoute(),
-                    feedLookupFaultStrandRoute())
-            routes += listOf(
-                    retrieveExceptionRoute(),
-                    retrieveExceptionReduxRoute())
-        }
-    }
+    private fun cors() = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
+
+    private fun errorHandler() = Filter { handler -> { req -> handleErrors(handler, req) } }
+
+    private fun appRoutes(): RoutingHttpHandler = routes(
+            rerouteToSwagger("/doc", configuration.prefix),
+            rerouteToSwagger("/", configuration.prefix),
+            swaggerUiRoute(configuration.prefix),
+            contracts())
+
+    private fun contracts(): RoutingHttpHandler =
+            configuration.prefix bind contract {
+                renderer = OpenApi3(
+                        apiInfo = ApiInfo("Unearth", "v1", "Taking exceptions seriously"),
+                        json = JSON)
+                descriptionPath = "/swagger.json"
+                routes +=
+                        submitExceptionRoute()
+                routes += listOf(
+                        faultRoute(),
+                        faultStrandRoute(),
+                        faultEventRoute(),
+                        causeRoute(),
+                        causeStrandRoute())
+                routes += listOf(
+                        globalLimit(),
+                        feedLimitsFaultRoute(),
+                        faultStrandLimit(),
+                        globalFeedRoute(),
+                        feedLookupFaultRoute(),
+                        feedLookupFaultStrandRoute())
+                routes += listOf(
+                        retrieveExceptionRoute(),
+                        retrieveExceptionReduxRoute())
+            }
 
     private fun submission(handling: HandlingPolicy) = Submission(
             handling.faultStrandId,
@@ -348,46 +348,91 @@ class UnearthServer(
             handling.faultSequence,
             handling.isLoggable)
 
-    private fun handleErrors(next: HttpHandler, req: Request): Response =
+    private fun handleErrors(next: HttpHandler, request: Request): Response =
             try {
-                next(req)
+                handledResponse(next(request), request)
             } catch (e: Throwable) {
-                if (configuration.selfDiagnose) {
-                    try {
-                        handledFailedResponse(e)
-                    } catch (sde: Exception) {
-                        logger.warn("Failed to self-diagnose", sde)
-                        simpleFailedResponse(e)
-                    }
-                } else {
-                    simpleFailedResponse(e)
-                }
+                handledException(e, request = request)
             }
 
-    private fun handledFailedResponse(e: Throwable): Response {
-        val handle = controller.submitRaw(e)
-        logger.error("Failed: ${handle.faultEventId}", e)
-        return internalError.set(
-                withContentType(Response(INTERNAL_SERVER_ERROR)),
-                UnearthlyError(
-                        message = e.toString(),
-                        submission = submission(handle)))
+    private fun handledResponse(response: Response, request: Request): Response =
+            when {
+                response.status.successful ->
+                    response // Yay
+                response.status.clientError ->
+                    handledException(
+                            IllegalArgumentException(
+                                    "Bad request ${request.method} ${request.uri}: ${response.toMessage().trim()}"),
+                            request = request,
+                            response = response)
+                else ->
+                    handledException(
+                            RuntimeException("Internal server error: ${request.uri}"), request = request, response = response)
+            }
 
+    private fun handledException(error: Throwable, request: Request? = null, response: Response? = null): Response =
+            if (configuration.selfDiagnose || request?.let { selfDiagnose[it] } == true)
+                try {
+                    storedFailedResponse(error, response = response, status = response?.status)
+                } catch (e: Exception) {
+                    logger.warn("Sorry, failed to self-diagnose fault: $request -> $response", e)
+                    simpleFailedResponse(error)
+                }
+            else
+                simpleFailedResponse(error)
+
+    private fun storedFailedResponse(
+            error: Throwable,
+            response: Response? = null,
+            status: Status? = INTERNAL_SERVER_ERROR
+    ): Response {
+        val handle = controller.submitRaw(error)
+        logger.error("Failed: ${handle.faultEventId}", error)
+        return internalError.set(
+                withContentType((response ?: (status?.let { Response(it) } ?: Response(INTERNAL_SERVER_ERROR) ))
+                        .header("X-Fault-SeqNo", handle.faultSequence.toString())
+                        .header("X-FaultStrand-SeqNo", handle.faultStrandSequence.toString())
+                        .header("X-SeqNo", handle.globalSequence.toString())
+                        .header("X-Fault-Id", handle.faultId.toHashString())
+                        .header("X-Fault-Strand-Id", handle.faultStrandId.toHashString())
+                        .header("X-Fault-Event-Id", handle.faultEventId.toHashString())),
+                unearthlyError(error, handle))
     }
 
     private fun simpleFailedResponse(e: Throwable): Response {
-        val faultStrandId = FaultStrand.create(e).id
-        logger.error("Failed: $faultStrandId", e)
+        val fault = Fault.create(e)
+        logger.error("Failed: Fault id ${fault.id.hash}, fault strand ${fault.faultStrand.id.hash}", e)
         return internalError.set(
-                Response(INTERNAL_SERVER_ERROR),
-                UnearthlyError(Throwables.join(e, " <= ")))
+                Response(INTERNAL_SERVER_ERROR)
+                        .header("X-Fault-Id", fault.id.toString())
+                        .header("X-FaultStrand-Id", fault.faultStrand.id.toString()),
+                simpleUnearthlyError(e))
     }
+
+    private fun unearthlyError(e: Throwable, handle: HandlingPolicy): UnearthlyError {
+        return try {
+            UnearthlyError(
+                    message = e.toString(),
+                    submission = submission(handle))
+        } catch (e2: Throwable) {
+            logger.error("Failed to provide error for $e", e2)
+            UnearthlyError(message = "Error processing failed")
+        }
+    }
+
+    private fun simpleUnearthlyError(e: Throwable) =
+            try {
+                UnearthlyError(Throwables.join(e, " <= "))
+            } catch (e2: Throwable) {
+                logger.error("Failed to provide error for $e", e2)
+                UnearthlyError(message = "Error processing failed")
+            }
 
     private fun swaggerUiRoute(prefix: String): RoutingHttpHandler = "/doc/{path}" bind GET to {
         try {
             statik.read(it.path("path")).map { file ->
                 Response(OK).body(file)
-            }.orElseGet { ->
+            }.orElseGet {
                 swaggerRedirect(prefix)
             }
         } catch (e: Exception) {
@@ -402,15 +447,24 @@ class UnearthServer(
     private fun swaggerRedirect(prefix: String) =
             Response(Status.FOUND).header("Location", "/doc/index.html?url=$prefix/swagger.json")
 
-    private fun withContentType(res: Response, type: ContentType = APPLICATION_JSON): Response =
-            res.header("Content-Type", type.value)
+    private fun withContentType(response: Response, type: ContentType = APPLICATION_JSON): Response =
+            response.header("Content-Type")
+                    ?.let { response }
+                    ?: response.header("Content-Type", type.value)
 
     override fun toString(): String = "${javaClass.simpleName}[$server]"
 
     companion object {
 
+        private val logger = LoggerFactory.getLogger(UnearthServer::class.java)
+
+        private const val swaggerUiPrefix = "META-INF/resources/webjars/swagger-ui"
+
         private val fullStack =
                 Query.boolean().optional("fullStack", "Provide a fully destructured stack")
+
+        private val selfDiagnose =
+                Query.boolean().optional("selfDiagnose", "Self-diagnose: Store any errors produced by Unearth itself")
 
         private val printStack =
                 Query.boolean().optional("printStack", "Provide a list of printed stacktrace elements")
@@ -424,18 +478,11 @@ class UnearthServer(
         private val groupsQuery =
                 Query.string().multi.optional("group", "Group to collapse")
 
-        private fun <T : Id> uuid(read: (UUID) -> T) = PathLens(
-                meta = Meta(required = true, location = "path", paramMeta = ParamMeta.StringParam, name = "uuid"),
-                get = { uuid -> read(UUID.fromString(uuid)) }
-        )
-
         private val swaggerUiPattern =
                 Pattern.compile("^.*swagger-ui-([\\d.]+).jar!.*$")
 
         private val swaggerUiJarPattern =
                 Pattern.compile("^.*swagger-ui/([\\d.]+)/.*$")
-
-        private const val swaggerUiPrefix = "META-INF/resources/webjars/swagger-ui"
 
         private val exception: BiDiBodyLens<Throwable> = BiDiBodyLens(
                 metas = emptyList(),
@@ -446,6 +493,10 @@ class UnearthServer(
                 setLens = { thr, msg ->
                     msg.body(Throwables.string(thr))
                 })
+
+        private fun <T : Id> uuid(read: (UUID) -> T) = PathLens(
+                meta = Meta(required = true, location = "path", paramMeta = ParamMeta.StringParam, name = "uuid"),
+                get = { uuid -> read(UUID.fromString(uuid)) })
 
         private val limit: BiDiBodyLens<Long> = BiDiBodyLens(
                 metas = emptyList(),
@@ -478,7 +529,8 @@ class UnearthServer(
                     return if (matcher.matches())
                         swaggerUiPrefix + "/" + matcher.group(1) + "/"
                     else
-                        jarSearch(url) ?: throw java.lang.IllegalStateException("No swagger-ui version found: $url")
+                        jarSearch(url)
+                                ?: throw java.lang.IllegalStateException("No swagger-ui version found: $url")
                 }
             } ?: throw IllegalStateException("No swagger-ui webjar found")
         }

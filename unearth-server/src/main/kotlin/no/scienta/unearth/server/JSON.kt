@@ -65,7 +65,7 @@ private fun forIds(prefix: String): Module =
 
             addSerializer(CauseId::class.java, serializer(prefix, "cause", false))
             addDeserializer(CauseId::class.java, deserializer(::CauseId))
-}
+        }
 
 private fun <T : Id> deserializer(id: (UUID) -> T): JsonDeserializer<T>? {
     return object : JsonDeserializer<T>() {
@@ -82,18 +82,25 @@ private fun <T : Id> deserializer(id: (UUID) -> T): JsonDeserializer<T>? {
 private fun <T : Id> serializer(prefix: String, path: String, feed: Boolean = false): JsonSerializer<T>? {
     return object : JsonSerializer<T>() {
         override fun serialize(value: T?, gen: JsonGenerator?, serializers: SerializerProvider?) {
-            gen?.apply {
+            gen?.let { generator ->
                 value?.let { id ->
-                    writeStartObject()
-                    writeStringField("id", id.hash.toString())
-                    writeStringField("type", value.javaClass.simpleName)
-                    writeStringField("link", "/$prefix/$path/${id.hash}")
-                    if (feed) {
-                        writeStringField("feed", "/$prefix/feed/$path/${id.hash}")
-                    }
-                    writeEndObject()
+                    obj(generator, refs(id, value))
                 }
             }
         }
+
+        private fun refs(id: T, value: T): Map<String, String> = mapOf(
+                "id" to id.hash.toString(),
+                "type" to value.javaClass.simpleName,
+                "link" to "/$prefix/$path/${id.hash}").let{base ->
+            if (feed) base.plus("feed" to "/$prefix/feed/$path/${id.hash}")
+            else base
+        }
     }
+}
+
+private fun obj(jsonGenerator: JsonGenerator, map: Map<String, String>) {
+    jsonGenerator.writeStartObject()
+    map.forEach { t, u -> jsonGenerator.writeStringField(t, u) }
+    jsonGenerator.writeEndObject()
 }
