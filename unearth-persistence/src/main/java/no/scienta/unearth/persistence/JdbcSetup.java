@@ -15,39 +15,21 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.core.parser;
+package no.scienta.unearth.persistence;
 
-interface StackTraceElementPicker {
+import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.configuration.FluentConfiguration;
 
-    default String module(String... parts) {
-        return null;
+public class JdbcSetup implements Runnable {
+
+    @Override
+    public void run() {
+        new Flyway(conf()
+            .locations("classpath:db")
+        ).migrate();
     }
 
-    default String moduleVersion(String... parts) {
-        return null;
-    }
-
-    default String className(String... parts) {
-        return null;
-    }
-
-    default String method(String... parts) {
-        return null;
-    }
-
-    default String file(String... parts) {
-        return null;
-    }
-
-    default String otherSource(String... parts) {
-        return null;
-    }
-
-    default Integer lineNo(String... parts) {
-        return null;
-    }
-
-    default Integer more(String... parts) {
-        return null;
+    private FluentConfiguration conf() {
+        return Flyway.configure(Thread.currentThread().getContextClassLoader());
     }
 }

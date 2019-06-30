@@ -21,7 +21,7 @@ import com.natpryce.konfig.*
 import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.scienta.unearth.core.storage.InMemoryThrowablesStorage
-import no.scienta.unearth.micrometer.MeteringThrowablesSensor
+import no.scienta.unearth.metrics.MeteringThrowablesSensor
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -32,6 +32,8 @@ object Unearth : () -> Unit {
     private val config = systemProperties() overriding
             EnvironmentVariables() overriding
             ConfigurationProperties.fromResource("defaults.properties")
+
+    fun conf(name: String): String = config[Key(name, stringType)]
 
     private val serverApi = Key("server.api", stringType)
 

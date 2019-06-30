@@ -15,10 +15,10 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.server
+dependencies {
+    compile(project(":unearth-munch"))
+    compile(project(":unearth-core"))
 
-fun main() {
-
-    @Suppress("UNNECESSARY_NOT_NULL_ASSERTION") // As if!!
-    Unearth()!!
+    compile("org.flywaydb:flyway-core:6.0.0-beta2")
 }
+

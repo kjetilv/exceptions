@@ -99,7 +99,7 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
 
     @Override
     public void hashTo(Consumer<byte[]> h) {
-        hashHashables(h, faultStrand);
-        hashHashables(h, causes);
+        hash(h, faultStrand);
+        hashAll(h, causes);
     }
 }

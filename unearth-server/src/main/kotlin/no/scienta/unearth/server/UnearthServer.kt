@@ -15,10 +15,12 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+@file:Suppress("UNNECESSARY_SAFE_CALL", "USELESS_ELVIS")
+
 package no.scienta.unearth.server
 
 import no.scienta.unearth.core.HandlingPolicy
-import no.scienta.unearth.core.parser.ThrowableParser
+import no.scienta.unearth.munch.parser.ThrowableParser
 import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.model.Fault
@@ -326,17 +328,20 @@ class UnearthServer(
                         faultStrandRoute(),
                         faultEventRoute(),
                         causeRoute(),
-                        causeStrandRoute())
+                        causeStrandRoute()
+                )
                 routes += listOf(
                         globalLimit(),
                         feedLimitsFaultRoute(),
                         faultStrandLimit(),
                         globalFeedRoute(),
                         feedLookupFaultRoute(),
-                        feedLookupFaultStrandRoute())
+                        feedLookupFaultStrandRoute()
+                )
                 routes += listOf(
                         retrieveExceptionRoute(),
-                        retrieveExceptionReduxRoute())
+                        retrieveExceptionReduxRoute()
+                )
             }
 
     private fun submission(handling: HandlingPolicy) = Submission(
@@ -373,43 +378,43 @@ class UnearthServer(
     private fun handledException(error: Throwable, request: Request? = null, response: Response? = null): Response =
             if (configuration.selfDiagnose || request?.let { selfDiagnose[it] } == true)
                 try {
-                    storedFailedResponse(error, response = response, status = response?.status)
+                    selfDiagnosedErrorResponse(error, response = response, status = response?.status)
                 } catch (e: Exception) {
                     logger.warn("Sorry, failed to self-diagnose fault: $request -> $response", e)
-                    simpleFailedResponse(error)
+                    simpleErrorResponse(error)
                 }
-            else
-                simpleFailedResponse(error)
+            else simpleErrorResponse(error)
 
-    private fun storedFailedResponse(
+    private fun selfDiagnosedErrorResponse(
             error: Throwable,
             response: Response? = null,
             status: Status? = INTERNAL_SERVER_ERROR
     ): Response {
-        val handle = try {
+        val policy = try {
             controller.submitRaw(error)
         } catch (e: Exception) {
-            logger.error("Failed to submit self-diagnosed error", e)
-            null
+            return bareBonesErrorResponse("Failed to submit self-diagnosed error", e)
         }
-        logger.error("Failed: ${handle?.faultEventId ?: "unknown"}", error)
+        logger.error("Failed: ${policy?.faultEventId ?: "unknown"}", error)
         return internalError.set(
-                withContentType((response ?: (status?.let { Response(it) } ?: Response(INTERNAL_SERVER_ERROR)))
-                        .header("X-Fault-SeqNo", handle?.faultSequence?.toString() ?: "-1")
-                        .header("X-FaultStrand-SeqNo", handle?.faultStrandSequence?.toString() ?: "-1")
-                        .header("X-SeqNo", handle?.globalSequence?.toString() ?: "-1")
-                        .header("X-Fault-Id", handle?.faultId?.toHashString() ?: "-")
-                        .header("X-Fault-Strand-Id", handle?.faultStrandId?.toHashString() ?: "-")
-                        .header("X-Fault-Event-Id", handle?.faultEventId?.toHashString() ?: "-")),
-                unearthlyError(error, handle))
+                withContentType((response ?: Response(status ?: INTERNAL_SERVER_ERROR))
+                        .header("X-Fault-SeqNo", policy?.faultSequence?.toString() ?: "-1")
+                        .header("X-FaultStrand-SeqNo", policy?.faultStrandSequence?.toString() ?: "-1")
+                        .header("X-SeqNo", policy?.globalSequence?.toString() ?: "-1")
+                        .header("X-Fault-Id", policy?.faultId?.toHashString() ?: "-")
+                        .header("X-Fault-Strand-Id", policy?.faultStrandId?.toHashString() ?: "-")
+                        .header("X-Fault-Event-Id", policy?.faultEventId?.toHashString() ?: "-")
+                ),
+                UnearthlyError(
+                        message = error.toString(),
+                        submission = policy?.let(::submission)))
     }
 
-    private fun simpleFailedResponse(e: Throwable): Response {
+    private fun simpleErrorResponse(e: Throwable): Response {
         val fault = try {
             Fault.create(e)
         } catch (e: Exception) {
-            logger.error("Failed to analyze failure", e)
-            null
+            return bareBonesErrorResponse("Failed to analyze failure", e)
         }
         logger.error("Failed: Fault id ${fault?.id?.hash ?: "unknown"}, " +
                 "fault strand ${fault?.faultStrand?.id?.hash ?: "unknown"}", e)
@@ -420,8 +425,12 @@ class UnearthServer(
                 simpleUnearthlyError(e))
     }
 
-    private fun unearthlyError(e: Throwable, handle: HandlingPolicy?) =
-            UnearthlyError(message = e.toString(), submission = handle?.let(::submission))
+    private fun bareBonesErrorResponse(msg: String, e: Exception): Response {
+        val reference = UUID.randomUUID().toString()
+        logger.error(msg, e)
+        return Response(INTERNAL_SERVER_ERROR)
+                .header("X-${INTERNAL_SERVER_ERROR.code}-Ref", reference)
+    }
 
     private fun simpleUnearthlyError(e: Throwable) =
             try {

@@ -56,12 +56,9 @@ import no.scienta.unearth.munch.id.Identifiable;
 import no.scienta.unearth.munch.util.Memoizer;
 
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public abstract class AbstractHashableIdentifiable<I extends Id>
-    extends AbstractHashable
-    implements Identifiable<I> {
+public abstract class AbstractHashableIdentifiable<I extends Id> extends AbstractHashable implements Identifiable<I> {
 
     /**
      * A supplier which computes {@link Identifiable this identifiable's} {@link Id id} once-only.

@@ -34,20 +34,15 @@
 
 package no.scienta.unearth.munch.base;
 
-import no.scienta.unearth.munch.model.CauseFrame;
 import no.scienta.unearth.munch.util.Memoizer;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-@SuppressWarnings("WeakerAccess")
 public abstract class AbstractHashable implements Hashable {
 
     /**
@@ -80,30 +75,34 @@ public abstract class AbstractHashable implements Hashable {
         }
     }
 
-    protected final void hashString(Consumer<byte[]> hash, String string) {
-        hashStrings(hash, string);
+    protected final void hash(Consumer<byte[]> hash, String string) {
+        this.hashStrings(hash, Collections.singleton(string));
     }
 
-    protected final void hashStrings(Consumer<byte[]> hash, String... strings) {
+    protected final void hash(Consumer<byte[]> hash, String... strings) {
         hashStrings(hash, Arrays.asList(strings));
     }
 
-    protected final void hashStrings(Consumer<byte[]> hash, Collection<String> strings) {
+    private void hashStrings(Consumer<byte[]> hash, Collection<String> strings) {
         strings.stream()
             .filter(Objects::nonNull)
             .forEach(s ->
                 hash.accept(s.getBytes(StandardCharsets.UTF_8)));
     }
 
-    protected final void hashHashables(Consumer<byte[]> h, Hashable... hashables) {
-        hashHashables(h, Arrays.asList(hashables));
+    protected final void hash(Consumer<byte[]> h, Hashable... hashables) {
+        hashAll(h, Arrays.asList(hashables));
     }
 
-    protected final void hashHashables(Consumer<byte[]> h, Collection<? extends Hashable> hasheds) {
-        hasheds.forEach(hasherTo(h));
+    protected final void hashAll(Consumer<byte[]> h, Collection<? extends Hashable> hasheds) {
+        for (Hashable hashable : hasheds) {
+            if (hashable != null) {
+                hashable.hashTo(h);
+            }
+        }
     }
 
-    protected final void hashLongs(Consumer<byte[]> hash, long... values) {
+    protected final void hash(Consumer<byte[]> hash, long... values) {
         for (long value : values) {
             ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
             buffer.putLong(value);
@@ -117,12 +116,6 @@ public abstract class AbstractHashable implements Hashable {
 
     protected String toStringBody() {
         return null;
-    }
-
-    protected Consumer<Hashable> hasherTo(Consumer<byte[]> h) {
-        return hashable -> {
-            if (hashable != null) hashable.hashTo(h);
-        };
     }
 
     private String toStringContents() {

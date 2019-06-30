@@ -80,7 +80,7 @@ public class Cause extends AbstractHashableIdentifiable<CauseId> {
 
     @Override
     public void hashTo(Consumer<byte[]> h) {
-        hashHashables(h, causeStrand);
-        hashString(h, message);
+        hash(h, causeStrand);
+        hash(h, message);
     }
 }

@@ -12,7 +12,7 @@ dependencies {
 
     compile(project(":unearth-core"))
     compile(project(":unearth-dto"))
-    compile(project(":unearth-micrometer"))
+    compile(project(":unearth-metrics"))
     compile(project(":unearth-static"))
 
     compile("org.http4k:http4k-core:3.154.1")

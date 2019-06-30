@@ -181,7 +181,7 @@ public class CauseFrame extends AbstractHashable {
 
     @Override
     public void hashTo(Consumer<byte[]> h) {
-        hashStrings(h, classLoader, module, moduleVer, className, file);
-        hashLongs(h, line);
+        hash(h, classLoader, module, moduleVer, className, file);
+        hash(h, line);
     }
 }

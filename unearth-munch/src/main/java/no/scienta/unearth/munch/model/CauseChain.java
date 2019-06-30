@@ -91,6 +91,6 @@ public class CauseChain extends AbstractHashable {
 
     @Override
     public void hashTo(Consumer<byte[]> h) {
-        hashHashables(h, cause, chainedCause);
+        hash(h, cause, chainedCause);
     }
 }

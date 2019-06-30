@@ -47,7 +47,7 @@ object JSON : ConfigurableJackson(KotlinModule()
         .configure(FAIL_ON_IGNORED_PROPERTIES, true)
         .registerModule(Jdk8Module())
         .registerModule(JavaTimeModule())
-        .registerModule(forIds("api/v1")))
+        .registerModule(forIds(Unearth.conf("server.api"))))
 
 private fun forIds(prefix: String): Module =
         SimpleModule().apply {

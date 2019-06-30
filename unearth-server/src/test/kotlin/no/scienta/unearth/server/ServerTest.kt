@@ -19,7 +19,7 @@ package no.scienta.unearth.server
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.scienta.unearth.core.storage.InMemoryThrowablesStorage
-import no.scienta.unearth.micrometer.MeteringThrowablesSensor
+import no.scienta.unearth.metrics.MeteringThrowablesSensor
 import no.scienta.unearth.dto.Submission
 import no.scienta.unearth.dto.FaultStrandDto
 import org.http4k.client.ApacheClient

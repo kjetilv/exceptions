@@ -91,8 +91,8 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
 
     @Override
     public void hashTo(Consumer<byte[]> h) {
-        hashHashables(h, fault);
-        hashLongs(h, time, faultSequenceNo, faultStrandSequenceNo, globalSequenceNo);
+        hash(h, fault);
+        hash(h, time, faultSequenceNo, faultStrandSequenceNo, globalSequenceNo);
     }
 }
 

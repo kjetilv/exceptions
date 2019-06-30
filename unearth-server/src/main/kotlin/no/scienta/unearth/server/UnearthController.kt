@@ -135,7 +135,7 @@ class UnearthController(
         return causeChainDto(storage.getFault(faultId).toCauseChain()
                 .withPrintout(CauseChainRenderer()
                         .group(PackageGrouper(Collections.singleton(groups)))
-                        .squasher { group, causeFrames ->
+                        .squasher { _, causeFrames ->
                             Optional.of("  * (${causeFrames.size})")
                         }
                         .reshapeAll(

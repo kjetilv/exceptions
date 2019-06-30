@@ -35,9 +35,16 @@ import java.util.function.Function;
 
 public class IdModule extends SimpleModule {
 
-    @SuppressWarnings("WeakerAccess")
+    public Module addDefaults() {
+        return add(FaultId.class, FaultId::new)
+            .add(FaultStrandId.class, FaultStrandId::new)
+            .add(FaultEventId.class, FaultEventId::new)
+            .add(CauseId.class, CauseId::new)
+            .add(CauseStrandId.class, CauseStrandId::new);
+    }
+
     @SafeVarargs
-    public final <T extends Id> IdModule add(
+    private <T extends Id> IdModule add(
         Class<T> idClass,
         Function<UUID, T> toId,
         Function<Id, Map.Entry<String, String>>... fields
@@ -45,14 +52,6 @@ public class IdModule extends SimpleModule {
         addDeserializer(idClass, deserializer(toId));
         addSerializer(idClass, serializer(fields));
         return this;
-    }
-
-    public Module addDefaults() {
-        return add(FaultId.class, FaultId::new)
-            .add(FaultStrandId.class, FaultStrandId::new)
-            .add(FaultEventId.class, FaultEventId::new)
-            .add(CauseId.class, CauseId::new)
-            .add(CauseStrandId.class, CauseStrandId::new);
     }
 
     private static <T extends Id> JsonDeserializer<T> deserializer(Function<UUID, T> toId) {
