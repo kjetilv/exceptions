@@ -91,15 +91,7 @@ public abstract class AbstractHashable implements Hashable {
     }
 
     protected final void hash(Consumer<byte[]> h, Hashable... hashables) {
-        hashAll(h, Arrays.asList(hashables));
-    }
-
-    protected final void hashAll(Consumer<byte[]> h, Collection<? extends Hashable> hasheds) {
-        for (Hashable hashable : hasheds) {
-            if (hashable != null) {
-                hashable.hashTo(h);
-            }
-        }
+        hash(h, Arrays.asList(hashables));
     }
 
     protected final void hash(Consumer<byte[]> hash, long... values) {
@@ -107,6 +99,14 @@ public abstract class AbstractHashable implements Hashable {
             ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
             buffer.putLong(value);
             hash.accept(buffer.array());
+        }
+    }
+
+    protected final void hash(Consumer<byte[]> h, Collection<? extends Hashable> hasheds) {
+        for (Hashable hashable : hasheds) {
+            if (hashable != null) {
+                hashable.hashTo(h);
+            }
         }
     }
 

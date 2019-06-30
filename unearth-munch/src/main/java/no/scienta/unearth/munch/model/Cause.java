@@ -47,10 +47,6 @@ public class Cause extends AbstractHashableIdentifiable<CauseId> {
         return causeStrand;
     }
 
-    public Cause withCauseStrand(CauseStrand causeStrand) {
-        return new Cause(causeStrand, message);
-    }
-
     public String getMessage() {
         return message;
     }

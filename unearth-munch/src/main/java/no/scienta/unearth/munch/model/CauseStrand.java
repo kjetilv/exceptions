@@ -94,7 +94,6 @@ public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
     @Override
     public void hashTo(Consumer<byte[]> h) {
         hash(h, this.className);
-        hashAll(h, this.causeFrames);
+        hash(h, this.causeFrames);
     }
-
 }

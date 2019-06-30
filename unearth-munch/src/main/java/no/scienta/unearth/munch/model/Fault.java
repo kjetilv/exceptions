@@ -100,6 +100,6 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
     @Override
     public void hashTo(Consumer<byte[]> h) {
         hash(h, faultStrand);
-        hashAll(h, causes);
+        hash(h, causes);
     }
 }

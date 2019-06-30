@@ -71,7 +71,7 @@ public class FaultStrand extends AbstractHashableIdentifiable<FaultStrandId> {
 
     @Override
     public void hashTo(Consumer<byte[]> h) {
-        hashAll(h, causeStrands);
+        hash(h, causeStrands);
     }
 
     @Override
