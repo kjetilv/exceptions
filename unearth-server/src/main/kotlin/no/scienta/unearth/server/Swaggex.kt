@@ -33,7 +33,7 @@ object Swaggex {
             random.nextLong() % 1000,
             1000L + random.nextLong() % 1000,
             2000L + random.nextLong() % 1000,
-            random.nextBoolean())
+            if (random.nextBoolean()) Action.LOG else Action.LOG_SHORT)
 
     internal fun faultSequence(id: ((UUID) -> Id)? = null): FaultEventSequence =
             FaultEventSequence(id?.let { it(uuid()) }, SequenceType.FAULT, listOf(faultEventDto()))

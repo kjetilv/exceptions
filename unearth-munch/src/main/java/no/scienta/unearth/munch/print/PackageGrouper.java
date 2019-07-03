@@ -30,7 +30,7 @@ public class PackageGrouper implements Function<CauseFrame, Optional<Collection<
     public PackageGrouper(Collection<Collection<String>> groups) {
         this.groups = groups == null || groups.isEmpty() || groups.stream().allMatch(g -> g == null || g.isEmpty())
             ? Collections.emptyList()
-            : List.copyOf(groups);
+            : Collections.unmodifiableCollection(new ArrayList<>(groups));
     }
 
     @Override

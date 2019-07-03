@@ -21,10 +21,7 @@ import no.scienta.unearth.munch.ChameleonException;
 import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
 import no.scienta.unearth.munch.id.CauseStrandId;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -45,7 +42,7 @@ public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
         this.className = className;
         this.causeFrames = stackFrames == null || stackFrames.isEmpty()
             ? Collections.emptyList()
-            : List.copyOf(stackFrames);
+            : Collections.unmodifiableList(new ArrayList<>(stackFrames));
     }
 
     public List<CauseFrame> getCauseFrames() {
@@ -66,16 +63,16 @@ public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
     }
 
     private static List<CauseFrame> causeFrames(StackTraceElement[] stackTrace) {
-        return Arrays.stream(stackTrace).map(ste -> new CauseFrame(
-            ste.getClassLoaderName(),
-            ste.getModuleName(),
-            ste.getModuleVersion(),
+        return Collections.unmodifiableList(Arrays.stream(stackTrace).map(ste -> new CauseFrame(
+            null, //            ste.getClassLoaderName(),
+            null, //            ste.getModuleName(),
+            null, //            ste.getModuleVersion(),
             ste.getClassName(),
             ste.getMethodName(),
             ste.getFileName(),
             ste.getLineNumber(),
             ste.isNativeMethod()
-        )).collect(Collectors.toUnmodifiableList());
+        )).collect(Collectors.toList()));
     }
 
     private static String className(Throwable throwable) {

@@ -35,5 +35,11 @@ data class Submission(
 
         val faultSequenceNo: Long,
 
-        val loggable: Boolean
+        val action: Action
 )
+
+enum class Action {
+    LOG,
+    LOG_SHORT,
+    IGNORE
+}

@@ -17,6 +17,7 @@
 
 package no.scienta.unearth.core;
 
+import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.id.FaultStrandId;
 import no.scienta.unearth.munch.model.FaultEvent;
 
@@ -27,25 +28,35 @@ import java.util.stream.Stream;
 
 public interface FaultStats {
 
-    Optional<FaultEvent> lastFaultEvent(FaultStrandId id);
-
-    default long faultEventCount(FaultStrandId id) {
-        return faultEventCount(id, null);
+    default long getFaultEventCount(FaultStrandId id) {
+        return getFaultEventCount(id, null);
     }
 
-    default long faultEventCount(FaultStrandId id, Instant sinceTime) {
-        return faultEventCount(id, sinceTime, null);
+    default long getFaultEventCount(FaultStrandId id, Instant sinceTime) {
+        return getFaultEventCount(id, sinceTime, null);
     }
 
-    long faultEventCount(FaultStrandId id, Instant sinceTime, Duration during);
-
-    default Stream<FaultEvent> faultEvents(FaultStrandId id) {
-        return faultEvents(id, null);
+    default Stream<FaultEvent> getFaultEvents(FaultStrandId id) {
+        return getFaultEvents(id, null);
     }
 
-    default Stream<FaultEvent> faultEvents(FaultStrandId id, Instant sinceTime) {
-        return faultEvents(id, sinceTime, null);
+    default Stream<FaultEvent> getFaultEvents(FaultStrandId id, Instant sinceTime) {
+        return getFaultEvents(id, sinceTime, null);
     }
 
-    Stream<FaultEvent> faultEvents(FaultStrandId id, Instant sinceTime, Duration period);
+    default Optional<FaultEvent> getLastFaultEvent(FaultId id) {
+        return getLastFaultEvent(id, null);
+    }
+
+    default Optional<FaultEvent> getLastFaultEvent(FaultStrandId id) {
+        return getLastFaultEvent(id, null);
+    }
+
+    Optional<FaultEvent> getLastFaultEvent(FaultId id, Instant sinceTime);
+
+    Optional<FaultEvent> getLastFaultEvent(FaultStrandId id, Instant sinceTime);
+
+    long getFaultEventCount(FaultStrandId id, Instant sinceTime, Duration interval);
+
+    Stream<FaultEvent> getFaultEvents(FaultStrandId id, Instant sinceTime, Duration period);
 }

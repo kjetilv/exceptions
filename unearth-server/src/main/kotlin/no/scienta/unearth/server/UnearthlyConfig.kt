@@ -34,7 +34,7 @@
 
 package no.scienta.unearth.server
 
-data class UnearthConfig(
+data class UnearthlyConfig(
         val prefix: String = "/api/v1",
         val host: String = "0.0.0.0",
         val port: Int = 8080,

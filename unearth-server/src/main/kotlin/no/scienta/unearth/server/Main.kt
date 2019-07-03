@@ -15,10 +15,8 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+@file:Suppress("UNNECESSARY_NOT_NULL_ASSERTION")
+
 package no.scienta.unearth.server
 
-fun main() {
-
-    @Suppress("UNNECESSARY_NOT_NULL_ASSERTION") // As if!!
-    Unearth()!!
-}
+fun main() = Unearth()!!

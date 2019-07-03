@@ -28,6 +28,8 @@ public class CauseFrame extends AbstractHashable {
 
     public static Function<CauseFrame, CauseFrame> UNSET_CLASSLOADER = CauseFrame::unsetClassLoader;
 
+    public static Function<CauseFrame, CauseFrame> JAVA_8_LIKE = UNSET_MODULE_INFO.andThen(UNSET_CLASSLOADER);
+
     private final String classLoader;
 
     private final String module;
@@ -62,10 +64,6 @@ public class CauseFrame extends AbstractHashable {
         this.file = norm(file);
         this.line = line == null || line < 1 ? -1 : line;
         this.naytiv = naytiv;
-    }
-
-    public CauseFrame rewriteClassname(Function<String, String> rewrite) {
-        return className(rewrite.apply(className));
     }
 
     public CauseFrame unsetModuleInfo() {
@@ -139,21 +137,29 @@ public class CauseFrame extends AbstractHashable {
     }
 
     public StackTraceElement toStackTraceElement() {
-        return new StackTraceElement(classLoader, module, moduleVer, className, method, file, line);
+        return new StackTraceElement(className, method, file, line);
     }
 
     private static String norm(String s) {
-        return s == null || s.isBlank() ? "" : s;
+        return blank(s) ? "" : s;
+    }
+
+    private static boolean isSet(String s) {
+        return !blank(s);
+    }
+
+    private static boolean blank(String s) {
+        return s == null || s.length() == 0 || s.trim().isEmpty();
     }
 
     public StringBuilder defaultPrint(StringBuilder sb) {
         int len = sb.length();
-        if (!classLoader.isBlank()) {
+        if (isSet(classLoader)) {
             sb.append(classLoader).append("/");
         }
-        if (!module.isBlank()) {
+        if (isSet(module)) {
             sb.append(module);
-            if (!moduleVer.isBlank()) {
+            if (isSet(moduleVer)) {
                 sb.append("@").append(moduleVer());
             }
         }
@@ -164,9 +170,9 @@ public class CauseFrame extends AbstractHashable {
         sb.append(".").append(method).append("(");
         if (naytiv) {
             sb.append("Native Method)");
-        } else if (!file.isBlank() && line > 0) {
+        } else if (isSet(file) && line > 0) {
             sb.append(file).append(":").append(line).append(")");
-        } else if (!file.isBlank()) {
+        } else if (isSet(file)) {
             sb.append(file).append(")");
         } else {
             sb.append("Unknown Source)");

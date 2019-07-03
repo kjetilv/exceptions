@@ -20,10 +20,10 @@
 package no.scienta.unearth.server
 
 import no.scienta.unearth.core.HandlingPolicy
-import no.scienta.unearth.munch.parser.ThrowableParser
 import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.model.Fault
+import no.scienta.unearth.munch.parser.ThrowableParser
 import no.scienta.unearth.munch.util.Throwables
 import no.scienta.unearth.server.JSON.auto
 import no.scienta.unearth.statik.Statik
@@ -57,17 +57,17 @@ import java.util.*
 import java.util.jar.JarFile
 import java.util.regex.Pattern
 
-class UnearthServer(
-        private val configuration: UnearthConfig = UnearthConfig(),
-        val controller: UnearthController
+class UnearthlyServer(
+        private val configuration: UnearthlyConfig = UnearthlyConfig(),
+        val controller: UnearthlyController
 ) {
 
-    fun start(after: (Http4kServer) -> Unit = {}): UnearthServer = apply {
+    fun start(after: (Http4kServer) -> Unit = {}): UnearthlyServer = apply {
         server.start()
         after(server)
     }
 
-    fun stop(after: (Http4kServer) -> Unit = {}): UnearthServer = apply {
+    fun stop(after: (Http4kServer) -> Unit = {}): UnearthlyServer = apply {
         server.stop()
         after(server)
     }
@@ -351,7 +351,7 @@ class UnearthServer(
             handling.globalSequence,
             handling.faultStrandSequence,
             handling.faultSequence,
-            handling.isLoggable)
+            Action.valueOf(handling.action.name))
 
     private fun handleErrors(next: HttpHandler, request: Request): Response =
             try {
@@ -468,7 +468,7 @@ class UnearthServer(
 
     companion object {
 
-        private val logger = LoggerFactory.getLogger(UnearthServer::class.java)
+        private val logger = LoggerFactory.getLogger(UnearthlyServer::class.java)
 
         private const val swaggerUiPrefix = "META-INF/resources/webjars/swagger-ui"
 

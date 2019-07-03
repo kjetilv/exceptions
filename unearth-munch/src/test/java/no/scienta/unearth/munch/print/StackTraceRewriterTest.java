@@ -17,14 +17,13 @@
 
 package no.scienta.unearth.munch.print;
 
-import no.scienta.unearth.munch.model.CauseChain;
 import no.scienta.unearth.munch.model.CauseFrame;
 import no.scienta.unearth.munch.model.Fault;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Optional;
+import java.util.stream.Stream;
 
 public class StackTraceRewriterTest {
 
@@ -37,7 +36,7 @@ public class StackTraceRewriterTest {
                     Collections.singleton("org.junit"),
                     Arrays.asList("java", "jdk", "com.sun"))))
             .squasher((group, causeFrames) ->
-                Optional.of("  * (" + causeFrames.size() + ")"))
+                Stream.of("  * (" + causeFrames.size() + ")"))
             .reshapeAll(
                 CauseFrame::unsetClassLoader,
                 CauseFrame::unsetModuleInfo)
@@ -47,7 +46,7 @@ public class StackTraceRewriterTest {
                 cf.defaultPrint(sb.append("--  ")));
 
         Fault fault = Fault.create(new Throwable());
-        CauseChain causeChain = fault.toCauseChain().withPrintout(causeChainRenderer);
+        CauseChain causeChain = CauseChain.build(fault).withPrintout(causeChainRenderer);
 
         causeChain.getPrintout().forEach(System.out::println);
     }

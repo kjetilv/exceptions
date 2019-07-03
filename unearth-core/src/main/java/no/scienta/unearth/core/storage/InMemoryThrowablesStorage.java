@@ -20,8 +20,8 @@ package no.scienta.unearth.core.storage;
 import no.scienta.unearth.core.FaultFeed;
 import no.scienta.unearth.core.FaultStats;
 import no.scienta.unearth.core.FaultStorage;
-import no.scienta.unearth.munch.model.*;
 import no.scienta.unearth.munch.id.*;
+import no.scienta.unearth.munch.model.*;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -84,13 +84,12 @@ public class InMemoryThrowablesStorage
                     Instant.now(clock),
                     globalSequence.getAndIncrement(),
                     increment(this.faultStrandSequence, fault.getFaultStrand().getId()),
-                    increment(this.faultSequence, fault.getId()))
-            );
+                    increment(this.faultSequence, fault.getId())));
             FaultStrand faultStrand = fault.getFaultStrand();
-            put(this.faultStrands, faultStrand);
-            put(this.faults, fault);
-            faultStrand.getCauseStrands().forEach(put(this.causeStrands));
-            faultEvent.getFault().getCauses().forEach(put(this.causes));
+            putInto(this.faultStrands, faultStrand);
+            putInto(this.faults, fault);
+            faultStrand.getCauseStrands().forEach(putInto(this.causeStrands));
+            faultEvent.getFault().getCauses().forEach(putInto(this.causes));
 
             faultEvents.add(faultEvent);
             addTo(faultStrandFaults, faultStrand.getId(), fault);
@@ -167,19 +166,34 @@ public class InMemoryThrowablesStorage
     }
 
     @Override
-    public Optional<FaultEvent> lastFaultEvent(FaultStrandId id) {
-        return streamLookup(faultStrandFaultEvents, id)
-            .max(Comparator.comparing(FaultEvent::getFaultStrandSequenceNo));
+    public Optional<FaultEvent> getLastFaultEvent(FaultId id, Instant sinceTime) {
+        return filter(
+            sinceTime,
+            streamLookup(faultFaultEvents, id),
+            FaultEvent::getFaultSequenceNo);
     }
 
     @Override
-    public long faultEventCount(FaultStrandId id, Instant sinceTime, Duration during) {
-        return getEvents(id).size();
+    public Optional<FaultEvent> getLastFaultEvent(FaultStrandId id, Instant sinceTime) {
+        return filter(
+            sinceTime,
+            streamLookup(faultStrandFaultEvents, id),
+            FaultEvent::getFaultStrandSequenceNo);
     }
 
     @Override
-    public Stream<FaultEvent> faultEvents(FaultStrandId id, Instant sinceTime, Duration period) {
-        return faultEvents(id);
+    public long getFaultEventCount(FaultStrandId id, Instant sinceTime, Duration interval) {
+        return getFaultEvents(id, sinceTime, interval).count();
+    }
+
+    @Override
+    public Stream<FaultEvent> getFaultEvents(FaultStrandId id, Instant sinceTime, Duration period) {
+        Instant limitTime = period == null ? null : sinceTime.plus(period);
+        return getFaultEvents(id)
+            .filter(event ->
+                event.getTime().equals(sinceTime) || event.getTime().isAfter(sinceTime))
+            .filter(event ->
+                limitTime == null || limitTime.isBefore(event.getTime()));
     }
 
     private <I extends Id, T> T get(String type, I id, Map<I, T> map) {
@@ -188,9 +202,19 @@ public class InMemoryThrowablesStorage
                 new IllegalArgumentException("No such " + type + ": " + id.getHash().toString()));
     }
 
-    public Stream<FaultEvent> faultEvents(FaultStrandId id) {
+    public Stream<FaultEvent> getFaultEvents(FaultStrandId id) {
         return streamLookup(faultStrandFaults, id).flatMap(fault ->
             streamLookup(faultFaultEvents, fault.getId()));
+    }
+
+    private Optional<FaultEvent> filter(
+        Instant sinceTime,
+        Stream<FaultEvent> faultEventStream,
+        Function<FaultEvent, Long> getFaultSequenceNo
+    ) {
+        return faultEventStream
+            .filter(faultEvent -> sinceTime == null || faultEvent.getTime().isAfter(sinceTime))
+            .max(Comparator.comparing(getFaultSequenceNo));
     }
 
     private List<FaultEvent> globalFeed(long offset, long count) {
@@ -199,7 +223,7 @@ public class InMemoryThrowablesStorage
                 .filter(faultEvent ->
                     faultEvent.getGlobalSequenceNo() >= offset),
             count
-        ).collect(Collectors.toUnmodifiableList());
+        ).collect(Collectors.toList());
     }
 
     private static <I extends Id, T> List<T> typedFeed(
@@ -213,7 +237,7 @@ public class InMemoryThrowablesStorage
             listLookup(map, id).stream()
                 .filter(t -> sequencer.apply(t) >= offset),
             count
-        ).collect(Collectors.toUnmodifiableList());
+        ).collect(Collectors.toList());
     }
 
     private static <T> Stream<T> delimited(Stream<T> candidates, long count) {
@@ -243,20 +267,20 @@ public class InMemoryThrowablesStorage
         }
         Collection<V> coll = map.getOrDefault(key, Collections.emptyList());
         if (offset == null || count == null || offset < 0 && count < 0 || offset == 0 && count <= coll.size()) {
-            return List.copyOf(coll);
+            return Collections.unmodifiableCollection(coll);
         }
         if (offset >= coll.size()) {
             return Collections.emptyList();
         }
         int lastIndex = Math.min(offset.intValue() + count.intValue(), coll.size());
-        return List.copyOf(new ArrayList<>(coll).subList(offset.intValue(), lastIndex));
+        return Collections.unmodifiableCollection(new ArrayList<>(coll).subList(offset.intValue(), lastIndex));
     }
 
-    private static <I extends Id, T extends Identifiable<I>> Consumer<T> put(Map<I, T> map) {
-        return t -> put(map, t);
+    private static <I extends Id, T extends Identifiable<I>> Consumer<T> putInto(Map<I, T> map) {
+        return t -> putInto(map, t);
     }
 
-    private static <I extends Id, T extends Identifiable<I>> void put(Map<I, T> map, T t) {
+    private static <I extends Id, T extends Identifiable<I>> void putInto(Map<I, T> map, T t) {
         map.putIfAbsent(t.getId(), t);
     }
 

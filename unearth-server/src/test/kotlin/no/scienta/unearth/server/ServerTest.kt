@@ -34,8 +34,8 @@ fun main() {
 
     val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
 
-    val server = UnearthServer(
-            controller = UnearthController(storage, storage, storage, sensor))
+    val server = UnearthlyServer(
+            controller = UnearthlyController(storage, storage, storage, sensor))
 
     val lookupLens = Body.auto<FaultStrandDto>().toLens()
 

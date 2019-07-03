@@ -19,22 +19,39 @@ package no.scienta.unearth.client;
 
 import no.scienta.unearth.dto.Submission;
 
-import java.io.FileInputStream;
 import java.net.URI;
+import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
+@SuppressWarnings("SameParameterValue")
 public class SubmitMain {
 
     public static void main(String[] args) {
-        UnearthClient unearthClient = new UnearthClient(URI.create(args[0]));
-        Arrays.stream(args).skip(1).forEach(arg -> {
+        URI uri = arg(args, 0, URI::create);
+        UnearthlyClient client = new UnearthlyClient(uri);
+        args(args, 1).forEach(arg -> {
             System.out.println("Uploading " + arg + " ...");
-            try (FileInputStream file = new FileInputStream(arg)) {
-                Submission submit = unearthClient.submit(file);
-                System.out.println("Uploaded: " + unearthClient.print(submit));
-            } catch (Exception e) {
-                throw new IllegalStateException("Failed to load " + arg, e);
-            }
+            Submission submit = client.submit(Paths.get(arg));
+            System.out.println("Uploaded: " + client.print(submit));
+            client.retrieve(submit.getFaultId()).printStackTrace(System.out);
+
         });
+    }
+
+    private static Stream<String> args(String[] args, int skip) {
+        return Arrays.stream(args).skip(skip);
+    }
+
+    private static <T> T arg(String[] args, int i, Function<String, T> fun) {
+        return Optional.of(args)
+            .filter(a -> a.length > i)
+            .map(a -> a[i])
+            .map(fun)
+            .orElseThrow(() ->
+                new IllegalStateException("Expected " + (i + 1) + " args: [URI] [Files...]")
+            );
     }
 }

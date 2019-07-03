@@ -15,14 +15,22 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.munch.print;
+package no.scienta.unearth.client;
 
-import no.scienta.unearth.munch.model.CauseFrame;
+import no.scienta.unearth.dto.Submission;
+import retrofit2.Call;
+import retrofit2.http.Body;
+import retrofit2.http.GET;
+import retrofit2.http.POST;
+import retrofit2.http.Path;
 
-public class DefaultCauseFramePrinter implements CauseFramePrinter {
+import java.util.UUID;
 
-    @Override
-    public StringBuilder print(StringBuilder sb, CauseFrame causeFrame) {
-        return causeFrame.defaultPrint(sb);
-    }
+public interface UnearthlyService {
+
+    @POST("throwable")
+    Call<Submission> throwable(@Body Throwable throwable);
+
+    @GET("throwable/{uuid}")
+    Call<Throwable> throwable(@Path("uuid") UUID uuid);
 }

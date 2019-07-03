@@ -19,10 +19,10 @@ package no.scienta.unearth.munch.model;
 
 import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
 import no.scienta.unearth.munch.id.FaultId;
+import no.scienta.unearth.munch.print.CauseChain;
 import no.scienta.unearth.munch.util.Streams;
 
 import java.util.*;
-import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -43,7 +43,7 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
         this.faultStrand = Objects.requireNonNull(faultStrand);
         this.causes = causes == null || causes.isEmpty()
             ? Collections.emptyList()
-            : List.copyOf(causes);
+            : Collections.unmodifiableList(new ArrayList<>(causes));
         if (this.faultStrand.getCauseCount() != this.causes.size()) {
             throw new IllegalStateException(
                 "Expected same arity: " + this.faultStrand.getCauseStrands().size() + "/" + this.causes.size());
@@ -58,33 +58,16 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
         return causes;
     }
 
-    public Fault withCauses(List<Cause> causes) {
-        return new Fault(faultStrand, causes);
-    }
-
-    public CauseChain toCauseChain() {
-        return Streams.reverse(causes).reduce(
-            null,
-            (chainedFault, cause) ->
-                cause.chain(chainedFault), noCombine());
-    }
-
     public Throwable toCameleon() {
         return Streams.reverse(causes)
             .reduce(null,
                 (t, cause) ->
                     cause.toChameleon(t),
-                noCombine());
+                CauseChain.noCombine());
     }
 
     private static List<Cause> causes(Throwable throwable) {
         return Streams.causes(throwable).map(Cause::create).collect(Collectors.toList());
-    }
-
-    private static <T> BinaryOperator<T> noCombine() {
-        return (t1, t2) -> {
-            throw new IllegalStateException("No combine: " + t1 + " <> " + t2);
-        };
     }
 
     @Override

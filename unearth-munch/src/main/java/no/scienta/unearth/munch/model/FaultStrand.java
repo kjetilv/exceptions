@@ -21,10 +21,7 @@ import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
 import no.scienta.unearth.munch.id.FaultStrandId;
 import no.scienta.unearth.munch.util.Streams;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -59,7 +56,7 @@ public class FaultStrand extends AbstractHashableIdentifiable<FaultStrandId> {
         if (Objects.requireNonNull(causeStrands).isEmpty()) {
             throw new IllegalArgumentException("Expected one or more causes");
         }
-        this.causeStrands = List.copyOf(causeStrands);
+        this.causeStrands = Collections.unmodifiableList(new ArrayList<>(causeStrands));
     }
 
     @Override

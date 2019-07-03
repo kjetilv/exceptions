@@ -17,8 +17,6 @@
 
 package no.scienta.unearth.munch.print;
 
-import no.scienta.unearth.munch.base.GroupedList;
-import no.scienta.unearth.munch.model.CauseChain;
 import no.scienta.unearth.munch.model.CauseFrame;
 
 import java.util.*;
@@ -32,22 +30,12 @@ public class CauseChainRenderer implements Function<CauseChain, List<String>> {
     public static BiFunction<Collection<String>, CauseFrame, CauseFrame> SHORTEN_CLASSNAME =
         CauseChainRenderer::shortenClassname;
 
-    public static Function<CauseFrame, CauseFrame> SHORTEN_ALL_CLASSNAME =
-        CauseChainRenderer::shortenClassName;
-
     public static CauseFrame shortenClassname(Collection<String> group, CauseFrame causeFrame) {
         return group == null ? causeFrame : shortenClassName(causeFrame);
     }
 
     private static CauseFrame shortenClassName(CauseFrame causeFrame) {
-        String className = causeFrame.className();
-        int dot = className.lastIndexOf(".");
-        String shortened = Stream.concat(
-            Arrays.stream(className.substring(0, dot).split("\\."))
-                .map(part -> part.substring(0, 1)),
-            Stream.of(className.substring(dot + 1)))
-            .collect(Collectors.joining("."));
-        return causeFrame.className(shortened);
+        return causeFrame.className(shortened(causeFrame.className()));
     }
 
     private final List<BiFunction<Collection<String>, CauseFrame, CauseFrame>> reshapers;
@@ -58,7 +46,7 @@ public class CauseChainRenderer implements Function<CauseChain, List<String>> {
 
     private final Function<CauseFrame, Optional<Collection<String>>> grouper;
 
-    private final BiFunction<Collection<String>, List<CauseFrame>, Optional<String>> squasher;
+    private final BiFunction<Collection<String>, List<CauseFrame>, Stream<String>> squasher;
 
     public CauseChainRenderer() {
         this(null, null, null, null, null);
@@ -69,7 +57,7 @@ public class CauseChainRenderer implements Function<CauseChain, List<String>> {
         BiFunction<String, Integer, String> groupDisplay,
         BiFunction<StringBuilder, CauseFrame, StringBuilder> framePrinter,
         List<BiFunction<Collection<String>, CauseFrame, CauseFrame>> reshapers,
-        BiFunction<Collection<String>, List<CauseFrame>, Optional<String>> squasher
+        BiFunction<Collection<String>, List<CauseFrame>, Stream<String>> squasher
     ) {
         this.grouper = grouper == null
             ? causeFrame -> Optional.empty()
@@ -79,7 +67,7 @@ public class CauseChainRenderer implements Function<CauseChain, List<String>> {
             : groupDisplay;
         this.reshapers = reshapers == null || reshapers.isEmpty()
             ? Collections.emptyList()
-            : List.copyOf(reshapers);
+            : Collections.unmodifiableList(new ArrayList<>(reshapers));
         this.framePrinter = framePrinter == null
             ? (sb, cf) -> cf.defaultPrint(sb)
             : framePrinter;
@@ -98,13 +86,13 @@ public class CauseChainRenderer implements Function<CauseChain, List<String>> {
         return new CauseChainRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher);
     }
 
-    public CauseChainRenderer squasher(BiFunction<Collection<String>, List<CauseFrame>, Optional<String>> squasher) {
+    public CauseChainRenderer squasher(BiFunction<Collection<String>, List<CauseFrame>, Stream<String>> squasher) {
         return new CauseChainRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher);
     }
 
     @SafeVarargs
     public final CauseChainRenderer reshape(BiFunction<Collection<String>, CauseFrame, CauseFrame>... reshapers) {
-        return new CauseChainRenderer(grouper, groupPrinter, framePrinter, added(Arrays.stream(reshapers)), squasher);
+        return new CauseChainRenderer(grouper, groupPrinter, framePrinter, added(reshapers), squasher);
     }
 
     @SafeVarargs
@@ -121,28 +109,42 @@ public class CauseChainRenderer implements Function<CauseChain, List<String>> {
             GroupedList.group(causeFrames, grouper);
         List<String> list = new ArrayList<>();
         groupedList.forEach((names, frames) -> {
-            if (names != null) {
-                list.add(printGroup(names, names.size()));
+            boolean grouped = names != null;
+            if (grouped) {
+                list.addAll(printGroupHeading(names, names.size()));
             }
-            if (names == null || squasher == null) {
+            if (grouped && squasher != null) {
+                squashed(names, frames)
+                    .forEach(list::add);
+            } else {
                 frames.stream()
                     .map(reshape(names))
                     .map(item ->
-                        print(names != null, item)).forEach(list::add);
-            } else {
-                squasher.apply(names, frames).ifPresent(list::add);
+                        print(grouped, item))
+                    .forEach(list::add);
             }
         });
         return list;
     }
 
+    private Stream<String> squashed(Collection<String> names, List<CauseFrame> frames) {
+        return squasher.apply(names, frames);
+    }
+
     private Function<CauseFrame, CauseFrame> reshape(Collection<String> group) {
-        return causeFrame -> reshapers.stream().reduce(
-            causeFrame,
-            (cf, reshaper) -> reshaper.apply(group, cf),
-            (cf1, cf2) -> {
-                throw new IllegalStateException("No combine: " + cf1 + "/" + cf2);
-            });
+        return causeFrame ->
+            reshapers.stream().reduce(
+                causeFrame,
+                (cf, reshaper) ->
+                    reshaper.apply(group, cf),
+                CauseChainRenderer::noCombine);
+    }
+
+    @SafeVarargs
+    private final List<BiFunction<Collection<String>, CauseFrame, CauseFrame>> added(
+        BiFunction<Collection<String>, CauseFrame, CauseFrame>... reshapers
+    ) {
+        return added(Arrays.stream(reshapers));
     }
 
     private List<BiFunction<Collection<String>, CauseFrame, CauseFrame>> added(
@@ -155,10 +157,10 @@ public class CauseChainRenderer implements Function<CauseChain, List<String>> {
         return indented(grouped, framePrinter.apply(new StringBuilder(), item).toString());
     }
 
-    private String printGroup(Collection<String> group, int groupSize) {
+    private Collection<String> printGroupHeading(Collection<String> group, int groupSize) {
         String groupString = group.size() > 1 ? String.join("/", group) : group.iterator().next();
         String printedGroup = groupPrinter.apply(groupString, groupSize);
-        return indented(false, printedGroup);
+        return Collections.singleton(indented(false, printedGroup));
     }
 
     private String indented(boolean indent, String printed) {
@@ -166,6 +168,19 @@ public class CauseChainRenderer implements Function<CauseChain, List<String>> {
     }
 
     private static final String INDENT = "  ";
+
+    private static CauseFrame noCombine(CauseFrame cf1, CauseFrame cf2) {
+        throw new IllegalStateException("No combine: " + cf1 + "/" + cf2);
+    }
+
+    private static String shortened(String className) {
+        int dot = className.lastIndexOf(".");
+        return Stream.concat(
+            Arrays.stream(className.substring(0, dot).split("\\."))
+                .map(part -> part.substring(0, 1)),
+            Stream.of(className.substring(dot + 1))
+        ).collect(Collectors.joining("."));
+    }
 
     private static BiFunction<Collection<String>, CauseFrame, CauseFrame> all(Function<CauseFrame, CauseFrame> fun) {
         return (group, causeFrame) -> fun.apply(causeFrame);

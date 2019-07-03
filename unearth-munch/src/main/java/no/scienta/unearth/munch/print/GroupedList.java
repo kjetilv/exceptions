@@ -15,7 +15,24 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.munch.base;
+/*
+ *     This file is part of Unearth.
+ *
+ *     Unearth is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     Unearth is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package no.scienta.unearth.munch.print;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -55,7 +72,7 @@ public class GroupedList<G, T> {
     }
 
     private List<Group<G, T>> groups() {
-        return List.copyOf(groups);
+        return Collections.unmodifiableList(new ArrayList<>(groups));
     }
 
     private Group<G, T> group(G g) {
@@ -89,7 +106,7 @@ public class GroupedList<G, T> {
         }
 
         List<T> items() {
-            return List.copyOf(items);
+            return Collections.unmodifiableList(items);
         }
 
         boolean hasRef(G ref) {

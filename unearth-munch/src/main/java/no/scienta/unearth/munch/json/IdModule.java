@@ -20,7 +20,6 @@ package no.scienta.unearth.munch.json;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;
-import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ValueNode;
@@ -35,7 +34,7 @@ import java.util.function.Function;
 
 public class IdModule extends SimpleModule {
 
-    public Module addDefaults() {
+    public IdModule addDefaults() {
         return add(FaultId.class, FaultId::new)
             .add(FaultStrandId.class, FaultStrandId::new)
             .add(FaultEventId.class, FaultEventId::new)
@@ -44,7 +43,7 @@ public class IdModule extends SimpleModule {
     }
 
     @SafeVarargs
-    private <T extends Id> IdModule add(
+    private final <T extends Id> IdModule add(
         Class<T> idClass,
         Function<UUID, T> toId,
         Function<Id, Map.Entry<String, String>>... fields
@@ -55,7 +54,7 @@ public class IdModule extends SimpleModule {
     }
 
     private static <T extends Id> JsonDeserializer<T> deserializer(Function<UUID, T> toId) {
-        return new JsonDeserializer<>() {
+        return new JsonDeserializer<T>() {
 
             @Override
             public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
@@ -76,7 +75,7 @@ public class IdModule extends SimpleModule {
 
     @SafeVarargs
     private static <T extends Id> JsonSerializer<T> serializer(Function<Id, Map.Entry<String, String>>... fields) {
-        return new JsonSerializer<>() {
+        return new JsonSerializer<T>() {
 
             @Override
             public void serialize(T value, JsonGenerator gen, SerializerProvider serializers)

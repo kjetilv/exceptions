@@ -17,6 +17,7 @@
 
 package no.scienta.unearth.munch.base;
 
+import no.scienta.unearth.munch.print.GroupedList;
 import org.junit.Test;
 
 import java.util.Arrays;

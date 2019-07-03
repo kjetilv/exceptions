@@ -57,7 +57,8 @@ public class ThrowableParser {
         try {
             List<String> lines = Arrays.stream(in.split("\n"))
                 .filter(Objects::nonNull)
-                .filter(line -> !line.isBlank())
+                .filter(line ->
+                    !line.trim().isEmpty())
                 .collect(Collectors.toList());
             List<Integer> causeIndices =
                 IntStream.range(0, lines.size())

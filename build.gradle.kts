@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.3.31"
+    kotlin("jvm") version "1.3.40"
     id("com.github.johnrengelman.shadow") version "5.0.0"
     maven
     `maven-publish`
@@ -12,8 +12,8 @@ allprojects {
     apply(plugin = "maven-publish")
 
     configure<JavaPluginConvention> {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
     group = "no.scienta.unearth"

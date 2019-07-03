@@ -51,10 +51,6 @@ public class Cause extends AbstractHashableIdentifiable<CauseId> {
         return message;
     }
 
-    CauseChain chain(CauseChain cause) {
-        return new CauseChain(this, cause);
-    }
-
     Throwable toChameleon(Throwable t) {
         Throwable exception = new ChameleonException(causeStrand.getClassName(), message, t);
         exception.setStackTrace(

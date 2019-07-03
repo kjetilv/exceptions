@@ -120,7 +120,7 @@ public abstract class AbstractHashable implements Hashable {
 
     private String toStringContents() {
         String body = toStringBody();
-        return body == null || body.isBlank() ? "" : " " + body.trim();
+        return body == null || body.trim().isEmpty() ? "" : " " + body.trim();
     }
 
     private static final String HASH = "MD5";

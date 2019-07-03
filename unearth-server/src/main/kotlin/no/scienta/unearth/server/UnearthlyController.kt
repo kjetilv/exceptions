@@ -22,20 +22,33 @@ import no.scienta.unearth.core.handler.DefaultThrowablesHandler
 import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.model.*
+import no.scienta.unearth.munch.print.CauseChain
 import no.scienta.unearth.munch.print.CauseChainRenderer
 import no.scienta.unearth.munch.print.PackageGrouper
+import org.slf4j.LoggerFactory
+import java.time.Clock
 import java.time.ZoneId
 import java.util.*
+import java.util.stream.Stream
 
-class UnearthController(
+class UnearthlyController(
         private val storage: FaultStorage,
         private val feed: FaultFeed,
         private val stats: FaultStats,
         sensor: FaultSensor
 ) {
-    private val handler: FaultHandler = DefaultThrowablesHandler(storage, sensor)
+    private val handler: FaultHandler = DefaultThrowablesHandler(storage, stats, sensor, Clock.systemUTC());
 
-    infix fun submitRaw(t: Throwable): HandlingPolicy = handler.handle(t)
+    private val submitLogger = LoggerFactory.getLogger("Submitted")
+
+    infix fun submitRaw(t: Throwable): HandlingPolicy {
+        return logged(handler.handle(t) ?: throw IllegalStateException("Unexpected: Missing handle"))
+    }
+
+    private fun logged(handle: HandlingPolicy): HandlingPolicy {
+        submitLogger.info(logMessage(handle))
+        return handle;
+    }
 
     fun lookupFaultStrandDto(
             id: FaultStrandId,
@@ -119,6 +132,9 @@ class UnearthController(
                 faultEventDto(it, fullStack, printStack)
             })
 
+    private fun logMessage(handle: HandlingPolicy) =
+            "F:${handle.faultId.hash} E:${handle.faultEventId.hash} FS:${handle.faultStrandId.hash}"
+
     private fun faultEventDto(
             faultEvent: FaultEvent,
             fullStack: Boolean = false,
@@ -132,16 +148,13 @@ class UnearthController(
             faultEvent.faultStrandSequenceNo)
 
     fun rewriteThrowable(faultId: FaultId, groups: Collection<String>?): CauseChainDto {
-        return causeChainDto(storage.getFault(faultId).toCauseChain()
+        return causeChainDto(CauseChain.build(storage.getFault(faultId))
                 .withPrintout(CauseChainRenderer()
                         .group(PackageGrouper(Collections.singleton(groups)))
                         .squasher { _, causeFrames ->
-                            Optional.of("  * (${causeFrames.size})")
-                        }
-                        .reshapeAll(
-                                CauseFrame.UNSET_CLASSLOADER,
-                                CauseFrame.UNSET_MODULE_INFO).reshape(
-                                CauseChainRenderer.SHORTEN_CLASSNAME)))
+                            Stream.of("  * (${causeFrames.size})")
+                        }.reshapeAll(CauseFrame.JAVA_8_LIKE)
+                        .reshape(CauseChainRenderer.SHORTEN_CLASSNAME)))
     }
 
     private fun causeChainDto(

@@ -23,17 +23,23 @@ import no.scienta.unearth.munch.id.FaultId;
 
 public interface HandlingPolicy {
 
+    Action getAction();
+
     FaultStrandId getFaultStrandId();
 
     FaultId getFaultId();
 
     FaultEventId getFaultEventId();
 
-    boolean isLoggable();
-
     long getGlobalSequence();
 
     long getFaultStrandSequence();
 
     long getFaultSequence();
+
+    enum Action {
+        LOG,
+        LOG_SHORT,
+        IGNORE
+    }
 }

@@ -27,11 +27,15 @@ class SimpleHandlingPolicy implements HandlingPolicy {
 
     private final FaultEvent faultEvent;
 
-    private final boolean isNew;
+    private final Action action;
 
-    SimpleHandlingPolicy(FaultEvent faultEvent, boolean isNew) {
+    SimpleHandlingPolicy(FaultEvent faultEvent) {
+        this(faultEvent, null);
+    }
+
+    SimpleHandlingPolicy(FaultEvent faultEvent, Action action) {
         this.faultEvent = faultEvent;
-        this.isNew = isNew;
+        this.action = action;
     }
 
     @Override
@@ -49,8 +53,8 @@ class SimpleHandlingPolicy implements HandlingPolicy {
     }
 
     @Override
-    public boolean isLoggable() {
-        return isNew;
+    public Action getAction() {
+        return action;
     }
 
     @Override
@@ -66,5 +70,17 @@ class SimpleHandlingPolicy implements HandlingPolicy {
     @Override
     public long getFaultStrandSequence() {
         return faultEvent.getFaultStrandSequenceNo();
+    }
+
+    HandlingPolicy log() {
+        return new SimpleHandlingPolicy(faultEvent, Action.LOG);
+    }
+
+    HandlingPolicy logShort() {
+        return new SimpleHandlingPolicy(faultEvent, Action.LOG_SHORT);
+    }
+
+    HandlingPolicy ignore() {
+        return new SimpleHandlingPolicy(faultEvent, Action.IGNORE);
     }
 }

@@ -48,17 +48,17 @@ object Unearth : () -> Unit {
     private val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
 
     override fun invoke() {
-        logger.info("Building ${UnearthServer::class.simpleName}...")
+        logger.info("Building ${UnearthlyServer::class.simpleName}...")
 
-        val configuration = UnearthConfig(
+        val configuration = UnearthlyConfig(
                 prefix = config[serverApi],
                 host = config[serverHost],
                 port = config[serverPort],
                 selfDiagnose = config[selfDiagnose])
 
-        val unearthServer = UnearthServer(
+        val unearthServer = UnearthlyServer(
                 configuration,
-                UnearthController(
+                UnearthlyController(
                         storage,
                         storage,
                         storage,
@@ -72,7 +72,7 @@ object Unearth : () -> Unit {
         }
     }
 
-    private fun registerShutdown(server: UnearthServer) {
+    private fun registerShutdown(server: UnearthlyServer) {
         Runtime.getRuntime().addShutdownHook(Thread({
             server.stop {
                 logger.info("Stopped $it")
@@ -80,6 +80,6 @@ object Unearth : () -> Unit {
         }, "Shutdown"))
     }
 
-    private fun callableHost(configuration: UnearthConfig): String =
-            if (configuration.host == UnearthConfig().host) "127.0.0.1" else configuration.host
+    private fun callableHost(configuration: UnearthlyConfig): String =
+            if (configuration.host == UnearthlyConfig().host) "127.0.0.1" else configuration.host
 }
