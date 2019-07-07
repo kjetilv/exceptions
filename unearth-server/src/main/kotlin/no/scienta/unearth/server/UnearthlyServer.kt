@@ -35,6 +35,7 @@ import org.http4k.contract.openapi.ApiInfo
 import org.http4k.contract.openapi.v3.OpenApi3
 import org.http4k.core.*
 import org.http4k.core.ContentType.Companion.APPLICATION_JSON
+import org.http4k.core.ContentType.Companion.TEXT_HTML
 import org.http4k.core.ContentType.Companion.TEXT_PLAIN
 import org.http4k.core.Method.GET
 import org.http4k.core.Method.POST
@@ -300,20 +301,25 @@ class UnearthlyServer(
         outLens.set(withContentType(Response(OK), type), result())
     }
 
-    private val server = cors()
-            .then(errorHandler())
-            .then(appRoutes())
+    private val server = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
+            .then(ServerFilters.GZipContentTypes(setOf(APPLICATION_JSON, TEXT_PLAIN, TEXT_HTML)))
+            .then(errorFilter())
+            .then(routes(
+                    rerouteToSwagger("/doc", configuration.prefix),
+                    rerouteToSwagger("/", configuration.prefix),
+                    swaggerUiRoute(configuration.prefix),
+                    contracts()))
             .asServer(NettyConfig(configuration.host, configuration.port))
 
-    private fun cors() = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
-
-    private fun errorHandler() = Filter { handler -> { req -> handleErrors(handler, req) } }
-
-    private fun appRoutes(): RoutingHttpHandler = routes(
-            rerouteToSwagger("/doc", configuration.prefix),
-            rerouteToSwagger("/", configuration.prefix),
-            swaggerUiRoute(configuration.prefix),
-            contracts())
+    private fun errorFilter() = Filter { handler ->
+        { req ->
+            try {
+                handledResponse(handler(req), req)
+            } catch (e: Throwable) {
+                handledException(e, request = req)
+            }
+        }
+    }
 
     private fun contracts(): RoutingHttpHandler =
             configuration.prefix bind contract {
@@ -353,17 +359,12 @@ class UnearthlyServer(
             handling.faultSequence,
             Action.valueOf(handling.action.name))
 
-    private fun handleErrors(next: HttpHandler, request: Request): Response =
-            try {
-                handledResponse(next(request), request)
-            } catch (e: Throwable) {
-                handledException(e, request = request)
-            }
-
     private fun handledResponse(response: Response, request: Request): Response =
             when {
                 response.status.successful ->
                     response // Yay
+                response.status.redirection ->
+                    response // Keep going
                 response.status.clientError ->
                     handledException(
                             IllegalArgumentException(
@@ -395,7 +396,11 @@ class UnearthlyServer(
         } catch (e: Exception) {
             return bareBonesErrorResponse("Failed to submit self-diagnosed error", e)
         }
-        logger.error("Failed: ${policy?.faultEventId ?: "unknown"}", error)
+        if (policy.action == HandlingPolicy.Action.LOG) {
+            logger.error("Failed: ${policy?.faultEventId ?: "unknown"}", error)
+        } else if (policy.action == HandlingPolicy.Action.LOG_SHORT){
+            logger.error("Failed: $error")
+        }
         return internalError.set(
                 withContentType((response ?: Response(status ?: INTERNAL_SERVER_ERROR))
                         .header("X-Fault-SeqNo", policy?.faultSequence?.toString() ?: "-1")

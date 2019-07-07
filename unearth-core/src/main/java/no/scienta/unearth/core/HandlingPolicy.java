@@ -17,13 +17,17 @@
 
 package no.scienta.unearth.core;
 
-import no.scienta.unearth.munch.id.FaultStrandId;
 import no.scienta.unearth.munch.id.FaultEventId;
 import no.scienta.unearth.munch.id.FaultId;
+import no.scienta.unearth.munch.id.FaultStrandId;
+
+import java.util.Optional;
 
 public interface HandlingPolicy {
 
     Action getAction();
+
+    Severity getSeverity();
 
     FaultStrandId getFaultStrandId();
 
@@ -31,15 +35,30 @@ public interface HandlingPolicy {
 
     FaultEventId getFaultEventId();
 
+    Optional<String> getPrintout(PrintoutType type);
+
     long getGlobalSequence();
 
     long getFaultStrandSequence();
 
     long getFaultSequence();
 
+    enum PrintoutType {
+        FULL,
+        SHORT,
+        MESSAGES_ONLY
+    }
+
     enum Action {
         LOG,
         LOG_SHORT,
         IGNORE
+    }
+
+    enum Severity {
+        ERROR,
+        WARNING,
+        INFO,
+        DEBUG
     }
 }

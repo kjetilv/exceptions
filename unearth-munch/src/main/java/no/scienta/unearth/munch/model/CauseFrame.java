@@ -20,15 +20,8 @@ package no.scienta.unearth.munch.model;
 import no.scienta.unearth.munch.base.AbstractHashable;
 
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class CauseFrame extends AbstractHashable {
-
-    public static Function<CauseFrame, CauseFrame> UNSET_MODULE_INFO = CauseFrame::unsetModuleInfo;
-
-    public static Function<CauseFrame, CauseFrame> UNSET_CLASSLOADER = CauseFrame::unsetClassLoader;
-
-    public static Function<CauseFrame, CauseFrame> JAVA_8_LIKE = UNSET_MODULE_INFO.andThen(UNSET_CLASSLOADER);
 
     private final String classLoader;
 

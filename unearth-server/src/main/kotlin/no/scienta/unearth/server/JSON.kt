@@ -67,12 +67,12 @@ private fun forIds(prefix: String): Module =
             addDeserializer(CauseId::class.java, deserializer(::CauseId))
         }
 
-private fun <T : Id> deserializer(id: (UUID) -> T): JsonDeserializer<T>? {
+private fun <T : Id> deserializer(toId: (UUID) -> T): JsonDeserializer<T>? {
     return object : JsonDeserializer<T>() {
         override fun deserialize(p: JsonParser?, ctxt: DeserializationContext?): T {
             return p?.readValueAsTree<TreeNode>()?.let { tree ->
                 tree.get("id")?.let { idNode ->
-                    id(UUID.fromString((idNode as ValueNode).textValue()))
+                    toId(UUID.fromString((idNode as ValueNode).textValue()))
                 }
             } ?: throw IllegalArgumentException("Could not parse Id")
         }
@@ -89,18 +89,24 @@ private fun <T : Id> serializer(prefix: String, path: String, feed: Boolean = fa
             }
         }
 
-        private fun refs(id: T, value: T): Map<String, String> = mapOf(
+        private fun refs(id: T, value: T): Map<String, String> =
+                if (feed)
+                    base(id, value).plus("feed" to "$prefix/feed/$path/${id.hash}")
+                else
+                    base(id, value)
+
+
+        private fun base(id: T, value: T): Map<String, String> = mapOf(
                 "id" to id.hash.toString(),
                 "type" to value.javaClass.simpleName,
-                "link" to "/$prefix/$path/${id.hash}").let{base ->
-            if (feed) base.plus("feed" to "/$prefix/feed/$path/${id.hash}")
-            else base
-        }
+                "link" to "$prefix/$path/${id.hash}")
     }
 }
 
-private fun obj(jsonGenerator: JsonGenerator, map: Map<String, String>) {
-    jsonGenerator.writeStartObject()
-    map.forEach { t, u -> jsonGenerator.writeStringField(t, u) }
-    jsonGenerator.writeEndObject()
+private fun obj(gen: JsonGenerator, map: Map<String, String>) {
+    gen.writeStartObject()
+    map.forEach { (field, value) ->
+        gen.writeStringField(field, value)
+    }
+    gen.writeEndObject()
 }

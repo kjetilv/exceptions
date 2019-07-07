@@ -60,8 +60,8 @@ public class UnearthlyClient implements UnearthlyService {
             new ObjectMapper()
                 .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
                 .registerModule(new Jdk8Module())
-                .registerModule(new IdModule().addDefaults())
-                .registerModule(new KotlinModule());
+                .registerModule(new KotlinModule())
+                .registerModule(IdModule.defaults());
         Converter.Factory jackson =
             JacksonConverterFactory.create(objectMapper);
         Converter.Factory throwables = new Converter.Factory() {

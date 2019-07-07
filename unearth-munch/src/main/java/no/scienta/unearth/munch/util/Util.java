@@ -15,21 +15,18 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.munch.print;
+package no.scienta.unearth.munch.util;
 
-import no.scienta.unearth.munch.model.Fault;
+import java.util.function.BinaryOperator;
 
-import java.util.List;
+public final class Util {
 
-public interface CauseChainRenderer {
-
-    default List<String> render(Throwable throwable) {
-        return render(Fault.create(throwable));
+    public static <T> BinaryOperator<T> noCombine() {
+        return (t1, t2) -> {
+            throw new IllegalStateException("No combine: " + t1 + " <> " + t2);
+        };
     }
 
-    default List<String> render(Fault fault) {
-        return render(CauseChain.build(fault));
+    private Util() {
     }
-
-    List<String> render(CauseChain causeChain);
 }

@@ -20,6 +20,7 @@ package no.scienta.unearth.core.handler;
 import no.scienta.unearth.core.*;
 import no.scienta.unearth.munch.model.Fault;
 import no.scienta.unearth.munch.model.FaultEvent;
+import no.scienta.unearth.munch.print.CauseChainRenderer;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -33,17 +34,21 @@ public class DefaultThrowablesHandler implements FaultHandler {
 
     private final FaultSensor sensor;
 
+    private final CauseChainRenderer causeChainRenderer;
+
     private final Clock clock;
 
     public DefaultThrowablesHandler(
         FaultStorage storage,
         FaultStats stats,
         FaultSensor sensor,
+        CauseChainRenderer causeChainRenderer,
         Clock clock
     ) {
         this.storage = storage;
         this.stats = stats;
         this.sensor = sensor;
+        this.causeChainRenderer = causeChainRenderer;
         this.clock = clock;
     }
 
@@ -59,9 +64,14 @@ public class DefaultThrowablesHandler implements FaultHandler {
         Optional<FaultEvent> faultEvent = stats.getLastFaultEvent(stored.getFault().getFaultStrand().getId());
         if (stored.getFaultSequenceNo() == 0 || faultEvent.map(FaultEvent::getTime).filter(time ->
             QUIET_WINDOW.minus(Duration.between(time, clock.instant())).isNegative()).isPresent()) {
-            return policy.log();
+            return policy
+                .withAction(HandlingPolicy.Action.LOG)
+                .withSeverity(HandlingPolicy.Severity.ERROR);
         }
-        return policy.log();
+        return policy
+            .withAction(HandlingPolicy.Action.LOG_SHORT)
+            .withPrintout(HandlingPolicy.PrintoutType.SHORT, toString())
+            .withSeverity(HandlingPolicy.Severity.WARNING);
     }
 
     private static final Duration QUIET_WINDOW = Duration.ofMinutes(1);

@@ -17,14 +17,17 @@
 
 package no.scienta.unearth.munch.util;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+@SuppressWarnings("WeakerAccess")
 public final class Streams {
 
     public static <T> Stream<T> reverse(Stream<T> s) {
@@ -37,6 +40,22 @@ public final class Streams {
 
     public static Stream<Throwable> causes(Throwable throwable) {
         return StreamSupport.stream(new CauseSpliterator(throwable), false);
+    }
+
+    public static <T, U> U quickReduce(Collection<T> stream, BiFunction<U, ? super T, U> accumulator) {
+        return quickReduce(stream.stream(), accumulator);
+    }
+
+    public static <T, U> U quickReduce(Stream<T> stream, BiFunction<U, ? super T, U> accumulator) {
+        return quickReduce(stream, null, accumulator);
+    }
+
+    public static <T, U> U quickReduce(Collection<T> stream, U identity, BiFunction<U, ? super T, U> accumulator) {
+        return quickReduce(stream.stream(), identity, accumulator);
+    }
+
+    public static <T, U> U quickReduce(Stream<T> stream, U identity, BiFunction<U, ? super T, U> accumulator) {
+        return stream.reduce(identity, accumulator, Util.noCombine());
     }
 
     private static class CauseSpliterator extends Spliterators.AbstractSpliterator<Throwable> {

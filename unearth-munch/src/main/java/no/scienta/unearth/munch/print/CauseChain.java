@@ -43,9 +43,7 @@ import no.scienta.unearth.munch.util.Streams;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * A cause chain is a moldable mirror image of an actual {@link Throwable}.
@@ -53,10 +51,10 @@ import java.util.function.Function;
 public class CauseChain extends AbstractHashable {
 
     public static CauseChain build(Fault fault) {
-        return Streams.reverse(fault.getCauses()).reduce(
-            null,
+        return Streams.quickReduce(
+            Streams.reverse(fault.getCauses()),
             (chainedFault, cause) ->
-                new CauseChain(cause, chainedFault), noCombine());
+                new CauseChain(cause, chainedFault, null));
     }
 
     private final Cause cause;
@@ -71,10 +69,6 @@ public class CauseChain extends AbstractHashable {
 
     private final CauseChain chainedCause;
 
-    public CauseChain(Cause cause, CauseChain chainedCause) {
-        this(cause, chainedCause, null);
-    }
-
     private CauseChain(Cause cause, CauseChain chainedCause, List<String> printout) {
         this.cause = cause;
         this.message = cause.getMessage();
@@ -84,12 +78,6 @@ public class CauseChain extends AbstractHashable {
             ? Collections.emptyList()
             : Collections.unmodifiableList(new ArrayList<>(printout));
         this.chainedCause = chainedCause;
-    }
-
-    public static <T> BinaryOperator<T> noCombine() {
-        return (t1, t2) -> {
-            throw new IllegalStateException("No combine: " + t1 + " <> " + t2);
-        };
     }
 
     public String getClassName() {
@@ -116,13 +104,13 @@ public class CauseChain extends AbstractHashable {
         return printout;
     }
 
-    public CauseChain withPrintout(Function<CauseChain, List<String>> writer) {
-        List<String> printout = writer.apply(this);
+    public CauseChain withPrintout(CauseChainRenderer renderer) {
+        List<String> printout = renderer.render(this);
         return new CauseChain(
             cause,
             chainedCause == null
                 ? null
-                : chainedCause.withPrintout(writer),
+                : chainedCause.withPrintout(renderer),
             printout);
     }
 

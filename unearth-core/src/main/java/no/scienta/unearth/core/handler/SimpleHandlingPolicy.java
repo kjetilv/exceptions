@@ -18,10 +18,15 @@
 package no.scienta.unearth.core.handler;
 
 import no.scienta.unearth.core.HandlingPolicy;
-import no.scienta.unearth.munch.id.FaultStrandId;
-import no.scienta.unearth.munch.model.FaultEvent;
 import no.scienta.unearth.munch.id.FaultEventId;
 import no.scienta.unearth.munch.id.FaultId;
+import no.scienta.unearth.munch.id.FaultStrandId;
+import no.scienta.unearth.munch.model.FaultEvent;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 class SimpleHandlingPolicy implements HandlingPolicy {
 
@@ -29,13 +34,26 @@ class SimpleHandlingPolicy implements HandlingPolicy {
 
     private final Action action;
 
+    private final Severity severity;
+
+    private final Map<PrintoutType, String> printouts;
+
     SimpleHandlingPolicy(FaultEvent faultEvent) {
-        this(faultEvent, null);
+        this(faultEvent, null, null, null);
     }
 
-    SimpleHandlingPolicy(FaultEvent faultEvent, Action action) {
+    private SimpleHandlingPolicy(
+        FaultEvent faultEvent,
+        Action action,
+        Severity severity,
+        Map<PrintoutType, String> printouts
+    ) {
         this.faultEvent = faultEvent;
         this.action = action;
+        this.severity = severity == null ? Severity.DEBUG : severity;
+        this.printouts = printouts == null || printouts.isEmpty()
+            ? Collections.emptyMap()
+            : Collections.unmodifiableMap(new HashMap<>(printouts));
     }
 
     @Override
@@ -53,8 +71,18 @@ class SimpleHandlingPolicy implements HandlingPolicy {
     }
 
     @Override
+    public Optional<String> getPrintout(PrintoutType type) {
+        return Optional.ofNullable(printouts.get(type));
+    }
+
+    @Override
     public Action getAction() {
         return action;
+    }
+
+    @Override
+    public Severity getSeverity() {
+        return severity;
     }
 
     @Override
@@ -72,15 +100,17 @@ class SimpleHandlingPolicy implements HandlingPolicy {
         return faultEvent.getFaultStrandSequenceNo();
     }
 
-    HandlingPolicy log() {
-        return new SimpleHandlingPolicy(faultEvent, Action.LOG);
+    SimpleHandlingPolicy withPrintout(PrintoutType type, String string) {
+        Map<PrintoutType, String> map = new HashMap<>(printouts);
+        map.put(type, string);
+        return new SimpleHandlingPolicy(faultEvent, action, severity, map);
     }
 
-    HandlingPolicy logShort() {
-        return new SimpleHandlingPolicy(faultEvent, Action.LOG_SHORT);
+    SimpleHandlingPolicy withAction(Action action) {
+        return new SimpleHandlingPolicy(faultEvent, action, severity, printouts);
     }
 
-    HandlingPolicy ignore() {
-        return new SimpleHandlingPolicy(faultEvent, Action.IGNORE);
+    SimpleHandlingPolicy withSeverity(Severity severity) {
+        return new SimpleHandlingPolicy(faultEvent, action, severity, printouts);
     }
 }

@@ -19,7 +19,6 @@ package no.scienta.unearth.munch.model;
 
 import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
 import no.scienta.unearth.munch.id.FaultId;
-import no.scienta.unearth.munch.print.CauseChain;
 import no.scienta.unearth.munch.util.Streams;
 
 import java.util.*;
@@ -59,11 +58,8 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
     }
 
     public Throwable toCameleon() {
-        return Streams.reverse(causes)
-            .reduce(null,
-                (t, cause) ->
-                    cause.toChameleon(t),
-                CauseChain.noCombine());
+        return Streams.quickReduce(Streams.reverse(causes), (throwable, cause) ->
+            cause.toChameleon(throwable));
     }
 
     private static List<Cause> causes(Throwable throwable) {

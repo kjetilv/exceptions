@@ -23,12 +23,11 @@ import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.model.*
 import no.scienta.unearth.munch.print.CauseChain
-import no.scienta.unearth.munch.print.CauseChainRenderer
+import no.scienta.unearth.munch.print.ConfigurableCauseChainRenderer
 import no.scienta.unearth.munch.print.PackageGrouper
 import org.slf4j.LoggerFactory
 import java.time.Clock
 import java.time.ZoneId
-import java.util.*
 import java.util.stream.Stream
 
 class UnearthlyController(
@@ -37,7 +36,8 @@ class UnearthlyController(
         private val stats: FaultStats,
         sensor: FaultSensor
 ) {
-    private val handler: FaultHandler = DefaultThrowablesHandler(storage, stats, sensor, Clock.systemUTC());
+    private val handler: FaultHandler =
+            DefaultThrowablesHandler(storage, stats, sensor, rendererFor("org.http4k"), Clock.systemUTC());
 
     private val submitLogger = LoggerFactory.getLogger("Submitted")
 
@@ -148,14 +148,23 @@ class UnearthlyController(
             faultEvent.faultStrandSequenceNo)
 
     fun rewriteThrowable(faultId: FaultId, groups: Collection<String>?): CauseChainDto {
+        val singletonList: List<String> = groups?.toList() ?: emptyList()
+        val renderer = rendererFor(singletonList)
         return causeChainDto(CauseChain.build(storage.getFault(faultId))
-                .withPrintout(CauseChainRenderer()
-                        .group(PackageGrouper(Collections.singleton(groups)))
-                        .squasher { _, causeFrames ->
-                            Stream.of("  * (${causeFrames.size})")
-                        }.reshapeAll(CauseFrame.JAVA_8_LIKE)
-                        .reshape(CauseChainRenderer.SHORTEN_CLASSNAME)))
+                .withPrintout(renderer))
     }
+
+    private fun rendererFor(vararg groups: String): ConfigurableCauseChainRenderer {
+        return rendererFor(groups.toList())
+    }
+
+    private fun rendererFor(groups1: List<String>) = ConfigurableCauseChainRenderer()
+            .group(PackageGrouper(groups1))
+            .squasher { _, causeFrames ->
+                Stream.of("  * (${causeFrames.size})")
+            }
+            .reshapeAll(FrameFun.LIKE_JAVA_8)
+            .reshape(FrameFun.SHORTEN_CLASSNAME)
 
     private fun causeChainDto(
             chain: CauseChain,

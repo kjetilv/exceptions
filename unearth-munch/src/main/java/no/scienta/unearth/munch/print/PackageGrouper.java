@@ -27,6 +27,14 @@ public class PackageGrouper implements Function<CauseFrame, Optional<Collection<
 
     private final Collection<Collection<String>> groups;
 
+    public PackageGrouper(String... groups) {
+        this(Arrays.asList(groups));
+    }
+
+    public PackageGrouper(List<String> groups) {
+        this(Collections.singleton(groups));
+    }
+
     public PackageGrouper(Collection<Collection<String>> groups) {
         this.groups = groups == null || groups.isEmpty() || groups.stream().allMatch(g -> g == null || g.isEmpty())
             ? Collections.emptyList()
