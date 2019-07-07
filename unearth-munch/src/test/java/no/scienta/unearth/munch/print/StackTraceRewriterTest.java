@@ -30,7 +30,7 @@ public class StackTraceRewriterTest {
 
     @Test
     public void test() {
-        CauseChainRenderer causeChainRenderer = new ConfigurableCauseChainRenderer()
+        ThrowableRenderer causeChainRenderer = new ConfigurableCauseChainRenderer()
             .group(new PackageGrouper(
                 Arrays.asList(
                     Collections.singleton("org.gradle"),

@@ -35,11 +35,32 @@ data class Submission(
 
         val faultSequenceNo: Long,
 
-        val action: Action
+        val action: Action?,
+
+        val printOut: Printout = Printout()
 )
 
-enum class Action {
-    LOG,
-    LOG_SHORT,
-    IGNORE
+data class Printout(
+
+        val log: List<String> = emptyList(),
+
+        val logShort: List<String> = emptyList(),
+
+        val logMessages: List<String> = emptyList()
+)
+
+@Suppress("EnumEntryName")
+enum class Action : (Submission) -> List<String> {
+
+    LOG {
+        override fun invoke(submission: Submission) = submission.printOut.log
+    },
+
+    LOG_SHORT {
+        override fun invoke(submission: Submission) = submission.printOut.logShort
+    },
+
+    LOG_MESSAGES {
+        override fun invoke(submission: Submission) = submission.printOut.logMessages
+    }
 }

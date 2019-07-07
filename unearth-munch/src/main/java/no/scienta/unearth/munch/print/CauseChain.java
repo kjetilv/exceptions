@@ -104,7 +104,7 @@ public class CauseChain extends AbstractHashable {
         return printout;
     }
 
-    public CauseChain withPrintout(CauseChainRenderer renderer) {
+    public CauseChain withPrintout(ThrowableRenderer renderer) {
         List<String> printout = renderer.render(this);
         return new CauseChain(
             cause,

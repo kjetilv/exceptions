@@ -23,10 +23,7 @@ import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.id.FaultStrandId;
 import no.scienta.unearth.munch.model.FaultEvent;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 class SimpleHandlingPolicy implements HandlingPolicy {
 
@@ -36,7 +33,7 @@ class SimpleHandlingPolicy implements HandlingPolicy {
 
     private final Severity severity;
 
-    private final Map<PrintoutType, String> printouts;
+    private final Map<PrintoutType, List<String>> printouts;
 
     SimpleHandlingPolicy(FaultEvent faultEvent) {
         this(faultEvent, null, null, null);
@@ -46,7 +43,7 @@ class SimpleHandlingPolicy implements HandlingPolicy {
         FaultEvent faultEvent,
         Action action,
         Severity severity,
-        Map<PrintoutType, String> printouts
+        Map<PrintoutType, List<String>> printouts
     ) {
         this.faultEvent = faultEvent;
         this.action = action;
@@ -71,8 +68,8 @@ class SimpleHandlingPolicy implements HandlingPolicy {
     }
 
     @Override
-    public Optional<String> getPrintout(PrintoutType type) {
-        return Optional.ofNullable(printouts.get(type));
+    public List<String> getPrintout(PrintoutType type) {
+        return Optional.ofNullable(printouts.get(type)).orElseGet(Collections::emptyList);
     }
 
     @Override
@@ -100,9 +97,10 @@ class SimpleHandlingPolicy implements HandlingPolicy {
         return faultEvent.getFaultStrandSequenceNo();
     }
 
-    SimpleHandlingPolicy withPrintout(PrintoutType type, String string) {
-        Map<PrintoutType, String> map = new HashMap<>(printouts);
-        map.put(type, string);
+    SimpleHandlingPolicy
+    withPrintout(PrintoutType type, List<String> printout) {
+        Map<PrintoutType, List<String>> map = new HashMap<>(printouts);
+        map.put(type, printout);
         return new SimpleHandlingPolicy(faultEvent, action, severity, map);
     }
 

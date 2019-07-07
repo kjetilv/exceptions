@@ -37,7 +37,10 @@ class UnearthlyController(
         sensor: FaultSensor
 ) {
     private val handler: FaultHandler =
-            DefaultThrowablesHandler(storage, stats, sensor, rendererFor("org.http4k"), Clock.systemUTC());
+            DefaultThrowablesHandler(storage, stats, sensor,
+                    ConfigurableCauseChainRenderer(),
+                    rendererFor("org.http4k", "io.netty"),
+                    Clock.systemUTC());
 
     private val submitLogger = LoggerFactory.getLogger("Submitted")
 

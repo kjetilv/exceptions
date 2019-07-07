@@ -21,7 +21,7 @@ import no.scienta.unearth.munch.id.FaultEventId;
 import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.id.FaultStrandId;
 
-import java.util.Optional;
+import java.util.List;
 
 public interface HandlingPolicy {
 
@@ -35,7 +35,7 @@ public interface HandlingPolicy {
 
     FaultEventId getFaultEventId();
 
-    Optional<String> getPrintout(PrintoutType type);
+    List<String> getPrintout(PrintoutType type);
 
     long getGlobalSequence();
 
@@ -52,7 +52,7 @@ public interface HandlingPolicy {
     enum Action {
         LOG,
         LOG_SHORT,
-        IGNORE
+        LOG_MESSAGES
     }
 
     enum Severity {

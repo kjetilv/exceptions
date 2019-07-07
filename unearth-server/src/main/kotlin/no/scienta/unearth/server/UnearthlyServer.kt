@@ -357,7 +357,12 @@ class UnearthlyServer(
             handling.globalSequence,
             handling.faultStrandSequence,
             handling.faultSequence,
-            Action.valueOf(handling.action.name))
+            action = Action.valueOf(handling.action.name),
+            printOut = Printout(
+                    log = handling.getPrintout(HandlingPolicy.PrintoutType.FULL),
+                    logShort = handling.getPrintout(HandlingPolicy.PrintoutType.SHORT),
+                    logMessages = handling.getPrintout(HandlingPolicy.PrintoutType.MESSAGES_ONLY)
+            ))
 
     private fun handledResponse(response: Response, request: Request): Response =
             when {

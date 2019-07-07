@@ -21,7 +21,7 @@ import no.scienta.unearth.munch.model.Fault;
 
 import java.util.List;
 
-public interface CauseChainRenderer {
+public interface ThrowableRenderer {
 
     default List<String> render(Throwable throwable) {
         return render(Fault.create(throwable));

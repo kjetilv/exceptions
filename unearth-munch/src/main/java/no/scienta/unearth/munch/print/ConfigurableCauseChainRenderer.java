@@ -26,7 +26,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ConfigurableCauseChainRenderer implements CauseChainRenderer {
+public class ConfigurableCauseChainRenderer implements ThrowableRenderer {
 
     private final List<BiFunction<Collection<String>, CauseFrame, CauseFrame>> reshapers;
 
@@ -64,7 +64,7 @@ public class ConfigurableCauseChainRenderer implements CauseChainRenderer {
         this.squasher = squasher;
     }
 
-    public CauseChainRenderer framePrinter(BiFunction<StringBuilder, CauseFrame, StringBuilder> framePrinter) {
+    public ThrowableRenderer framePrinter(BiFunction<StringBuilder, CauseFrame, StringBuilder> framePrinter) {
         return new ConfigurableCauseChainRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher);
     }
 

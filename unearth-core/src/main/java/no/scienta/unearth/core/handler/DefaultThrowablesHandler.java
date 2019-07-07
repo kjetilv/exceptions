@@ -20,7 +20,8 @@ package no.scienta.unearth.core.handler;
 import no.scienta.unearth.core.*;
 import no.scienta.unearth.munch.model.Fault;
 import no.scienta.unearth.munch.model.FaultEvent;
-import no.scienta.unearth.munch.print.CauseChainRenderer;
+import no.scienta.unearth.munch.print.ThrowableRenderer;
+import no.scienta.unearth.munch.util.Util;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -34,7 +35,9 @@ public class DefaultThrowablesHandler implements FaultHandler {
 
     private final FaultSensor sensor;
 
-    private final CauseChainRenderer causeChainRenderer;
+    private final ThrowableRenderer fullRenderer;
+
+    private final ThrowableRenderer shortRenderer;
 
     private final Clock clock;
 
@@ -42,13 +45,15 @@ public class DefaultThrowablesHandler implements FaultHandler {
         FaultStorage storage,
         FaultStats stats,
         FaultSensor sensor,
-        CauseChainRenderer causeChainRenderer,
+        ThrowableRenderer fullRenderer,
+        ThrowableRenderer shortRenderer,
         Clock clock
     ) {
         this.storage = storage;
         this.stats = stats;
         this.sensor = sensor;
-        this.causeChainRenderer = causeChainRenderer;
+        this.fullRenderer = fullRenderer;
+        this.shortRenderer = shortRenderer;
         this.clock = clock;
     }
 
@@ -58,20 +63,39 @@ public class DefaultThrowablesHandler implements FaultHandler {
     }
 
     private HandlingPolicy store(Fault submitted) {
+        Optional<FaultEvent> lastStored = stats.getLastFaultEvent(submitted.getFaultStrand().getId());
+
         FaultEvent stored = storage.store(submitted);
         FaultEvent registered = sensor.registered(stored);
-        SimpleHandlingPolicy policy = new SimpleHandlingPolicy(registered);
-        Optional<FaultEvent> faultEvent = stats.getLastFaultEvent(stored.getFault().getFaultStrand().getId());
-        if (stored.getFaultSequenceNo() == 0 || faultEvent.map(FaultEvent::getTime).filter(time ->
-            QUIET_WINDOW.minus(Duration.between(time, clock.instant())).isNegative()).isPresent()) {
+
+        return policy(lastStored.orElse(null), registered);
+    }
+
+    private HandlingPolicy policy(FaultEvent previous, FaultEvent registered) {
+        Fault fault = registered.getFault();
+        SimpleHandlingPolicy policy = new SimpleHandlingPolicy(registered)
+            .withPrintout(HandlingPolicy.PrintoutType.MESSAGES_ONLY,
+                fault.getMessages())
+            .withPrintout(HandlingPolicy.PrintoutType.FULL,
+                fullRenderer.render(fault))
+            .withPrintout(HandlingPolicy.PrintoutType.SHORT,
+                shortRenderer.render(fault));
+        if (loggedInQuietWindow(previous)) {
             return policy
-                .withAction(HandlingPolicy.Action.LOG)
-                .withSeverity(HandlingPolicy.Severity.ERROR);
+                .withAction(HandlingPolicy.Action.LOG_SHORT)
+                .withSeverity(HandlingPolicy.Severity.WARNING);
         }
         return policy
-            .withAction(HandlingPolicy.Action.LOG_SHORT)
-            .withPrintout(HandlingPolicy.PrintoutType.SHORT, toString())
-            .withSeverity(HandlingPolicy.Severity.WARNING);
+            .withAction(HandlingPolicy.Action.LOG)
+            .withSeverity(HandlingPolicy.Severity.ERROR);
+    }
+
+    private boolean loggedInQuietWindow(FaultEvent lastStored) {
+        if (lastStored == null) {
+            return false;
+        }
+        Duration timeSinceLastOccurrence = Duration.between(lastStored.getTime(), clock.instant());
+        return Util.isLongerThan(QUIET_WINDOW, timeSinceLastOccurrence);
     }
 
     private static final Duration QUIET_WINDOW = Duration.ofMinutes(1);

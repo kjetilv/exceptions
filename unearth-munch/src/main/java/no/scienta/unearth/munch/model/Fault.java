@@ -57,6 +57,12 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
         return causes;
     }
 
+    public List<String> getMessages() {
+        return causes.stream().map(cause ->
+            cause.getCauseStrand().getClassName() + ": " + cause.getMessage()
+        ).collect(Collectors.toList());
+    }
+
     public Throwable toCameleon() {
         return Streams.quickReduce(Streams.reverse(causes), (throwable, cause) ->
             cause.toChameleon(throwable));

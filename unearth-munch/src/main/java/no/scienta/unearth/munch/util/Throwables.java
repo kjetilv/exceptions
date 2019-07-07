@@ -30,6 +30,10 @@ public class Throwables {
         return ByteBuffer.wrap(bytes(throwable));
     }
 
+    public static String toStringString(Throwable throwable) {
+        return Streams.causes(throwable).map(Throwable::toString).collect(Collectors.joining("\n => "));
+    }
+
     public static String string(Throwable throwable) {
         return new String(bytes(throwable), StandardCharsets.UTF_8);
     }

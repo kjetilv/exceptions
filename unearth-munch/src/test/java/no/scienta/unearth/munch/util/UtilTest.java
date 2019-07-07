@@ -17,21 +17,16 @@
 
 package no.scienta.unearth.munch.util;
 
+import org.junit.Test;
+
 import java.time.Duration;
-import java.util.function.BinaryOperator;
 
-public final class Util {
+import static org.junit.Assert.assertTrue;
 
-    static <T> BinaryOperator<T> noCombine() {
-        return (t1, t2) -> {
-            throw new IllegalStateException("No combine: " + t1 + " <> " + t2);
-        };
-    }
+public class UtilTest {
 
-    public static boolean isLongerThan(Duration time, Duration comparedValue) {
-        return comparedValue.minus(time).isNegative();
-    }
-
-    private Util() {
+    @Test
+    public void longerThan() {
+        assertTrue(Util.isLongerThan(Duration.ofMinutes(2), Duration.ofMillis(200)));
     }
 }
