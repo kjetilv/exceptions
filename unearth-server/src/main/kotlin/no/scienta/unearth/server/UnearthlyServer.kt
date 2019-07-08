@@ -402,9 +402,16 @@ class UnearthlyServer(
             return bareBonesErrorResponse("Failed to submit self-diagnosed error", e)
         }
         if (policy.action == HandlingPolicy.Action.LOG) {
-            logger.error("Failed: ${policy?.faultEventId ?: "unknown"}", error)
-        } else if (policy.action == HandlingPolicy.Action.LOG_SHORT){
-            logger.error("Failed: $error")
+            logger.warn("Failed: ${policy?.faultEventId ?: "unknown"}\n  {}",
+                    java.lang.String.join("\n  ", policy.getPrintout(HandlingPolicy.PrintoutType.FULL)))
+        } else if (policy.action == HandlingPolicy.Action.LOG_SHORT) {
+            logger.warn("Failed: $error:\n{}",
+                    java.lang.String.join("\n  ", policy.getPrintout(HandlingPolicy.PrintoutType.SHORT)));
+        } else if (policy.action == HandlingPolicy.Action.LOG_MESSAGES) {
+            logger.warn("Failed: $error:\n{}",
+                    java.lang.String.join("\n  ", policy.getPrintout(HandlingPolicy.PrintoutType.MESSAGES_ONLY)));
+        } else if (policy.action == HandlingPolicy.Action.LOG_ID) {
+            logger.warn("Failed: $error: {}", policy.faultId);
         }
         return internalError.set(
                 withContentType((response ?: Response(status ?: INTERNAL_SERVER_ERROR))

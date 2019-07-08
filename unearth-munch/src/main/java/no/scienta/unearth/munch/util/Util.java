@@ -32,6 +32,10 @@ public final class Util {
         return comparedValue.minus(time).isNegative();
     }
 
+    public static boolean isShorterThan(Duration time, Duration comparedValue) {
+        return time.minus(comparedValue).isNegative();
+    }
+
     private Util() {
     }
 }

@@ -30,19 +30,19 @@ public class StackTraceRewriterTest {
 
     @Test
     public void test() {
-        ThrowableRenderer causeChainRenderer = new ConfigurableCauseChainRenderer()
-            .group(new PackageGrouper(
+        ThrowableRenderer causeChainRenderer = new ConfigurableThrowableRenderer()
+            .group(new SimplePackageGrouper(
                 Arrays.asList(
                     Collections.singleton("org.gradle"),
                     Collections.singleton("org.junit"),
                     Arrays.asList("java", "jdk", "com.sun"))))
-            .squasher((group, causeFrames) ->
+            .squash((group, causeFrames) ->
                 Stream.of("  * (" + causeFrames.size() + ")"))
-            .reshapeAll(
+            .reshape(
                 CauseFrame::unsetClassLoader,
                 CauseFrame::unsetModuleInfo)
             .reshape(
-                FrameFun::shortenClassname)
+                FrameFun::shortenClassName)
             .framePrinter((sb, cf) ->
                 cf.defaultPrint(sb.append("--  ")));
 

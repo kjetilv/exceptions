@@ -18,6 +18,7 @@
 package no.scienta.unearth.core.handler;
 
 import no.scienta.unearth.core.*;
+import no.scienta.unearth.core.HandlingPolicy.Action;
 import no.scienta.unearth.munch.model.Fault;
 import no.scienta.unearth.munch.model.FaultEvent;
 import no.scienta.unearth.munch.print.ThrowableRenderer;
@@ -74,29 +75,32 @@ public class DefaultThrowablesHandler implements FaultHandler {
     private HandlingPolicy policy(FaultEvent previous, FaultEvent registered) {
         Fault fault = registered.getFault();
         SimpleHandlingPolicy policy = new SimpleHandlingPolicy(registered)
-            .withPrintout(HandlingPolicy.PrintoutType.MESSAGES_ONLY,
-                fault.getMessages())
-            .withPrintout(HandlingPolicy.PrintoutType.FULL,
+            .withPrintout(HandlingPolicy.PrintoutType.MESSAGES_ONLY, fault::getMessages)
+            .withPrintout(HandlingPolicy.PrintoutType.FULL, () ->
                 fullRenderer.render(fault))
-            .withPrintout(HandlingPolicy.PrintoutType.SHORT,
+            .withPrintout(HandlingPolicy.PrintoutType.SHORT, () ->
                 shortRenderer.render(fault));
-        if (loggedInQuietWindow(previous)) {
-            return policy
-                .withAction(HandlingPolicy.Action.LOG_SHORT)
-                .withSeverity(HandlingPolicy.Severity.WARNING);
-        }
-        return policy
-            .withAction(HandlingPolicy.Action.LOG)
-            .withSeverity(HandlingPolicy.Severity.ERROR);
+        return policy.withAction(actionForWindow(previous));
     }
 
-    private boolean loggedInQuietWindow(FaultEvent lastStored) {
-        if (lastStored == null) {
-            return false;
+    private Action actionForWindow(FaultEvent previous) {
+        if (previous == null) {
+            return Action.LOG;
         }
-        Duration timeSinceLastOccurrence = Duration.between(lastStored.getTime(), clock.instant());
-        return Util.isLongerThan(QUIET_WINDOW, timeSinceLastOccurrence);
+        Duration eventInterval = Duration.between(previous.getTime(), clock.instant());
+        return isIn(eventInterval, DELUGE_WINDOW) ? Action.LOG_ID :
+            isIn(eventInterval, SPAM_WINDOW) ? Action.LOG_MESSAGES
+                : isIn(eventInterval, QUIET_WINDOW) ? Action.LOG_SHORT
+                : Action.LOG;
     }
 
-    private static final Duration QUIET_WINDOW = Duration.ofMinutes(1);
+    private boolean isIn(Duration eventWindow, Duration window) {
+        return Util.isLongerThan(window, eventWindow);
+    }
+
+    private static final Duration QUIET_WINDOW = Duration.ofMinutes(5);
+
+    private static final Duration SPAM_WINDOW = Duration.ofMinutes(1);
+
+    private static final Duration DELUGE_WINDOW = Duration.ofSeconds(5);
 }

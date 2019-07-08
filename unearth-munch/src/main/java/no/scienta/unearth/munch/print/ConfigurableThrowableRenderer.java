@@ -26,28 +26,28 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ConfigurableCauseChainRenderer implements ThrowableRenderer {
+public class ConfigurableThrowableRenderer implements ThrowableRenderer {
 
-    private final List<BiFunction<Collection<String>, CauseFrame, CauseFrame>> reshapers;
+    private final List<GroupedFrameTransform> reshapers;
 
-    private final BiFunction<String, Integer, String> groupPrinter;
+    private final GroupPrinter groupPrinter;
 
-    private final BiFunction<StringBuilder, CauseFrame, StringBuilder> framePrinter;
+    private final FramePrinter framePrinter;
 
-    private final Function<CauseFrame, Optional<Collection<String>>> grouper;
+    private final PackageGrouper grouper;
 
-    private final BiFunction<Collection<String>, List<CauseFrame>, Stream<String>> squasher;
+    private final FrameLister squasher;
 
-    public ConfigurableCauseChainRenderer() {
+    public ConfigurableThrowableRenderer() {
         this(null, null, null, null, null);
     }
 
-    private ConfigurableCauseChainRenderer(
-        Function<CauseFrame, Optional<Collection<String>>> grouper,
-        BiFunction<String, Integer, String> groupDisplay,
-        BiFunction<StringBuilder, CauseFrame, StringBuilder> framePrinter,
-        List<BiFunction<Collection<String>, CauseFrame, CauseFrame>> reshapers,
-        BiFunction<Collection<String>, List<CauseFrame>, Stream<String>> squasher
+    private ConfigurableThrowableRenderer(
+        PackageGrouper grouper,
+        GroupPrinter groupDisplay,
+        FramePrinter framePrinter,
+        List<GroupedFrameTransform> reshapers,
+        FrameLister squasher
     ) {
         this.grouper = grouper == null
             ? causeFrame -> Optional.empty()
@@ -64,28 +64,26 @@ public class ConfigurableCauseChainRenderer implements ThrowableRenderer {
         this.squasher = squasher;
     }
 
-    public ThrowableRenderer framePrinter(BiFunction<StringBuilder, CauseFrame, StringBuilder> framePrinter) {
-        return new ConfigurableCauseChainRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher);
+    public ThrowableRenderer framePrinter(FramePrinter framePrinter) {
+        return new ConfigurableThrowableRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher);
     }
 
-    public ConfigurableCauseChainRenderer group(Function<CauseFrame, Optional<Collection<String>>> grouper) {
-        return new ConfigurableCauseChainRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher);
+    public ConfigurableThrowableRenderer group(PackageGrouper grouper) {
+        return new ConfigurableThrowableRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher);
     }
 
-    public ConfigurableCauseChainRenderer squasher(BiFunction<Collection<String>, List<CauseFrame>, Stream<String>> squasher) {
-        return new ConfigurableCauseChainRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher);
+    public ConfigurableThrowableRenderer squash(FrameLister squasher) {
+        return new ConfigurableThrowableRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher);
     }
 
-    @SafeVarargs
-    public final ConfigurableCauseChainRenderer reshape(BiFunction<Collection<String>, CauseFrame, CauseFrame>... reshapers) {
-        return new ConfigurableCauseChainRenderer(grouper, groupPrinter, framePrinter, added(reshapers), squasher);
+    public final ConfigurableThrowableRenderer reshape(GroupedFrameTransform... reshapers) {
+        return new ConfigurableThrowableRenderer(grouper, groupPrinter, framePrinter, added(reshapers), squasher);
     }
 
-    @SafeVarargs
-    public final ConfigurableCauseChainRenderer reshapeAll(Function<CauseFrame, CauseFrame>... reshapers) {
-        List<BiFunction<Collection<String>, CauseFrame, CauseFrame>> added =
-            added(Arrays.stream(reshapers).map(ConfigurableCauseChainRenderer::all));
-        return new ConfigurableCauseChainRenderer(grouper, groupPrinter, framePrinter, added, squasher);
+    public final ConfigurableThrowableRenderer reshape(FrameTransform... reshapers) {
+        List<GroupedFrameTransform> added =
+            added(Arrays.stream(reshapers).map(ConfigurableThrowableRenderer::forAll));
+        return new ConfigurableThrowableRenderer(grouper, groupPrinter, framePrinter, added, squasher);
     }
 
     @Override
@@ -123,16 +121,11 @@ public class ConfigurableCauseChainRenderer implements ThrowableRenderer {
                 reshaper.apply(group, cf));
     }
 
-    @SafeVarargs
-    private final List<BiFunction<Collection<String>, CauseFrame, CauseFrame>> added(
-        BiFunction<Collection<String>, CauseFrame, CauseFrame>... reshapers
-    ) {
+    private List<GroupedFrameTransform> added(GroupedFrameTransform... reshapers) {
         return added(Arrays.stream(reshapers));
     }
 
-    private List<BiFunction<Collection<String>, CauseFrame, CauseFrame>> added(
-        Stream<BiFunction<Collection<String>, CauseFrame, CauseFrame>> reshapers
-    ) {
+    private List<GroupedFrameTransform> added(Stream<GroupedFrameTransform> reshapers) {
         return Stream.concat(this.reshapers.stream(), reshapers).collect(Collectors.toList());
     }
 
@@ -152,11 +145,25 @@ public class ConfigurableCauseChainRenderer implements ThrowableRenderer {
 
     private static final String INDENT = "  ";
 
-    private static CauseFrame noCombine(CauseFrame cf1, CauseFrame cf2) {
-        throw new IllegalStateException("No combine: " + cf1 + "/" + cf2);
+    private static GroupedFrameTransform forAll(Function<CauseFrame, CauseFrame> fun) {
+        return (group, causeFrame) -> fun.apply(causeFrame);
     }
 
-    private static BiFunction<Collection<String>, CauseFrame, CauseFrame> all(Function<CauseFrame, CauseFrame> fun) {
-        return (group, causeFrame) -> fun.apply(causeFrame);
+    public interface FramePrinter extends BiFunction<StringBuilder, CauseFrame, StringBuilder> {
+    }
+
+    public interface FrameLister extends BiFunction<Collection<String>, List<CauseFrame>, Stream<String>> {
+    }
+
+    public interface FrameTransform extends Function<CauseFrame, CauseFrame> {
+    }
+
+    public interface GroupedFrameTransform extends BiFunction<Collection<String>, CauseFrame, CauseFrame> {
+    }
+
+    public interface PackageGrouper extends Function<CauseFrame, Optional<Collection<String>>> {
+    }
+
+    public interface GroupPrinter extends BiFunction<String, Integer, String> {
     }
 }

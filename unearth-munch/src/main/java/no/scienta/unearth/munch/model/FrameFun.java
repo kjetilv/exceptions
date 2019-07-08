@@ -17,43 +17,45 @@
 
 package no.scienta.unearth.munch.model;
 
+import no.scienta.unearth.munch.print.ConfigurableThrowableRenderer;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class FrameFun {
 
-    public static Function<CauseFrame, CauseFrame> UNSET_MODULE_INFO = CauseFrame::unsetModuleInfo;
+    public static ConfigurableThrowableRenderer.FrameTransform UNSET_MODULE_INFO = CauseFrame::unsetModuleInfo;
 
-    public static Function<CauseFrame, CauseFrame> UNSET_CLASSLOADER = CauseFrame::unsetClassLoader;
+    public static ConfigurableThrowableRenderer.FrameTransform UNSET_CLASSLOADER = CauseFrame::unsetClassLoader;
 
-    public static Function<CauseFrame, CauseFrame> LIKE_JAVA_8 = UNSET_MODULE_INFO.andThen(UNSET_CLASSLOADER);
+    public static ConfigurableThrowableRenderer.FrameTransform LIKE_JAVA_8 = UNSET_MODULE_INFO.andThen(UNSET_CLASSLOADER)::apply;
 
-    public static BiFunction<Collection<String>, List<CauseFrame>, Stream<String>> JUST_THE_COUNT_MAM =
+    public static ConfigurableThrowableRenderer.FrameLister JUST_COUNT =
         FrameFun::justTheCount;
 
-    public static BiFunction<Collection<String>, List<CauseFrame>, Stream<String>> JUST_THE_TOP_AND_COUNT_MAM =
-        FrameFun::justTheCount;
+    public static ConfigurableThrowableRenderer.FrameLister JUST_COUNT_AND_TOP =
+        FrameFun::justTheCountAndTop;
 
-    public static BiFunction<Collection<String>, CauseFrame, CauseFrame> SHORTEN_CLASSNAME =
-        FrameFun::shortenClassname;
+    public static ConfigurableThrowableRenderer.GroupedFrameTransform SHORTEN_CLASSNAME =
+        FrameFun::shortenClassName;
 
-    public static CauseFrame shortenClassname(Collection<String> group, CauseFrame causeFrame) {
-        return group == null ? causeFrame : shortenClassName(causeFrame);
-    }
+    public static ConfigurableThrowableRenderer.FrameTransform SHORTEN_CLASSNAMES = FrameFun::shortenClassName;
 
-    private static Stream<String> justTheCount(Collection<String> strings, List<CauseFrame> causeFrames) {
+    private static Stream<String> justTheCount(Collection<String> group, List<CauseFrame> causeFrames) {
         return Stream.of("  * (" + causeFrames.size() + ")");
     }
 
-    private static Stream<String> justTheCountAndTop(Collection<String> strings, List<CauseFrame> causeFrames) {
+    private static Stream<String> justTheCountAndTop(Collection<String> group, List<CauseFrame> causeFrames) {
         return Stream.of(
             causeFrames.iterator().next().toStringBody(),
             "  * (" + (causeFrames.size() - 1) + " more)");
+    }
+
+    public static CauseFrame shortenClassName(Collection<String> group, CauseFrame causeFrame) {
+        return group == null ? causeFrame : shortenClassName(causeFrame);
     }
 
     private static CauseFrame shortenClassName(CauseFrame causeFrame) {

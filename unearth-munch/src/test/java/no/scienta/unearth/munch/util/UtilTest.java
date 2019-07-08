@@ -29,4 +29,9 @@ public class UtilTest {
     public void longerThan() {
         assertTrue(Util.isLongerThan(Duration.ofMinutes(2), Duration.ofMillis(200)));
     }
+
+    @Test
+    public void shorterThan() {
+        assertTrue(Util.isShorterThan(Duration.ofMillis(200), Duration.ofMinutes(2)));
+    }
 }

@@ -23,19 +23,19 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class PackageGrouper implements Function<CauseFrame, Optional<Collection<String>>> {
+public class SimplePackageGrouper implements ConfigurableThrowableRenderer.PackageGrouper {
 
     private final Collection<Collection<String>> groups;
 
-    public PackageGrouper(String... groups) {
+    public SimplePackageGrouper(String... groups) {
         this(Arrays.asList(groups));
     }
 
-    public PackageGrouper(List<String> groups) {
+    public SimplePackageGrouper(List<String> groups) {
         this(Collections.singleton(groups));
     }
 
-    public PackageGrouper(Collection<Collection<String>> groups) {
+    public SimplePackageGrouper(Collection<Collection<String>> groups) {
         this.groups = groups == null || groups.isEmpty() || groups.stream().allMatch(g -> g == null || g.isEmpty())
             ? Collections.emptyList()
             : Collections.unmodifiableCollection(new ArrayList<>(groups));

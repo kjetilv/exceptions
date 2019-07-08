@@ -27,8 +27,6 @@ public interface HandlingPolicy {
 
     Action getAction();
 
-    Severity getSeverity();
-
     FaultStrandId getFaultStrandId();
 
     FaultId getFaultId();
@@ -52,7 +50,8 @@ public interface HandlingPolicy {
     enum Action {
         LOG,
         LOG_SHORT,
-        LOG_MESSAGES
+        LOG_MESSAGES,
+        LOG_ID
     }
 
     enum Severity {

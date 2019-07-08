@@ -23,8 +23,8 @@ import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.model.*
 import no.scienta.unearth.munch.print.CauseChain
-import no.scienta.unearth.munch.print.ConfigurableCauseChainRenderer
-import no.scienta.unearth.munch.print.PackageGrouper
+import no.scienta.unearth.munch.print.ConfigurableThrowableRenderer
+import no.scienta.unearth.munch.print.SimplePackageGrouper
 import org.slf4j.LoggerFactory
 import java.time.Clock
 import java.time.ZoneId
@@ -38,7 +38,7 @@ class UnearthlyController(
 ) {
     private val handler: FaultHandler =
             DefaultThrowablesHandler(storage, stats, sensor,
-                    ConfigurableCauseChainRenderer(),
+                    ConfigurableThrowableRenderer(),
                     rendererFor("org.http4k", "io.netty"),
                     Clock.systemUTC());
 
@@ -157,17 +157,17 @@ class UnearthlyController(
                 .withPrintout(renderer))
     }
 
-    private fun rendererFor(vararg groups: String): ConfigurableCauseChainRenderer {
+    private fun rendererFor(vararg groups: String): ConfigurableThrowableRenderer {
         return rendererFor(groups.toList())
     }
 
-    private fun rendererFor(groups1: List<String>) = ConfigurableCauseChainRenderer()
-            .group(PackageGrouper(groups1))
-            .squasher { _, causeFrames ->
+    private fun rendererFor(groups1: List<String>) = ConfigurableThrowableRenderer()
+            .group(SimplePackageGrouper(groups1))
+            .squash { _, causeFrames ->
                 Stream.of("  * (${causeFrames.size})")
             }
-            .reshapeAll(FrameFun.LIKE_JAVA_8)
-            .reshape(FrameFun.SHORTEN_CLASSNAME)
+            .reshape(FrameFun.LIKE_JAVA_8)
+            .reshape(FrameFun.SHORTEN_CLASSNAMES)
 
     private fun causeChainDto(
             chain: CauseChain,

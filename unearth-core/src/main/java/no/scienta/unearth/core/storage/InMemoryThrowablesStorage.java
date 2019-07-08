@@ -47,7 +47,6 @@ public class InMemoryThrowablesStorage
 
     private final Map<CauseId, Cause> causes = new HashMap<>();
 
-
     private final Collection<FaultEvent> faultEvents = new ArrayList<>();
 
     private final Map<FaultStrandId, Collection<Fault>> faultStrandFaults = new HashMap<>();
