@@ -24,7 +24,7 @@ data class FaultEventDto(
 
         val id: FaultEventId,
 
-        val fault: FaultDto,
+        val fault: FaultDto?,
 
         val time: ZonedDateTime,
 

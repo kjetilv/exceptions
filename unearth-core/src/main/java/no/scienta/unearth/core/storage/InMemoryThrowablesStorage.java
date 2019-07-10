@@ -232,11 +232,14 @@ public class InMemoryThrowablesStorage
         long offset,
         long count
     ) {
-        return delimited(
-            listLookup(map, id).stream()
-                .filter(t -> sequencer.apply(t) >= offset),
-            count
-        ).collect(Collectors.toList());
+        if (map.containsKey(id)) {
+            return delimited(
+                listLookup(map, id).stream()
+                    .filter(t -> sequencer.apply(t) >= offset),
+                count
+            ).collect(Collectors.toList());
+        }
+        throw new IllegalArgumentException("No " + id + " events recorded");
     }
 
     private static <T> Stream<T> delimited(Stream<T> candidates, long count) {

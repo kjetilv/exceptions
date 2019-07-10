@@ -120,7 +120,8 @@ class UnearthlyServer(
                     get(faultEvent) {
                         controller.lookupFaultEventDto(faultEventId,
                                 fullStack[req] ?: false,
-                                printStack[req] ?: false
+                                printStack[req] ?: false,
+                                true
                         )
                     }
                 }
@@ -260,16 +261,18 @@ class UnearthlyServer(
             "/feed/fault" / uuid(::FaultId) meta {
                 summary = "Events for a fault"
                 produces += APPLICATION_JSON
-                queries += listOf(offsetQuery, countQuery, fullStack, printStack)
+                queries += listOf(offsetQuery, countQuery, fullStack, printStack, fullEvent)
                 returning(OK, faultSequence to Swaggex.faultSequence(::FaultId))
             } bindContract GET to { faultId ->
                 { req ->
                     get(faultSequence) {
-                        controller.feed(faultId,
+                        controller.feed(
+                                faultId,
                                 offsetQuery[req] ?: 0L,
                                 countQuery[req] ?: 0L,
                                 fullStack[req] ?: false,
-                                printStack[req] ?: false)
+                                printStack[req] ?: false,
+                                fullEvent[req] ?: false)
                     }
                 }
             }
@@ -413,17 +416,18 @@ class UnearthlyServer(
         } catch (e: Exception) {
             return bareBonesErrorResponse("Failed to submit self-diagnosed error", e)
         }
-        if (policy.action == HandlingPolicy.Action.LOG) {
-            logger.warn("Failed: ${policy?.faultEventId ?: "unknown"}\n  {}",
-                    print(policy, HandlingPolicy.PrintoutType.FULL))
-        } else if (policy.action == HandlingPolicy.Action.LOG_SHORT) {
-            logger.warn("Failed: $error:\n{}",
-                    print(policy, HandlingPolicy.PrintoutType.SHORT))
-        } else if (policy.action == HandlingPolicy.Action.LOG_MESSAGES) {
-            logger.warn("Failed: $error:\n{}",
-                    print(policy, HandlingPolicy.PrintoutType.MESSAGES_ONLY))
-        } else if (policy.action == HandlingPolicy.Action.LOG_ID) {
-            logger.warn("Failed: $error: {}", policy.faultId)
+        when {
+            policy.action == HandlingPolicy.Action.LOG ->
+                logger.warn("Failed: ${policy?.faultEventId ?: "unknown"}\n  {}",
+                        print(policy, HandlingPolicy.PrintoutType.FULL))
+            policy.action == HandlingPolicy.Action.LOG_SHORT ->
+                logger.warn("Failed: $error:\n{}",
+                        print(policy, HandlingPolicy.PrintoutType.SHORT))
+            policy.action == HandlingPolicy.Action.LOG_MESSAGES ->
+                logger.warn("Failed: $error:\n{}",
+                        print(policy, HandlingPolicy.PrintoutType.MESSAGES_ONLY))
+            policy.action == HandlingPolicy.Action.LOG_ID ->
+                logger.warn("Failed: $error: {}", policy.faultId)
         }
         return internalError.set(
                 withContentType((response ?: Response(status ?: INTERNAL_SERVER_ERROR))
@@ -432,8 +436,7 @@ class UnearthlyServer(
                         .header("X-SeqNo", policy?.globalSequence?.toString() ?: "-1")
                         .header("X-Fault-Id", policy?.faultId?.toHashString() ?: "-")
                         .header("X-Fault-Strand-Id", policy?.faultStrandId?.toHashString() ?: "-")
-                        .header("X-Fault-Event-Id", policy?.faultEventId?.toHashString() ?: "-")
-                ),
+                        .header("X-Fault-Event-Id", policy?.faultEventId?.toHashString() ?: "-")),
                 UnearthlyError(
                         message = error.toString(),
                         submission = policy?.let(::submission)))
@@ -518,6 +521,9 @@ class UnearthlyServer(
 
         private val offsetQuery =
                 Query.long().optional("offset", "Start point in feed")
+
+        private val fullEvent =
+                Query.boolean().optional("fullEvent", "Add fault data to each feed element")
 
         private val countQuery =
                 Query.long().optional("count", "No. of elements to retrieve from start point in feed")

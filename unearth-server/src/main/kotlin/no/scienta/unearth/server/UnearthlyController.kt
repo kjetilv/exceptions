@@ -77,8 +77,9 @@ class UnearthlyController(
     fun lookupFaultEventDto(
             id: FaultEventId,
             fullStack: Boolean = false,
-            printStack: Boolean = false
-    ): FaultEventDto = faultEventDto(storage.getFaultEvent(id), fullStack, printStack)
+            printStack: Boolean = false,
+            fullEvent: Boolean = false
+    ): FaultEventDto = faultEventDto(storage.getFaultEvent(id), fullStack, printStack, fullEvent)
 
     fun lookupCauseStrandDto(
             causeStrandId: CauseStrandId,
@@ -104,12 +105,13 @@ class UnearthlyController(
             offset: Long,
             count: Long,
             fullStack: Boolean = false,
-            printStack: Boolean = false
-    ): FaultEventSequence = FaultEventSequence(
+            printStack: Boolean = false,
+            fullEvent: Boolean = false
+    ) = FaultEventSequence(
             null,
             SequenceType.GLOBAL,
             feed.feed(offset, count).map {
-                faultEventDto(it, fullStack, printStack)
+                faultEventDto(it, fullStack, printStack, fullEvent)
             })
 
     fun feed(
@@ -117,12 +119,13 @@ class UnearthlyController(
             offset: Long,
             count: Long,
             fullStack: Boolean = false,
-            printStack: Boolean = false
+            printStack: Boolean = false,
+            fullEvent: Boolean = false
     ): FaultEventSequence = FaultEventSequence(
             faultId,
             SequenceType.FAULT,
             feed.feed(faultId, offset, count).map {
-                faultEventDto(it, fullStack, printStack)
+                faultEventDto(it, fullStack, printStack, fullEvent)
             })
 
     fun feed(
@@ -130,12 +133,13 @@ class UnearthlyController(
             offset: Long,
             count: Long,
             fullStack: Boolean = false,
-            printStack: Boolean = false
+            printStack: Boolean = false,
+            fullEvent: Boolean = false
     ): FaultEventSequence = FaultEventSequence(
             faultStrandId,
             SequenceType.FAULT_STRAND,
             feed.feed(faultStrandId, offset, count).map {
-                faultEventDto(it, fullStack, printStack)
+                faultEventDto(it, fullStack, printStack, fullEvent)
             })
 
     private fun logMessage(handle: HandlingPolicy) =
@@ -144,10 +148,11 @@ class UnearthlyController(
     private fun faultEventDto(
             faultEvent: FaultEvent,
             fullStack: Boolean = false,
-            printStack: Boolean = false
-    ): FaultEventDto = FaultEventDto(
+            printStack: Boolean = false,
+            fullEvent: Boolean = false
+    ) = FaultEventDto(
             faultEvent.id,
-            faultDto(faultEvent.fault, fullStack, printStack),
+            if (fullEvent) faultDto(faultEvent.fault, fullStack, printStack) else null,
             faultEvent.time.atZone(ZoneId.of("UTC")),
             faultEvent.globalSequenceNo,
             faultEvent.faultSequenceNo,
@@ -160,9 +165,8 @@ class UnearthlyController(
                 .withPrintout(renderer))
     }
 
-    private fun rendererFor(vararg groups: String): ConfigurableThrowableRenderer {
-        return rendererFor(groups.toList())
-    }
+    private fun rendererFor(vararg groups: String): ConfigurableThrowableRenderer =
+            rendererFor(groups.toList())
 
     private fun rendererFor(groups1: List<String>) = ConfigurableThrowableRenderer()
             .group(SimplePackageGrouper(groups1))
