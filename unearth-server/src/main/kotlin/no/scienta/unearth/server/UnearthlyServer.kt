@@ -350,19 +350,31 @@ class UnearthlyServer(
                 )
             }
 
-    private fun submission(handling: HandlingPolicy) = Submission(
-            handling.faultStrandId,
-            handling.faultId,
-            handling.faultEventId,
-            handling.globalSequence,
-            handling.faultStrandSequence,
-            handling.faultSequence,
-            action = Action.valueOf(handling.action.name),
-            printOut = Printout(
-                    log = handling.getPrintout(HandlingPolicy.PrintoutType.FULL),
-                    logShort = handling.getPrintout(HandlingPolicy.PrintoutType.SHORT),
-                    logMessages = handling.getPrintout(HandlingPolicy.PrintoutType.MESSAGES_ONLY)
-            ))
+    private fun submission(handling: HandlingPolicy): Submission {
+        return Submission(
+                handling.faultStrandId,
+                handling.faultId,
+                handling.faultEventId,
+                handling.globalSequence,
+                handling.faultStrandSequence,
+                handling.faultSequence,
+                action = Action.valueOf(handling.action.name),
+                printouts = Printouts(
+                        log = toPrintout(handling, HandlingPolicy.PrintoutType.FULL),
+                        logShort = toPrintout(handling, HandlingPolicy.PrintoutType.SHORT),
+                        logMessages = toPrintout(handling, HandlingPolicy.PrintoutType.MESSAGES_ONLY)
+                ))
+    }
+
+    private fun toPrintout(handling: HandlingPolicy, full: HandlingPolicy.PrintoutType): List<Printout> {
+        return handling.getPrintout(full).map { chain ->
+            chain.map {
+                Printout(it.message, it.printout)
+            }
+        }.orElseGet {
+            emptyList()
+        }
+    }
 
     private fun handledResponse(response: Response, request: Request): Response =
             when {
@@ -403,15 +415,15 @@ class UnearthlyServer(
         }
         if (policy.action == HandlingPolicy.Action.LOG) {
             logger.warn("Failed: ${policy?.faultEventId ?: "unknown"}\n  {}",
-                    java.lang.String.join("\n  ", policy.getPrintout(HandlingPolicy.PrintoutType.FULL)))
+                    print(policy, HandlingPolicy.PrintoutType.FULL))
         } else if (policy.action == HandlingPolicy.Action.LOG_SHORT) {
             logger.warn("Failed: $error:\n{}",
-                    java.lang.String.join("\n  ", policy.getPrintout(HandlingPolicy.PrintoutType.SHORT)));
+                    print(policy, HandlingPolicy.PrintoutType.SHORT))
         } else if (policy.action == HandlingPolicy.Action.LOG_MESSAGES) {
             logger.warn("Failed: $error:\n{}",
-                    java.lang.String.join("\n  ", policy.getPrintout(HandlingPolicy.PrintoutType.MESSAGES_ONLY)));
+                    print(policy, HandlingPolicy.PrintoutType.MESSAGES_ONLY))
         } else if (policy.action == HandlingPolicy.Action.LOG_ID) {
-            logger.warn("Failed: $error: {}", policy.faultId);
+            logger.warn("Failed: $error: {}", policy.faultId)
         }
         return internalError.set(
                 withContentType((response ?: Response(status ?: INTERNAL_SERVER_ERROR))
@@ -426,6 +438,12 @@ class UnearthlyServer(
                         message = error.toString(),
                         submission = policy?.let(::submission)))
     }
+
+    private fun print(policy: HandlingPolicy, full: HandlingPolicy.PrintoutType): String =
+            java.lang.String.join("\n  ",
+                    policy.getPrintout(full)
+                            .map { cc -> cc.printout }
+                            .orElseGet { emptyList() })
 
     private fun simpleErrorResponse(e: Throwable): Response {
         val fault = try {

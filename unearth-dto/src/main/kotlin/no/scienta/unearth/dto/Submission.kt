@@ -37,30 +37,33 @@ data class Submission(
 
         val action: Action?,
 
-        val printOut: Printout = Printout()
+        val printouts: Printouts = Printouts()
+)
+
+data class Printouts(
+
+        val log: List<Printout> = emptyList(),
+
+        val logShort: List<Printout> = emptyList(),
+
+        val logMessages: List<Printout> = emptyList()
 )
 
 data class Printout(
+        val message: String = "null",
 
-        val log: List<String> = emptyList(),
-
-        val logShort: List<String> = emptyList(),
-
-        val logMessages: List<String> = emptyList()
+        val stack: List<String> = emptyList()
 )
 
 @Suppress("EnumEntryName")
-enum class Action : (Submission) -> List<String> {
+enum class Action {
 
     LOG {
-        override fun invoke(submission: Submission) = submission.printOut.log
     },
 
     LOG_SHORT {
-        override fun invoke(submission: Submission) = submission.printOut.logShort
     },
 
     LOG_MESSAGES {
-        override fun invoke(submission: Submission) = submission.printOut.logMessages
     }
 }

@@ -19,6 +19,7 @@ package no.scienta.unearth.core.handler;
 
 import no.scienta.unearth.core.*;
 import no.scienta.unearth.core.HandlingPolicy.Action;
+import no.scienta.unearth.munch.model.CauseChain;
 import no.scienta.unearth.munch.model.Fault;
 import no.scienta.unearth.munch.model.FaultEvent;
 import no.scienta.unearth.munch.print.ThrowableRenderer;
@@ -40,6 +41,8 @@ public class DefaultThrowablesHandler implements FaultHandler {
 
     private final ThrowableRenderer shortRenderer;
 
+    private final ThrowableRenderer messagesRenderer;
+
     private final Clock clock;
 
     public DefaultThrowablesHandler(
@@ -48,13 +51,14 @@ public class DefaultThrowablesHandler implements FaultHandler {
         FaultSensor sensor,
         ThrowableRenderer fullRenderer,
         ThrowableRenderer shortRenderer,
-        Clock clock
+        ThrowableRenderer messagesRenderer, Clock clock
     ) {
         this.storage = storage;
         this.stats = stats;
         this.sensor = sensor;
         this.fullRenderer = fullRenderer;
         this.shortRenderer = shortRenderer;
+        this.messagesRenderer = messagesRenderer;
         this.clock = clock;
     }
 
@@ -65,22 +69,21 @@ public class DefaultThrowablesHandler implements FaultHandler {
 
     private HandlingPolicy store(Fault submitted) {
         Optional<FaultEvent> lastStored = stats.getLastFaultEvent(submitted.getFaultStrand().getId());
-
         FaultEvent stored = storage.store(submitted);
         FaultEvent registered = sensor.registered(stored);
-
         return policy(lastStored.orElse(null), registered);
     }
 
     private HandlingPolicy policy(FaultEvent previous, FaultEvent registered) {
-        Fault fault = registered.getFault();
-        SimpleHandlingPolicy policy = new SimpleHandlingPolicy(registered)
-            .withPrintout(HandlingPolicy.PrintoutType.MESSAGES_ONLY, fault::getMessages)
+        CauseChain causeChain = CauseChain.build(registered.getFault());
+        return new SimpleHandlingPolicy(registered)
+            .withPrintout(HandlingPolicy.PrintoutType.MESSAGES_ONLY, () ->
+                causeChain.withPrintout(messagesRenderer))
             .withPrintout(HandlingPolicy.PrintoutType.FULL, () ->
-                fullRenderer.render(fault))
+                causeChain.withPrintout(fullRenderer))
             .withPrintout(HandlingPolicy.PrintoutType.SHORT, () ->
-                shortRenderer.render(fault));
-        return policy.withAction(actionForWindow(previous));
+                causeChain.withPrintout(shortRenderer))
+            .withAction(actionForWindow(previous));
     }
 
     private Action actionForWindow(FaultEvent previous) {

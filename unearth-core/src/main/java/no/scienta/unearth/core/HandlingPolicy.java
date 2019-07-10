@@ -20,8 +20,9 @@ package no.scienta.unearth.core;
 import no.scienta.unearth.munch.id.FaultEventId;
 import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.id.FaultStrandId;
+import no.scienta.unearth.munch.model.CauseChain;
 
-import java.util.List;
+import java.util.Optional;
 
 public interface HandlingPolicy {
 
@@ -33,7 +34,7 @@ public interface HandlingPolicy {
 
     FaultEventId getFaultEventId();
 
-    List<String> getPrintout(PrintoutType type);
+    Optional<CauseChain> getPrintout(PrintoutType type);
 
     long getGlobalSequence();
 

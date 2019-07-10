@@ -22,7 +22,6 @@ import no.scienta.unearth.core.handler.DefaultThrowablesHandler
 import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.model.*
-import no.scienta.unearth.munch.print.CauseChain
 import no.scienta.unearth.munch.print.ConfigurableThrowableRenderer
 import no.scienta.unearth.munch.print.SimplePackageGrouper
 import org.slf4j.LoggerFactory
@@ -40,6 +39,10 @@ class UnearthlyController(
             DefaultThrowablesHandler(storage, stats, sensor,
                     ConfigurableThrowableRenderer(),
                     rendererFor("org.http4k", "io.netty"),
+                    ConfigurableThrowableRenderer()
+                            .squash { _, _ ->
+                                Stream.empty()
+                            },
                     Clock.systemUTC());
 
     private val submitLogger = LoggerFactory.getLogger("Submitted")
@@ -164,7 +167,7 @@ class UnearthlyController(
     private fun rendererFor(groups1: List<String>) = ConfigurableThrowableRenderer()
             .group(SimplePackageGrouper(groups1))
             .squash { _, causeFrames ->
-                Stream.of("  * (${causeFrames.size})")
+                Stream.of("  * [${causeFrames.size} hidden]")
             }
             .reshape(FrameFun.LIKE_JAVA_8)
             .reshape(FrameFun.SHORTEN_CLASSNAMES)
@@ -218,7 +221,8 @@ class UnearthlyController(
             message = cause.message,
             causeStrand = causeStrandDto(cause.causeStrand, fullStack, printStack))
 
-    private fun simpleStackTrace(stackTrace: List<CauseFrame>): List<String> = stackTrace.map { it.toString() }
+    private fun simpleStackTrace(stackTrace: List<CauseFrame>): List<String> =
+            stackTrace.map { it.toStackTraceElement().toString() }
 
     private fun stackTrace(
             stackTrace: List<CauseFrame>

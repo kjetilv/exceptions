@@ -17,6 +17,7 @@
 
 package no.scienta.unearth.munch.print;
 
+import no.scienta.unearth.munch.model.CauseChain;
 import no.scienta.unearth.munch.model.Fault;
 
 import java.util.List;

@@ -17,6 +17,7 @@
 
 package no.scienta.unearth.munch.print;
 
+import no.scienta.unearth.munch.model.CauseChain;
 import no.scienta.unearth.munch.model.CauseFrame;
 import no.scienta.unearth.munch.model.Fault;
 import no.scienta.unearth.munch.model.FrameFun;
