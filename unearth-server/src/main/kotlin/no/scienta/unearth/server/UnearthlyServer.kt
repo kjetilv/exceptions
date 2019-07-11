@@ -81,7 +81,7 @@ class UnearthlyServer(
                 receiving(exception to Swaggex.exception())
                 returning(OK, submission to Swaggex.submission())
             } bindContract POST to exchange(exception, submission) { throwable ->
-                submission(controller submitRaw throwable)
+                submission(controller.submitRaw(throwable))
             }
 
     private fun retrieveExceptionRoute() =

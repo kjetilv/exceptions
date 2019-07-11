@@ -19,6 +19,7 @@ package no.scienta.unearth.core.handler;
 
 import no.scienta.unearth.core.*;
 import no.scienta.unearth.core.HandlingPolicy.Action;
+import no.scienta.unearth.munch.model.Cause;
 import no.scienta.unearth.munch.model.CauseChain;
 import no.scienta.unearth.munch.model.Fault;
 import no.scienta.unearth.munch.model.FaultEvent;
@@ -27,7 +28,16 @@ import no.scienta.unearth.munch.util.Util;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+
+import static no.scienta.unearth.core.HandlingPolicy.PrintoutType;
 
 public class DefaultThrowablesHandler implements FaultHandler {
 
@@ -37,13 +47,9 @@ public class DefaultThrowablesHandler implements FaultHandler {
 
     private final FaultSensor sensor;
 
-    private final ThrowableRenderer fullRenderer;
-
-    private final ThrowableRenderer shortRenderer;
-
-    private final ThrowableRenderer messagesRenderer;
-
     private final Clock clock;
+
+    private final Map<PrintoutType, ThrowableRenderer> renderers;
 
     public DefaultThrowablesHandler(
         FaultStorage storage,
@@ -56,10 +62,13 @@ public class DefaultThrowablesHandler implements FaultHandler {
         this.storage = storage;
         this.stats = stats;
         this.sensor = sensor;
-        this.fullRenderer = fullRenderer;
-        this.shortRenderer = shortRenderer;
-        this.messagesRenderer = messagesRenderer;
         this.clock = clock;
+
+        Map<PrintoutType, ThrowableRenderer> renderers = new HashMap<>();
+        put(renderers, PrintoutType.FULL, fullRenderer);
+        put(renderers, PrintoutType.MESSAGES_ONLY, messagesRenderer);
+        put(renderers, PrintoutType.SHORT, shortRenderer);
+        this.renderers = Collections.unmodifiableMap(renderers);
     }
 
     @Override
@@ -71,29 +80,40 @@ public class DefaultThrowablesHandler implements FaultHandler {
         Optional<FaultEvent> lastStored = stats.getLastFaultEvent(submitted.getFaultStrand().getId());
         FaultEvent stored = storage.store(submitted);
         FaultEvent registered = sensor.registered(stored);
-        return policy(lastStored.orElse(null), registered);
+        return policy(registered, lastStored.orElse(null));
     }
 
-    private HandlingPolicy policy(FaultEvent previous, FaultEvent registered) {
-        CauseChain causeChain = CauseChain.build(registered.getFault());
-        return new SimpleHandlingPolicy(registered)
-            .withPrintout(HandlingPolicy.PrintoutType.MESSAGES_ONLY, () ->
-                causeChain.withPrintout(messagesRenderer))
-            .withPrintout(HandlingPolicy.PrintoutType.FULL, () ->
-                causeChain.withPrintout(fullRenderer))
-            .withPrintout(HandlingPolicy.PrintoutType.SHORT, () ->
-                causeChain.withPrintout(shortRenderer))
-            .withAction(actionForWindow(previous));
+    private HandlingPolicy policy(FaultEvent event, FaultEvent previous) {
+        CauseChain causeChain = CauseChain.build(event.getFault());
+        return renderers.entrySet().stream()
+            .reduce(
+                new SimpleHandlingPolicy(event),
+                printout(causeChain),
+                Util.noCombine()
+            ).withAction(
+                actionForWindow(previous)
+            ).withSummary(
+                event.getFault().getCauses().stream().map(Cause::getMessage).collect(Collectors.joining(" <="))
+            );
     }
 
-    private Action actionForWindow(FaultEvent previous) {
-        if (previous == null) {
+    private BiFunction<SimpleHandlingPolicy, Entry<PrintoutType, ThrowableRenderer>, SimpleHandlingPolicy> printout(
+            CauseChain causeChain
+    ) {
+        return (hp, e) ->
+            hp.withPrintout(e.getKey(), () ->
+                causeChain.withPrintout(e.getValue()));
+    }
+
+    private Action actionForWindow(FaultEvent previousEvent) {
+        if (previousEvent == null) {
             return Action.LOG;
         }
-        Duration eventInterval = Duration.between(previous.getTime(), clock.instant());
-        return isIn(eventInterval, DELUGE_WINDOW) ? Action.LOG_ID :
-            isIn(eventInterval, SPAM_WINDOW) ? Action.LOG_MESSAGES
-                : isIn(eventInterval, QUIET_WINDOW) ? Action.LOG_SHORT
+        Instant eventTime = clock.instant();
+        Duration interval = Duration.between(previousEvent.getTime(), eventTime);
+        return isIn(interval, DELUGE_WINDOW) ? Action.LOG_ID :
+            isIn(interval, SPAM_WINDOW) ? Action.LOG_MESSAGES
+                : isIn(interval, QUIET_WINDOW) ? Action.LOG_SHORT
                 : Action.LOG;
     }
 
@@ -101,9 +121,19 @@ public class DefaultThrowablesHandler implements FaultHandler {
         return Util.isLongerThan(window, eventWindow);
     }
 
-    private static final Duration QUIET_WINDOW = Duration.ofMinutes(5);
+    private static final Duration QUIET_WINDOW = Duration.ofMinutes(10);
 
     private static final Duration SPAM_WINDOW = Duration.ofMinutes(1);
 
-    private static final Duration DELUGE_WINDOW = Duration.ofSeconds(5);
+    private static final Duration DELUGE_WINDOW = Duration.ofSeconds(1);
+
+    private static void put(
+        Map<PrintoutType, ThrowableRenderer> renderers,
+        PrintoutType type,
+        ThrowableRenderer renderer
+    ) {
+        if (renderer != null) {
+            renderers.put(type, renderer);
+        }
+    }
 }

@@ -39,15 +39,12 @@ class UnearthlyController(
             DefaultThrowablesHandler(storage, stats, sensor,
                     ConfigurableThrowableRenderer(),
                     rendererFor("org.http4k", "io.netty"),
-                    ConfigurableThrowableRenderer()
-                            .squash { _, _ ->
-                                Stream.empty()
-                            },
+                    ConfigurableThrowableRenderer().noStack(),
                     Clock.systemUTC());
 
     private val submitLogger = LoggerFactory.getLogger("Submitted")
 
-    infix fun submitRaw(t: Throwable): HandlingPolicy {
+    fun submitRaw(t: Throwable): HandlingPolicy {
         return logged(handler.handle(t) ?: throw IllegalStateException("Unexpected: Missing handle"))
     }
 
@@ -143,7 +140,7 @@ class UnearthlyController(
             })
 
     private fun logMessage(handle: HandlingPolicy) =
-            "F:${handle.faultId.hash} E:${handle.faultEventId.hash} FS:${handle.faultStrandId.hash}"
+            "${handle.loggableSummary} F:${handle.faultId.hash} E:${handle.faultEventId.hash} FS:${handle.faultStrandId.hash}"
 
     private fun faultEventDto(
             faultEvent: FaultEvent,
@@ -161,15 +158,13 @@ class UnearthlyController(
     fun rewriteThrowable(faultId: FaultId, groups: Collection<String>?): CauseChainDto {
         val singletonList: List<String> = groups?.toList() ?: emptyList()
         val renderer = rendererFor(singletonList)
-        return causeChainDto(CauseChain.build(storage.getFault(faultId))
-                .withPrintout(renderer))
+        return causeChainDto(CauseChain.build(storage.getFault(faultId)).withPrintout(renderer))
     }
 
-    private fun rendererFor(vararg groups: String): ConfigurableThrowableRenderer =
-            rendererFor(groups.toList())
+    private fun rendererFor(vararg groups: String) = rendererFor(groups.toList())
 
-    private fun rendererFor(groups1: List<String>) = ConfigurableThrowableRenderer()
-            .group(SimplePackageGrouper(groups1))
+    private fun rendererFor(groups: List<String>) = ConfigurableThrowableRenderer()
+            .group(SimplePackageGrouper(groups))
             .squash { _, causeFrames ->
                 Stream.of("  * [${causeFrames.size} hidden]")
             }

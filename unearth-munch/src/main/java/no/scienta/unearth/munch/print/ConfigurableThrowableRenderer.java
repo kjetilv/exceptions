@@ -38,9 +38,10 @@ public class ConfigurableThrowableRenderer implements ThrowableRenderer {
     private final PackageGrouper grouper;
 
     private final FrameLister squasher;
+    private final boolean omitStack;
 
     public ConfigurableThrowableRenderer() {
-        this(null, null, null, null, null);
+        this(null, null, null, null, null, false);
     }
 
     private ConfigurableThrowableRenderer(
@@ -48,7 +49,8 @@ public class ConfigurableThrowableRenderer implements ThrowableRenderer {
         GroupPrinter groupDisplay,
         FramePrinter framePrinter,
         List<GroupedFrameTransform> reshapers,
-        FrameLister squasher
+        FrameLister squasher,
+        boolean omitStack
     ) {
         this.grouper = grouper == null
             ? causeFrame -> Optional.empty()
@@ -63,32 +65,40 @@ public class ConfigurableThrowableRenderer implements ThrowableRenderer {
             ? (sb, cf) -> cf.defaultPrint(sb)
             : framePrinter;
         this.squasher = squasher;
+        this.omitStack = omitStack;
     }
 
     public ThrowableRenderer framePrinter(FramePrinter framePrinter) {
-        return new ConfigurableThrowableRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher);
+        return new ConfigurableThrowableRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher, omitStack);
     }
 
     public ConfigurableThrowableRenderer group(PackageGrouper grouper) {
-        return new ConfigurableThrowableRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher);
+        return new ConfigurableThrowableRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher, omitStack);
     }
 
     public ConfigurableThrowableRenderer squash(FrameLister squasher) {
-        return new ConfigurableThrowableRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher);
+        return new ConfigurableThrowableRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher, omitStack);
     }
 
     public final ConfigurableThrowableRenderer reshape(GroupedFrameTransform... reshapers) {
-        return new ConfigurableThrowableRenderer(grouper, groupPrinter, framePrinter, added(reshapers), squasher);
+        return new ConfigurableThrowableRenderer(grouper, groupPrinter, framePrinter, added(reshapers), squasher, omitStack);
+    }
+
+    public final ConfigurableThrowableRenderer noStack() {
+        return new ConfigurableThrowableRenderer(grouper, groupPrinter, framePrinter, reshapers, squasher, true);
     }
 
     public final ConfigurableThrowableRenderer reshape(FrameTransform... reshapers) {
         List<GroupedFrameTransform> added =
-            added(Arrays.stream(reshapers).map(ConfigurableThrowableRenderer::forAll));
-        return new ConfigurableThrowableRenderer(grouper, groupPrinter, framePrinter, added, squasher);
+            added(Arrays.stream(reshapers).map(ConfigurableThrowableRenderer::ungrouped));
+        return new ConfigurableThrowableRenderer(grouper, groupPrinter, framePrinter, added, squasher, omitStack);
     }
 
     @Override
     public List<String> render(CauseChain causeChain) {
+        if (omitStack) {
+            return Collections.emptyList();
+        }
         List<CauseFrame> causeFrames = causeChain.getCauseFrames();
         GroupedList<Collection<String>, CauseFrame> groupedList =
             GroupedList.group(causeFrames, grouper);
@@ -146,7 +156,7 @@ public class ConfigurableThrowableRenderer implements ThrowableRenderer {
 
     private static final String INDENT = "  ";
 
-    private static GroupedFrameTransform forAll(Function<CauseFrame, CauseFrame> fun) {
+    private static GroupedFrameTransform ungrouped(Function<CauseFrame, CauseFrame> fun) {
         return (group, causeFrame) -> fun.apply(causeFrame);
     }
 

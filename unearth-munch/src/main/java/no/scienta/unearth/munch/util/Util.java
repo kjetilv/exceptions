@@ -22,7 +22,7 @@ import java.util.function.BinaryOperator;
 
 public final class Util {
 
-    static <T> BinaryOperator<T> noCombine() {
+    public static <T> BinaryOperator<T> noCombine() {
         return (t1, t2) -> {
             throw new IllegalStateException("No combine: " + t1 + " <> " + t2);
         };

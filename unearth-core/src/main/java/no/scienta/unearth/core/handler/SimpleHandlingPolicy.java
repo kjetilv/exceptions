@@ -33,6 +33,8 @@ import java.util.function.Supplier;
 
 class SimpleHandlingPolicy implements HandlingPolicy {
 
+    private final String summary;
+
     private final FaultEvent faultEvent;
 
     private final Action action;
@@ -40,14 +42,21 @@ class SimpleHandlingPolicy implements HandlingPolicy {
     private final Map<PrintoutType, Supplier<CauseChain>> printouts;
 
     SimpleHandlingPolicy(FaultEvent faultEvent) {
-        this(faultEvent, null, null);
+        this(null, faultEvent, null, null);
+    }
+
+    @Override
+    public String getLoggableSummary() {
+        return null;
     }
 
     private SimpleHandlingPolicy(
+        String summary,
         FaultEvent faultEvent,
         Action action,
         Map<PrintoutType, Supplier<CauseChain>> printouts
     ) {
+        this.summary = summary;
         this.faultEvent = faultEvent;
         this.action = action;
         this.printouts = printouts == null || printouts.isEmpty()
@@ -97,10 +106,14 @@ class SimpleHandlingPolicy implements HandlingPolicy {
     SimpleHandlingPolicy withPrintout(PrintoutType type, Supplier<CauseChain> printout) {
         Map<PrintoutType, Supplier<CauseChain>> map = new HashMap<>(printouts);
         map.put(type, Memoizer.get(printout));
-        return new SimpleHandlingPolicy(faultEvent, action, map);
+        return new SimpleHandlingPolicy(summary, faultEvent, action, map);
+    }
+
+    SimpleHandlingPolicy withSummary(String summary) {
+        return new SimpleHandlingPolicy(summary, faultEvent, action, printouts);
     }
 
     SimpleHandlingPolicy withAction(Action action) {
-        return new SimpleHandlingPolicy(faultEvent, action, printouts);
+        return new SimpleHandlingPolicy(summary, faultEvent, action, printouts);
     }
 }

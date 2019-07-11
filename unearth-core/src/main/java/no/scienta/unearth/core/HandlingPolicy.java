@@ -26,6 +26,8 @@ import java.util.Optional;
 
 public interface HandlingPolicy {
 
+    String getLoggableSummary();
+
     Action getAction();
 
     FaultStrandId getFaultStrandId();
