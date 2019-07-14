@@ -31,7 +31,6 @@ import no.scienta.unearth.munch.id.*;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -62,15 +61,20 @@ public class IdModule extends SimpleModule {
             @Override
             public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
                 TreeNode node = p.readValueAsTree();
-                return Optional.ofNullable(node)
-                    .map(treeNode -> treeNode.get("id"))
-                    .filter(ValueNode.class::isInstance)
-                    .map(ValueNode.class::cast)
-                    .map(ValueNode::textValue)
-                    .map(UUID::fromString)
-                    .map(toId)
-                    .orElseThrow(() ->
-                        new IllegalArgumentException("Not a valid ID node: " + node));
+                TreeNode id = node.get("id");
+                if (id instanceof ValueNode) {
+                    ValueNode valueNode = (ValueNode) id;
+                    String nodeValue = valueNode.textValue();
+                    if (nodeValue == null || nodeValue.trim().isEmpty()) {
+                        throw new IllegalStateException("Not a valid value node: " + valueNode);
+                    }
+                    try {
+                        return toId.apply(UUID.fromString(nodeValue.trim()));
+                    } catch (Exception e) {
+                        throw new IllegalStateException("Not a valid ID node: " + nodeValue, e);
+                    }
+                }
+                throw new IllegalStateException("Not a valid ID node: " + node);
             }
         };
     }

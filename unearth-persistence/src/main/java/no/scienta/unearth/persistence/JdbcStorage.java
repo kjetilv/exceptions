@@ -20,6 +20,7 @@ package no.scienta.unearth.persistence;
 import no.scienta.unearth.core.FaultStorage;
 import no.scienta.unearth.munch.id.*;
 import no.scienta.unearth.munch.model.*;
+import no.scienta.unearth.munch.print.CauseFrame;
 
 import javax.sql.DataSource;
 import java.time.Instant;

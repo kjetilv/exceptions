@@ -18,7 +18,6 @@
 package no.scienta.unearth.munch.print;
 
 import no.scienta.unearth.munch.model.CauseChain;
-import no.scienta.unearth.munch.model.CauseFrame;
 import no.scienta.unearth.munch.model.Fault;
 import no.scienta.unearth.munch.model.FrameFun;
 import org.junit.Test;
@@ -48,8 +47,8 @@ public class StackTraceRewriterTest {
                 cf.defaultPrint(sb.append("--  ")));
 
         Fault fault = Fault.create(new Throwable());
-        CauseChain causeChain = CauseChain.build(fault).withPrintout(causeChainRenderer);
+        CauseChain causeChain = CauseChain.build(fault).withStackRendering(causeChainRenderer);
 
-        causeChain.getPrintout().forEach(System.out::println);
+        causeChain.getRendering().getStack().forEach(System.out::println);
     }
 }

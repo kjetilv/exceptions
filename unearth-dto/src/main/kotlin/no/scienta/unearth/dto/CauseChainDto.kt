@@ -23,7 +23,7 @@ data class CauseChainDto(
 
         val message: String?,
 
-        val printedCauseFrames: List<String>? = null,
+        val printedCauseFrames: Collection<String>? = null,
 
         val causeStrand: CauseStrandDto? = null,
 

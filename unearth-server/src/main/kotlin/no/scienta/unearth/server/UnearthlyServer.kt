@@ -63,6 +63,16 @@ class UnearthlyServer(
         val controller: UnearthlyController
 ) {
 
+    private val server = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
+            .then(ServerFilters.GZipContentTypes(setOf(APPLICATION_JSON, TEXT_PLAIN, TEXT_HTML)))
+            .then(errorFilter())
+            .then(routes(
+                    rerouteToSwagger("/doc", configuration.prefix),
+                    rerouteToSwagger("/", configuration.prefix),
+                    swaggerUiRoute(configuration.prefix),
+                    contracts()))
+            .asServer(NettyConfig(configuration.host, configuration.port))
+
     fun start(after: (Http4kServer) -> Unit = {}): UnearthlyServer = apply {
         server.start()
         after(server)
@@ -79,7 +89,7 @@ class UnearthlyServer(
                 consumes += TEXT_PLAIN
                 produces += APPLICATION_JSON
                 receiving(exception to Swaggex.exception())
-                returning(OK, submission to Swaggex.submission())
+                returning(OK/*, submission to Swaggex.submission()*/)
             } bindContract POST to exchange(exception, submission) { throwable ->
                 submission(controller.submitRaw(throwable))
             }
@@ -91,7 +101,7 @@ class UnearthlyServer(
                 returning(OK, exception to Swaggex.exception())
             } bindContract GET to { faultId ->
                 simpleGet(exception, type = TEXT_PLAIN) {
-                    controller lookupThrowable faultId
+                    controller.lookupThrowable(faultId)
                 }
             }
 
@@ -216,6 +226,7 @@ class UnearthlyServer(
                 }
             }
 
+
     private fun faultStrandLimit() =
             "/feed/fault-strand/limit" / uuid(::FaultStrandId) meta {
                 summary = "Event limits for a fault strand"
@@ -223,10 +234,9 @@ class UnearthlyServer(
                 returning(OK, limit to Swaggex.limit())
             } bindContract GET to { faultId ->
                 simpleGet(limit) {
-                    controller feedLimit faultId
+                    controller.feedLimit(faultId)
                 }
             }
-
 
     private fun feedLookupFaultStrandRoute() =
             "/feed/fault-strand" / uuid(::FaultStrandId) meta {
@@ -253,7 +263,7 @@ class UnearthlyServer(
                 returning(OK, limit to Swaggex.limit())
             } bindContract GET to { faultId ->
                 simpleGet(limit) {
-                    controller feedLimit faultId
+                    controller.feedLimit(faultId)
                 }
             }
 
@@ -301,18 +311,14 @@ class UnearthlyServer(
             type: ContentType = APPLICATION_JSON,
             result: () -> O
     ): (Request) -> Response = {
-        outLens.set(withContentType(Response(OK), type), result())
+        try {
+            result()
+        } catch (e: Exception) {
+            throw IllegalStateException("Failed GET", e)
+        }.let {
+            outLens.set(withContentType(Response(OK), type), it)
+        }
     }
-
-    private val server = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
-            .then(ServerFilters.GZipContentTypes(setOf(APPLICATION_JSON, TEXT_PLAIN, TEXT_HTML)))
-            .then(errorFilter())
-            .then(routes(
-                    rerouteToSwagger("/doc", configuration.prefix),
-                    rerouteToSwagger("/", configuration.prefix),
-                    swaggerUiRoute(configuration.prefix),
-                    contracts()))
-            .asServer(NettyConfig(configuration.host, configuration.port))
 
     private fun errorFilter() = Filter { handler ->
         { req ->
@@ -362,17 +368,17 @@ class UnearthlyServer(
                 handling.faultStrandSequence,
                 handling.faultSequence,
                 action = Action.valueOf(handling.action.name),
-                printouts = Printouts(
+                printouts = PrintoutsDto(
                         log = toPrintout(handling, HandlingPolicy.PrintoutType.FULL),
                         logShort = toPrintout(handling, HandlingPolicy.PrintoutType.SHORT),
                         logMessages = toPrintout(handling, HandlingPolicy.PrintoutType.MESSAGES_ONLY)
                 ))
     }
 
-    private fun toPrintout(handling: HandlingPolicy, full: HandlingPolicy.PrintoutType): List<Printout> {
+    private fun toPrintout(handling: HandlingPolicy, full: HandlingPolicy.PrintoutType): List<PrintoutDto> {
         return handling.getPrintout(full).map { chain ->
             chain.map {
-                Printout(it.message, it.printout)
+                PrintoutDto(it.message, it.rendering.stack)
             }
         }.orElseGet {
             emptyList()
@@ -442,11 +448,8 @@ class UnearthlyServer(
                         submission = policy?.let(::submission)))
     }
 
-    private fun print(policy: HandlingPolicy, full: HandlingPolicy.PrintoutType): String =
-            java.lang.String.join("\n  ",
-                    policy.getPrintout(full)
-                            .map { cc -> cc.printout }
-                            .orElseGet { emptyList() })
+    private fun print(policy: HandlingPolicy, printoutType: HandlingPolicy.PrintoutType): String =
+            "\t" + java.lang.String.join("\n\t", policy.getThrowableRendering(printoutType));
 
     private fun simpleErrorResponse(e: Throwable): Response {
         val fault = try {
@@ -582,8 +585,7 @@ class UnearthlyServer(
                     return if (matcher.matches())
                         swaggerUiPrefix + "/" + matcher.group(1) + "/"
                     else
-                        jarSearch(url)
-                                ?: throw java.lang.IllegalStateException("No swagger-ui version found: $url")
+                        jarSearch(url) ?: throw java.lang.IllegalStateException("No swagger-ui version found: $url")
                 }
             } ?: throw IllegalStateException("No swagger-ui webjar found")
         }

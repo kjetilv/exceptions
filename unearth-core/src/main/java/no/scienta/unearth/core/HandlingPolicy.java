@@ -22,11 +22,12 @@ import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.id.FaultStrandId;
 import no.scienta.unearth.munch.model.CauseChain;
 
+import java.util.Collection;
 import java.util.Optional;
 
 public interface HandlingPolicy {
 
-    String getLoggableSummary();
+    String getSummary();
 
     Action getAction();
 
@@ -43,6 +44,8 @@ public interface HandlingPolicy {
     long getFaultStrandSequence();
 
     long getFaultSequence();
+
+    Collection<String> getThrowableRendering(PrintoutType type);
 
     enum PrintoutType {
         FULL,

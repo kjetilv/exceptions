@@ -37,22 +37,22 @@ data class Submission(
 
         val action: Action?,
 
-        val printouts: Printouts = Printouts()
+        val printouts: PrintoutsDto = PrintoutsDto()
 )
 
-data class Printouts(
+data class PrintoutsDto(
 
-        val log: List<Printout> = emptyList(),
+        val log: List<PrintoutDto> = emptyList(),
 
-        val logShort: List<Printout> = emptyList(),
+        val logShort: List<PrintoutDto> = emptyList(),
 
-        val logMessages: List<Printout> = emptyList()
+        val logMessages: List<PrintoutDto> = emptyList()
 )
 
-data class Printout(
+data class PrintoutDto(
         val message: String = "null",
 
-        val stack: List<String> = emptyList()
+        val stack: Collection<String>? = emptyList()
 )
 
 @Suppress("EnumEntryName")

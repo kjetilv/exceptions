@@ -35,7 +35,7 @@
 package no.scienta.unearth.munch.parser;
 
 import no.scienta.unearth.munch.ChameleonException;
-import no.scienta.unearth.munch.model.CauseFrame;
+import no.scienta.unearth.munch.print.CauseFrame;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

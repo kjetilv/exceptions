@@ -22,8 +22,10 @@ import no.scienta.unearth.core.handler.DefaultThrowablesHandler
 import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.model.*
+import no.scienta.unearth.munch.print.CauseFrame
 import no.scienta.unearth.munch.print.ConfigurableThrowableRenderer
 import no.scienta.unearth.munch.print.SimplePackageGrouper
+import no.scienta.unearth.munch.print.ThrowableRenderer
 import org.slf4j.LoggerFactory
 import java.time.Clock
 import java.time.ZoneId
@@ -32,7 +34,7 @@ import java.util.stream.Stream
 class UnearthlyController(
         private val storage: FaultStorage,
         private val feed: FaultFeed,
-        private val stats: FaultStats,
+        stats: FaultStats,
         sensor: FaultSensor
 ) {
     private val handler: FaultHandler =
@@ -90,11 +92,11 @@ class UnearthlyController(
             printStack: Boolean = false
     ): CauseDto = causeDto(storage.getCause(causeId), fullStack, printStack)
 
-    infix fun lookupThrowable(faultId: FaultId): Throwable = storage.getFault(faultId).toCameleon()
+    fun lookupThrowable(faultId: FaultId): Throwable = storage.getFault(faultId).toChameleon()
 
-    infix fun feedLimit(faultId: FaultId): Long = feed.limit(faultId)
+    fun feedLimit(faultId: FaultId): Long = feed.limit(faultId)
 
-    infix fun feedLimit(faultStrandId: FaultStrandId): Long = feed.limit(faultStrandId)
+    fun feedLimit(faultStrandId: FaultStrandId): Long = feed.limit(faultStrandId)
 
     fun feedLimit() = feed.limit()
 
@@ -140,7 +142,7 @@ class UnearthlyController(
             })
 
     private fun logMessage(handle: HandlingPolicy) =
-            "${handle.loggableSummary} F:${handle.faultId.hash} E:${handle.faultEventId.hash} FS:${handle.faultStrandId.hash}"
+            "${handle.summary?.let { "$it " } ?: ""}F:${handle.faultId.hash} E:${handle.faultEventId.hash} FS:${handle.faultStrandId.hash}"
 
     private fun faultEventDto(
             faultEvent: FaultEvent,
@@ -158,12 +160,12 @@ class UnearthlyController(
     fun rewriteThrowable(faultId: FaultId, groups: Collection<String>?): CauseChainDto {
         val singletonList: List<String> = groups?.toList() ?: emptyList()
         val renderer = rendererFor(singletonList)
-        return causeChainDto(CauseChain.build(storage.getFault(faultId)).withPrintout(renderer))
+        return causeChainDto(CauseChain.build(storage.getFault(faultId)).withStackRendering(renderer))
     }
 
     private fun rendererFor(vararg groups: String) = rendererFor(groups.toList())
 
-    private fun rendererFor(groups: List<String>) = ConfigurableThrowableRenderer()
+    private fun rendererFor(groups: List<String>): ThrowableRenderer = ConfigurableThrowableRenderer()
             .group(SimplePackageGrouper(groups))
             .squash { _, causeFrames ->
                 Stream.of("  * [${causeFrames.size} hidden]")
@@ -178,8 +180,8 @@ class UnearthlyController(
             thin: Boolean = false
     ): CauseChainDto = CauseChainDto(
             className = chain.className,
-            message = chain.message,
-            printedCauseFrames = if (chain.printout.isEmpty()) null else chain.printout,
+            message = chain.rendering.message,
+            printedCauseFrames = if (chain.rendering.stack.isEmpty()) null else chain.rendering.stack,
             causeStrand = if (thin) null else
                 causeStrandDto(chain.cause.causeStrand, fullStack, printStack),
             cause = chain.causeChain?.let {

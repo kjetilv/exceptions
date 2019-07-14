@@ -17,6 +17,7 @@
 
 package no.scienta.unearth.munch.model;
 
+import no.scienta.unearth.munch.print.CauseFrame;
 import no.scienta.unearth.munch.print.ConfigurableThrowableRenderer;
 
 import java.util.Arrays;
@@ -50,7 +51,7 @@ public final class FrameFun {
 
     private static Stream<String> justTheCountAndTop(Collection<String> group, List<CauseFrame> causeFrames) {
         return Stream.of(
-            causeFrames.iterator().next().toStringBody(),
+            causeFrames.iterator().next().defaultPrint(new StringBuilder()).toString(),
             "  * (" + (causeFrames.size() - 1) + " more)");
     }
 

@@ -18,9 +18,25 @@
 package no.scienta.unearth.munch.util;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.BinaryOperator;
 
 public final class Util {
+
+    public static <T> Collection<T> orEmpty(Collection<T> t) {
+        return t == null || t.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(t));
+    }
+
+    public static <T> List<T> orEmptyList(Collection<T> t) {
+        return t == null || t.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(t));
+    }
+
+    public static <T> List<T> orEmpty(List<T> t) {
+        return t == null || t.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(t));
+    }
 
     public static <T> BinaryOperator<T> noCombine() {
         return (t1, t2) -> {

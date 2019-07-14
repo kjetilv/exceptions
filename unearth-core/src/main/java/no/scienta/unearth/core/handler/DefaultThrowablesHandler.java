@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import static no.scienta.unearth.core.HandlingPolicy.PrintoutType;
@@ -88,21 +87,24 @@ public class DefaultThrowablesHandler implements FaultHandler {
         return renderers.entrySet().stream()
             .reduce(
                 new SimpleHandlingPolicy(event),
-                printout(causeChain),
+                (handlingPolicy, e) ->
+                    printout(handlingPolicy, e, causeChain),
                 Util.noCombine()
             ).withAction(
                 actionForWindow(previous)
             ).withSummary(
-                event.getFault().getCauses().stream().map(Cause::getMessage).collect(Collectors.joining(" <="))
+                event.getFault().getCauses().stream()
+                    .map(Cause::getMessage)
+                    .collect(Collectors.joining(" <- "))
             );
     }
 
-    private BiFunction<SimpleHandlingPolicy, Entry<PrintoutType, ThrowableRenderer>, SimpleHandlingPolicy> printout(
-            CauseChain causeChain
+    private SimpleHandlingPolicy printout(
+        SimpleHandlingPolicy hp,
+        Entry<PrintoutType, ThrowableRenderer> e, CauseChain causeChain
     ) {
-        return (hp, e) ->
-            hp.withPrintout(e.getKey(), () ->
-                causeChain.withPrintout(e.getValue()));
+        return hp.withPrintout(e.getKey(), () ->
+            causeChain.withStackRendering(e.getValue()));
     }
 
     private Action actionForWindow(FaultEvent previousEvent) {

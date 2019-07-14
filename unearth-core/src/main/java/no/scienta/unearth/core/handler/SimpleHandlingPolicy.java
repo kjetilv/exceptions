@@ -23,13 +23,12 @@ import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.id.FaultStrandId;
 import no.scienta.unearth.munch.model.CauseChain;
 import no.scienta.unearth.munch.model.FaultEvent;
+import no.scienta.unearth.munch.print.Rendering;
 import no.scienta.unearth.munch.util.Memoizer;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 class SimpleHandlingPolicy implements HandlingPolicy {
 
@@ -45,11 +44,6 @@ class SimpleHandlingPolicy implements HandlingPolicy {
         this(null, faultEvent, null, null);
     }
 
-    @Override
-    public String getLoggableSummary() {
-        return null;
-    }
-
     private SimpleHandlingPolicy(
         String summary,
         FaultEvent faultEvent,
@@ -62,6 +56,11 @@ class SimpleHandlingPolicy implements HandlingPolicy {
         this.printouts = printouts == null || printouts.isEmpty()
             ? Collections.emptyMap()
             : Collections.unmodifiableMap(new HashMap<>(printouts));
+    }
+
+    @Override
+    public String getSummary() {
+        return summary;
     }
 
     @Override
@@ -101,6 +100,17 @@ class SimpleHandlingPolicy implements HandlingPolicy {
     @Override
     public long getFaultStrandSequence() {
         return faultEvent.getFaultStrandSequenceNo();
+    }
+
+    @Override
+    public Collection<String> getThrowableRendering(PrintoutType type) {
+        Optional<CauseChain> causeChain = Optional.ofNullable(printouts.get(type)).map(Supplier::get);
+        Collection<Rendering> renderings =
+            causeChain.map(CauseChain::getChainRendering).orElseGet(Collections::emptyList);
+        return renderings.stream()
+            .map(Rendering::getStrings)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
     }
 
     SimpleHandlingPolicy withPrintout(PrintoutType type, Supplier<CauseChain> printout) {

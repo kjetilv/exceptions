@@ -20,8 +20,13 @@ package no.scienta.unearth.munch.model;
 import no.scienta.unearth.munch.ChameleonException;
 import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
 import no.scienta.unearth.munch.id.CauseStrandId;
+import no.scienta.unearth.munch.print.CauseFrame;
+import no.scienta.unearth.munch.util.Util;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -40,9 +45,7 @@ public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
 
     private CauseStrand(String className, List<CauseFrame> stackFrames) {
         this.className = className;
-        this.causeFrames = stackFrames == null || stackFrames.isEmpty()
-            ? Collections.emptyList()
-            : Collections.unmodifiableList(new ArrayList<>(stackFrames));
+        this.causeFrames = Util.orEmpty(stackFrames);
     }
 
     public List<CauseFrame> getCauseFrames() {
@@ -91,6 +94,5 @@ public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
     @Override
     public void hashTo(Consumer<byte[]> h) {
         hash(h, this.className);
-        hash(h, this.causeFrames);
     }
 }

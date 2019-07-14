@@ -20,6 +20,7 @@ package no.scienta.unearth.munch.model;
 import no.scienta.unearth.munch.ChameleonException;
 import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
 import no.scienta.unearth.munch.id.CauseId;
+import no.scienta.unearth.munch.print.CauseFrame;
 
 import java.util.Objects;
 import java.util.UUID;

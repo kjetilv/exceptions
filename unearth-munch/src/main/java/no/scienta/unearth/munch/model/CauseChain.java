@@ -52,10 +52,13 @@
 package no.scienta.unearth.munch.model;
 
 import no.scienta.unearth.munch.base.AbstractHashable;
+import no.scienta.unearth.munch.print.CauseFrame;
+import no.scienta.unearth.munch.print.Rendering;
 import no.scienta.unearth.munch.print.ThrowableRenderer;
 import no.scienta.unearth.munch.util.Streams;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
@@ -79,20 +82,18 @@ public class CauseChain extends AbstractHashable {
 
     private final String message;
 
-    private final List<String> printout;
+    private final Rendering rendering;
 
     private final List<CauseFrame> causeFrames;
 
     private final CauseChain chainedCause;
 
-    private CauseChain(Cause cause, CauseChain chainedCause, List<String> printout) {
+    private CauseChain(Cause cause, CauseChain chainedCause, Rendering rendering) {
         this.cause = cause;
         this.message = cause.getMessage();
         this.className = cause.getCauseStrand().getClassName();
         this.causeFrames = Collections.unmodifiableList(new ArrayList<>(cause.getCauseStrand().getCauseFrames()));
-        this.printout = printout == null || printout.isEmpty()
-            ? Collections.emptyList()
-            : Collections.unmodifiableList(new ArrayList<>(printout));
+        this.rendering = rendering;
         this.chainedCause = chainedCause;
     }
 
@@ -116,8 +117,8 @@ public class CauseChain extends AbstractHashable {
         return causeFrames;
     }
 
-    public List<String> getPrintout() {
-        return printout;
+    public Rendering getRendering() {
+        return rendering;
     }
 
     public <T> List<T> map(Function<CauseChain, T> toT) {
@@ -127,16 +128,25 @@ public class CauseChain extends AbstractHashable {
 
     private <T> List<T> map(Function<CauseChain, T> toT, List<T> ts) {
         ts.add(toT.apply(this));
-        return chainedCause == null ? Collections.unmodifiableList(ts) : map(toT, ts);
+        return chainedCause == null ? Collections.unmodifiableList(ts) : chainedCause.map(toT, ts);
     }
 
-    public CauseChain withPrintout(ThrowableRenderer renderer) {
-        List<String> printout = renderer.render(this);
+    public Collection<Rendering> getChainRendering() {
+        return getChainRendering(new ArrayList<Rendering>());
+    }
+
+    private Collection<Rendering> getChainRendering(Collection<Rendering> renderings) {
+        renderings.add(rendering);
+        return chainedCause == null ? renderings : chainedCause.getChainRendering(renderings);
+    }
+
+    public CauseChain withStackRendering(ThrowableRenderer renderer) {
+        Rendering printout = new Rendering(className, message, renderer.render(this));
         return new CauseChain(
             cause,
             chainedCause == null
                 ? null
-                : chainedCause.withPrintout(renderer),
+                : chainedCause.withStackRendering(renderer),
             printout);
     }
 

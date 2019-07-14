@@ -20,8 +20,12 @@ package no.scienta.unearth.munch.model;
 import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
 import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.util.Streams;
+import no.scienta.unearth.munch.util.Util;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -40,9 +44,7 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
 
     private Fault(FaultStrand faultStrand, Collection<Cause> causes) {
         this.faultStrand = Objects.requireNonNull(faultStrand);
-        this.causes = causes == null || causes.isEmpty()
-            ? Collections.emptyList()
-            : Collections.unmodifiableList(new ArrayList<>(causes));
+        this.causes = Util.orEmptyList(causes);
         if (this.faultStrand.getCauseCount() != this.causes.size()) {
             throw new IllegalStateException(
                 "Expected same arity: " + this.faultStrand.getCauseStrands().size() + "/" + this.causes.size());
@@ -63,7 +65,7 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
         ).collect(Collectors.toList());
     }
 
-    public Throwable toCameleon() {
+    public Throwable toChameleon() {
         return Streams.quickReduce(Streams.reverse(causes), (throwable, cause) ->
             cause.toChameleon(throwable));
     }
