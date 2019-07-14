@@ -325,7 +325,7 @@ class UnearthlyServer(
             try {
                 handledResponse(handler(req), req)
             } catch (e: Throwable) {
-                handledException(e, request = req)
+                handledException(e, req)
             }
         }
     }
