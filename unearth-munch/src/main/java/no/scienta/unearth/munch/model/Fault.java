@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 public class Fault extends AbstractHashableIdentifiable<FaultId> {
 
     public static Fault create(Throwable throwable) {
-        return new Fault(FaultStrand.create(throwable), causes(throwable));
+        return create(throwable);
     }
 
     private final FaultStrand faultStrand;

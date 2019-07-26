@@ -19,10 +19,10 @@ dependencies {
     compile(project(":unearth-dto"))
     compile(project(":unearth-munch"))
 
-    compile("com.squareup.retrofit2:retrofit:2.6.0")
-    compile("com.squareup.retrofit2:converter-jackson:2.6.0")
+    compile("com.squareup.retrofit2:retrofit")
+    compile("com.squareup.retrofit2:converter-jackson")
 
-    compile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.9")
-    compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.9")
-    compile("com.fasterxml.jackson.module:jackson-module-kotlin:2.9.9")
+    compile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
+    compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    compile("com.fasterxml.jackson.module:jackson-module-kotlin")
 }

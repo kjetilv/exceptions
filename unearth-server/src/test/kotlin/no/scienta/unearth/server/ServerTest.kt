@@ -18,7 +18,7 @@
 package no.scienta.unearth.server
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import no.scienta.unearth.core.storage.InMemoryThrowablesStorage
+import no.scienta.unearth.core.storage.InMemoryFaults
 import no.scienta.unearth.metrics.MeteringThrowablesSensor
 import no.scienta.unearth.dto.Submission
 import no.scienta.unearth.dto.FaultStrandDto
@@ -30,7 +30,7 @@ import no.scienta.unearth.server.JSON.auto
 
 fun main() {
 
-    val storage = InMemoryThrowablesStorage()
+    val storage = InMemoryFaults()
 
     val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
 

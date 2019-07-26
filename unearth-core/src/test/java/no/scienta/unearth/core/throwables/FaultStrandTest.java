@@ -29,7 +29,8 @@ public class FaultStrandTest {
 
     @Test
     public void hash() {
-        FaultStrand d1 = newFaultStrand(); FaultStrand d2 = newFaultStrand();
+        FaultStrand d1 = newFaultStrand();
+        FaultStrand d2 = newFaultStrand();
         assertEquals(d1.getHash(), d2.getHash());
     }
 
@@ -41,9 +42,14 @@ public class FaultStrandTest {
 
     @Test
     public void hash2() {
-        FaultStrand digest1 = newFaultStrand();
-        FaultStrand digest2 = newFaultStrand();
-        assertNotEquals(digest1.getHash(), digest2.getHash());
+        FaultStrand[] strands = new FaultStrand[2];
+        new Object() {
+            {
+                strands[0] = newFaultStrand();
+            }
+        };
+        strands[1] = newFaultStrand();
+        assertNotEquals(strands[0].getHash(), strands[1].getHash());
     }
 
     @Test

@@ -19,10 +19,7 @@ package no.scienta.unearth.core.handler;
 
 import no.scienta.unearth.core.*;
 import no.scienta.unearth.core.HandlingPolicy.Action;
-import no.scienta.unearth.munch.model.Cause;
-import no.scienta.unearth.munch.model.CauseChain;
-import no.scienta.unearth.munch.model.Fault;
-import no.scienta.unearth.munch.model.FaultEvent;
+import no.scienta.unearth.munch.model.*;
 import no.scienta.unearth.munch.print.ThrowableRenderer;
 import no.scienta.unearth.munch.util.Util;
 
@@ -38,7 +35,7 @@ import java.util.stream.Collectors;
 
 import static no.scienta.unearth.core.HandlingPolicy.PrintoutType;
 
-public class DefaultThrowablesHandler implements FaultHandler {
+public class DefaultFaultHandler implements FaultHandler {
 
     private final FaultStorage storage;
 
@@ -50,7 +47,7 @@ public class DefaultThrowablesHandler implements FaultHandler {
 
     private final Map<PrintoutType, ThrowableRenderer> renderers;
 
-    public DefaultThrowablesHandler(
+    public DefaultFaultHandler(
         FaultStorage storage,
         FaultStats stats,
         FaultSensor sensor,
@@ -71,13 +68,16 @@ public class DefaultThrowablesHandler implements FaultHandler {
     }
 
     @Override
-    public HandlingPolicy handle(Throwable throwable) {
-        return store(Fault.create(throwable));
+    public HandlingPolicy handle(Throwable throwable, String logMessage, Object... args) {
+        return store(
+            logMessage == null ? null : LogEntry.create(logMessage, args),
+            Fault.create(throwable)
+        );
     }
 
-    private HandlingPolicy store(Fault submitted) {
-        Optional<FaultEvent> lastStored = stats.getLastFaultEvent(submitted.getFaultStrand().getId());
-        FaultEvent stored = storage.store(submitted);
+    private HandlingPolicy store(LogEntry logEntry, Fault fault) {
+        Optional<FaultEvent> lastStored = stats.getLastFaultEvent(fault.getFaultStrand().getId());
+        FaultEvent stored = storage.store(logEntry, fault);
         FaultEvent registered = sensor.registered(stored);
         return policy(registered, lastStored.orElse(null));
     }

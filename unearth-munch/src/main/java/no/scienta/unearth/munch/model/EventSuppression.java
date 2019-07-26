@@ -15,13 +15,13 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.core;
+package no.scienta.unearth.munch.model;
 
-public interface FaultHandler {
+public enum EventSuppression {
 
-    default HandlingPolicy handle(Throwable throwable) {
-        return handle(throwable, null);
-    }
+    DEBUG,
 
-    HandlingPolicy handle(Throwable throwable, String logMessage, Object... args);
+    SUPPRESSED,
+
+    UNKNOWN
 }

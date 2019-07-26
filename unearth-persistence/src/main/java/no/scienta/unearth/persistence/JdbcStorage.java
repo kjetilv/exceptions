@@ -42,7 +42,7 @@ public class JdbcStorage implements FaultStorage {
     }
 
     @Override
-    public FaultEvent store(Fault fault) {
+    public FaultEvent store(LogEntry logEntry, Fault fault) {
         return inSession(session -> {
             fault.getCauses().forEach(cause -> {
                 CauseStrand causeStrand = cause.getCauseStrand();
@@ -54,7 +54,7 @@ public class JdbcStorage implements FaultStorage {
             insertFault(fault, session);
 
             return new FaultEvent(
-                fault, Instant.now(), 1L, 1L, 1L);
+                fault, logEntry, Instant.now(), 1L, 1L, 1L);
         });
     }
 

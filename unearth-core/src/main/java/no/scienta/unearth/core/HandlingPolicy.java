@@ -37,6 +37,8 @@ public interface HandlingPolicy {
 
     FaultEventId getFaultEventId();
 
+    Optional<CauseChain> getPrintout();
+
     Optional<CauseChain> getPrintout(PrintoutType type);
 
     long getGlobalSequence();
@@ -58,12 +60,5 @@ public interface HandlingPolicy {
         LOG_SHORT,
         LOG_MESSAGES,
         LOG_ID
-    }
-
-    enum Severity {
-        ERROR,
-        WARNING,
-        INFO,
-        DEBUG
     }
 }

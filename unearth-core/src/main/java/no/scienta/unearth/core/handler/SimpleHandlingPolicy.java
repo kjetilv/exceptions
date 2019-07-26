@@ -68,6 +68,7 @@ class SimpleHandlingPolicy implements HandlingPolicy {
         return faultEvent.getFault().getFaultStrand().getId();
     }
 
+    @Override
     public FaultId getFaultId() {
         return faultEvent.getFault().getId();
     }
@@ -75,6 +76,21 @@ class SimpleHandlingPolicy implements HandlingPolicy {
     @Override
     public FaultEventId getFaultEventId() {
         return faultEvent.getId();
+    }
+
+    @Override
+    public Optional<CauseChain> getPrintout() {
+        switch (action) {
+            case LOG_ID:
+                return Optional.empty();
+            case LOG_MESSAGES:
+                return getPrintout(PrintoutType.MESSAGES_ONLY);
+            case LOG_SHORT:
+                return getPrintout(PrintoutType.SHORT);
+            case LOG:
+            default:
+                return getPrintout(PrintoutType.FULL);
+        }
     }
 
     @Override

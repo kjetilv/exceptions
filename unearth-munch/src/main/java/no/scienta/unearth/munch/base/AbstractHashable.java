@@ -39,7 +39,10 @@ import no.scienta.unearth.munch.util.Memoizer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -73,10 +76,6 @@ public abstract class AbstractHashable implements Hashable {
         } catch (Exception e) {
             throw new IllegalStateException("Expected " + HASH + " implementation", e);
         }
-    }
-
-    protected final void hash(Consumer<byte[]> hash, String string) {
-        this.hashStrings(hash, Collections.singleton(string));
     }
 
     protected final void hash(Consumer<byte[]> hash, String... strings) {

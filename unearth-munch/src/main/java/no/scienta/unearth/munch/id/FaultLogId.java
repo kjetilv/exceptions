@@ -15,13 +15,13 @@
  *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.core;
+package no.scienta.unearth.munch.id;
 
-public interface FaultHandler {
+import java.util.UUID;
 
-    default HandlingPolicy handle(Throwable throwable) {
-        return handle(throwable, null);
+public class FaultLogId extends Id {
+
+    public FaultLogId(UUID hash) {
+        super(hash);
     }
-
-    HandlingPolicy handle(Throwable throwable, String logMessage, Object... args);
 }

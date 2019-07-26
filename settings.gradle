@@ -1,10 +1,11 @@
 rootProject.name = "unearth"
 
-include("unearth-client")
-include("unearth-dto")
-include("unearth-core")
-include("unearth-munch")
-include("unearth-metrics")
-include("unearth-persistence")
-include("unearth-server")
-include("unearth-static")
+include("unearth-client",
+        "unearth-dto",
+        "unearth-core",
+        "unearth-munch",
+        "unearth-metrics",
+        "unearth-persistence",
+        "unearth-server",
+        "unearth-static",
+        "unearth-turbo")

@@ -289,14 +289,14 @@ class UnearthlyServer(
 
     @Suppress("SameParameterValue")
     private fun <I, O> exchange(
-            inl: BiDiBodyLens<I>,
-            outl: BiDiBodyLens<O>,
+            inLens: BiDiBodyLens<I>,
+            outLens : BiDiBodyLens<O>,
             accept: (I) -> O
     ): HttpHandler = { req ->
-        inl[req]?.let {
+        inLens[req]?.let {
             accept(it)
         }?.let {
-            outl.set(Response(OK), it)
+            outLens.set(Response(OK), it)
         } ?: Response(Status.BAD_REQUEST)
     }
 
@@ -375,8 +375,8 @@ class UnearthlyServer(
                 ))
     }
 
-    private fun toPrintout(handling: HandlingPolicy, full: HandlingPolicy.PrintoutType): List<PrintoutDto> {
-        return handling.getPrintout(full).map { chain ->
+    private fun toPrintout(handling: HandlingPolicy, type: HandlingPolicy.PrintoutType): List<PrintoutDto> {
+        return handling.getPrintout(type).map { chain ->
             chain.map {
                 PrintoutDto(it.message, it.rendering.stack)
             }

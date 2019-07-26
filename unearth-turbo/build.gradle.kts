@@ -1,5 +1,4 @@
 dependencies {
     compile(project(":unearth-core"))
-    compile ("io.micrometer:micrometer-core")
+    compile("ch.qos.logback:logback-classic")
 }
-

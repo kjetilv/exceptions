@@ -17,14 +17,14 @@
 
 package no.scienta.unearth.core;
 
-import no.scienta.unearth.munch.model.*;
 import no.scienta.unearth.munch.id.*;
+import no.scienta.unearth.munch.model.*;
 
 import java.util.Collection;
 
 public interface FaultStorage {
 
-    FaultEvent store(Fault fault);
+    FaultEvent store(LogEntry logEntry, Fault fault);
 
     Fault getFault(FaultId faultId);
 

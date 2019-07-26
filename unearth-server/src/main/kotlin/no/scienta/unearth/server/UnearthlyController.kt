@@ -18,7 +18,7 @@
 package no.scienta.unearth.server
 
 import no.scienta.unearth.core.*
-import no.scienta.unearth.core.handler.DefaultThrowablesHandler
+import no.scienta.unearth.core.handler.DefaultFaultHandler
 import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.model.*
@@ -38,7 +38,7 @@ class UnearthlyController(
         sensor: FaultSensor
 ) {
     private val handler: FaultHandler =
-            DefaultThrowablesHandler(storage, stats, sensor,
+            DefaultFaultHandler(storage, stats, sensor,
                     ConfigurableThrowableRenderer(),
                     rendererFor("org.http4k", "io.netty"),
                     ConfigurableThrowableRenderer().noStack(),

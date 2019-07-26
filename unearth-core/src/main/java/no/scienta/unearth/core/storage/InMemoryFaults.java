@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @SuppressWarnings("WeakerAccess")
-public class InMemoryThrowablesStorage
+public class InMemoryFaults
     implements FaultStorage, FaultStats, FaultFeed {
 
     private final Map<FaultId, Fault> faults = new HashMap<>();
@@ -66,20 +66,21 @@ public class InMemoryThrowablesStorage
 
     private final Clock clock;
 
-    public InMemoryThrowablesStorage() {
+    public InMemoryFaults() {
         this(null);
     }
 
-    public InMemoryThrowablesStorage(Clock clock) {
+    public InMemoryFaults(Clock clock) {
         this.clock = clock == null ? Clock.systemUTC() : clock;
     }
 
     @Override
-    public FaultEvent store(Fault fault) {
+    public FaultEvent store(LogEntry logEntry, Fault fault) {
         synchronized (lock) {
             FaultEvent faultEvent = stored(this.events,
                 new FaultEvent(
                     fault,
+                    logEntry,
                     Instant.now(clock),
                     globalSequence.getAndIncrement(),
                     increment(this.faultStrandSequence, fault.getFaultStrand().getId()),
@@ -265,7 +266,7 @@ public class InMemoryThrowablesStorage
     private static <K, V> Collection<V> listLookup(Map<K, Collection<V>> map, K key, Long offset, Long count) {
         if (offset != null && offset > Integer.MAX_VALUE || count != null && count > Integer.MAX_VALUE) {
             throw new UnsupportedOperationException
-                (InMemoryThrowablesStorage.class + " is for sub-ginormous data amounts ONLY!");
+                (InMemoryFaults.class + " is for sub-ginormous data amounts ONLY!");
         }
         Collection<V> coll = map.getOrDefault(key, Collections.emptyList());
         if (offset == null || count == null || offset < 0 && count < 0 || offset == 0 && count <= coll.size()) {
