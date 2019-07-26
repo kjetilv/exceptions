@@ -12,7 +12,7 @@
  *     GNU General Public License for more details.
  *
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
+ *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /*
@@ -29,12 +29,15 @@
  *     GNU General Public License for more details.
  *
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
+ *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package no.scienta.unearth.statik;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;

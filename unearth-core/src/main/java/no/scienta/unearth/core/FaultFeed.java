@@ -12,14 +12,14 @@
  *     GNU General Public License for more details.
  *
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
+ *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package no.scienta.unearth.core;
 
+import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.id.FaultStrandId;
 import no.scienta.unearth.munch.model.FaultEvent;
-import no.scienta.unearth.munch.id.FaultId;
 
 import java.util.List;
 

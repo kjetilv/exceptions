@@ -12,7 +12,7 @@
  *     GNU General Public License for more details.
  *
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
+ *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package no.scienta.unearth.server
@@ -37,10 +37,12 @@ class UnearthlyController(
         stats: FaultStats,
         sensor: FaultSensor
 ) {
-    private val handler: FaultHandler =
+    val serverRenderer: ThrowableRenderer = rendererFor("org.http4k", "io.netty")
+
+    val handler: FaultHandler =
             DefaultFaultHandler(storage, stats, sensor,
                     ConfigurableThrowableRenderer(),
-                    rendererFor("org.http4k", "io.netty"),
+                    serverRenderer,
                     ConfigurableThrowableRenderer().noStack(),
                     Clock.systemUTC());
 
@@ -142,7 +144,8 @@ class UnearthlyController(
             })
 
     private fun logMessage(handle: HandlingPolicy) =
-            "${handle.summary?.let { "$it " } ?: ""}F:${handle.faultId.hash} E:${handle.faultEventId.hash} FS:${handle.faultStrandId.hash}"
+            "${handle.summary?.let { "$it " }
+                    ?: ""}F:${handle.faultId.hash} E:${handle.faultEventId.hash} FS:${handle.faultStrandId.hash}"
 
     private fun faultEventDto(
             faultEvent: FaultEvent,

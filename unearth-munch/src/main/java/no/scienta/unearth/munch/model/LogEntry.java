@@ -12,7 +12,7 @@
  *     GNU General Public License for more details.
  *
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
+ *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package no.scienta.unearth.munch.model;
@@ -22,8 +22,10 @@ import no.scienta.unearth.munch.id.FaultLogId;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 public class LogEntry extends AbstractHashableIdentifiable<FaultLogId> {
 
@@ -40,7 +42,11 @@ public class LogEntry extends AbstractHashableIdentifiable<FaultLogId> {
         Object... args
     ) {
         this.logMessage = Objects.requireNonNull(logMessage, "logMessage");
-        this.args = Arrays.stream(args).map(String::valueOf).toArray(String[]::new);
+        this.args = Optional.ofNullable(args)
+            .map(Arrays::stream)
+            .orElseGet(Stream::empty)
+            .map(String::valueOf)
+            .toArray(String[]::new);
         if (this.logMessage.trim().isEmpty()) {
             throw new IllegalArgumentException("Empty log statement");
         }

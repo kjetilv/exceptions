@@ -20,6 +20,7 @@ dependencies {
     compile(project(":unearth-dto"))
     compile(project(":unearth-metrics"))
     compile(project(":unearth-static"))
+    compile(project(":unearth-turbo"))
 
     compile("org.http4k:http4k-core")
     compile("org.http4k:http4k-contract")

@@ -12,7 +12,7 @@
  *     GNU General Public License for more details.
  *
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
+ *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package no.scienta.unearth.munch.model;
@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 public class Fault extends AbstractHashableIdentifiable<FaultId> {
 
     public static Fault create(Throwable throwable) {
-        return create(throwable);
+        return new Fault(FaultStrand.create(throwable), causes(throwable));
     }
 
     private final FaultStrand faultStrand;

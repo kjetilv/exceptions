@@ -12,21 +12,21 @@
  *     GNU General Public License for more details.
  *
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
+ *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package no.scienta.unearth.server
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.scienta.unearth.core.storage.InMemoryFaults
-import no.scienta.unearth.metrics.MeteringThrowablesSensor
-import no.scienta.unearth.dto.Submission
 import no.scienta.unearth.dto.FaultStrandDto
+import no.scienta.unearth.dto.Submission
+import no.scienta.unearth.metrics.MeteringThrowablesSensor
+import no.scienta.unearth.server.JSON.auto
 import org.http4k.client.ApacheClient
 import org.http4k.core.Body
 import org.http4k.core.Method
 import org.http4k.core.Request
-import no.scienta.unearth.server.JSON.auto
 
 fun main() {
 

@@ -12,7 +12,7 @@
  *     GNU General Public License for more details.
  *
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
+ *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package no.scienta.unearth.metrics;
@@ -21,9 +21,9 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import no.scienta.unearth.core.FaultSensor;
-import no.scienta.unearth.munch.model.FaultStrand;
-import no.scienta.unearth.munch.model.FaultEvent;
 import no.scienta.unearth.munch.model.Fault;
+import no.scienta.unearth.munch.model.FaultEvent;
+import no.scienta.unearth.munch.model.FaultStrand;
 
 import java.util.Arrays;
 import java.util.Collections;

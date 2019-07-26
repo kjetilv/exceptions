@@ -12,18 +12,21 @@
  *     GNU General Public License for more details.
  *
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
+ *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package no.scienta.unearth.server
 
+import ch.qos.logback.classic.LoggerContext
 import com.natpryce.konfig.*
 import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.scienta.unearth.core.storage.InMemoryFaults
 import no.scienta.unearth.metrics.MeteringThrowablesSensor
+import no.scienta.unearth.turbo.UnearthlyTurboFilter
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
 
 object Unearth : () -> Unit {
 
@@ -35,14 +38,6 @@ object Unearth : () -> Unit {
 
     fun conf(name: String): String = config[Key(name, stringType)]
 
-    private val serverApi = Key("server.api", stringType)
-
-    private val serverHost = Key("server.host", stringType)
-
-    private val serverPort = Key("server.port", intType)
-
-    private val selfDiagnose = Key("unearth.self-diagnose", booleanType)
-
     private val storage = InMemoryFaults()
 
     private val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
@@ -51,25 +46,28 @@ object Unearth : () -> Unit {
         logger.info("Building ${UnearthlyServer::class.simpleName}...")
 
         val configuration = UnearthlyConfig(
-                prefix = config[serverApi],
-                host = config[serverHost],
-                port = config[serverPort],
-                selfDiagnose = config[selfDiagnose])
+                prefix = config[Key("server.api", stringType)],
+                host = config[Key("server.host", stringType)],
+                port = config[Key("server.port", intType)],
+                selfDiagnose = config[Key("unearth.self-diagnose", booleanType)])
 
-        val unearthServer = UnearthlyServer(
-                configuration,
-                UnearthlyController(
-                        storage,
-                        storage,
-                        storage,
-                        sensor))
+        val unearthlyController = UnearthlyController(storage, storage, storage, sensor)
+        val unearthServer = UnearthlyServer(configuration, unearthlyController)
+
+        reconfigureLogging(unearthlyController)
 
         logger.info("Created $unearthServer")
+
         registerShutdown(unearthServer)
 
         unearthServer.start {
             logger.info("Ready at http://${callableHost(configuration)}:${configuration.port}")
         }
+    }
+
+    private fun reconfigureLogging(controller: UnearthlyController) {
+        val context = LoggerFactory.getILoggerFactory() as LoggerContext
+        context.turboFilterList.add(UnearthlyTurboFilter(controller.handler, controller.serverRenderer))
     }
 
     private fun registerShutdown(server: UnearthlyServer) {
