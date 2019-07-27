@@ -23,10 +23,15 @@ import ch.qos.logback.classic.turbo.TurboFilter;
 import ch.qos.logback.core.spi.FilterReply;
 import no.scienta.unearth.core.FaultHandler;
 import no.scienta.unearth.core.HandlingPolicy;
+import no.scienta.unearth.munch.model.CauseChain;
+import no.scienta.unearth.munch.print.Rendering;
 import no.scienta.unearth.munch.print.ThrowableRenderer;
 import org.slf4j.Marker;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class UnearthlyTurboFilter extends TurboFilter {
@@ -53,23 +58,28 @@ public class UnearthlyTurboFilter extends TurboFilter {
             return FilterReply.NEUTRAL;
         }
         HandlingPolicy handle = faultHandler.handle(t, format, params);
-        return handle.getPrintout()
-            .map(renderer::render)
-            .map(lines ->
-                "\n\t\tat " + String.join("\n\t\tat ", lines))
-            .map(printout -> {
-                Object[] pars = allPars(params, t.toString(), printout);
-                String message = format + ": {} {}";
-                String fqcn = logger.getName();
-                int logLevel = level.toInt() / 1000;
-                logger.log(marker, fqcn, logLevel, message, pars, null);
-                return FilterReply.DENY;
-            })
-            .orElse(FilterReply.NEUTRAL);
+        Collection<Rendering> renderings = handle.getPrintout()
+            .map(causeChain -> causeChain.withStackRendering(renderer))
+            .map(CauseChain::getChainRendering)
+            .orElseGet(Collections::emptySet);
+        Collection<String> printout = renderings.stream()
+            .map(render -> render.getStrings("  "))
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
+        Object[] pars = allPars(
+            new Object[]{handle.getFaultId(), handle.getFaultEventId()},
+            params,
+            new Object[]{t.toString(), String.join("\n", printout)});
+
+        String message = "{} {} " + format + "\n{}{}";
+        String fqcn = logger.getName();
+        int logLevel = level.toInt() / 1000;
+        logger.log(marker, fqcn, logLevel, message, pars, null);
+        return FilterReply.DENY;
     }
 
-    private Object[] allPars(Object[] params, Object... andMore) {
-        return Stream.concat(stream(params), stream(andMore)).toArray(Object[]::new);
+    private Object[] allPars(Object[]... params) {
+        return Arrays.stream(params).flatMap(this::stream).toArray(Object[]::new);
     }
 
     private Stream<Object> stream(Object[] params) {

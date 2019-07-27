@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 public class Rendering {
 
     private static final String DEFAULT_INDENT = "\t";
+
     private final String className;
 
     private final String message;

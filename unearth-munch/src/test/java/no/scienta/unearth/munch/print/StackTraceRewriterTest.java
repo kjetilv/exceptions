@@ -37,7 +37,7 @@ public class StackTraceRewriterTest {
                     Collections.singleton("org.junit"),
                     Arrays.asList("java", "jdk", "com.sun"))))
             .squash((group, causeFrames) ->
-                Stream.of("  * (" + causeFrames.size() + ")"))
+                Stream.of(" * (" + causeFrames.size() + ")"))
             .reshape(
                 CauseFrame::unsetClassLoader,
                 CauseFrame::unsetModuleInfo)

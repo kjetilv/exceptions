@@ -171,7 +171,7 @@ class UnearthlyController(
     private fun rendererFor(groups: List<String>): ThrowableRenderer = ConfigurableThrowableRenderer()
             .group(SimplePackageGrouper(groups))
             .squash { _, causeFrames ->
-                Stream.of("  * [${causeFrames.size} hidden]")
+                Stream.of(" * [${causeFrames.size} hidden]")
             }
             .reshape(FrameFun.LIKE_JAVA_8)
             .reshape(FrameFun.SHORTEN_CLASSNAMES)

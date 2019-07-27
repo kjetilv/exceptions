@@ -46,13 +46,13 @@ public final class FrameFun {
     public static ConfigurableThrowableRenderer.FrameTransform SHORTEN_CLASSNAMES = FrameFun::shortenClassName;
 
     private static Stream<String> justTheCount(Collection<String> group, List<CauseFrame> causeFrames) {
-        return Stream.of("  * (" + causeFrames.size() + ")");
+        return Stream.of(" * (" + causeFrames.size() + ")");
     }
 
     private static Stream<String> justTheCountAndTop(Collection<String> group, List<CauseFrame> causeFrames) {
         return Stream.of(
             causeFrames.iterator().next().defaultPrint(new StringBuilder()).toString(),
-            "  * (" + (causeFrames.size() - 1) + " more)");
+            " * (" + (causeFrames.size() - 1) + " more)");
     }
 
     public static CauseFrame shortenClassName(Collection<String> group, CauseFrame causeFrame) {

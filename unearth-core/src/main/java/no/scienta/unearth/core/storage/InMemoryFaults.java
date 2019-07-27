@@ -196,10 +196,14 @@ public class InMemoryFaults
                 limitTime == null || limitTime.isBefore(event.getTime()));
     }
 
-    private <I extends Id, T> T get(String type, I id, Map<I, T> map) {
-        return Optional.ofNullable(map.get(id))
-            .orElseThrow(() ->
-                new IllegalArgumentException("No such " + type + ": " + id.getHash().toString()));
+    private <I extends Id, T> T get(String type, I id, Map<I, T> memoryMap) {
+        try {
+            return Optional.ofNullable(memoryMap.get(id))
+                .orElseThrow(() ->
+                    new IllegalArgumentException("No such " + type + ": " + id.getHash().toString()));
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to get " + id + " of " + type, e);
+        }
     }
 
     public Stream<FaultEvent> getFaultEvents(FaultStrandId id) {

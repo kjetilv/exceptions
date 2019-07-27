@@ -290,7 +290,7 @@ class UnearthlyServer(
     @Suppress("SameParameterValue")
     private fun <I, O> exchange(
             inLens: BiDiBodyLens<I>,
-            outLens : BiDiBodyLens<O>,
+            outLens: BiDiBodyLens<O>,
             accept: (I) -> O
     ): HttpHandler = { req ->
         inLens[req]?.let {
@@ -402,15 +402,18 @@ class UnearthlyServer(
                             RuntimeException("Internal server error: ${request.uri}"), request = request, response = response)
             }
 
-    private fun handledException(error: Throwable, request: Request? = null, response: Response? = null): Response =
+    private fun handledException(e: Throwable, request: Request? = null, response: Response? = null): Response =
             if (configuration.selfDiagnose || request?.let { selfDiagnose[it] } == true)
                 try {
-                    selfDiagnosedErrorResponse(error, response = response, status = response?.status)
+                    selfDiagnosedErrorResponse(e, response = response, status = response?.status)
                 } catch (e: Exception) {
                     logger.warn("Sorry, failed to self-diagnose fault: $request -> $response", e)
-                    simpleErrorResponse(error)
+                    simpleErrorResponse(e)
                 }
-            else simpleErrorResponse(error)
+            else {
+                logger.error("Exception occurred: ${request?.method ?: "?"} ${request?.uri ?: "?"}", e)
+                simpleErrorResponse(e)
+            }
 
     private fun selfDiagnosedErrorResponse(
             error: Throwable,
@@ -448,23 +451,21 @@ class UnearthlyServer(
                         submission = policy?.let(::submission)))
     }
 
-    private fun print(policy: HandlingPolicy, printoutType: HandlingPolicy.PrintoutType): String =
-            "\t" + java.lang.String.join("\n\t", policy.getThrowableRendering(printoutType));
-
     private fun simpleErrorResponse(e: Throwable): Response {
         val fault = try {
             Fault.create(e)
         } catch (e: Exception) {
             return bareBonesErrorResponse("Failed to analyze failure", e)
         }
-        logger.error("Failed: Fault id ${fault?.id?.hash ?: "unknown"}, " +
-                "fault strand ${fault?.faultStrand?.id?.hash ?: "unknown"}", e)
         return internalError.set(
                 Response(INTERNAL_SERVER_ERROR)
                         .header("X-Fault-Id", fault?.id?.toString() ?: "Unknown")
                         .header("X-FaultStrand-Id", fault?.faultStrand?.id?.toString() ?: "Unknown"),
                 simpleUnearthlyError(e))
     }
+
+    private fun print(policy: HandlingPolicy, printoutType: HandlingPolicy.PrintoutType): String =
+            "\t" + java.lang.String.join("\n\t", policy.getThrowableRendering(printoutType));
 
     private fun bareBonesErrorResponse(msg: String, e: Exception): Response {
         val reference = UUID.randomUUID().toString()

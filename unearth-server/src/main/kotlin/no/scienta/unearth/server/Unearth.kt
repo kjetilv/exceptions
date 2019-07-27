@@ -49,12 +49,15 @@ object Unearth : () -> Unit {
                 prefix = config[Key("server.api", stringType)],
                 host = config[Key("server.host", stringType)],
                 port = config[Key("server.port", intType)],
-                selfDiagnose = config[Key("unearth.self-diagnose", booleanType)])
+                selfDiagnose = config[Key("unearth.self-diagnose", booleanType)],
+                unearthlyLogging = config[Key("unearth.logging", booleanType)])
 
         val unearthlyController = UnearthlyController(storage, storage, storage, sensor)
         val unearthServer = UnearthlyServer(configuration, unearthlyController)
 
-        reconfigureLogging(unearthlyController)
+        if (configuration.unearthlyLogging) {
+            reconfigureLogging(unearthlyController)
+        }
 
         logger.info("Created $unearthServer")
 
@@ -66,8 +69,9 @@ object Unearth : () -> Unit {
     }
 
     private fun reconfigureLogging(controller: UnearthlyController) {
-        val context = LoggerFactory.getILoggerFactory() as LoggerContext
-        context.turboFilterList.add(UnearthlyTurboFilter(controller.handler, controller.serverRenderer))
+        (LoggerFactory.getILoggerFactory() as LoggerContext)
+                .turboFilterList
+                .add(UnearthlyTurboFilter(controller.handler, controller.serverRenderer))
     }
 
     private fun registerShutdown(server: UnearthlyServer) {
