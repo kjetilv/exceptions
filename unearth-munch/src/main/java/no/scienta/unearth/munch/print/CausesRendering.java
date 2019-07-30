@@ -17,13 +17,15 @@
 
 package no.scienta.unearth.munch.print;
 
+import no.scienta.unearth.munch.util.Streams;
 import no.scienta.unearth.munch.util.Util;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class Rendering {
+public class CausesRendering implements Iterable<CausesRendering>{
 
     private static final String DEFAULT_INDENT = "\t";
 
@@ -33,10 +35,17 @@ public class Rendering {
 
     private final Collection<String> stack;
 
-    public Rendering(String className, String message, Collection<String> stack) {
+    private final CausesRendering cause;
+
+    public CausesRendering(String className, String message, Collection<String> stack) {
+        this(className, message, stack, null);
+    }
+
+    public CausesRendering(String className, String message, Collection<String> stack, CausesRendering cause) {
         this.className = className;
         this.message = message == null || message.trim().isEmpty() ? "null" : message.trim();
         this.stack = Util.orEmpty(stack);
+        this.cause = cause;
     }
 
     public String getClassName() {
@@ -55,11 +64,20 @@ public class Rendering {
         return getStrings(null);
     }
 
+    public CausesRendering getCause() {
+        return cause;
+    }
+
     public Collection<String> getStrings(String stackIndent) {
         String indent = stackIndent == null ? DEFAULT_INDENT : stackIndent;
         return Stream.concat(
             Stream.of(className + ": " + message),
             stack.stream().map(line -> indent + line)
         ).collect(Collectors.toList());
+    }
+
+    @Override
+    public Iterator<CausesRendering> iterator() {
+        return Streams.chain(this, CausesRendering::getCause).iterator();
     }
 }

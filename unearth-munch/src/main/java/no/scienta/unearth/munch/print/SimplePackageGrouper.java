@@ -21,7 +21,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class SimplePackageGrouper implements ConfigurableThrowableRenderer.PackageGrouper {
+public class SimplePackageGrouper implements ConfigurableStackRenderer.PackageGrouper {
 
     private final Collection<Collection<String>> groups;
 

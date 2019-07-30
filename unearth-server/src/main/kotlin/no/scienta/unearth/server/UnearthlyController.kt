@@ -21,36 +21,28 @@ import no.scienta.unearth.core.*
 import no.scienta.unearth.core.handler.DefaultFaultHandler
 import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.id.*
-import no.scienta.unearth.munch.model.*
-import no.scienta.unearth.munch.print.CauseFrame
-import no.scienta.unearth.munch.print.ConfigurableThrowableRenderer
-import no.scienta.unearth.munch.print.SimplePackageGrouper
-import no.scienta.unearth.munch.print.ThrowableRenderer
+import no.scienta.unearth.munch.model.Cause
+import no.scienta.unearth.munch.model.CauseStrand
+import no.scienta.unearth.munch.model.Fault
+import no.scienta.unearth.munch.model.FaultEvent
+import no.scienta.unearth.munch.print.*
 import org.slf4j.LoggerFactory
 import java.time.Clock
 import java.time.ZoneId
-import java.util.stream.Stream
 
 class UnearthlyController(
         private val storage: FaultStorage,
         private val feed: FaultFeed,
         stats: FaultStats,
-        sensor: FaultSensor
+        sensor: FaultSensor,
+        private val renderer: UnearthlyRenderer
 ) {
-    val serverRenderer: ThrowableRenderer = rendererFor("org.http4k", "io.netty")
+    val handler: FaultHandler = DefaultFaultHandler(storage, stats, sensor, Clock.systemUTC());
 
-    val handler: FaultHandler =
-            DefaultFaultHandler(storage, stats, sensor,
-                    ConfigurableThrowableRenderer(),
-                    serverRenderer,
-                    ConfigurableThrowableRenderer().noStack(),
-                    Clock.systemUTC());
+    private val submitLogger = LoggerFactory.getLogger(javaClass)
 
-    private val submitLogger = LoggerFactory.getLogger("Submitted")
-
-    fun submitRaw(t: Throwable): HandlingPolicy {
-        return logged(handler.handle(t) ?: throw IllegalStateException("Unexpected: Missing handle"))
-    }
+    fun submitRaw(t: Throwable): HandlingPolicy =
+            handler.handle(t) ?: throw IllegalStateException("Unexpected: Missing handle")
 
     private fun logged(handle: HandlingPolicy): HandlingPolicy {
         submitLogger.info(logMessage(handle))
@@ -108,12 +100,13 @@ class UnearthlyController(
             fullStack: Boolean = false,
             printStack: Boolean = false,
             fullEvent: Boolean = false
-    ) = FaultEventSequence(
-            null,
-            SequenceType.GLOBAL,
-            feed.feed(offset, count).map {
-                faultEventDto(it, fullStack, printStack, fullEvent)
-            })
+    ): FaultEventSequence =
+            FaultEventSequence(
+                    null,
+                    SequenceType.GLOBAL,
+                    feed.feed(offset, count).map {
+                        faultEventDto(it, fullStack, printStack, fullEvent)
+                    })
 
     fun feed(
             faultId: FaultId,
@@ -122,12 +115,13 @@ class UnearthlyController(
             fullStack: Boolean = false,
             printStack: Boolean = false,
             fullEvent: Boolean = false
-    ): FaultEventSequence = FaultEventSequence(
-            faultId,
-            SequenceType.FAULT,
-            feed.feed(faultId, offset, count).map {
-                faultEventDto(it, fullStack, printStack, fullEvent)
-            })
+    ): FaultEventSequence =
+            FaultEventSequence(
+                    faultId,
+                    SequenceType.FAULT,
+                    feed.feed(faultId, offset, count).map {
+                        faultEventDto(it, fullStack, printStack, fullEvent)
+                    })
 
     fun feed(
             faultStrandId: FaultStrandId,
@@ -136,12 +130,15 @@ class UnearthlyController(
             fullStack: Boolean = false,
             printStack: Boolean = false,
             fullEvent: Boolean = false
-    ): FaultEventSequence = FaultEventSequence(
-            faultStrandId,
-            SequenceType.FAULT_STRAND,
-            feed.feed(faultStrandId, offset, count).map {
-                faultEventDto(it, fullStack, printStack, fullEvent)
-            })
+    ): FaultEventSequence =
+            FaultEventSequence(
+                    faultStrandId,
+                    SequenceType.FAULT_STRAND,
+                    feed.feed(faultStrandId, offset, count).map {
+                        faultEventDto(it, fullStack, printStack, fullEvent)
+                    })
+
+    fun render(policy: HandlingPolicy): CausesRendering? = renderer.rendering(policy)
 
     private fun logMessage(handle: HandlingPolicy) =
             "${handle.summary?.let { "$it " }
@@ -152,92 +149,87 @@ class UnearthlyController(
             fullStack: Boolean = false,
             printStack: Boolean = false,
             fullEvent: Boolean = false
-    ) = FaultEventDto(
-            faultEvent.id,
-            if (fullEvent) faultDto(faultEvent.fault, fullStack, printStack) else null,
-            faultEvent.time.atZone(ZoneId.of("UTC")),
-            faultEvent.globalSequenceNo,
-            faultEvent.faultSequenceNo,
-            faultEvent.faultStrandSequenceNo)
+    ): FaultEventDto =
+            FaultEventDto(
+                    faultEvent.id,
+                    if (fullEvent) faultDto(faultEvent.fault, fullStack, printStack) else null,
+                    faultEvent.time.atZone(ZoneId.of("UTC")),
+                    faultEvent.globalSequenceNo,
+                    faultEvent.faultSequenceNo,
+                    faultEvent.faultStrandSequenceNo)
 
     fun rewriteThrowable(faultId: FaultId, groups: Collection<String>?): CauseChainDto {
-        val singletonList: List<String> = groups?.toList() ?: emptyList()
-        val renderer = rendererFor(singletonList)
-        return causeChainDto(CauseChain.build(storage.getFault(faultId)).withStackRendering(renderer))
+        val fault = storage.getFault(faultId)
+        val renderer = SimpleCausesRenderer(ConfigurableStackRenderer().group(
+                SimplePackageGrouper(groups?.toList())))
+        return causeChainDto(renderer.render(fault));
     }
 
-    private fun rendererFor(vararg groups: String) = rendererFor(groups.toList())
-
-    private fun rendererFor(groups: List<String>): ThrowableRenderer = ConfigurableThrowableRenderer()
-            .group(SimplePackageGrouper(groups))
-            .squash { _, causeFrames ->
-                Stream.of(" * [${causeFrames.size} hidden]")
-            }
-            .reshape(FrameFun.LIKE_JAVA_8)
-            .reshape(FrameFun.SHORTEN_CLASSNAMES)
-
     private fun causeChainDto(
-            chain: CauseChain,
+            chain: CausesRendering,
             fullStack: Boolean = false,
             printStack: Boolean = false,
             thin: Boolean = false
-    ): CauseChainDto = CauseChainDto(
-            className = chain.className,
-            message = chain.rendering.message,
-            printedCauseFrames = if (chain.rendering.stack.isEmpty()) null else chain.rendering.stack,
-            causeStrand = if (thin) null else
-                causeStrandDto(chain.cause.causeStrand, fullStack, printStack),
-            cause = chain.causeChain?.let {
-                causeChainDto(it, fullStack)
-            })
+    ): CauseChainDto =
+            CauseChainDto(
+                    className = chain.className,
+                    message = chain.message,
+                    printedCauseFrames = if (chain.stack.isEmpty()) null else chain.stack,
+//                    causeStrand = if (thin) null else
+//                        causeStrandDto(chain.cause, fullStack, printStack),
+                    cause = chain.cause?.let {
+                        causeChainDto(it, fullStack)
+                    })
 
-    private fun faultDto(fault: Fault, fullStack: Boolean, printStack: Boolean): FaultDto {
-        return FaultDto(
-                id = fault.id,
-                faultStrandId = fault.faultStrand.id,
-                causes = fault.causes.map { cause ->
-                    causeDto(cause, fullStack = fullStack, printStack = printStack)
-                })
-    }
+    private fun faultDto(fault: Fault, fullStack: Boolean, printStack: Boolean): FaultDto =
+            FaultDto(
+                    id = fault.id,
+                    faultStrandId = fault.faultStrand.id,
+                    causes = fault.causes.map { cause ->
+                        causeDto(cause, fullStack = fullStack, printStack = printStack)
+                    })
 
     private fun causeStrandDto(
             causeStrand: CauseStrand,
             fullStack: Boolean = false,
             printStack: Boolean = false
-    ): CauseStrandDto = CauseStrandDto(
-            causeStrand.id,
-            causeStrand.className,
-            if (fullStack)
-                stackTrace(causeStrand.causeFrames)
-            else
-                emptyList(),
-            if (printStack && !fullStack)
-                simpleStackTrace(causeStrand.causeFrames)
-            else
-                emptyList())
+    ): CauseStrandDto =
+            CauseStrandDto(
+                    causeStrand.id,
+                    causeStrand.className,
+                    if (fullStack)
+                        stackTrace(causeStrand.causeFrames)
+                    else
+                        emptyList(),
+                    if (printStack && !fullStack)
+                        simpleStackTrace(causeStrand.causeFrames)
+                    else
+                        emptyList())
 
     private fun causeDto(
             cause: Cause,
             fullStack: Boolean = true,
             printStack: Boolean = false
-    ): CauseDto = CauseDto(
-            id = cause.id,
-            message = cause.message,
-            causeStrand = causeStrandDto(cause.causeStrand, fullStack, printStack))
+    ): CauseDto =
+            CauseDto(
+                    id = cause.id,
+                    message = cause.message,
+                    causeStrand = causeStrandDto(cause.causeStrand, fullStack, printStack))
 
     private fun simpleStackTrace(stackTrace: List<CauseFrame>): List<String> =
             stackTrace.map { it.toStackTraceElement().toString() }
 
     private fun stackTrace(
             stackTrace: List<CauseFrame>
-    ): List<StackTraceElementDto>? = stackTrace.map { element ->
-        StackTraceElementDto(
-                classLoaderName = element.classLoader(),
-                moduleName = element.module(),
-                moduleVersion = element.moduleVer(),
-                declaringClass = element.className(),
-                methodName = element.method(),
-                fileName = element.file(),
-                lineNumber = element.line())
-    }.toList()
+    ): List<StackTraceElementDto>? =
+            stackTrace.map { element ->
+                StackTraceElementDto(
+                        classLoaderName = element.classLoader(),
+                        moduleName = element.module(),
+                        moduleVersion = element.moduleVer(),
+                        declaringClass = element.className(),
+                        methodName = element.method(),
+                        fileName = element.file(),
+                        lineNumber = element.line())
+            }.toList()
 }

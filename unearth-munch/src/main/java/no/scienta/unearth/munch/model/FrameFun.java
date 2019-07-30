@@ -18,7 +18,7 @@
 package no.scienta.unearth.munch.model;
 
 import no.scienta.unearth.munch.print.CauseFrame;
-import no.scienta.unearth.munch.print.ConfigurableThrowableRenderer;
+import no.scienta.unearth.munch.print.ConfigurableStackRenderer;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,22 +28,22 @@ import java.util.stream.Stream;
 
 public final class FrameFun {
 
-    public static ConfigurableThrowableRenderer.FrameTransform UNSET_MODULE_INFO = CauseFrame::unsetModuleInfo;
+    public static ConfigurableStackRenderer.FrameTransform UNSET_MODULE_INFO = CauseFrame::unsetModuleInfo;
 
-    public static ConfigurableThrowableRenderer.FrameTransform UNSET_CLASSLOADER = CauseFrame::unsetClassLoader;
+    public static ConfigurableStackRenderer.FrameTransform UNSET_CLASSLOADER = CauseFrame::unsetClassLoader;
 
-    public static ConfigurableThrowableRenderer.FrameTransform LIKE_JAVA_8 = UNSET_MODULE_INFO.andThen(UNSET_CLASSLOADER)::apply;
+    public static ConfigurableStackRenderer.FrameTransform LIKE_JAVA_8 = UNSET_MODULE_INFO.andThen(UNSET_CLASSLOADER)::apply;
 
-    public static ConfigurableThrowableRenderer.FrameLister JUST_COUNT =
+    public static ConfigurableStackRenderer.FrameLister JUST_COUNT =
         FrameFun::justTheCount;
 
-    public static ConfigurableThrowableRenderer.FrameLister JUST_COUNT_AND_TOP =
+    public static ConfigurableStackRenderer.FrameLister JUST_COUNT_AND_TOP =
         FrameFun::justTheCountAndTop;
 
-    public static ConfigurableThrowableRenderer.GroupedFrameTransform SHORTEN_CLASSNAME =
+    public static ConfigurableStackRenderer.GroupedFrameTransform SHORTEN_CLASSNAME =
         FrameFun::shortenClassName;
 
-    public static ConfigurableThrowableRenderer.FrameTransform SHORTEN_CLASSNAMES = FrameFun::shortenClassName;
+    public static ConfigurableStackRenderer.FrameTransform SHORTEN_CLASSNAMES = FrameFun::shortenClassName;
 
     private static Stream<String> justTheCount(Collection<String> group, List<CauseFrame> causeFrames) {
         return Stream.of(" * (" + causeFrames.size() + ")");

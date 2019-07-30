@@ -20,10 +20,9 @@ package no.scienta.unearth.core;
 import no.scienta.unearth.munch.id.FaultEventId;
 import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.id.FaultStrandId;
-import no.scienta.unearth.munch.model.CauseChain;
-
-import java.util.Collection;
-import java.util.Optional;
+import no.scienta.unearth.munch.model.Fault;
+import no.scienta.unearth.munch.model.FaultEvent;
+import no.scienta.unearth.munch.model.FaultStrand;
 
 public interface HandlingPolicy {
 
@@ -31,15 +30,23 @@ public interface HandlingPolicy {
 
     Action getAction();
 
-    FaultStrandId getFaultStrandId();
+    default FaultStrandId getFaultStrandId() {
+        return getFaultStrand().getId();
+    }
 
-    FaultId getFaultId();
+    FaultStrand getFaultStrand();
 
-    FaultEventId getFaultEventId();
+    default FaultId getFaultId() {
+        return getFault().getId();
+    }
 
-    Optional<CauseChain> getPrintout();
+    Fault getFault();
 
-    Optional<CauseChain> getPrintout(PrintoutType type);
+    default FaultEventId getFaultEventId() {
+        return getFaultEvent().getId();
+    }
+
+    FaultEvent getFaultEvent();
 
     long getGlobalSequence();
 
@@ -47,9 +54,7 @@ public interface HandlingPolicy {
 
     long getFaultSequence();
 
-    Collection<String> getThrowableRendering(PrintoutType type);
-
-    enum PrintoutType {
+    enum RenderType {
         FULL,
         SHORT,
         MESSAGES_ONLY

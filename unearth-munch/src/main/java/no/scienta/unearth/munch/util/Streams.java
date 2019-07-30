@@ -17,12 +17,10 @@
 
 package no.scienta.unearth.munch.util;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -34,12 +32,12 @@ public final class Streams {
         return reverse(s.collect(Collectors.toList()));
     }
 
-    public static <T> Stream<T> reverse(List<T> s) {
+    public static <T> Stream<T> reverse(Collection<T> s) {
         return StreamSupport.stream(new ReverseSpliterator<>(s), false);
     }
 
     public static Stream<Throwable> causes(Throwable throwable) {
-        return StreamSupport.stream(new CauseSpliterator(throwable), false);
+        return chain(throwable, Throwable::getCause);
     }
 
     public static <T, U> U quickReduce(Collection<T> stream, BiFunction<U, ? super T, U> accumulator) {
@@ -58,27 +56,10 @@ public final class Streams {
         return stream.reduce(identity, accumulator, Util.noCombine());
     }
 
-    private static class CauseSpliterator extends Spliterators.AbstractSpliterator<Throwable> {
-
-        private Throwable throwable;
-
-        CauseSpliterator(Throwable throwable) {
-            super(Long.MAX_VALUE, IMMUTABLE | ORDERED);
-            this.throwable = throwable;
-        }
-
-        @Override
-        public boolean tryAdvance(Consumer<? super Throwable> action) {
-            if (throwable == null) {
-                return false;
-            }
-            try {
-                action.accept(throwable);
-                return true;
-            } finally {
-                throwable = throwable.getCause();
-            }
-        }
+    public static <T> Stream<T> chain(T head, Function<T, T> next) {
+        return StreamSupport.stream(
+            new NextSpliterator<>(head, next),
+            false);
     }
 
     private static class ReverseSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
@@ -87,9 +68,9 @@ public final class Streams {
 
         private int index;
 
-        private ReverseSpliterator(List<T> s) {
-            super(s.size(), Spliterator.ORDERED);
-            this.s = s;
+        private ReverseSpliterator(Collection<T> s) {
+            super(s.size(), ORDERED);
+            this.s = s instanceof List<?> ? (List<T>) s : new ArrayList<>(s);
             index = s.size();
         }
 
@@ -100,6 +81,29 @@ public final class Streams {
             }
             index--;
             action.accept(s.get(index));
+            return true;
+        }
+    }
+
+    private static class NextSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
+
+        private final Function<T, T> next;
+
+        private T current;
+
+        public NextSpliterator(T head, Function<T, T> next) {
+            super(Long.MAX_VALUE, Spliterator.IMMUTABLE | Spliterator.ORDERED);
+            this.next = next;
+            current = head;
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super T> action) {
+            if (current == null) {
+                return false;
+            }
+            action.accept(current);
+            current = next.apply(current);
             return true;
         }
     }

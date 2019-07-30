@@ -23,9 +23,14 @@ import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.scienta.unearth.core.storage.InMemoryFaults
 import no.scienta.unearth.metrics.MeteringThrowablesSensor
+import no.scienta.unearth.munch.model.FrameFun
+import no.scienta.unearth.munch.print.ConfigurableStackRenderer
+import no.scienta.unearth.munch.print.SimpleCausesRenderer
+import no.scienta.unearth.munch.print.SimplePackageGrouper
 import no.scienta.unearth.turbo.UnearthlyTurboFilter
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.stream.Stream
 
 
 object Unearth : () -> Unit {
@@ -52,18 +57,19 @@ object Unearth : () -> Unit {
                 selfDiagnose = config[Key("unearth.self-diagnose", booleanType)],
                 unearthlyLogging = config[Key("unearth.logging", booleanType)])
 
-        val unearthlyController = UnearthlyController(storage, storage, storage, sensor)
-        val unearthServer = UnearthlyServer(configuration, unearthlyController)
+        val controller = UnearthlyController(storage, storage, storage, sensor, UnearthlyRenderer())
+
+        val server = UnearthlyServer(configuration, controller)
 
         if (configuration.unearthlyLogging) {
-            reconfigureLogging(unearthlyController)
+            reconfigureLogging(controller)
         }
 
-        logger.info("Created $unearthServer")
+        logger.info("Created $server")
 
-        registerShutdown(unearthServer)
+        registerShutdown(server)
 
-        unearthServer.start {
+        server.start {
             logger.info("Ready at http://${callableHost(configuration)}:${configuration.port}")
         }
     }
@@ -71,7 +77,15 @@ object Unearth : () -> Unit {
     private fun reconfigureLogging(controller: UnearthlyController) {
         (LoggerFactory.getILoggerFactory() as LoggerContext)
                 .turboFilterList
-                .add(UnearthlyTurboFilter(controller.handler, controller.serverRenderer))
+                .add(UnearthlyTurboFilter(
+                        controller.handler,
+                        SimpleCausesRenderer(ConfigurableStackRenderer()
+                                .group(SimplePackageGrouper(listOf("org.http4k", "io.netty")))
+                                .squash { _, causeFrames ->
+                                    Stream.of(" * [${causeFrames.size} hidden]")
+                                }
+                                .reshape(FrameFun.LIKE_JAVA_8)
+                                .reshape(FrameFun.SHORTEN_CLASSNAMES))))
     }
 
     private fun registerShutdown(server: UnearthlyServer) {

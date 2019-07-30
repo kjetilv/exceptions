@@ -19,21 +19,16 @@ package no.scienta.unearth.core.handler;
 
 import no.scienta.unearth.core.*;
 import no.scienta.unearth.core.HandlingPolicy.Action;
-import no.scienta.unearth.munch.model.*;
-import no.scienta.unearth.munch.print.ThrowableRenderer;
+import no.scienta.unearth.munch.model.Cause;
+import no.scienta.unearth.munch.model.Fault;
+import no.scienta.unearth.munch.model.FaultEvent;
+import no.scienta.unearth.munch.model.LogEntry;
 import no.scienta.unearth.munch.util.Util;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static no.scienta.unearth.core.HandlingPolicy.PrintoutType;
 
 public class DefaultFaultHandler implements FaultHandler {
 
@@ -45,26 +40,16 @@ public class DefaultFaultHandler implements FaultHandler {
 
     private final Clock clock;
 
-    private final Map<PrintoutType, ThrowableRenderer> renderers;
-
     public DefaultFaultHandler(
         FaultStorage storage,
         FaultStats stats,
         FaultSensor sensor,
-        ThrowableRenderer fullRenderer,
-        ThrowableRenderer shortRenderer,
-        ThrowableRenderer messagesRenderer, Clock clock
+        Clock clock
     ) {
         this.storage = storage;
         this.stats = stats;
         this.sensor = sensor;
         this.clock = clock;
-
-        Map<PrintoutType, ThrowableRenderer> renderers = new HashMap<>();
-        put(renderers, PrintoutType.FULL, fullRenderer);
-        put(renderers, PrintoutType.MESSAGES_ONLY, messagesRenderer);
-        put(renderers, PrintoutType.SHORT, shortRenderer);
-        this.renderers = Collections.unmodifiableMap(renderers);
     }
 
     @Override
@@ -77,42 +62,23 @@ public class DefaultFaultHandler implements FaultHandler {
 
     private HandlingPolicy store(LogEntry logEntry, Fault fault) {
         Optional<FaultEvent> lastStored = stats.getLastFaultEvent(fault.getFaultStrand().getId());
-        FaultEvent stored = storage.store(logEntry, fault);
-        FaultEvent registered = sensor.registered(stored);
-        return policy(registered, lastStored.orElse(null));
-    }
+        FaultEvent event = sensor.registered(storage.store(logEntry, fault));
 
-    private HandlingPolicy policy(FaultEvent event, FaultEvent previous) {
-        CauseChain causeChain = CauseChain.build(event.getFault());
-        return renderers.entrySet().stream()
-            .reduce(
-                new SimpleHandlingPolicy(event),
-                (handlingPolicy, e) ->
-                    printout(handlingPolicy, e, causeChain),
-                Util.noCombine()
-            ).withAction(
-                actionForWindow(previous)
+        return new SimpleHandlingPolicy(event)
+            .withAction(
+                actionForWindow(lastStored.orElse(null))
             ).withSummary(
                 event.getFault().getCauses().stream()
                     .map(Cause::getMessage)
-                    .collect(Collectors.joining(" <- "))
-            );
-    }
-
-    private SimpleHandlingPolicy printout(
-        SimpleHandlingPolicy hp,
-        Entry<PrintoutType, ThrowableRenderer> e, CauseChain causeChain
-    ) {
-        return hp.withPrintout(e.getKey(), () ->
-            causeChain.withStackRendering(e.getValue()));
+                    .collect(Collectors.joining(" <- ")));
     }
 
     private Action actionForWindow(FaultEvent previousEvent) {
-        if (previousEvent == null) {
-            return Action.LOG;
-        }
-        Instant eventTime = clock.instant();
-        Duration interval = Duration.between(previousEvent.getTime(), eventTime);
+        return previousEvent == null ? Action.LOG
+            : actionForWindow(Duration.between(previousEvent.getTime(), clock.instant()));
+    }
+
+    private Action actionForWindow(Duration interval) {
         return isIn(interval, DELUGE_WINDOW) ? Action.LOG_ID :
             isIn(interval, SPAM_WINDOW) ? Action.LOG_MESSAGES
                 : isIn(interval, QUIET_WINDOW) ? Action.LOG_SHORT
@@ -128,14 +94,4 @@ public class DefaultFaultHandler implements FaultHandler {
     private static final Duration SPAM_WINDOW = Duration.ofMinutes(1);
 
     private static final Duration DELUGE_WINDOW = Duration.ofSeconds(1);
-
-    private static void put(
-        Map<PrintoutType, ThrowableRenderer> renderers,
-        PrintoutType type,
-        ThrowableRenderer renderer
-    ) {
-        if (renderer != null) {
-            renderers.put(type, renderer);
-        }
-    }
 }

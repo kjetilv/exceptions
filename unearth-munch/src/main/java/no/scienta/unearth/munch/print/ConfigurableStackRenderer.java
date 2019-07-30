@@ -17,6 +17,7 @@
 
 package no.scienta.unearth.munch.print;
 
+import no.scienta.unearth.munch.model.Cause;
 import no.scienta.unearth.munch.model.CauseChain;
 import no.scienta.unearth.munch.util.Streams;
 import no.scienta.unearth.munch.util.Util;
@@ -27,7 +28,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ConfigurableThrowableRenderer implements ThrowableRenderer {
+public class ConfigurableStackRenderer implements StackRenderer {
 
     private final List<GroupedFrameTransform> reshapers;
 
@@ -41,11 +42,11 @@ public class ConfigurableThrowableRenderer implements ThrowableRenderer {
 
     private final boolean omitStack;
 
-    public ConfigurableThrowableRenderer() {
+    public ConfigurableStackRenderer() {
         this(null, null, null, null, null, false);
     }
 
-    private ConfigurableThrowableRenderer(
+    private ConfigurableStackRenderer(
         PackageGrouper grouper,
         GroupPrinter groupDisplay,
         FramePrinter framePrinter,
@@ -67,44 +68,52 @@ public class ConfigurableThrowableRenderer implements ThrowableRenderer {
         this.omitStack = omitStack;
     }
 
-    public ThrowableRenderer framePrinter(FramePrinter framePrinter) {
-        return new ConfigurableThrowableRenderer(
+    public StackRenderer framePrinter(FramePrinter framePrinter) {
+        return new ConfigurableStackRenderer(
             grouper, groupPrinter, framePrinter, reshapers, squasher, omitStack);
     }
 
-    public ConfigurableThrowableRenderer group(PackageGrouper grouper) {
-        return new ConfigurableThrowableRenderer(
+    public ConfigurableStackRenderer group(PackageGrouper grouper) {
+        return new ConfigurableStackRenderer(
             grouper, groupPrinter, framePrinter, reshapers, squasher, omitStack);
     }
 
-    public ConfigurableThrowableRenderer squash(FrameLister squasher) {
-        return new ConfigurableThrowableRenderer(
+    public ConfigurableStackRenderer squash(FrameLister squasher) {
+        return new ConfigurableStackRenderer(
             grouper, groupPrinter, framePrinter, reshapers, squasher, omitStack);
     }
 
-    public final ConfigurableThrowableRenderer reshape(GroupedFrameTransform... reshapers) {
-        return new ConfigurableThrowableRenderer(
+    public final ConfigurableStackRenderer reshape(GroupedFrameTransform... reshapers) {
+        return new ConfigurableStackRenderer(
             grouper, groupPrinter, framePrinter, added(reshapers), squasher, omitStack);
     }
 
-    public final ConfigurableThrowableRenderer noStack() {
-        return new ConfigurableThrowableRenderer(
+    public final ConfigurableStackRenderer noStack() {
+        return new ConfigurableStackRenderer(
             grouper, groupPrinter, framePrinter, reshapers, squasher, true);
     }
 
-    public final ConfigurableThrowableRenderer reshape(FrameTransform... reshapers) {
+    public final ConfigurableStackRenderer reshape(FrameTransform... reshapers) {
         List<GroupedFrameTransform> added =
-            added(Arrays.stream(reshapers).map(ConfigurableThrowableRenderer::ungrouped));
-        return new ConfigurableThrowableRenderer(
+            added(Arrays.stream(reshapers).map(ConfigurableStackRenderer::ungrouped));
+        return new ConfigurableStackRenderer(
             grouper, groupPrinter, framePrinter, added, squasher, omitStack);
     }
 
     @Override
+    public List<String> render(Cause cause) {
+        return renderFrames(cause. getCauseStrand().getCauseFrames());
+    }
+
+    @Override
     public List<String> render(CauseChain causeChain) {
+        return renderFrames(causeChain.getCauseFrames());
+    }
+
+    private List<String> renderFrames(List<CauseFrame> causeFrames) {
         if (omitStack) {
             return Collections.emptyList();
         }
-        List<CauseFrame> causeFrames = causeChain.getCauseFrames();
         GroupedList<Collection<String>, CauseFrame> groupedList =
             GroupedList.group(causeFrames, grouper);
         List<String> list = new ArrayList<>();

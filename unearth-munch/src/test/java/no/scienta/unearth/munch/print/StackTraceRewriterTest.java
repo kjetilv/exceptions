@@ -17,7 +17,6 @@
 
 package no.scienta.unearth.munch.print;
 
-import no.scienta.unearth.munch.model.CauseChain;
 import no.scienta.unearth.munch.model.Fault;
 import no.scienta.unearth.munch.model.FrameFun;
 import org.junit.Test;
@@ -30,7 +29,7 @@ public class StackTraceRewriterTest {
 
     @Test
     public void test() {
-        ThrowableRenderer causeChainRenderer = new ConfigurableThrowableRenderer()
+        StackRenderer causeChainRenderer = new ConfigurableStackRenderer()
             .group(new SimplePackageGrouper(
                 Arrays.asList(
                     Collections.singleton("org.gradle"),
@@ -47,8 +46,8 @@ public class StackTraceRewriterTest {
                 cf.defaultPrint(sb.append("--  ")));
 
         Fault fault = Fault.create(new Throwable());
-        CauseChain causeChain = CauseChain.build(fault).withStackRendering(causeChainRenderer);
+        CausesRendering render = new SimpleCausesRenderer(causeChainRenderer).render(fault);
 
-        causeChain.getRendering().getStack().forEach(System.out::println);
+        render.getStrings("##  ").forEach(System.out::println);
     }
 }

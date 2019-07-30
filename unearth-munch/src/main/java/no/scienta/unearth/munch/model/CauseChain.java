@@ -19,8 +19,8 @@ package no.scienta.unearth.munch.model;
 
 import no.scienta.unearth.munch.base.AbstractHashable;
 import no.scienta.unearth.munch.print.CauseFrame;
-import no.scienta.unearth.munch.print.Rendering;
-import no.scienta.unearth.munch.print.ThrowableRenderer;
+import no.scienta.unearth.munch.print.CausesRendering;
+import no.scienta.unearth.munch.print.StackRenderer;
 import no.scienta.unearth.munch.util.Streams;
 
 import java.util.ArrayList;
@@ -31,11 +31,12 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * A cause chain is a moldable mirror image of an actual {@link Throwable}.
+ * A cause chain is a moldable mirror image of an actual {@link Throwable}, and should be used to create alternate
+ * representations of throwables.
  */
 public class CauseChain extends AbstractHashable {
 
-    public static CauseChain build(Fault fault) {
+    public static CauseChain create(Fault fault) {
         return Streams.quickReduce(
             Streams.reverse(fault.getCauses()),
             (chainedFault, cause) ->
@@ -48,13 +49,13 @@ public class CauseChain extends AbstractHashable {
 
     private final String message;
 
-    private final Rendering rendering;
+    private final CausesRendering rendering;
 
     private final List<CauseFrame> causeFrames;
 
     private final CauseChain chainedCause;
 
-    private CauseChain(Cause cause, CauseChain chainedCause, Rendering rendering) {
+    private CauseChain(Cause cause, CauseChain chainedCause, CausesRendering rendering) {
         this.cause = cause;
         this.message = cause.getMessage();
         this.className = cause.getCauseStrand().getClassName();
@@ -83,7 +84,7 @@ public class CauseChain extends AbstractHashable {
         return causeFrames;
     }
 
-    public Rendering getRendering() {
+    public CausesRendering getRendering() {
         return rendering;
     }
 
@@ -97,23 +98,23 @@ public class CauseChain extends AbstractHashable {
         return chainedCause == null ? Collections.unmodifiableList(ts) : chainedCause.map(toT, ts);
     }
 
-    public Collection<Rendering> getChainRendering() {
+    public Collection<CausesRendering> getChainRendering() {
         return getChainRendering(new ArrayList<>());
     }
 
-    private Collection<Rendering> getChainRendering(Collection<Rendering> renderings) {
+    private Collection<CausesRendering> getChainRendering(Collection<CausesRendering> renderings) {
         renderings.add(rendering);
         return chainedCause == null ? renderings : chainedCause.getChainRendering(renderings);
     }
 
-    public CauseChain withStackRendering(ThrowableRenderer renderer) {
-        Rendering printout = new Rendering(className, message, renderer.render(this));
+    public CauseChain withStackRendering(StackRenderer renderer) {
+        CausesRendering rendering = new CausesRendering(className, message, renderer.render(this));
         return new CauseChain(
             cause,
             chainedCause == null
                 ? null
                 : chainedCause.withStackRendering(renderer),
-            printout);
+            rendering);
     }
 
     @Override

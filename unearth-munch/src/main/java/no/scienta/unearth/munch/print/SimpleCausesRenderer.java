@@ -17,20 +17,29 @@
 
 package no.scienta.unearth.munch.print;
 
-import no.scienta.unearth.munch.model.CauseChain;
-import no.scienta.unearth.munch.model.Fault;
+import no.scienta.unearth.munch.model.Cause;
+import no.scienta.unearth.munch.util.Streams;
 
-import java.util.List;
+import java.util.Collection;
 
-public interface ThrowableRenderer {
+public class SimpleCausesRenderer implements CausesRenderer {
 
-    default List<String> render(Throwable throwable) {
-        return render(Fault.create(throwable));
+    private final StackRenderer renderer;
+
+    public SimpleCausesRenderer(StackRenderer renderer) {
+        this.renderer = renderer;
     }
 
-    default List<String> render(Fault fault) {
-        return render(CauseChain.build(fault));
+    @Override
+    public CausesRendering render(Collection<Cause> causeCollection) {
+        return Streams.quickReduce(
+            Streams.reverse(causeCollection),
+            null,
+            (rendering, cause) ->
+                new CausesRendering(
+                    cause.getCauseStrand().getClassName(),
+                    cause.getMessage(),
+                    renderer.render(cause),
+                    rendering));
     }
-
-    List<String> render(CauseChain causeChain);
 }

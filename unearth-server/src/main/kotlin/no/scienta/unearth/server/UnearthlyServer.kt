@@ -321,11 +321,11 @@ class UnearthlyServer(
     }
 
     private fun errorFilter() = Filter { handler ->
-        { req ->
+        { request ->
             try {
-                handledResponse(handler(req), req)
+                handledResponse(handler(request), request)
             } catch (e: Throwable) {
-                handledException(e, req)
+                handledException(e, request)
             }
         }
     }
@@ -369,21 +369,16 @@ class UnearthlyServer(
                 handling.faultSequence,
                 action = Action.valueOf(handling.action.name),
                 printouts = PrintoutsDto(
-                        log = toPrintout(handling, HandlingPolicy.PrintoutType.FULL),
-                        logShort = toPrintout(handling, HandlingPolicy.PrintoutType.SHORT),
-                        logMessages = toPrintout(handling, HandlingPolicy.PrintoutType.MESSAGES_ONLY)
+                        log = toPrintout(handling),
+                        logShort = toPrintout(handling),
+                        logMessages = toPrintout(handling)
                 ))
     }
 
-    private fun toPrintout(handling: HandlingPolicy, type: HandlingPolicy.PrintoutType): List<PrintoutDto> {
-        return handling.getPrintout(type).map { chain ->
-            chain.map {
-                PrintoutDto(it.message, it.rendering.stack)
-            }
-        }.orElseGet {
-            emptyList()
-        }
-    }
+    private fun toPrintout(policy: HandlingPolicy): List<PrintoutDto> =
+            controller.render(policy)?.map {
+                PrintoutDto(it.message, it.stack)
+            } ?: emptyList()
 
     private fun handledResponse(response: Response, request: Request): Response =
             when {
@@ -395,28 +390,29 @@ class UnearthlyServer(
                     handledException(
                             IllegalArgumentException(
                                     "Bad request ${request.method} ${request.uri}: ${response.toMessage().trim()}"),
-                            request = request,
-                            response = response)
+                            request,
+                            response)
                 else ->
                     handledException(
-                            RuntimeException("Internal server error: ${request.uri}"), request = request, response = response)
+                            RuntimeException("Internal server error: ${request.uri}"), request, response)
             }
 
-    private fun handledException(e: Throwable, request: Request? = null, response: Response? = null): Response =
+    private fun handledException(e: Throwable, request: Request, response: Response? = null): Response =
             if (configuration.selfDiagnose || request?.let { selfDiagnose[it] } == true)
                 try {
-                    selfDiagnosedErrorResponse(e, response = response, status = response?.status)
+                    selfDiagnosedErrorResponse(e, request, response = response, status = response?.status)
                 } catch (e: Exception) {
-                    logger.warn("Sorry, failed to self-diagnose fault: $request -> $response", e)
-                    simpleErrorResponse(e)
+                    logger.warn("Failed to self-diagnose fault: $request -> $response", e)
+                    internalErrorResponse(e)
                 }
             else {
                 logger.error("Exception occurred: ${request?.method ?: "?"} ${request?.uri ?: "?"}", e)
-                simpleErrorResponse(e)
+                internalErrorResponse(e)
             }
 
     private fun selfDiagnosedErrorResponse(
             error: Throwable,
+            request: Request,
             response: Response? = null,
             status: Status? = INTERNAL_SERVER_ERROR
     ): Response {
@@ -425,19 +421,11 @@ class UnearthlyServer(
         } catch (e: Exception) {
             return bareBonesErrorResponse("Failed to submit self-diagnosed error", e)
         }
-        when {
-            policy.action == HandlingPolicy.Action.LOG ->
-                logger.warn("Failed: ${policy?.faultEventId ?: "unknown"}\n  {}",
-                        print(policy, HandlingPolicy.PrintoutType.FULL))
-            policy.action == HandlingPolicy.Action.LOG_SHORT ->
-                logger.warn("Failed: $error:\n{}",
-                        print(policy, HandlingPolicy.PrintoutType.SHORT))
-            policy.action == HandlingPolicy.Action.LOG_MESSAGES ->
-                logger.warn("Failed: $error:\n{}",
-                        print(policy, HandlingPolicy.PrintoutType.MESSAGES_ONLY))
-            policy.action == HandlingPolicy.Action.LOG_ID ->
-                logger.warn("Failed: $error: {}", policy.faultId)
-        }
+//        Logging.doLog(
+//                Logging.WarnLog(logger),
+//                policy,
+//                controller.render(policy),
+//                "Failed: ${request.method} ${request.uri} ${policy?.faultEventId ?: "unknown"}\n  {}")
         return internalError.set(
                 withContentType((response ?: Response(status ?: INTERNAL_SERVER_ERROR))
                         .header("X-Fault-SeqNo", policy?.faultSequence?.toString() ?: "-1")
@@ -451,7 +439,7 @@ class UnearthlyServer(
                         submission = policy?.let(::submission)))
     }
 
-    private fun simpleErrorResponse(e: Throwable): Response {
+    private fun internalErrorResponse(e: Throwable): Response {
         val fault = try {
             Fault.create(e)
         } catch (e: Exception) {
@@ -463,9 +451,6 @@ class UnearthlyServer(
                         .header("X-FaultStrand-Id", fault?.faultStrand?.id?.toString() ?: "Unknown"),
                 simpleUnearthlyError(e))
     }
-
-    private fun print(policy: HandlingPolicy, printoutType: HandlingPolicy.PrintoutType): String =
-            "\t" + java.lang.String.join("\n\t", policy.getThrowableRendering(printoutType));
 
     private fun bareBonesErrorResponse(msg: String, e: Exception): Response {
         val reference = UUID.randomUUID().toString()
