@@ -24,8 +24,12 @@ import ch.qos.logback.core.spi.FilterReply;
 import no.scienta.unearth.core.FaultHandler;
 import no.scienta.unearth.core.HandlingPolicy;
 import no.scienta.unearth.munch.print.CausesRenderer;
+import no.scienta.unearth.munch.print.CausesRendering;
 import org.slf4j.Marker;
 import org.slf4j.spi.LocationAwareLogger;
+
+import java.util.Arrays;
+import java.util.stream.Stream;
 
 public class UnearthlyTurboFilter extends TurboFilter {
 
@@ -36,6 +40,29 @@ public class UnearthlyTurboFilter extends TurboFilter {
     public UnearthlyTurboFilter(FaultHandler faultHandler, CausesRenderer renderer) {
         this.faultHandler = faultHandler;
         this.renderer = renderer;
+    }
+
+    private static Object[] allPars(Object[] params, HandlingPolicy policy, CausesRendering rendering) {
+        return allPars(
+            new Object[]{
+                policy.getFaultId(), policy.getFaultEventId()
+            },
+            params,
+            new Object[]{
+                String.join("\n", rendering.getStrings("  "))
+            });
+    }
+
+    private static String message(String format) {
+        return "{} {} " + format + "\n{}";
+    }
+
+    private static Object[] allPars(Object[]... params) {
+        return Arrays.stream(params).flatMap(UnearthlyTurboFilter::stream).toArray(Object[]::new);
+    }
+
+    private static Stream<Object> stream(Object[] params) {
+        return params == null ? Stream.empty() : Arrays.stream(params);
     }
 
     @Override
@@ -67,14 +94,13 @@ public class UnearthlyTurboFilter extends TurboFilter {
         HandlingPolicy policy,
         CausesRenderer renderer
     ) {
-        Logging.doLog(
-            (expandedFormat, expandedParams) ->
-                logger.log(marker, logger.getName(), level(level), expandedFormat, expandedParams, null),
-            policy,
-            renderer.render(policy.getFault()),
-            format,
-            params
-        );
+        logger.log(
+            marker,
+            logger.getName(),
+            level(level),
+            message(format),
+            allPars(params, policy, renderer.render(policy.getFault())),
+            null);
         return FilterReply.DENY;
     }
 
@@ -93,5 +119,4 @@ public class UnearthlyTurboFilter extends TurboFilter {
         }
         return LocationAwareLogger.TRACE_INT;
     }
-
 }

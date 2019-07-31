@@ -41,8 +41,7 @@ class UnearthlyController(
 
     private val submitLogger = LoggerFactory.getLogger(javaClass)
 
-    fun submitRaw(t: Throwable): HandlingPolicy =
-            handler.handle(t) ?: throw IllegalStateException("Unexpected: Missing handle")
+    fun submitRaw(t: Throwable): HandlingPolicy = handler.handle(t)!!
 
     private fun logged(handle: HandlingPolicy): HandlingPolicy {
         submitLogger.info(logMessage(handle))

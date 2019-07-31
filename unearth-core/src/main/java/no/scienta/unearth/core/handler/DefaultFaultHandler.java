@@ -56,14 +56,12 @@ public class DefaultFaultHandler implements FaultHandler {
     public HandlingPolicy handle(Throwable throwable, String logMessage, Object... args) {
         return store(
             logMessage == null ? null : LogEntry.create(logMessage, args),
-            Fault.create(throwable)
-        );
+            Fault.create(throwable));
     }
 
     private HandlingPolicy store(LogEntry logEntry, Fault fault) {
         Optional<FaultEvent> lastStored = stats.getLastFaultEvent(fault.getFaultStrand().getId());
         FaultEvent event = sensor.registered(storage.store(logEntry, fault));
-
         return new SimpleHandlingPolicy(event)
             .withAction(
                 actionForWindow(lastStored.orElse(null))

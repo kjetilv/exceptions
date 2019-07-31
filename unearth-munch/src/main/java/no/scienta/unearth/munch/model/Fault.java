@@ -35,7 +35,9 @@ import java.util.stream.Collectors;
 public class Fault extends AbstractHashableIdentifiable<FaultId> {
 
     public static Fault create(Throwable throwable) {
-        return new Fault(FaultStrand.create(throwable), causes(throwable));
+        List<Cause> causes = Cause.causes(throwable);
+        FaultStrand faultStrand = FaultStrand.create(causes);
+        return new Fault(faultStrand, causes);
     }
 
     private final FaultStrand faultStrand;
@@ -68,10 +70,6 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
     public Throwable toChameleon() {
         return Streams.quickReduce(Streams.reverse(causes), (throwable, cause) ->
             cause.toChameleon(throwable));
-    }
-
-    private static List<Cause> causes(Throwable throwable) {
-        return Streams.causes(throwable).map(Cause::create).collect(Collectors.toList());
     }
 
     @Override

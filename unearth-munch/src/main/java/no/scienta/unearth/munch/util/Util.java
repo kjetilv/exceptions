@@ -18,10 +18,7 @@
 package no.scienta.unearth.munch.util;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.BinaryOperator;
 
 public final class Util {
@@ -34,14 +31,12 @@ public final class Util {
         return t == null || t.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(t));
     }
 
-    public static <T> List<T> orEmpty(List<T> t) {
-        return t == null || t.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(t));
+    public static <K, V> Map<K, V> orEmptyMap(Map<K, V> t) {
+        return t == null || t.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(new HashMap<>(t));
     }
 
-    public static <T> BinaryOperator<T> noCombine() {
-        return (t1, t2) -> {
-            throw new IllegalStateException("No combine: " + t1 + " <> " + t2);
-        };
+    public static <T> List<T> orEmpty(List<T> t) {
+        return t == null || t.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(t));
     }
 
     public static boolean isLongerThan(Duration time, Duration comparedValue) {
@@ -50,6 +45,12 @@ public final class Util {
 
     public static boolean isShorterThan(Duration time, Duration comparedValue) {
         return time.minus(comparedValue).isNegative();
+    }
+
+    static <T> BinaryOperator<T> noCombine() {
+        return (t1, t2) -> {
+            throw new IllegalStateException("No combine: " + t1 + " <> " + t2);
+        };
     }
 
     private Util() {

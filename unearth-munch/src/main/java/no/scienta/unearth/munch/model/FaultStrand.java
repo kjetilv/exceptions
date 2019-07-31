@@ -19,7 +19,6 @@ package no.scienta.unearth.munch.model;
 
 import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
 import no.scienta.unearth.munch.id.FaultStrandId;
-import no.scienta.unearth.munch.util.Streams;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -32,11 +31,9 @@ public class FaultStrand extends AbstractHashableIdentifiable<FaultStrandId> {
 
     private final List<CauseStrand> causeStrands;
 
-    public static FaultStrand create(Throwable throwable) {
-        List<Cause> causes = Streams.reverse(
-            Streams.causes(throwable).map(Cause::create)
-        ).collect(Collectors.toList());
-        List<CauseStrand> causeStrands = causes.stream().map(Cause::getCauseStrand).collect(Collectors.toList());
+    public static FaultStrand create(List<Cause> causes) {
+        List<CauseStrand> causeStrands =
+            causes.stream().map(Cause::getCauseStrand).collect(Collectors.toList());
         return new FaultStrand(causeStrands);
     }
 

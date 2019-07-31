@@ -21,23 +21,29 @@ import no.scienta.unearth.munch.ChameleonException;
 import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
 import no.scienta.unearth.munch.id.CauseId;
 import no.scienta.unearth.munch.print.CauseFrame;
+import no.scienta.unearth.munch.util.Streams;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * A cause has a {@link CauseStrand cause strand} and a given {@link #message message}.
  */
 public class Cause extends AbstractHashableIdentifiable<CauseId> {
 
+    public static List<Cause> causes(Throwable throwable) {
+        return Streams.reverse(Streams.causes(throwable))
+            .map(t ->
+                new Cause(CauseStrand.create(t), t.getMessage()))
+            .collect(Collectors.toList());
+    }
+
     private final CauseStrand causeStrand;
 
     private final String message;
-
-    static Cause create(Throwable cause) {
-        return new Cause(CauseStrand.create(cause), cause.getMessage());
-    }
 
     private Cause(CauseStrand causeStrand, String message) {
         this.causeStrand = Objects.requireNonNull(causeStrand);

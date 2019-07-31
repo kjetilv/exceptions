@@ -398,9 +398,9 @@ class UnearthlyServer(
             }
 
     private fun handledException(e: Throwable, request: Request, response: Response? = null): Response =
-            if (configuration.selfDiagnose || request?.let { selfDiagnose[it] } == true)
+            if (configuration.selfDiagnose)
                 try {
-                    selfDiagnosedErrorResponse(e, request, response = response, status = response?.status)
+                    selfDiagnosedErrorResponse(e, request, response, response?.status)
                 } catch (e: Exception) {
                     logger.warn("Failed to self-diagnose fault: $request -> $response", e)
                     internalErrorResponse(e)
@@ -421,6 +421,7 @@ class UnearthlyServer(
         } catch (e: Exception) {
             return bareBonesErrorResponse("Failed to submit self-diagnosed error", e)
         }
+        logger.warn("Handled error", error);
 //        Logging.doLog(
 //                Logging.WarnLog(logger),
 //                policy,
@@ -501,9 +502,6 @@ class UnearthlyServer(
 
         private val fullStack =
                 Query.boolean().optional("fullStack", "Provide a fully destructured stack")
-
-        private val selfDiagnose =
-                Query.boolean().optional("selfDiagnose", "Self-diagnose: Store any errors produced by Unearth itself")
 
         private val printStack =
                 Query.boolean().optional("printStack", "Provide a list of printed stacktrace elements")

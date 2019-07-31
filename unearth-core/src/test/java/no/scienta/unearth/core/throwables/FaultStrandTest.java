@@ -17,6 +17,7 @@
 
 package no.scienta.unearth.core.throwables;
 
+import no.scienta.unearth.munch.model.Cause;
 import no.scienta.unearth.munch.model.FaultStrand;
 import org.junit.Test;
 
@@ -29,27 +30,22 @@ public class FaultStrandTest {
 
     @Test
     public void hash() {
-        FaultStrand d1 = newFaultStrand();
-        FaultStrand d2 = newFaultStrand();
+        FaultStrand d1 = newFaultStrand(), d2 = newFaultStrand();
         assertEquals(d1.getHash(), d2.getHash());
-    }
-
-    private FaultStrand newFaultStrand() {
-        Throwable cause = new Throwable();
-        Throwable cause1 = new Throwable(cause);
-        return FaultStrand.create(new Throwable(cause1));
     }
 
     @Test
     public void hash2() {
         FaultStrand[] strands = new FaultStrand[2];
-        new Object() {
-            {
-                strands[0] = newFaultStrand();
-            }
-        };
+        strands[0] = newFaultStrand();
         strands[1] = newFaultStrand();
         assertNotEquals(strands[0].getHash(), strands[1].getHash());
+    }
+
+    private FaultStrand newFaultStrand() {
+        Throwable cause = new Throwable();
+        Throwable cause1 = new Throwable(cause);
+        return FaultStrand.create(Cause.causes(cause1));
     }
 
     @Test

@@ -32,7 +32,8 @@ public final class FrameFun {
 
     public static ConfigurableStackRenderer.FrameTransform UNSET_CLASSLOADER = CauseFrame::unsetClassLoader;
 
-    public static ConfigurableStackRenderer.FrameTransform LIKE_JAVA_8 = UNSET_MODULE_INFO.andThen(UNSET_CLASSLOADER)::apply;
+    public static ConfigurableStackRenderer.FrameTransform LIKE_JAVA_8 =
+        UNSET_MODULE_INFO.andThen(UNSET_CLASSLOADER)::apply;
 
     public static ConfigurableStackRenderer.FrameLister JUST_COUNT =
         FrameFun::justTheCount;

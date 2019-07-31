@@ -17,67 +17,9 @@
 
 package no.scienta.unearth.turbo;
 
-import no.scienta.unearth.core.HandlingPolicy;
-import no.scienta.unearth.munch.print.CausesRendering;
-import org.slf4j.Logger;
-
-import java.util.Arrays;
-import java.util.stream.Stream;
-
 public final class Logging {
-
-    public interface DoLog {
-
-        void log(String format, Object... args);
-    }
-
-    public static class WarnLog implements DoLog {
-
-        private final Logger logger;
-
-        public WarnLog(Logger logger) {
-            this.logger = logger;
-        }
-
-        @Override
-        public void log(String format, Object... args) {
-            logger.warn(format, args);
-        }
-    }
 
     private Logging() {
     }
 
-    public static void doLog(
-        DoLog log,
-        HandlingPolicy policy,
-        CausesRendering rendering,
-        String format,
-        Object... args
-    ) {
-        log.log(message(format), allPars(args, policy, rendering));
-    }
-
-    private static Object[] allPars(Object[] params, HandlingPolicy policy, CausesRendering rendering) {
-        return allPars(
-            new Object[]{
-                policy.getFaultId(), policy.getFaultEventId()
-            },
-            params,
-            new Object[]{
-                String.join("\n", rendering.getStrings("  "))
-            });
-    }
-
-    private static String message(String format) {
-        return "{} {} " + format + "\n{}";
-    }
-
-    private static Object[] allPars(Object[]... params) {
-        return Arrays.stream(params).flatMap(Logging::stream).toArray(Object[]::new);
-    }
-
-    private static Stream<Object> stream(Object[] params) {
-        return params == null ? Stream.empty() : Arrays.stream(params);
-    }
 }
