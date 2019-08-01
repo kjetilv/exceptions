@@ -34,6 +34,7 @@
 
 package no.scienta.unearth.munch.base;
 
+import no.scienta.unearth.munch.id.Id;
 import no.scienta.unearth.munch.util.Memoizer;
 
 import java.nio.ByteBuffer;
@@ -46,6 +47,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+@SuppressWarnings("unused")
 public abstract class AbstractHashable implements Hashable {
 
     /**
@@ -89,16 +91,54 @@ public abstract class AbstractHashable implements Hashable {
                 hash.accept(s.getBytes(StandardCharsets.UTF_8)));
     }
 
+    protected final void hash(Consumer<byte[]> h, Id... ids) {
+        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * 2 * ids.length);
+        for (Id id : ids) {
+            UUID uuid = id.getHash();
+            buffer.putLong(uuid.getMostSignificantBits());
+            buffer.putLong(uuid.getLeastSignificantBits());
+        }
+        h.accept(buffer.array());
+    }
+
     protected final void hash(Consumer<byte[]> h, Hashable... hashables) {
         hash(h, Arrays.asList(hashables));
     }
 
-    protected final void hash(Consumer<byte[]> hash, long... values) {
-        for (long value : values) {
-            ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-            buffer.putLong(value);
-            hash.accept(buffer.array());
+    protected final void hash(Consumer<byte[]> hash, Long... values) {
+        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * values.length);
+        for (Long value : values) {
+            if (value != null) {
+                buffer.putLong(value);
+            }
         }
+        hash.accept(buffer.array());
+    }
+
+    protected final void hashLongs(Consumer<byte[]> hash, long... values) {
+        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * values.length);
+        for (long value : values) {
+            buffer.putLong(value);
+        }
+        hash.accept(buffer.array());
+    }
+
+    protected final void hash(Consumer<byte[]> hash, Integer... values) {
+        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES * values.length);
+        for (Integer value : values) {
+            if (value != null) {
+                buffer.putInt(value);
+            }
+        }
+        hash.accept(buffer.array());
+    }
+
+    protected final void hashInts(Consumer<byte[]> hash, int... values) {
+        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES * values.length);
+        for (int value : values) {
+            buffer.putInt(value);
+        }
+        hash.accept(buffer.array());
     }
 
     protected final void hash(Consumer<byte[]> h, Collection<? extends Hashable> hasheds) {

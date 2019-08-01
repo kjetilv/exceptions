@@ -56,6 +56,8 @@ public interface FaultStats {
 
     Optional<FaultEvent> getLastFaultEvent(FaultStrandId id, Instant sinceTime);
 
+    Optional<FaultEvent> getLastFaultEvent(FaultId id, Instant sinceTime, Long ceiling);
+
     long getFaultEventCount(FaultStrandId id, Instant sinceTime, Duration interval);
 
     Stream<FaultEvent> getFaultEvents(FaultStrandId id, Instant sinceTime, Duration period);

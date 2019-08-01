@@ -25,6 +25,7 @@ import no.scienta.unearth.munch.print.CauseFrame;
 import javax.sql.DataSource;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -37,12 +38,12 @@ public class JdbcStorage implements FaultStorage {
     }
 
     @Override
-    public CauseStrand getCauseStrand(CauseStrandId causeId) {
+    public Optional<CauseStrand> getCauseStrand(CauseStrandId causeId) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public FaultEvent store(LogEntry logEntry, Fault fault) {
+    public FaultEvents store(LogEntry logEntry, Fault fault, Throwable throwable) {
         return inSession(session -> {
             fault.getCauses().forEach(cause -> {
                 CauseStrand causeStrand = cause.getCauseStrand();
@@ -53,8 +54,15 @@ public class JdbcStorage implements FaultStorage {
             insertFaultStrand(fault.getFaultStrand(), session);
             insertFault(fault, session);
 
-            return new FaultEvent(
-                fault, logEntry, Instant.now(), 1L, 1L, 1L);
+            return new FaultEvents(new FaultEvent(
+                System.identityHashCode(throwable),
+                fault,
+                logEntry,
+                Instant.now(),
+                1L,
+                1L,
+                1L,
+                null));
         });
     }
 
@@ -118,12 +126,12 @@ public class JdbcStorage implements FaultStorage {
     }
 
     @Override
-    public Fault getFault(FaultId faultId) {
+    public Optional<Fault> getFault(FaultId faultId) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public FaultStrand getFaultStrand(FaultStrandId faultStrandId) {
+    public Optional<FaultStrand> getFaultStrand(FaultStrandId faultStrandId) {
         throw new UnsupportedOperationException();
     }
 
@@ -138,12 +146,12 @@ public class JdbcStorage implements FaultStorage {
     }
 
     @Override
-    public FaultEvent getFaultEvent(FaultEventId faultEventId) {
+    public Optional<FaultEvent> getFaultEvent(FaultEventId faultEventId) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Cause getCause(CauseId causeId) {
+    public Optional<Cause> getCause(CauseId causeId) {
         throw new UnsupportedOperationException();
     }
 

@@ -27,15 +27,17 @@ import org.http4k.client.ApacheClient
 import org.http4k.core.Body
 import org.http4k.core.Method
 import org.http4k.core.Request
+import java.time.Clock
 
 fun main() {
 
-    val storage = InMemoryFaults()
-
     val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
 
+    val storage = InMemoryFaults(sensor)
+
     val server = UnearthlyServer(
-            controller = UnearthlyController(storage, storage, storage, sensor))
+            controller = UnearthlyController(
+                    storage, storage, storage, UnearthlyRenderer(), Clock.systemDefaultZone()));
 
     val lookupLens = Body.auto<FaultStrandDto>().toLens()
 

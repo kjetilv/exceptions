@@ -24,18 +24,14 @@ import java.util.stream.Stream
 
 class UnearthlyRenderer {
 
-    private val renderers = hashMapOf(
-            HandlingPolicy.RenderType.FULL to SimpleCausesRenderer(ConfigurableStackRenderer()),
-            HandlingPolicy.RenderType.SHORT to SimpleCausesRenderer(rendererFor("org.http4k", "io.netty")),
-            HandlingPolicy.RenderType.MESSAGES_ONLY to SimpleCausesRenderer(ConfigurableStackRenderer().noStack()))
+    private val renderers: Map<HandlingPolicy.Action, CausesRenderer> = hashMapOf(
+            HandlingPolicy.Action.LOG to SimpleCausesRenderer(ConfigurableStackRenderer()),
+            HandlingPolicy.Action.LOG_SHORT to SimpleCausesRenderer(rendererFor("org.http4k", "io.netty")),
+            HandlingPolicy.Action.LOG_MESSAGES to SimpleCausesRenderer(ConfigurableStackRenderer().noStack()))
 
-    fun render(policy: HandlingPolicy): String? =
-            rendering(policy)?.getStrings("  ")?.joinToString("\n")
-
-    fun rendering(policy: HandlingPolicy): CausesRendering? =
-            getRenderTypeFor(policy.action)
-                    ?.let { renderers[it] }
-                    ?.let { it.render(policy.fault) }
+    fun rendering(policy: HandlingPolicy): CausesRendering? = policy.action
+            ?.let { renderers[it] }
+            ?.let { it.render(policy.fault) }
 
     private fun rendererFor(vararg groups: String) =
             rendererFor(groups.toList())
@@ -48,21 +44,4 @@ class UnearthlyRenderer {
                     }
                     .reshape(FrameFun.LIKE_JAVA_8)
                     .reshape(FrameFun.SHORTEN_CLASSNAMES)
-
-    private fun getRenderTypeFor(
-            action: HandlingPolicy.Action, suggested: HandlingPolicy.RenderType? = null
-    ): HandlingPolicy.RenderType? =
-            when (suggested) {
-                null ->
-                    when (action) {
-                        HandlingPolicy.Action.LOG_ID -> null
-                        HandlingPolicy.Action.LOG_MESSAGES -> HandlingPolicy.RenderType.MESSAGES_ONLY
-                        HandlingPolicy.Action.LOG_SHORT -> HandlingPolicy.RenderType.SHORT
-                        HandlingPolicy.Action.LOG -> HandlingPolicy.RenderType.FULL
-                        else -> HandlingPolicy.RenderType.FULL
-                    }
-                else ->
-                    suggested
-            }
-
 }

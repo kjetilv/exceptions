@@ -37,16 +37,7 @@ data class Submission(
 
         val action: Action?,
 
-        val printouts: PrintoutsDto = PrintoutsDto()
-)
-
-data class PrintoutsDto(
-
-        val log: List<PrintoutDto> = emptyList(),
-
-        val logShort: List<PrintoutDto> = emptyList(),
-
-        val logMessages: List<PrintoutDto> = emptyList()
+        val printout: List<PrintoutDto> = emptyList()
 )
 
 data class PrintoutDto(
@@ -55,15 +46,14 @@ data class PrintoutDto(
         val stack: Collection<String>? = emptyList()
 )
 
-@Suppress("EnumEntryName")
+@Suppress("EnumEntryName", "unused")
 enum class Action {
 
-    LOG {
-    },
+    LOG,
 
-    LOG_SHORT {
-    },
+    LOG_SHORT,
 
-    LOG_MESSAGES {
-    }
+    LOG_MESSAGES,
+
+    LOG_ID
 }

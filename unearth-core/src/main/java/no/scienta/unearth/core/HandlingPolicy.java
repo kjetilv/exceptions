@@ -54,12 +54,6 @@ public interface HandlingPolicy {
 
     long getFaultSequence();
 
-    enum RenderType {
-        FULL,
-        SHORT,
-        MESSAGES_ONLY
-    }
-
     enum Action {
         LOG,
         LOG_SHORT,

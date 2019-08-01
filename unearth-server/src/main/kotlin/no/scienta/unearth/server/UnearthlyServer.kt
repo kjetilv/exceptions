@@ -40,6 +40,7 @@ import org.http4k.core.ContentType.Companion.TEXT_PLAIN
 import org.http4k.core.Method.GET
 import org.http4k.core.Method.POST
 import org.http4k.core.Status.Companion.INTERNAL_SERVER_ERROR
+import org.http4k.core.Status.Companion.NOT_FOUND
 import org.http4k.core.Status.Companion.OK
 import org.http4k.filter.CorsPolicy
 import org.http4k.filter.ServerFilters
@@ -303,20 +304,27 @@ class UnearthlyServer(
     private fun <O> get(
             outLens: BiDiBodyLens<O>,
             type: ContentType = APPLICATION_JSON,
-            result: () -> O
-    ): Response = outLens.set(withContentType(Response(OK), type), result())
+            result: () -> O?
+    ): Response =
+            try {
+                result()?.let {
+                    outLens.set(withContentType(Response(OK), type), it)
+                } ?: Response(NOT_FOUND)
+            } catch (e: Exception) {
+                throw IllegalStateException("Failed GET", e)
+            }
 
     private fun <O> simpleGet(
             outLens: BiDiBodyLens<O>,
             type: ContentType = APPLICATION_JSON,
-            result: () -> O
+            result: () -> O?
     ): (Request) -> Response = {
         try {
-            result()
+            result()?.let<O, Response> {
+                outLens.set(withContentType(Response(OK), type), it)
+            } ?: withContentType(Response(NOT_FOUND))
         } catch (e: Exception) {
             throw IllegalStateException("Failed GET", e)
-        }.let {
-            outLens.set(withContentType(Response(OK), type), it)
         }
     }
 
@@ -368,11 +376,7 @@ class UnearthlyServer(
                 handling.faultStrandSequence,
                 handling.faultSequence,
                 action = Action.valueOf(handling.action.name),
-                printouts = PrintoutsDto(
-                        log = toPrintout(handling),
-                        logShort = toPrintout(handling),
-                        logMessages = toPrintout(handling)
-                ))
+                printout = toPrintout(handling))
     }
 
     private fun toPrintout(policy: HandlingPolicy): List<PrintoutDto> =
@@ -382,37 +386,32 @@ class UnearthlyServer(
 
     private fun handledResponse(response: Response, request: Request): Response =
             when {
-                response.status.successful ->
-                    response // Yay
-                response.status.redirection ->
-                    response // Keep going
-                response.status.clientError ->
-                    handledException(
-                            IllegalArgumentException(
-                                    "Bad request ${request.method} ${request.uri}: ${response.toMessage().trim()}"),
-                            request,
-                            response)
+                response.status.successful || response.status.redirection || response.status.clientError ->
+                    response
                 else ->
                     handledException(
                             RuntimeException("Internal server error: ${request.uri}"), request, response)
             }
 
-    private fun handledException(e: Throwable, request: Request, response: Response? = null): Response =
-            if (configuration.selfDiagnose)
-                try {
-                    selfDiagnosedErrorResponse(e, request, response, response?.status)
-                } catch (e: Exception) {
-                    logger.warn("Failed to self-diagnose fault: $request -> $response", e)
-                    internalErrorResponse(e)
-                }
-            else {
-                logger.error("Exception occurred: ${request?.method ?: "?"} ${request?.uri ?: "?"}", e)
+    private fun handledException(e: Throwable, request: Request, response: Response? = null): Response {
+        val message = "Exception occurred: ${request?.method ?: "?"} ${request?.uri ?: "?"}"
+        return if (configuration.selfDiagnose)
+            try {
+                selfDiagnosedErrorResponse(e, response, response?.status)
+            } catch (sde: Exception) {
+                logger.warn("Failed to self-diagnose", sde)
                 internalErrorResponse(e)
+            } finally {
+                logger.warn(message, e)
             }
+        else {
+            logger.error(message, e)
+            internalErrorResponse(e)
+        }
+    }
 
     private fun selfDiagnosedErrorResponse(
             error: Throwable,
-            request: Request,
             response: Response? = null,
             status: Status? = INTERNAL_SERVER_ERROR
     ): Response {
@@ -421,12 +420,6 @@ class UnearthlyServer(
         } catch (e: Exception) {
             return bareBonesErrorResponse("Failed to submit self-diagnosed error", e)
         }
-        logger.warn("Handled error", error);
-//        Logging.doLog(
-//                Logging.WarnLog(logger),
-//                policy,
-//                controller.render(policy),
-//                "Failed: ${request.method} ${request.uri} ${policy?.faultEventId ?: "unknown"}\n  {}")
         return internalError.set(
                 withContentType((response ?: Response(status ?: INTERNAL_SERVER_ERROR))
                         .header("X-Fault-SeqNo", policy?.faultSequence?.toString() ?: "-1")

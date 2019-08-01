@@ -17,17 +17,16 @@
 
 package no.scienta.unearth.core.handler;
 
-import no.scienta.unearth.core.*;
+import no.scienta.unearth.core.FaultHandler;
+import no.scienta.unearth.core.FaultStats;
+import no.scienta.unearth.core.FaultStorage;
+import no.scienta.unearth.core.HandlingPolicy;
 import no.scienta.unearth.core.HandlingPolicy.Action;
-import no.scienta.unearth.munch.model.Cause;
-import no.scienta.unearth.munch.model.Fault;
-import no.scienta.unearth.munch.model.FaultEvent;
-import no.scienta.unearth.munch.model.LogEntry;
+import no.scienta.unearth.munch.model.*;
 import no.scienta.unearth.munch.util.Util;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class DefaultFaultHandler implements FaultHandler {
@@ -36,37 +35,45 @@ public class DefaultFaultHandler implements FaultHandler {
 
     private final FaultStats stats;
 
-    private final FaultSensor sensor;
-
     private final Clock clock;
 
     public DefaultFaultHandler(
         FaultStorage storage,
         FaultStats stats,
-        FaultSensor sensor,
         Clock clock
     ) {
         this.storage = storage;
         this.stats = stats;
-        this.sensor = sensor;
-        this.clock = clock;
+        this.clock = clock == null ? Clock.systemDefaultZone() : clock;
     }
 
     @Override
     public HandlingPolicy handle(Throwable throwable, String logMessage, Object... args) {
         return store(
             logMessage == null ? null : LogEntry.create(logMessage, args),
+            throwable,
             Fault.create(throwable));
     }
 
-    private HandlingPolicy store(LogEntry logEntry, Fault fault) {
-        Optional<FaultEvent> lastStored = stats.getLastFaultEvent(fault.getFaultStrand().getId());
-        FaultEvent event = sensor.registered(storage.store(logEntry, fault));
-        return new SimpleHandlingPolicy(event)
-            .withAction(
-                actionForWindow(lastStored.orElse(null))
-            ).withSummary(
-                event.getFault().getCauses().stream()
+    private HandlingPolicy store(
+        LogEntry logEntry,
+        Throwable throwable,
+        Fault fault
+    ) {
+        FaultEvents events = storage.store(logEntry, fault, throwable);
+        return basePolicy(events).withAction(loggingAction(events));
+    }
+
+    private Action loggingAction(FaultEvents events) {
+        return (Action) events.getPrevious()
+            .map(this::actionForWindow)
+            .orElse(Action.LOG);
+    }
+
+    private SimpleHandlingPolicy basePolicy(FaultEvents events) {
+        return new SimpleHandlingPolicy(events.getEvent())
+            .withSummary(
+                events.getEvent().getFault().getCauses().stream()
                     .map(Cause::getMessage)
                     .collect(Collectors.joining(" <- ")));
     }
@@ -76,14 +83,14 @@ public class DefaultFaultHandler implements FaultHandler {
             : actionForWindow(Duration.between(previousEvent.getTime(), clock.instant()));
     }
 
-    private Action actionForWindow(Duration interval) {
+    private static Action actionForWindow(Duration interval) {
         return isIn(interval, DELUGE_WINDOW) ? Action.LOG_ID :
             isIn(interval, SPAM_WINDOW) ? Action.LOG_MESSAGES
                 : isIn(interval, QUIET_WINDOW) ? Action.LOG_SHORT
                 : Action.LOG;
     }
 
-    private boolean isIn(Duration eventWindow, Duration window) {
+    private static boolean isIn(Duration eventWindow, Duration window) {
         return Util.isLongerThan(window, eventWindow);
     }
 

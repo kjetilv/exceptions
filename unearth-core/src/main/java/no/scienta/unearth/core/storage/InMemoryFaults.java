@@ -18,6 +18,7 @@
 package no.scienta.unearth.core.storage;
 
 import no.scienta.unearth.core.FaultFeed;
+import no.scienta.unearth.core.FaultSensor;
 import no.scienta.unearth.core.FaultStats;
 import no.scienta.unearth.core.FaultStorage;
 import no.scienta.unearth.munch.id.*;
@@ -27,13 +28,13 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@SuppressWarnings("WeakerAccess")
 public class InMemoryFaults
     implements FaultStorage, FaultStats, FaultFeed {
 
@@ -49,12 +50,13 @@ public class InMemoryFaults
 
     private final Collection<FaultEvent> faultEvents = new ArrayList<>();
 
+    private final Map<Integer, UniqueIncident> hashCodes = new ConcurrentHashMap<>();
+
     private final Map<FaultStrandId, Collection<Fault>> faultStrandFaults = new HashMap<>();
 
     private final Map<FaultStrandId, Collection<FaultEvent>> faultStrandFaultEvents = new HashMap<>();
 
     private final Map<FaultId, Collection<FaultEvent>> faultFaultEvents = new HashMap<>();
-
 
     private final Object lock = new boolean[]{};
 
@@ -64,65 +66,108 @@ public class InMemoryFaults
 
     private final Map<FaultId, AtomicLong> faultSequence = new LinkedHashMap<>();
 
+    private final FaultSensor faultSensor;
+
     private final Clock clock;
 
-    public InMemoryFaults() {
-        this(null);
+    public InMemoryFaults(FaultSensor faultSensor) {
+        this(faultSensor, null);
     }
 
-    public InMemoryFaults(Clock clock) {
-        this.clock = clock == null ? Clock.systemUTC() : clock;
+    public InMemoryFaults(FaultSensor faultSensor, Clock clock) {
+        this.faultSensor = faultSensor;
+        this.clock = clock == null ? Clock.systemDefaultZone() : clock;
     }
 
     @Override
-    public FaultEvent store(LogEntry logEntry, Fault fault) {
+    public FaultEvents store(LogEntry logEntry, Fault fault, Throwable throwable) {
         synchronized (lock) {
-            FaultEvent faultEvent = stored(this.events,
+            FaultEvent faultEvent = storedEvent(
                 new FaultEvent(
+                    System.identityHashCode(throwable),
                     fault,
                     logEntry,
                     Instant.now(clock),
-                    globalSequence.getAndIncrement(),
-                    increment(this.faultStrandSequence, fault.getFaultStrand().getId()),
-                    increment(this.faultSequence, fault.getId())));
-            FaultStrand faultStrand = fault.getFaultStrand();
-            putInto(this.faultStrands, faultStrand);
-            putInto(this.faults, fault);
-            faultStrand.getCauseStrands().forEach(putInto(this.causeStrands));
-            faultEvent.getFault().getCauses().forEach(putInto(this.causes));
+                    null));
 
-            faultEvents.add(faultEvent);
-            addTo(faultStrandFaults, faultStrand.getId(), fault);
-            addTo(faultStrandFaultEvents, faultStrand.getId(), faultEvent);
-            addTo(faultFaultEvents, fault.getId(), faultEvent);
+            UniqueIncident existing = hashCodes.putIfAbsent(
+                System.identityHashCode(throwable),
+                new UniqueIncident(
+                    System.identityHashCode(throwable),
+                    new FaultEvents(faultEvent, eventBefore(faultEvent))));
 
-            return faultEvent;
+            if (existing != null) {
+                return existing.getFaultEvents();
+            }
+
+            FaultEvent sequenced = sequenced(faultEvent);
+            return registered(sequenced, eventBefore(sequenced));
         }
     }
 
-    @Override
-    public FaultStrand getFaultStrand(FaultStrandId faultStrandId) {
-        return get("faultStrand", faultStrandId, faultStrands);
+    private FaultEvent eventBefore(FaultEvent faultEvent) {
+        long ceiling = faultEvent.isSequenced()
+            ? faultEvent.getFaultSequenceNo()
+            : currentSequence(faultSequence, faultEvent.getFault().getId()).get() + 1L;
+
+        return getLastFaultEvent(
+            faultEvent.getFault().getId(),
+            null,
+            ceiling
+        ).orElse(null);
+    }
+
+    private FaultEvent sequenced(FaultEvent faultEvent) {
+        return faultEvent.sequence(
+            globalSequence.getAndIncrement(),
+            increment(this.faultStrandSequence, faultEvent.getFault().getFaultStrand().getId()),
+            increment(this.faultSequence, faultEvent.getFault().getId()));
+    }
+
+    private FaultEvents registered(FaultEvent sequenced, FaultEvent previous) {
+        faultSensor.register(sequenced);
+        FaultStrand faultStrand = sequenced.getFault().getFaultStrand();
+        putInto(this.faultStrands, faultStrand);
+        putInto(this.faults, sequenced.getFault());
+        faultStrand.getCauseStrands().forEach(putInto(this.causeStrands));
+        sequenced.getFault().getCauses().forEach(putInto(this.causes));
+
+        faultEvents.add(sequenced);
+
+        addTo(faultStrandFaults, faultStrand.getId(), sequenced.getFault());
+        addTo(faultStrandFaultEvents, faultStrand.getId(), sequenced);
+        addTo(faultFaultEvents, sequenced.getFault().getId(), sequenced);
+
+        return new FaultEvents(sequenced, previous);
+    }
+
+    private FaultEvent storedEvent(FaultEvent t) {
+        return stored(this.events, t);
     }
 
     @Override
-    public Fault getFault(FaultId faultStrandId) {
-        return get("fault", faultStrandId, faults);
+    public Optional<FaultStrand> getFaultStrand(FaultStrandId faultStrandId) {
+        return get(faultStrandId, faultStrands);
     }
 
     @Override
-    public CauseStrand getCauseStrand(CauseStrandId causeStrandId) {
-        return get("cause", causeStrandId, causeStrands);
+    public Optional<Fault> getFault(FaultId faultStrandId) {
+        return get(faultStrandId, faults);
     }
 
     @Override
-    public Cause getCause(CauseId causeId) {
-        return get("cause", causeId, causes);
+    public Optional<CauseStrand> getCauseStrand(CauseStrandId causeStrandId) {
+        return get(causeStrandId, causeStrands);
     }
 
     @Override
-    public FaultEvent getFaultEvent(FaultEventId faultEventId) {
-        return get("faultEvent", faultEventId, events);
+    public Optional<Cause> getCause(CauseId causeId) {
+        return get(causeId, causes);
+    }
+
+    @Override
+    public Optional<FaultEvent> getFaultEvent(FaultEventId faultEventId) {
+        return get(faultEventId, events);
     }
 
     @Override
@@ -166,11 +211,21 @@ public class InMemoryFaults
     }
 
     @Override
+    public Optional<FaultEvent> getLastFaultEvent(FaultId id, Instant sinceTime, Long ceiling) {
+        return filter(
+            sinceTime,
+            streamLookup(faultFaultEvents, id),
+            FaultEvent::getFaultSequenceNo,
+            ceiling);
+    }
+
+    @Override
     public Optional<FaultEvent> getLastFaultEvent(FaultId id, Instant sinceTime) {
         return filter(
             sinceTime,
             streamLookup(faultFaultEvents, id),
-            FaultEvent::getFaultSequenceNo);
+            FaultEvent::getFaultStrandSequenceNo,
+            null);
     }
 
     @Override
@@ -178,7 +233,8 @@ public class InMemoryFaults
         return filter(
             sinceTime,
             streamLookup(faultStrandFaultEvents, id),
-            FaultEvent::getFaultStrandSequenceNo);
+            FaultEvent::getFaultStrandSequenceNo,
+            null);
     }
 
     @Override
@@ -196,14 +252,8 @@ public class InMemoryFaults
                 limitTime == null || limitTime.isBefore(event.getTime()));
     }
 
-    private <I extends Id, T> T get(String type, I id, Map<I, T> memoryMap) {
-        try {
-            return Optional.ofNullable(memoryMap.get(id))
-                .orElseThrow(() ->
-                    new IllegalArgumentException("No such " + type + ": " + id.getHash().toString()));
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to get " + id + " of " + type, e);
-        }
+    private <I extends Id, T> Optional<T> get(I id, Map<I, T> memoryMap) {
+        return Optional.ofNullable(memoryMap.get(id));
     }
 
     public Stream<FaultEvent> getFaultEvents(FaultStrandId id) {
@@ -214,10 +264,14 @@ public class InMemoryFaults
     private Optional<FaultEvent> filter(
         Instant sinceTime,
         Stream<FaultEvent> faultEventStream,
-        Function<FaultEvent, Long> getFaultSequenceNo
+        Function<FaultEvent, Long> getFaultSequenceNo,
+        Long ceiling
     ) {
         return faultEventStream
-            .filter(faultEvent -> sinceTime == null || faultEvent.getTime().isAfter(sinceTime))
+            .filter(faultEvent ->
+                sinceTime == null || faultEvent.getTime().isAfter(sinceTime))
+            .filter(faultEvent ->
+                ceiling == null || getFaultSequenceNo.apply(faultEvent) < ceiling)
             .max(Comparator.comparing(getFaultSequenceNo));
     }
 
@@ -256,7 +310,11 @@ public class InMemoryFaults
     }
 
     private static <K> long increment(Map<K, AtomicLong> sequences, K id) {
-        return sequences.computeIfAbsent(id, __ -> new AtomicLong()).getAndIncrement();
+        return currentSequence(sequences, id).getAndIncrement();
+    }
+
+    private static <K> AtomicLong currentSequence(Map<K, AtomicLong> sequences, K id) {
+        return sequences.computeIfAbsent(id, __ -> new AtomicLong());
     }
 
     private static <K, V> Stream<V> streamLookup(Map<K, Collection<V>> map, K key) {

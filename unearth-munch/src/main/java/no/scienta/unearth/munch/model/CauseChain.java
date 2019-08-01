@@ -20,7 +20,6 @@ package no.scienta.unearth.munch.model;
 import no.scienta.unearth.munch.base.AbstractHashable;
 import no.scienta.unearth.munch.print.CauseFrame;
 import no.scienta.unearth.munch.print.CausesRendering;
-import no.scienta.unearth.munch.print.StackRenderer;
 import no.scienta.unearth.munch.util.Streams;
 
 import java.util.ArrayList;
@@ -105,16 +104,6 @@ public class CauseChain extends AbstractHashable {
     private Collection<CausesRendering> getChainRendering(Collection<CausesRendering> renderings) {
         renderings.add(rendering);
         return chainedCause == null ? renderings : chainedCause.getChainRendering(renderings);
-    }
-
-    public CauseChain withStackRendering(StackRenderer renderer) {
-        CausesRendering rendering = new CausesRendering(className, message, renderer.render(this));
-        return new CauseChain(
-            cause,
-            chainedCause == null
-                ? null
-                : chainedCause.withStackRendering(renderer),
-            rendering);
     }
 
     @Override

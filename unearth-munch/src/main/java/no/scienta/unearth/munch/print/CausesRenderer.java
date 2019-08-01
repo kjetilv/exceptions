@@ -22,6 +22,7 @@ import no.scienta.unearth.munch.model.Fault;
 
 import java.util.Collection;
 
+@SuppressWarnings("unused")
 public interface CausesRenderer {
 
     default CausesRendering render(Throwable throwable) {

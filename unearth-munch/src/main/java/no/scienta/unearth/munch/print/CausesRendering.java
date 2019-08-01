@@ -37,11 +37,7 @@ public class CausesRendering implements Iterable<CausesRendering>{
 
     private final CausesRendering cause;
 
-    public CausesRendering(String className, String message, Collection<String> stack) {
-        this(className, message, stack, null);
-    }
-
-    public CausesRendering(String className, String message, Collection<String> stack, CausesRendering cause) {
+    CausesRendering(String className, String message, Collection<String> stack, CausesRendering cause) {
         this.className = className;
         this.message = message == null || message.trim().isEmpty() ? "null" : message.trim();
         this.stack = Util.orEmpty(stack);
@@ -76,6 +72,7 @@ public class CausesRendering implements Iterable<CausesRendering>{
         ).collect(Collectors.toList());
     }
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public Iterator<CausesRendering> iterator() {
         return Streams.chain(this, CausesRendering::getCause).iterator();

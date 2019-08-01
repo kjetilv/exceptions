@@ -34,10 +34,10 @@ class UnearthlyController(
         private val storage: FaultStorage,
         private val feed: FaultFeed,
         stats: FaultStats,
-        sensor: FaultSensor,
-        private val renderer: UnearthlyRenderer
+        private val renderer: UnearthlyRenderer,
+        clock: Clock = Clock.systemDefaultZone()
 ) {
-    val handler: FaultHandler = DefaultFaultHandler(storage, stats, sensor, Clock.systemUTC());
+    val handler: FaultHandler = DefaultFaultHandler(storage, stats, clock)
 
     private val submitLogger = LoggerFactory.getLogger(javaClass)
 
@@ -52,40 +52,46 @@ class UnearthlyController(
             id: FaultStrandId,
             fullStack: Boolean = false,
             printStack: Boolean = false
-    ): FaultStrandDto = storage.getFaultStrand(id).let { faultStrand ->
-        FaultStrandDto(
-                faultStrand.id,
-                faultStrand.causeStrands.map {
-                    causeStrandDto(it, fullStack, printStack)
-                })
-    }
+    ): FaultStrandDto? =
+            storage.getFaultStrand(id).orElse(null)?.let { faultStrand ->
+                FaultStrandDto(
+                        faultStrand.id,
+                        faultStrand.causeStrands.map {
+                            causeStrandDto(it, fullStack, printStack)
+                        })
+            }
 
     fun lookupFaultDto(
             faultId: FaultId,
             fullStack: Boolean = true,
             printStack: Boolean = false
-    ): FaultDto = faultDto(storage.getFault(faultId), fullStack, printStack)
+    ): FaultDto? =
+            storage.getFault(faultId).orElse(null)?.let { faultDto(it, fullStack, printStack) }
 
     fun lookupFaultEventDto(
             id: FaultEventId,
             fullStack: Boolean = false,
             printStack: Boolean = false,
             fullEvent: Boolean = false
-    ): FaultEventDto = faultEventDto(storage.getFaultEvent(id), fullStack, printStack, fullEvent)
+    ): FaultEventDto? =
+            storage.getFaultEvent(id).orElse(null)?.let { faultEventDto(it, fullStack, printStack, fullEvent) }
 
     fun lookupCauseStrandDto(
             causeStrandId: CauseStrandId,
             fullStack: Boolean = false,
             printStack: Boolean = false
-    ): CauseStrandDto = causeStrandDto(storage.getCauseStrand(causeStrandId), fullStack, printStack)
+    ): CauseStrandDto? =
+            storage.getCauseStrand(causeStrandId).orElse(null)?.let { causeStrandDto(it, fullStack, printStack) }
 
     fun lookupCauseDto(
             causeId: CauseId,
             fullStack: Boolean = false,
             printStack: Boolean = false
-    ): CauseDto = causeDto(storage.getCause(causeId), fullStack, printStack)
+    ): CauseDto? =
+            storage.getCause(causeId).orElse(null)?.let { causeDto(it, fullStack, printStack) }
 
-    fun lookupThrowable(faultId: FaultId): Throwable = storage.getFault(faultId).toChameleon()
+    fun lookupThrowable(faultId: FaultId): Throwable? =
+            storage.getFault(faultId).orElse(null)?.let(Fault::toChameleon)
 
     fun feedLimit(faultId: FaultId): Long = feed.limit(faultId)
 
@@ -157,11 +163,11 @@ class UnearthlyController(
                     faultEvent.faultSequenceNo,
                     faultEvent.faultStrandSequenceNo)
 
-    fun rewriteThrowable(faultId: FaultId, groups: Collection<String>?): CauseChainDto {
-        val fault = storage.getFault(faultId)
+    fun rewriteThrowable(faultId: FaultId, groups: Collection<String>?): CauseChainDto? {
+        val fault: Fault? = storage.getFault(faultId).orElse(null)
         val renderer = SimpleCausesRenderer(ConfigurableStackRenderer().group(
                 SimplePackageGrouper(groups?.toList())))
-        return causeChainDto(renderer.render(fault));
+        return causeChainDto(renderer.render(fault))
     }
 
     private fun causeChainDto(

@@ -34,6 +34,8 @@
 
 package no.scienta.unearth.munch.id;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -41,8 +43,18 @@ public abstract class Id {
 
     private final UUID hash;
 
+    private String simpleName;
+
+    private static final Map<Class<?>, String> NAMES = new HashMap<>();
+
     Id(UUID hash) {
         this.hash = Objects.requireNonNull(hash);
+        this.simpleName = NAMES.computeIfAbsent(getClass(), cl -> {
+            String simpleName = cl.getSimpleName();
+            String lowerCased = simpleName.substring(0, 1).toLowerCase() + simpleName.substring(1);
+            int tail = lowerCased.lastIndexOf("Id");
+            return lowerCased.substring(0, tail);
+        });
     }
 
     public UUID getHash() {
@@ -65,6 +77,6 @@ public abstract class Id {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + getHash() + "]";
+        return simpleName + ":" + getHash();
     }
 }

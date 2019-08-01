@@ -21,5 +21,5 @@ import no.scienta.unearth.munch.model.FaultEvent;
 
 public interface FaultSensor {
 
-    FaultEvent registered(FaultEvent faultEvent);
+    void register(FaultEvent faultEvent);
 }

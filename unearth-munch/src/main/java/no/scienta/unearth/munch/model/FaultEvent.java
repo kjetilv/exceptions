@@ -27,7 +27,10 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+@SuppressWarnings("unused")
 public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
+
+    private final int throwableHashCode;
 
     private final Fault fault;
 
@@ -44,34 +47,46 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
     private final long faultSequenceNo;
 
     public FaultEvent(
+        int throwableHashCode,
         Fault fault,
         LogEntry logEntry,
         Instant time,
-        Long globalSequenceNo,
-        Long faultStrandSequenceNo,
-        Long faultSequenceNo
-    ) {
-        this(fault, logEntry, time, globalSequenceNo, faultStrandSequenceNo, faultSequenceNo, null);
-    }
-
-    public FaultEvent(
-        Fault fault,
-        LogEntry logEntry,
-        Instant time,
-        Long globalSequenceNo,
-        Long faultStrandSequenceNo,
-        Long faultSequenceNo,
         EventSuppression suppression
     ) {
-        this.fault = Objects.requireNonNull(fault);
+        this(throwableHashCode,
+            fault,
+            logEntry,
+            Objects.requireNonNull(time, "time").toEpochMilli(),
+            -1L,
+            -1L,
+            -1L,
+            suppression);
+    }
+
+    private FaultEvent(
+        int throwableHashCode,
+        Fault fault,
+        LogEntry logEntry,
+        long time,
+        long globalSequenceNo,
+        long faultStrandSequenceNo,
+        long faultSequenceNo,
+        EventSuppression suppression
+    ) {
+        this.throwableHashCode = throwableHashCode;
+        this.fault = Objects.requireNonNull(fault, "fault");
         this.logEntry = logEntry;
-        this.time = Objects.requireNonNull(time).toEpochMilli();
-        this.globalSequenceNo = Objects.requireNonNull(globalSequenceNo);
-        this.faultStrandSequenceNo = Objects.requireNonNull(faultStrandSequenceNo);
-        this.faultSequenceNo = Objects.requireNonNull(faultSequenceNo);
+        this.time = time;
+        this.globalSequenceNo = globalSequenceNo;
+        this.faultStrandSequenceNo = faultStrandSequenceNo;
+        this.faultSequenceNo = faultSequenceNo;
         this.suppression = suppression == null
             ? EventSuppression.UNKNOWN
             : suppression;
+    }
+
+    public int getThrowableHashCode() {
+        return throwableHashCode;
     }
 
     public Fault getFault() {
@@ -100,6 +115,33 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
 
     public EventSuppression getSuppression() {
         return suppression;
+    }
+
+    public boolean isSequenced() {
+        return globalSequenceNo >= 0;
+    }
+
+    public FaultEvent sequence(
+        long globalSequenceNo,
+        long faultStrandSequenceNo,
+        long faultSequenceNo
+    ) {
+        return new FaultEvent(
+            throwableHashCode,
+            fault,
+            logEntry,
+            time,
+            valid(globalSequenceNo),
+            valid(faultStrandSequenceNo),
+            valid(faultSequenceNo),
+            suppression);
+    }
+
+    private static long valid(long seqNo) {
+        if (seqNo <0) {
+            throw new IllegalArgumentException("Invalid seqNo: " + seqNo);
+        }
+        return seqNo;
     }
 
     @Override

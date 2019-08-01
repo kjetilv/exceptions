@@ -22,12 +22,11 @@ import no.scienta.unearth.munch.model.CauseChain;
 import no.scienta.unearth.munch.model.Fault;
 import no.scienta.unearth.munch.model.FaultEvent;
 import no.scienta.unearth.munch.model.FaultStrand;
-import no.scienta.unearth.munch.print.CausesRendering;
-import no.scienta.unearth.munch.util.Memoizer;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 class SimpleHandlingPolicy implements HandlingPolicy {
 
@@ -37,7 +36,7 @@ class SimpleHandlingPolicy implements HandlingPolicy {
 
     private final Action action;
 
-    private final Map<RenderType, Supplier<CauseChain>> causeChains;
+    private final Map<Action, Supplier<CauseChain>> causeChains;
 
     SimpleHandlingPolicy(FaultEvent faultEvent) {
         this(null, faultEvent, null, null);
@@ -47,7 +46,7 @@ class SimpleHandlingPolicy implements HandlingPolicy {
         String summary,
         FaultEvent faultEvent,
         Action action,
-        Map<RenderType, Supplier<CauseChain>> causeChains
+        Map<Action, Supplier<CauseChain>> causeChains
     ) {
         this.summary = summary;
         this.faultEvent = faultEvent;
@@ -97,50 +96,11 @@ class SimpleHandlingPolicy implements HandlingPolicy {
         return faultEvent.getFaultStrandSequenceNo();
     }
 
-    public Collection<String> getThrowableRendering(RenderType type) {
-        return getType(type).map(t -> {
-            Optional<CauseChain> causeChain = Optional.ofNullable(causeChains.get(t)).map(Supplier::get);
-            Collection<CausesRendering> renderings =
-                causeChain.map(CauseChain::getChainRendering).orElseGet(Collections::emptyList);
-            return renderings.stream()
-                .map(CausesRendering::getStrings)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
-        }).orElseGet(Collections::emptyList);
-    }
-
-    SimpleHandlingPolicy withPrintout(RenderType type, Supplier<CauseChain> printout) {
-        Map<RenderType, Supplier<CauseChain>> map = new HashMap<>(causeChains);
-        map.put(type, Memoizer.get(printout));
-        return new SimpleHandlingPolicy(summary, faultEvent, action, map);
-    }
-
     SimpleHandlingPolicy withSummary(String summary) {
         return new SimpleHandlingPolicy(summary, faultEvent, action, causeChains);
     }
 
     SimpleHandlingPolicy withAction(Action action) {
         return new SimpleHandlingPolicy(summary, faultEvent, action, causeChains);
-    }
-
-    private Optional<RenderType> getType(RenderType suggested) {
-        return getRenderTypeFor(this.action, suggested);
-    }
-
-    private Optional<RenderType> getRenderTypeFor(Action action, RenderType suggested) {
-        if (suggested == null) {
-            switch (action) {
-                case LOG_ID:
-                    return Optional.empty();
-                case LOG_MESSAGES:
-                    return Optional.of(RenderType.MESSAGES_ONLY);
-                case LOG_SHORT:
-                    return Optional.of(RenderType.SHORT);
-                case LOG:
-                default:
-                    return Optional.of(RenderType.FULL);
-            }
-        }
-        return Optional.of(suggested);
     }
 }

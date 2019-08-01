@@ -28,7 +28,7 @@ import no.scienta.unearth.munch.print.CausesRendering;
 import org.slf4j.Marker;
 import org.slf4j.spi.LocationAwareLogger;
 
-import java.util.Arrays;
+import java.util.*;
 import java.util.stream.Stream;
 
 public class UnearthlyTurboFilter extends TurboFilter {
@@ -37,32 +37,22 @@ public class UnearthlyTurboFilter extends TurboFilter {
 
     private final CausesRenderer renderer;
 
+    private final Map<HandlingPolicy.Action, CausesRenderer> renderers;
+
     public UnearthlyTurboFilter(FaultHandler faultHandler, CausesRenderer renderer) {
+        this(faultHandler, renderer, null);
+    }
+
+    private UnearthlyTurboFilter(
+        FaultHandler faultHandler,
+        CausesRenderer renderer,
+        Map<HandlingPolicy.Action, CausesRenderer> renderers
+    ) {
         this.faultHandler = faultHandler;
         this.renderer = renderer;
-    }
-
-    private static Object[] allPars(Object[] params, HandlingPolicy policy, CausesRendering rendering) {
-        return allPars(
-            new Object[]{
-                policy.getFaultId(), policy.getFaultEventId()
-            },
-            params,
-            new Object[]{
-                String.join("\n", rendering.getStrings("  "))
-            });
-    }
-
-    private static String message(String format) {
-        return "{} {} " + format + "\n{}";
-    }
-
-    private static Object[] allPars(Object[]... params) {
-        return Arrays.stream(params).flatMap(UnearthlyTurboFilter::stream).toArray(Object[]::new);
-    }
-
-    private static Stream<Object> stream(Object[] params) {
-        return params == null ? Stream.empty() : Arrays.stream(params);
+        this.renderers = renderers == null || renderers.isEmpty()
+            ? Collections.emptyMap()
+            : Collections.unmodifiableMap(new HashMap<>(renderers));
     }
 
     @Override
@@ -74,34 +64,60 @@ public class UnearthlyTurboFilter extends TurboFilter {
         Object[] params,
         Throwable t
     ) {
-        if (params != null && params.length > 0 && params[params.length - 1] instanceof HandlingPolicy) {
-            return logPolicy(
-                marker, logger, level, format, params, (HandlingPolicy) params[params.length - 1], renderer);
-        }
         if (t == null) {
             return FilterReply.NEUTRAL;
         }
-        return logPolicy(
-            marker, logger, level, format, params, faultHandler.handle(t, format, params), renderer);
-    }
-
-    private static FilterReply logPolicy(
-        Marker marker,
-        LocationAwareLogger logger,
-        Level level,
-        String format,
-        Object[] params,
-        HandlingPolicy policy,
-        CausesRenderer renderer
-    ) {
-        logger.log(
+        HandlingPolicy policy = faultHandler.handle(t, format, params);
+        ((LocationAwareLogger) logger).log(
             marker,
-            logger.getName(),
+            ((LocationAwareLogger) logger).getName(),
             level(level),
-            message(format),
-            allPars(params, policy, renderer.render(policy.getFault())),
+            message(format, policy),
+            allPars(params, policy, rendering(policy)),
             null);
         return FilterReply.DENY;
+    }
+
+    private CausesRendering rendering(HandlingPolicy policy) {
+        if (policy.getAction() == HandlingPolicy.Action.LOG_ID) {
+            return null;
+        }
+        return renderer(policy.getAction()).render(policy.getFault());
+    }
+
+    private CausesRenderer renderer(HandlingPolicy.Action action) {
+        return renderers.getOrDefault(action, renderer);
+    }
+
+    public UnearthlyTurboFilter withRendererFor(HandlingPolicy.Action action, CausesRenderer renderer) {
+        HashMap<HandlingPolicy.Action, CausesRenderer> renderers = new HashMap<>(this.renderers);
+        renderers.put(action, renderer);
+        return new UnearthlyTurboFilter(faultHandler, renderer, renderers);
+    }
+
+    private static Object[] allPars(Object[] params, HandlingPolicy policy, CausesRendering rendering) {
+        return allPars(
+            params,
+            new Object[]{
+                policy.getFaultId(),
+                policy.getFaultEventId(),
+                rendering == null ? null : String.join("\n", rendering.getStrings("  "))
+            });
+    }
+
+    private static String message(String format, HandlingPolicy policy) {
+        return format + " {} {}" + (policy.getAction() == HandlingPolicy.Action.LOG_ID ? "" : "\n{}");
+    }
+
+    private static Object[] allPars(Object[]... params) {
+        return Arrays.stream(params)
+            .flatMap(UnearthlyTurboFilter::stream)
+            .filter(Objects::nonNull)
+            .toArray(Object[]::new);
+    }
+
+    private static Stream<Object> stream(Object[] params) {
+        return params == null ? Stream.empty() : Arrays.stream(params);
     }
 
     private static int level(Level level) {

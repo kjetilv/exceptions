@@ -21,19 +21,21 @@ import ch.qos.logback.classic.LoggerContext
 import com.natpryce.konfig.*
 import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import no.scienta.unearth.core.HandlingPolicy
 import no.scienta.unearth.core.storage.InMemoryFaults
 import no.scienta.unearth.metrics.MeteringThrowablesSensor
 import no.scienta.unearth.munch.model.FrameFun
-import no.scienta.unearth.munch.print.ConfigurableStackRenderer
-import no.scienta.unearth.munch.print.SimpleCausesRenderer
-import no.scienta.unearth.munch.print.SimplePackageGrouper
+import no.scienta.unearth.munch.print.*
 import no.scienta.unearth.turbo.UnearthlyTurboFilter
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.time.Clock
 import java.util.stream.Stream
 
 
 object Unearth : () -> Unit {
+
+    private val clock: Clock = Clock.systemDefaultZone();
 
     private val logger: Logger = LoggerFactory.getLogger(Unearth.javaClass)
 
@@ -43,9 +45,9 @@ object Unearth : () -> Unit {
 
     fun conf(name: String): String = config[Key(name, stringType)]
 
-    private val storage = InMemoryFaults()
-
     private val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
+
+    private val storage = InMemoryFaults(sensor, clock)
 
     override fun invoke() {
         logger.info("Building ${UnearthlyServer::class.simpleName}...")
@@ -57,7 +59,7 @@ object Unearth : () -> Unit {
                 selfDiagnose = config[Key("unearth.self-diagnose", booleanType)],
                 unearthlyLogging = config[Key("unearth.logging", booleanType)])
 
-        val controller = UnearthlyController(storage, storage, storage, sensor, UnearthlyRenderer())
+        val controller = UnearthlyController(storage, storage, storage, UnearthlyRenderer())
 
         val server = UnearthlyServer(configuration, controller)
 
@@ -75,17 +77,36 @@ object Unearth : () -> Unit {
     }
 
     private fun reconfigureLogging(controller: UnearthlyController) {
+        val squasher: (t: MutableCollection<String>, u: MutableList<CauseFrame>) -> Stream<String> =
+                { _, causeFrames ->
+                    Stream.of(" * [${causeFrames.size} hidden]")
+                }
+        val defaultStackRenderer: StackRenderer =
+                ConfigurableStackRenderer()
+                        .group(SimplePackageGrouper(listOf("org.http4k", "io.netty")))
+                        .squash(squasher)
+                        .reshape(FrameFun.LIKE_JAVA_8)
+                        .reshape(FrameFun.SHORTEN_CLASSNAMES)
+        val shortStackRenderer =
+                ConfigurableStackRenderer()
+                        .group(SimplePackageGrouper(listOf("org.http4k", "io.netty")))
+                        .squash(FrameFun.JUST_COUNT_AND_TOP)
+                        .reshape(FrameFun.LIKE_JAVA_8)
+                        .reshape(FrameFun.SHORTEN_CLASSNAMES)
+        val noStackRenderer =
+                ConfigurableStackRenderer().noStack()
+
         (LoggerFactory.getILoggerFactory() as LoggerContext)
                 .turboFilterList
                 .add(UnearthlyTurboFilter(
                         controller.handler,
-                        SimpleCausesRenderer(ConfigurableStackRenderer()
-                                .group(SimplePackageGrouper(listOf("org.http4k", "io.netty")))
-                                .squash { _, causeFrames ->
-                                    Stream.of(" * [${causeFrames.size} hidden]")
-                                }
-                                .reshape(FrameFun.LIKE_JAVA_8)
-                                .reshape(FrameFun.SHORTEN_CLASSNAMES))))
+                        SimpleCausesRenderer(defaultStackRenderer)
+                ).withRendererFor(
+                        HandlingPolicy.Action.LOG_MESSAGES,
+                        SimpleCausesRenderer(noStackRenderer)
+                ).withRendererFor(
+                        HandlingPolicy.Action.LOG_SHORT,
+                        SimpleCausesRenderer(shortStackRenderer)))
     }
 
     private fun registerShutdown(server: UnearthlyServer) {

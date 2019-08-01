@@ -87,10 +87,6 @@ public class GroupedList<G, T> {
         return groups.getLast();
     }
 
-    private Group<G, T> base() {
-        return group(null);
-    }
-
     private static final class Group<G, T> {
 
         private final G ref;

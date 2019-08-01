@@ -40,13 +40,12 @@ public class MeteringThrowablesSensor implements FaultSensor {
     }
 
     @Override
-    public FaultEvent registered(FaultEvent faultEvent) {
+    public void register(FaultEvent faultEvent) {
         Fault fault = faultEvent.getFault();
         faultCounter(fault).count();
         FaultStrand faultStrand = fault.getFaultStrand();
         faultStrandCounter(faultStrand).count();
         faultCounter(faultStrand, fault, faultEvent).count();
-        return faultEvent;
     }
 
     private Counter faultStrandCounter(FaultStrand faultStrand) {

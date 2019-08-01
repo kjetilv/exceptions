@@ -21,14 +21,15 @@ import no.scienta.unearth.munch.id.*;
 import no.scienta.unearth.munch.model.*;
 
 import java.util.Collection;
+import java.util.Optional;
 
 public interface FaultStorage {
 
-    FaultEvent store(LogEntry logEntry, Fault fault);
+    FaultEvents store(LogEntry logEntry, Fault fault, Throwable throwable);
 
-    Fault getFault(FaultId faultId);
+    Optional<Fault> getFault(FaultId faultId);
 
-    FaultStrand getFaultStrand(FaultStrandId faultStrandId);
+    Optional<FaultStrand> getFaultStrand(FaultStrandId faultStrandId);
 
     default Collection<FaultEvent> getEvents(FaultStrandId faultStrandId) {
         return getEvents(faultStrandId, null, null);
@@ -42,9 +43,9 @@ public interface FaultStorage {
 
     Collection<FaultEvent> getEvents(FaultId faultId, Long offset, Long count);
 
-    FaultEvent getFaultEvent(FaultEventId faultEventId);
+    Optional<FaultEvent> getFaultEvent(FaultEventId faultEventId);
 
-    CauseStrand getCauseStrand(CauseStrandId causeStrandId);
+    Optional<CauseStrand> getCauseStrand(CauseStrandId causeStrandId);
 
-    Cause getCause(CauseId causeId);
+    Optional<Cause> getCause(CauseId causeId);
 }
