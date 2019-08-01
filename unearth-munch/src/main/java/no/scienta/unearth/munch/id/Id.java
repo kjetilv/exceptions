@@ -43,17 +43,22 @@ public abstract class Id {
 
     private final UUID hash;
 
-    private String simpleName;
+    private String name;
+
+    private final int hashCode;
 
     private static final Map<Class<?>, String> NAMES = new HashMap<>();
 
+    private static final String TAIL = "Id";
+
     Id(UUID hash) {
-        this.hash = Objects.requireNonNull(hash);
-        this.simpleName = NAMES.computeIfAbsent(getClass(), cl -> {
+        this.hash = Objects.requireNonNull(hash, "hash");
+        this.hashCode = this.hash.hashCode();
+        this.name = NAMES.computeIfAbsent(getClass(), cl -> {
             String simpleName = cl.getSimpleName();
             String lowerCased = simpleName.substring(0, 1).toLowerCase() + simpleName.substring(1);
-            int tail = lowerCased.lastIndexOf("Id");
-            return lowerCased.substring(0, tail);
+            int tail = lowerCased.lastIndexOf(TAIL);
+            return lowerCased.substring(0, tail).intern();
         });
     }
 
@@ -72,11 +77,11 @@ public abstract class Id {
 
     @Override
     public int hashCode() {
-        return 3 + 31 * hash.hashCode();
+        return hashCode;
     }
 
     @Override
     public String toString() {
-        return simpleName + ":" + getHash();
+        return name + ":" + getHash();
     }
 }

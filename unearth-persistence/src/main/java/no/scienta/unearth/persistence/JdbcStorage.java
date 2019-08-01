@@ -59,9 +59,6 @@ public class JdbcStorage implements FaultStorage {
                 fault,
                 logEntry,
                 Instant.now(),
-                1L,
-                1L,
-                1L,
                 null));
         });
     }

@@ -1,6 +1,6 @@
 val jacksonVer = "2.9.9"
 
-val http4kVer = "3.162.0"
+val http4kVer = "3.167.0"
 
 val retrofitVer = "2.6.0"
 
