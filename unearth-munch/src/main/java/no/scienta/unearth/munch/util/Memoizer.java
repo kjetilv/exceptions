@@ -27,7 +27,7 @@ public final class Memoizer {
      * Returns a supplier which runs the given supplier once only.
      *
      * @param supplier Source supplier
-     * @param <O> Type
+     * @param <O>      Type
      * @return Single-run supplier
      */
     public static <O> Supplier<O> get(Supplier<O> supplier) {

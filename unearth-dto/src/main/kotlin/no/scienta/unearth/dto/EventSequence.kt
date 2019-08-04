@@ -15,9 +15,22 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.munch.util;
+package no.scienta.unearth.dto
 
-public interface NamedException {
+import java.util.*
 
-    String getProxiedClassName();
+data class EventSequence(
+
+        val events: List<FaultEventDto> = Collections.emptyList(),
+
+        val sequenceType: SequenceType = SequenceType.GLOBAL
+) {
+
+    val offset = seqs().min().orElse(0L)
+
+    val count = events.size
+
+    val last = seqs().max().orElse(-1L)
+
+    private fun seqs() = events.stream().mapToLong(sequenceType)
 }

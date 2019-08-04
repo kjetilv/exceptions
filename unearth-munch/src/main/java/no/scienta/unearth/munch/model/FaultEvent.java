@@ -138,7 +138,7 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
     }
 
     private static long valid(long seqNo) {
-        if (seqNo <0) {
+        if (seqNo < 0) {
             throw new IllegalArgumentException("Invalid seqNo: " + seqNo);
         }
         return seqNo;

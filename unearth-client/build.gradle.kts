@@ -15,7 +15,6 @@ tasks.withType<KotlinCompile> {
 }
 
 dependencies {
-    compile(project(":unearth-core"))
     compile(project(":unearth-dto"))
     compile(project(":unearth-munch"))
 

@@ -1,8 +1,8 @@
 val jacksonVer = "2.9.9"
 
-val http4kVer = "3.167.0"
+val http4kVer = "3.169.0"
 
-val retrofitVer = "2.6.0"
+val retrofitVer = "2.6.1"
 
 val micrometerVer = "1.1.4"
 
@@ -20,7 +20,9 @@ val junitVer = "4.12"
 
 val swaggerUiVer = "3.23.0"
 
-val javaVer = JavaVersion.VERSION_1_8
+val clientJavaVer = JavaVersion.VERSION_1_8
+
+val serverJavaVer = JavaVersion.VERSION_11
 
 val kotlinVer = "1.3.40"
 
@@ -38,8 +40,8 @@ allprojects {
     apply(plugin = "maven-publish")
 
     configure<JavaPluginConvention> {
-        sourceCompatibility = javaVer
-        targetCompatibility = javaVer
+        sourceCompatibility = clientJavaVer
+        targetCompatibility = clientJavaVer
     }
 
     group = "no.scienta.unearth"
@@ -47,6 +49,8 @@ allprojects {
 
     repositories {
         mavenCentral()
+        jcenter()
+        google()
     }
 
     dependencies {

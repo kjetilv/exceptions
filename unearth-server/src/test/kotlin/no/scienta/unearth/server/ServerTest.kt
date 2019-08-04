@@ -37,7 +37,7 @@ fun main() {
 
     val server = UnearthlyServer(
             controller = UnearthlyController(
-                    storage, storage, storage, UnearthlyRenderer(), Clock.systemDefaultZone()));
+                    storage, storage, storage, UnearthlyRenderer(), UnearthlyConfig(), Clock.systemDefaultZone()));
 
     val lookupLens = Body.auto<FaultStrandDto>().toLens()
 
@@ -107,7 +107,7 @@ fun main() {
 
     println(JSON.asJsonString(submission))
 
-    val uri = "http://localhost:8080/api/v1/fault-strand/${submission.faultStrandId.hash}"
+    val uri = "http://localhost:8080/api/v1/fault-strand/${submission.faultStrandId.uuid}"
     val request = Request(Method.GET, uri)
     val target = client(request)
 

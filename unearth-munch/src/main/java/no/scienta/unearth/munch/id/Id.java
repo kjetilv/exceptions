@@ -43,7 +43,7 @@ public abstract class Id {
 
     private final UUID hash;
 
-    private String name;
+    private String type;
 
     private final int hashCode;
 
@@ -54,16 +54,37 @@ public abstract class Id {
     Id(UUID hash) {
         this.hash = Objects.requireNonNull(hash, "hash");
         this.hashCode = this.hash.hashCode();
-        this.name = NAMES.computeIfAbsent(getClass(), cl -> {
+        this.type = NAMES.computeIfAbsent(getClass(), cl -> {
             String simpleName = cl.getSimpleName();
-            String lowerCased = simpleName.substring(0, 1).toLowerCase() + simpleName.substring(1);
-            int tail = lowerCased.lastIndexOf(TAIL);
-            return lowerCased.substring(0, tail).intern();
+            int tail = simpleName.lastIndexOf(TAIL);
+            String baseName = simpleName.substring(0, tail);
+            String lowerCased = baseName.substring(0, 1).toLowerCase() + baseName.substring(1);
+            int dashedLength =
+                lowerCased.length() + lowerCased.chars().filter(Character::isUpperCase).map(b -> 1).sum();
+            char[] source = lowerCased.substring(0, tail).toCharArray();
+            char[] dashed = new char[dashedLength];
+            for (int i = 0, c = 0; i < source.length; i++, c++) {
+                if (Character.isUpperCase(source[i])) {
+                    dashed[c++] = '-';
+                    dashed[c] = Character.toLowerCase(source[i]);
+                } else {
+                    dashed[c] = source[i];
+                }
+            }
+            return new String(dashed);
         });
+    }
+
+    public String getType() {
+        return type;
     }
 
     public UUID getHash() {
         return hash;
+    }
+
+    public String getUuid() {
+        return getHash().toString();
     }
 
     public String toHashString() {
@@ -82,6 +103,6 @@ public abstract class Id {
 
     @Override
     public String toString() {
-        return name + ":" + getHash();
+        return type + ":" + getHash();
     }
 }

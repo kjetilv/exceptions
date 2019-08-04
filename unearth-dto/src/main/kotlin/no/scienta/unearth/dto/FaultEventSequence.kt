@@ -17,16 +17,15 @@
 
 package no.scienta.unearth.dto
 
-import no.scienta.unearth.munch.id.Id
 import java.util.*
 
 data class FaultEventSequence(
 
-        val id: Id?,
+        val id: FaultIdDto,
 
-        val sequenceType: SequenceType,
+        val events: List<FaultEventDto> = Collections.emptyList(),
 
-        val events: List<FaultEventDto> = Collections.emptyList()
+        val sequenceType: SequenceType = SequenceType.FAULT
 ) {
 
     val offset = seqs().min().orElse(0L)

@@ -17,12 +17,16 @@
 
 package no.scienta.unearth.dto
 
-data class CauseStrandDto(
+import java.util.*
 
-        val id: CauseStrandIdDto,
+data class IdDto(
 
-        val className: String,
+        val uuid: UUID,
 
-        val fullStack: List<StackTraceElementDto>?,
+        val type: String,
 
-        val printStack: List<String>?)
+        val link: String? = null,
+
+        val feed: String? = null
+)
+

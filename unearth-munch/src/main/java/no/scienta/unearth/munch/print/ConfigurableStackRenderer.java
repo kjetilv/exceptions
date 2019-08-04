@@ -102,7 +102,7 @@ public class ConfigurableStackRenderer implements StackRenderer {
 
     @Override
     public List<String> render(Cause cause) {
-        return renderFrames(cause. getCauseStrand().getCauseFrames());
+        return renderFrames(cause.getCauseStrand().getCauseFrames());
     }
 
     @Override

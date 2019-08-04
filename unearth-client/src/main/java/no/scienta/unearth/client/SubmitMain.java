@@ -37,7 +37,6 @@ public class SubmitMain {
             Submission submit = client.submit(Paths.get(arg));
             System.out.println("Uploaded: " + client.print(submit));
             client.retrieve(submit.getFaultId()).printStackTrace(System.out);
-
         });
     }
 

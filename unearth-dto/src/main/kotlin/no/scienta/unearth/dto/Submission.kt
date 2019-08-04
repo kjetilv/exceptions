@@ -17,17 +17,13 @@
 
 package no.scienta.unearth.dto
 
-import no.scienta.unearth.munch.id.FaultEventId
-import no.scienta.unearth.munch.id.FaultId
-import no.scienta.unearth.munch.id.FaultStrandId
-
 data class Submission(
 
-        val faultStrandId: FaultStrandId,
+        val faultStrandId: FaultStrandIdDto,
 
-        val faultId: FaultId,
+        val faultId: FaultIdDto,
 
-        val faultEventId: FaultEventId,
+        val faultEventId: FaultEventIdDto,
 
         val globalSequenceNo: Long,
 
@@ -41,6 +37,8 @@ data class Submission(
 )
 
 data class PrintoutDto(
+        val exception: String,
+
         val message: String = "null",
 
         val stack: Collection<String>? = emptyList()

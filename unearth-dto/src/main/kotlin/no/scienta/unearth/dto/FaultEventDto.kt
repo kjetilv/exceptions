@@ -17,12 +17,11 @@
 
 package no.scienta.unearth.dto
 
-import no.scienta.unearth.munch.id.FaultEventId
 import java.time.ZonedDateTime
 
 data class FaultEventDto(
 
-        val id: FaultEventId,
+        val id: FaultEventIdDto,
 
         val fault: FaultDto?,
 

@@ -29,37 +29,38 @@ import no.scienta.unearth.munch.print.*
 import no.scienta.unearth.turbo.UnearthlyTurboFilter
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.URI
 import java.time.Clock
 import java.util.stream.Stream
 
+class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> Unearth.State {
 
-object Unearth : () -> Unit {
-
-    private val clock: Clock = Clock.systemDefaultZone();
-
-    private val logger: Logger = LoggerFactory.getLogger(Unearth.javaClass)
-
-    private val config = systemProperties() overriding
-            EnvironmentVariables() overriding
-            ConfigurationProperties.fromResource("defaults.properties")
-
-    fun conf(name: String): String = config[Key(name, stringType)]
+    private val clock: Clock = Clock.systemDefaultZone()
 
     private val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
 
     private val storage = InMemoryFaults(sensor, clock)
 
-    override fun invoke() {
+    interface State {
+
+        fun url(): URI
+
+        fun port(): Int
+
+        fun close()
+    }
+
+    override fun invoke(): State {
         logger.info("Building ${UnearthlyServer::class.simpleName}...")
 
-        val configuration = UnearthlyConfig(
-                prefix = config[Key("server.api", stringType)],
-                host = config[Key("server.host", stringType)],
-                port = config[Key("server.port", intType)],
-                selfDiagnose = config[Key("unearth.self-diagnose", booleanType)],
-                unearthlyLogging = config[Key("unearth.logging", booleanType)])
+        val configuration = customConfiguration ?: loadUnearthlyConfig()
 
-        val controller = UnearthlyController(storage, storage, storage, UnearthlyRenderer())
+        val controller = UnearthlyController(
+                storage,
+                storage,
+                storage,
+                UnearthlyRenderer(),
+                configuration)
 
         val server = UnearthlyServer(configuration, controller)
 
@@ -67,13 +68,38 @@ object Unearth : () -> Unit {
             reconfigureLogging(controller)
         }
 
-        logger.info("Created $server")
+        logger.info("Created $server!!")
 
         registerShutdown(server)
 
         server.start {
             logger.info("Ready at http://${callableHost(configuration)}:${configuration.port}")
         }
+
+        return object : State {
+            override fun close() {
+                server.stop {
+                    logger.info("Stopped by demand: $it")
+                }
+            }
+
+            override fun url(): URI = URI.create(
+                    "http://" + configuration.host + ":" + server.port() +
+                            configuration.prefix +
+                            (if (configuration.prefix.endsWith("/")) "" else "/"))
+
+            override fun port(): Int = server.port()
+        }
+    }
+
+    private fun loadUnearthlyConfig(): UnearthlyConfig {
+        val config = loadConfiguration()
+        return UnearthlyConfig(
+                prefix = config[Key("server.api", stringType)],
+                host = config[Key("server.host", stringType)],
+                port = config[Key("server.port", intType)],
+                selfDiagnose = config[Key("unearth.self-diagnose", booleanType)],
+                unearthlyLogging = config[Key("unearth.logging", booleanType)])
     }
 
     private fun reconfigureLogging(controller: UnearthlyController) {
@@ -112,11 +138,24 @@ object Unearth : () -> Unit {
     private fun registerShutdown(server: UnearthlyServer) {
         Runtime.getRuntime().addShutdownHook(Thread({
             server.stop {
-                logger.info("Stopped $it")
+                logger.info("Stopped at shutdown: $it")
             }
         }, "Shutdown"))
     }
 
     private fun callableHost(configuration: UnearthlyConfig): String =
             if (configuration.host == UnearthlyConfig().host) "127.0.0.1" else configuration.host
+
+    companion object {
+
+        fun conf(name: String): String = loadConfiguration()[Key(name, stringType)]
+
+        private val logger: Logger = LoggerFactory.getLogger(Unearth::class.java)
+
+        private fun loadConfiguration(): Configuration {
+            return systemProperties() overriding
+                    EnvironmentVariables() overriding
+                    ConfigurationProperties.fromResource("defaults.properties")
+        }
+    }
 }

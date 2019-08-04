@@ -26,7 +26,6 @@ import no.scienta.unearth.munch.model.CauseStrand
 import no.scienta.unearth.munch.model.Fault
 import no.scienta.unearth.munch.model.FaultEvent
 import no.scienta.unearth.munch.print.*
-import org.slf4j.LoggerFactory
 import java.time.Clock
 import java.time.ZoneId
 
@@ -35,18 +34,12 @@ class UnearthlyController(
         private val feed: FaultFeed,
         stats: FaultStats,
         private val renderer: UnearthlyRenderer,
+        private val configuration: UnearthlyConfig,
         clock: Clock = Clock.systemDefaultZone()
 ) {
     val handler: FaultHandler = DefaultFaultHandler(storage, stats, clock)
 
-    private val submitLogger = LoggerFactory.getLogger(javaClass)
-
     fun submitRaw(t: Throwable): HandlingPolicy = handler.handle(t)!!
-
-    private fun logged(handle: HandlingPolicy): HandlingPolicy {
-        submitLogger.info(logMessage(handle))
-        return handle;
-    }
 
     fun lookupFaultStrandDto(
             id: FaultStrandId,
@@ -55,7 +48,7 @@ class UnearthlyController(
     ): FaultStrandDto? =
             storage.getFaultStrand(id).orElse(null)?.let { faultStrand ->
                 FaultStrandDto(
-                        faultStrand.id,
+                        FaultStrandIdDto(faultStrand.hash, link(id), feed(id)),
                         faultStrand.causeStrands.map {
                             causeStrandDto(it, fullStack, printStack)
                         })
@@ -105,10 +98,8 @@ class UnearthlyController(
             fullStack: Boolean = false,
             printStack: Boolean = false,
             fullEvent: Boolean = false
-    ): FaultEventSequence =
-            FaultEventSequence(
-                    null,
-                    SequenceType.GLOBAL,
+    ): EventSequence =
+            EventSequence(
                     feed.feed(offset, count).map {
                         faultEventDto(it, fullStack, printStack, fullEvent)
                     })
@@ -122,8 +113,7 @@ class UnearthlyController(
             fullEvent: Boolean = false
     ): FaultEventSequence =
             FaultEventSequence(
-                    faultId,
-                    SequenceType.FAULT,
+                    FaultIdDto(faultId.hash, link(faultId)),
                     feed.feed(faultId, offset, count).map {
                         faultEventDto(it, fullStack, printStack, fullEvent)
                     })
@@ -135,19 +125,12 @@ class UnearthlyController(
             fullStack: Boolean = false,
             printStack: Boolean = false,
             fullEvent: Boolean = false
-    ): FaultEventSequence =
-            FaultEventSequence(
-                    faultStrandId,
-                    SequenceType.FAULT_STRAND,
+    ): FaultStrandEventSequence =
+            FaultStrandEventSequence(
+                    FaultStrandIdDto(faultStrandId.hash, link(faultStrandId)),
                     feed.feed(faultStrandId, offset, count).map {
                         faultEventDto(it, fullStack, printStack, fullEvent)
                     })
-
-    fun render(policy: HandlingPolicy): CausesRendering? = renderer.rendering(policy)
-
-    private fun logMessage(handle: HandlingPolicy) =
-            "${handle.summary?.let { "$it " }
-                    ?: ""}F:${handle.faultId.hash} E:${handle.faultEventId.hash} FS:${handle.faultStrandId.hash}"
 
     private fun faultEventDto(
             faultEvent: FaultEvent,
@@ -156,7 +139,7 @@ class UnearthlyController(
             fullEvent: Boolean = false
     ): FaultEventDto =
             FaultEventDto(
-                    faultEvent.id,
+                    FaultEventIdDto(faultEvent.hash, link(faultEvent), feed(faultEvent)),
                     if (fullEvent) faultDto(faultEvent.fault, fullStack, printStack) else null,
                     faultEvent.time.atZone(ZoneId.of("UTC")),
                     faultEvent.globalSequenceNo,
@@ -188,8 +171,9 @@ class UnearthlyController(
 
     private fun faultDto(fault: Fault, fullStack: Boolean, printStack: Boolean): FaultDto =
             FaultDto(
-                    id = fault.id,
-                    faultStrandId = fault.faultStrand.id,
+                    id = FaultIdDto(fault.hash, link(fault), feed(fault)),
+                    faultStrandId = FaultStrandIdDto(
+                            fault.faultStrand.hash, link(fault.faultStrand), feed(fault.faultStrand)),
                     causes = fault.causes.map { cause ->
                         causeDto(cause, fullStack = fullStack, printStack = printStack)
                     })
@@ -198,18 +182,47 @@ class UnearthlyController(
             causeStrand: CauseStrand,
             fullStack: Boolean = false,
             printStack: Boolean = false
-    ): CauseStrandDto =
-            CauseStrandDto(
-                    causeStrand.id,
-                    causeStrand.className,
-                    if (fullStack)
-                        stackTrace(causeStrand.causeFrames)
-                    else
-                        emptyList(),
-                    if (printStack && !fullStack)
-                        simpleStackTrace(causeStrand.causeFrames)
-                    else
-                        emptyList())
+    ): CauseStrandDto {
+        return CauseStrandDto(
+                CauseStrandIdDto(causeStrand.hash, link(causeStrand), feed(causeStrand)),
+                causeStrand.className,
+                if (fullStack)
+                    stackTrace(causeStrand.causeFrames)
+                else
+                    emptyList(),
+                if (printStack && !fullStack)
+                    simpleStackTrace(causeStrand.causeFrames)
+                else
+                    emptyList())
+    }
+
+    fun submission(handling: HandlingPolicy): Submission {
+        return Submission(
+                FaultStrandIdDto(
+                        handling.faultStrandId.hash, link(handling.faultStrandId), feed(handling.faultStrandId)),
+                FaultIdDto(
+                        handling.faultId.hash, link(handling.faultId), feed(handling.faultId)),
+                FaultEventIdDto(
+                        handling.faultEventId.hash, link(handling.faultEventId), feed(handling.faultEventId)),
+                handling.globalSequence,
+                handling.faultStrandSequence,
+                handling.faultSequence,
+                action = Action.valueOf(handling.action.name),
+                printout = toPrintout(handling))
+    }
+
+    private fun toPrintout(policy: HandlingPolicy): List<PrintoutDto> =
+            renderer.rendering(policy)?.map {
+                PrintoutDto(it.className, it.message, it.stack)
+            } ?: emptyList()
+
+    private fun feed(id: Identifiable<*>): String = feed(id.id)
+
+    private fun feed(id: Id): String = "${configuration.prefix}/feed/${id.type}/${id.hash}"
+
+    private fun link(id: Identifiable<*>): String = link(id.id)
+
+    private fun link(id: Id): String = "${configuration.prefix}/${id.type}/${id.hash}"
 
     private fun causeDto(
             cause: Cause,
@@ -217,7 +230,7 @@ class UnearthlyController(
             printStack: Boolean = false
     ): CauseDto =
             CauseDto(
-                    id = cause.id,
+                    id = CauseIdDto(cause.hash, link(cause)),
                     message = cause.message,
                     causeStrand = causeStrandDto(cause.causeStrand, fullStack, printStack))
 

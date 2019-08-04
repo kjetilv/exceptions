@@ -18,7 +18,6 @@
 package no.scienta.unearth.server
 
 import no.scienta.unearth.dto.*
-import no.scienta.unearth.munch.id.*
 import java.time.ZonedDateTime
 import java.util.*
 
@@ -27,27 +26,33 @@ object Swaggex {
     private val random = Random()
 
     internal fun submission() = Submission(
-            FaultStrandId(UUID.randomUUID()),
-            FaultId(UUID.randomUUID()),
-            FaultEventId(UUID.randomUUID()),
+            FaultStrandIdDto(UUID.randomUUID()),
+            FaultIdDto(UUID.randomUUID()),
+            FaultEventIdDto(UUID.randomUUID()),
             random.nextLong() % 1000,
             1000L + random.nextLong() % 1000,
             2000L + random.nextLong() % 1000,
             if (random.nextBoolean()) Action.LOG else Action.LOG_SHORT)
 
-    internal fun faultSequence(id: ((UUID) -> Id)? = null): FaultEventSequence =
-            FaultEventSequence(id?.let { it(uuid()) }, SequenceType.FAULT, listOf(faultEventDto()))
+    internal fun eventSequence(): EventSequence =
+            EventSequence(listOf(faultEventDto()))
 
-    internal fun faultStrandDto() = FaultStrandDto(FaultStrandId(uuid()), listOf(causeStrandDto()))
+    internal fun faultEventSequence(): FaultEventSequence =
+            FaultEventSequence(FaultIdDto(uuid()), listOf(faultEventDto()))
 
-    internal fun faultDto() = FaultDto(FaultId(uuid()), FaultStrandId(uuid()), listOf(causeDto()))
+    internal fun faultStrandEventSequence(): FaultStrandEventSequence =
+            FaultStrandEventSequence(FaultStrandIdDto(uuid()), listOf(faultEventDto()))
+
+    internal fun faultStrandDto() = FaultStrandDto(FaultStrandIdDto(uuid()), listOf(causeStrandDto()))
+
+    internal fun faultDto() = FaultDto(FaultIdDto(uuid()), FaultStrandIdDto(uuid()), listOf(causeDto()))
 
     internal fun exception() = RuntimeException("Example throwable")
 
-    internal fun causeDto() = CauseDto(CauseId(uuid()), "Bad stuff", causeStrandDto())
+    internal fun causeDto() = CauseDto(CauseIdDto(uuid()), "Bad stuff", causeStrandDto())
 
     internal fun faultEventDto(): FaultEventDto = FaultEventDto(
-            FaultEventId(uuid()),
+            FaultEventIdDto(uuid()),
             faultDto(),
             ZonedDateTime.now(),
             random.nextInt().toLong(),
@@ -55,7 +60,7 @@ object Swaggex {
             random.nextInt().toLong())
 
     internal fun causeStrandDto() =
-            CauseStrandDto(CauseStrandId(uuid()), "BadStuffException", emptyList(), emptyList())
+            CauseStrandDto(CauseStrandIdDto(uuid()), "BadStuffException", emptyList(), emptyList())
 
     internal fun causeChainDto(): CauseChainDto =
             CauseChainDto(

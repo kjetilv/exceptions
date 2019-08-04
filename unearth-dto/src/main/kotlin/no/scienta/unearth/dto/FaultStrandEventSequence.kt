@@ -17,12 +17,22 @@
 
 package no.scienta.unearth.dto
 
-data class CauseStrandDto(
+import java.util.*
 
-        val id: CauseStrandIdDto,
+data class FaultStrandEventSequence(
 
-        val className: String,
+        val id: FaultStrandIdDto,
 
-        val fullStack: List<StackTraceElementDto>?,
+        val events: List<FaultEventDto> = Collections.emptyList(),
 
-        val printStack: List<String>?)
+        val sequenceType: SequenceType = SequenceType.FAULT_STRAND
+) {
+
+    val offset = seqs().min().orElse(0L)
+
+    val count = events.size
+
+    val last = seqs().max().orElse(-1L)
+
+    private fun seqs() = events.stream().mapToLong(sequenceType)
+}

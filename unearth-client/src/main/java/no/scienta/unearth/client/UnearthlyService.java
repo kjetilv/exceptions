@@ -28,9 +28,9 @@ import java.util.UUID;
 
 public interface UnearthlyService {
 
-    @POST("throwable")
+    @POST("catch")
     Call<Submission> throwable(@Body Throwable throwable);
 
-    @GET("throwable/{uuid}")
+    @GET("catch/{uuid}")
     Call<Throwable> throwable(@Path("uuid") UUID uuid);
 }

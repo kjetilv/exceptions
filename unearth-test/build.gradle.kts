@@ -15,14 +15,9 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.dto
+dependencies {
+    compile(project(":unearth-server"))
+    compile(project(":unearth-client"))
 
-data class CauseStrandDto(
-
-        val id: CauseStrandIdDto,
-
-        val className: String,
-
-        val fullStack: List<StackTraceElementDto>?,
-
-        val printStack: List<String>?)
+    testCompile("junit:junit")
+}

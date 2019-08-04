@@ -34,11 +34,9 @@
 
 package no.scienta.unearth.munch;
 
-import no.scienta.unearth.munch.util.NamedException;
-
 import java.util.Objects;
 
-public class ChameleonException extends Exception implements NamedException {
+public class ChameleonException extends Exception {
 
     private final String proxiedClassName;
 
@@ -47,7 +45,6 @@ public class ChameleonException extends Exception implements NamedException {
         this.proxiedClassName = Objects.requireNonNull(proxiedClassName, "proxiedClassName");
     }
 
-    @Override
     public String getProxiedClassName() {
         return proxiedClassName;
     }

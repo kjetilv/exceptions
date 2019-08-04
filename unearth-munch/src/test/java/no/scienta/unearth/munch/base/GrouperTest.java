@@ -52,7 +52,7 @@ public class GrouperTest {
             ),
             stringOptionalFunction
         );
-        group.forEach((strings, strings2) ->{
+        group.forEach((strings, strings2) -> {
             System.out.println(strings);
             strings2.stream().map(s -> s + "  ").forEach(System.out::println);
         });

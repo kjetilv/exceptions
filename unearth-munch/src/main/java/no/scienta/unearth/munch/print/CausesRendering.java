@@ -25,7 +25,7 @@ import java.util.Iterator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class CausesRendering implements Iterable<CausesRendering>{
+public class CausesRendering implements Iterable<CausesRendering> {
 
     private static final String DEFAULT_INDENT = "\t";
 

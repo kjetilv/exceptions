@@ -75,10 +75,9 @@ public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
     }
 
     private static String className(Throwable throwable) {
-        if (throwable instanceof ChameleonException) {
-            return ((ChameleonException) throwable).getProxiedClassName();
-        }
-        return throwable.getClass().getName();
+        return throwable instanceof ChameleonException
+            ? ((ChameleonException) throwable).getProxiedClassName()
+            : throwable.getClass().getName();
     }
 
     @Override

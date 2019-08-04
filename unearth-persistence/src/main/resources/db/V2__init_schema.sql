@@ -80,14 +80,14 @@ create sequence eventSequence no maxvalue;
 
 create table fault_event
 (
-    id               uuid,
-    fault            uuid,
-    fault_strand     uuid,
-    cause            uuid,
-    cause_strand     uuid,
-    time             timestamp,
-    seq              int not null,
-    event_seq        int default nextval(eventSequence),
+    id           uuid,
+    fault        uuid,
+    fault_strand uuid,
+    cause        uuid,
+    cause_strand uuid,
+    time         timestamp,
+    seq          int not null,
+    event_seq    int default nextval(eventSequence),
 
     primary key (id),
     foreign key (fault) references fault (id)

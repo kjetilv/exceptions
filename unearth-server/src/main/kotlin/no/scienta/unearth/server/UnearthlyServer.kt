@@ -19,7 +19,6 @@
 
 package no.scienta.unearth.server
 
-import no.scienta.unearth.core.HandlingPolicy
 import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.model.Fault
@@ -84,15 +83,17 @@ class UnearthlyServer(
         after(server)
     }
 
+    fun port(): Int = server.port()
+
     private fun submitExceptionRoute() =
-            "/throwable" meta {
+            "/catch" meta {
                 summary = "Submit an exception"
                 consumes += TEXT_PLAIN
                 produces += APPLICATION_JSON
-                receiving(exception to Swaggex.exception())
-                returning(OK/*, submission to Swaggex.submission()*/)
-            } bindContract POST to exchange(exception, submission) { throwable ->
-                submission(controller.submitRaw(throwable))
+                returning(OK, submission to Swaggex.submission())
+            } bindContract POST to { request ->
+                val throwable = ThrowableParser.parse(request.body.payload)
+                submission.set(Response(OK), controller.submission(controller.submitRaw(throwable)))
             }
 
     private fun retrieveExceptionRoute() =
@@ -216,9 +217,9 @@ class UnearthlyServer(
                 summary = "Events global"
                 produces += APPLICATION_JSON
                 queries += listOf(offsetQuery, countQuery, fullStack, printStack)
-                returning(OK, faultSequence to Swaggex.faultSequence())
+                returning(OK, sequence to Swaggex.eventSequence())
             } bindContract GET to { req ->
-                get(faultSequence) {
+                get(sequence) {
                     controller.feed(
                             offsetQuery[req] ?: 0L,
                             countQuery[req] ?: 0L,
@@ -244,10 +245,10 @@ class UnearthlyServer(
                 summary = "Events for a fault strand"
                 produces += APPLICATION_JSON
                 queries += listOf(offsetQuery, countQuery, fullStack, printStack)
-                returning(OK, faultSequence to Swaggex.faultSequence(::FaultStrandId))
+                returning(OK, faultStrandSequence to Swaggex.faultStrandEventSequence())
             } bindContract GET to { faultStrandId ->
                 { req ->
-                    get(faultSequence) {
+                    get(faultStrandSequence) {
                         controller.feed(faultStrandId,
                                 offsetQuery[req] ?: 0L,
                                 countQuery[req] ?: 0L,
@@ -273,7 +274,7 @@ class UnearthlyServer(
                 summary = "Events for a fault"
                 produces += APPLICATION_JSON
                 queries += listOf(offsetQuery, countQuery, fullStack, printStack, fullEvent)
-                returning(OK, faultSequence to Swaggex.faultSequence(::FaultId))
+                returning(OK, faultSequence to Swaggex.faultEventSequence())
             } bindContract GET to { faultId ->
                 { req ->
                     get(faultSequence) {
@@ -287,19 +288,6 @@ class UnearthlyServer(
                     }
                 }
             }
-
-    @Suppress("SameParameterValue")
-    private fun <I, O> exchange(
-            inLens: BiDiBodyLens<I>,
-            outLens: BiDiBodyLens<O>,
-            accept: (I) -> O
-    ): HttpHandler = { req ->
-        inLens[req]?.let {
-            accept(it)
-        }?.let {
-            outLens.set(Response(OK), it)
-        } ?: Response(Status.BAD_REQUEST)
-    }
 
     private fun <O> get(
             outLens: BiDiBodyLens<O>,
@@ -342,8 +330,10 @@ class UnearthlyServer(
             configuration.prefix bind contract {
                 renderer = OpenApi3(
                         apiInfo = ApiInfo("Unearth", "v1", "Taking exceptions seriously"),
-                        json = JSON)
-                descriptionPath = "/swagger.json"
+                        json = JSON
+                )
+                descriptionPath =
+                        "/swagger.json"
                 routes +=
                         submitExceptionRoute()
                 routes += listOf(
@@ -366,23 +356,6 @@ class UnearthlyServer(
                         retrieveExceptionReduxRoute()
                 )
             }
-
-    private fun submission(handling: HandlingPolicy): Submission {
-        return Submission(
-                handling.faultStrandId,
-                handling.faultId,
-                handling.faultEventId,
-                handling.globalSequence,
-                handling.faultStrandSequence,
-                handling.faultSequence,
-                action = Action.valueOf(handling.action.name),
-                printout = toPrintout(handling))
-    }
-
-    private fun toPrintout(policy: HandlingPolicy): List<PrintoutDto> =
-            controller.render(policy)?.map {
-                PrintoutDto(it.message, it.stack)
-            } ?: emptyList()
 
     private fun handledResponse(response: Response, request: Request): Response =
             when {
@@ -430,7 +403,7 @@ class UnearthlyServer(
                         .header("X-Fault-Event-Id", policy?.faultEventId?.toHashString() ?: "-")),
                 UnearthlyError(
                         message = error.toString(),
-                        submission = policy?.let(::submission)))
+                        submission = policy?.let { controller.submission(it) }))
     }
 
     private fun internalErrorResponse(e: Throwable): Response {
@@ -521,7 +494,9 @@ class UnearthlyServer(
                 metas = emptyList(),
                 contentType = TEXT_PLAIN,
                 get = { msg ->
-                    ThrowableParser.parse(msg.body.payload)
+                    loggingLens(msg) {
+                        ThrowableParser.parse(msg.body.payload)
+                    }
                 },
                 setLens = { thr, msg ->
                     msg.body(Throwables.string(thr))
@@ -529,18 +504,38 @@ class UnearthlyServer(
 
         private fun <T : Id> uuid(read: (UUID) -> T) = PathLens(
                 meta = Meta(required = true, location = "path", paramMeta = ParamMeta.StringParam, name = "uuid"),
-                get = { uuid -> read(UUID.fromString(uuid)) })
+                get = { uuid ->
+                    loggingLens(uuid) {
+                        read(UUID.fromString(uuid))
+                    }
+                })
 
         private val limit: BiDiBodyLens<Long> = BiDiBodyLens(
                 metas = emptyList(),
                 contentType = TEXT_PLAIN,
-                get = { msg -> java.lang.Long.parseLong(msg.body.payload.asString()) },
+                get = { msg ->
+                    loggingLens(msg) {
+                        java.lang.Long.parseLong(msg.body.payload.asString())
+                    }
+                },
                 setLens = { v, msg -> msg.body(v.toString()) }
         )
 
+        private fun <F, T> loggingLens(msg: F, transform: (F) -> T): T =
+                try {
+                    transform(msg)
+                } catch (e: Exception) {
+                    logger.warn("Exception in lens", e)
+                    throw IllegalStateException("Exception in lens", e)
+                }
+
         private val submission = Body.auto<Submission>().toLens()
 
+        private val sequence = Body.auto<EventSequence>().toLens()
+
         private val faultSequence = Body.auto<FaultEventSequence>().toLens()
+
+        private val faultStrandSequence = Body.auto<FaultStrandEventSequence>().toLens()
 
         private val faultEvent = Body.auto<FaultEventDto>().toLens()
 

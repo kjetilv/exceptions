@@ -9,6 +9,5 @@ tasks.withType<KotlinCompile> {
 }
 
 dependencies {
-    compile(project(":unearth-munch"))
     implementation(kotlin("stdlib"))
 }

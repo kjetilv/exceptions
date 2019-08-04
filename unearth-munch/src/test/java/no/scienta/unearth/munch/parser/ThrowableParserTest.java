@@ -57,7 +57,6 @@ public class ThrowableParserTest {
             String print = print(chameleon);
             System.out.println(output);
             System.out.println(print);
-//            assertEquals(output, print);
         }
     }
 
