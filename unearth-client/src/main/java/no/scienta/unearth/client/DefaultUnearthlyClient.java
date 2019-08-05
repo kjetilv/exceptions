@@ -76,7 +76,15 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
 
     @Override
     public Submission submit(String string) {
-        return submit(ThrowableParser.parse(string));
+        try {
+             return get(unearthlyService.throwable(
+                 RequestBody.create(
+                     MediaType.get("text/plain;charset=UTF-8"),
+                     string.getBytes(StandardCharsets.UTF_8))));
+         } catch (Exception e) {
+             throw new IllegalStateException(
+                 "Failed to submit " + (string.length() > 20 ? string.substring(0, 20) + " ..." : string), e);
+         }
     }
 
     @Override

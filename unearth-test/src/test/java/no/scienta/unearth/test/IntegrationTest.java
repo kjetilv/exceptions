@@ -17,7 +17,6 @@
 
 package no.scienta.unearth.test;
 
-import no.scienta.unearth.client.Print;
 import no.scienta.unearth.client.UnearthlyClient;
 import no.scienta.unearth.dto.*;
 import no.scienta.unearth.server.Unearth;
@@ -46,8 +45,6 @@ public class IntegrationTest {
         Exception barf = new IOException("Barf");
         Submission submit = client.submit("Exception in thread \"foobar\" " + Throwables.string(barf));
 
-        System.out.println(Print.toString(submit));
-
         Throwable throwable = client.throwable(submit.getFaultId());
         assertThat(throwable.getMessage(), equalTo("Barf"));
 
@@ -67,11 +64,9 @@ public class IntegrationTest {
         List<CauseDto> causes = fault.getCauses();
         List<CauseStrandDto> causeStrands = faultStrand.getCauseStrands();
 
-        assertThat(causes.size(), is(1));
-        assertThat(causeStrands.size(), is(1));
+        assertThat(causes.size(), is(causeStrands.size()));
 
         assertThat(causes.get(0).getCauseStrand().getId(), is(causeStrands.get(0).getId()));
-
         CauseIdDto id = causes.get(0).getId();
 
         CauseDto cause = client.cause(id);

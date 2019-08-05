@@ -18,6 +18,7 @@
 package no.scienta.unearth.client;
 
 import no.scienta.unearth.dto.*;
+import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.http.*;
 
@@ -27,6 +28,9 @@ public interface UnearthlyAPI {
 
     @POST("catch")
     Call<Submission> throwable(@Body Throwable throwable);
+
+    @POST("catch")
+    Call<Submission> throwable(@Body RequestBody throwable);
 
     @GET("throwable/{uuid}")
     Call<Throwable> throwable(@Path("uuid") UUID uuid);
