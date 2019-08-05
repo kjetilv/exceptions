@@ -61,4 +61,6 @@ public interface FaultStats {
     long getFaultEventCount(FaultStrandId id, Instant sinceTime, Duration interval);
 
     Stream<FaultEvent> getFaultEvents(FaultStrandId id, Instant sinceTime, Duration period);
+
+    void reset();
 }

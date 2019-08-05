@@ -16,8 +16,8 @@
  */
 
 dependencies {
-    compile(project(":unearth-server"))
-    compile(project(":unearth-client"))
+    testCompile(project(":unearth-server"))
+    testCompile(project(":unearth-client"))
 
     testCompile("junit:junit")
 }

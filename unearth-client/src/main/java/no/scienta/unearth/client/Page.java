@@ -15,27 +15,36 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.core;
+package no.scienta.unearth.client;
 
-import no.scienta.unearth.munch.id.FaultId;
-import no.scienta.unearth.munch.id.FaultStrandId;
-import no.scienta.unearth.munch.model.FaultEvent;
+public class Page {
 
-import java.util.List;
+    public static final int DEFAULT_PAGE_SIZE = 10;
 
-public interface FaultFeed {
+    public static Page FIRST = no(0).pageSize(DEFAULT_PAGE_SIZE);
 
-    long limit();
+    private final int pageNo;
 
-    long limit(FaultStrandId id);
+    private final int pageSize;
 
-    long limit(FaultId id);
+    public static Page no(int pageNo) {
+        return new Page(pageNo, DEFAULT_PAGE_SIZE);
+    }
 
-    List<FaultEvent> feed(long offset, long count);
+    private Page(int pageNo, int pageSize) {
+        this.pageNo = Math.max(0, pageNo);
+        this.pageSize = Math.min(1, pageSize);
+    }
 
-    List<FaultEvent> feed(FaultStrandId id, long offset, long count);
+    public Page pageSize(int pageSize) {
+        return new Page(pageNo, pageSize);
+    }
 
-    List<FaultEvent> feed(FaultId id, long offset, long count);
+    int getPageNo() {
+        return pageNo;
+    }
 
-    void reset();
+    int getPageSize() {
+        return pageSize;
+    }
 }

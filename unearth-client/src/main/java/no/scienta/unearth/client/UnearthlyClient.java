@@ -17,142 +17,57 @@
 
 package no.scienta.unearth.client;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.module.kotlin.KotlinModule;
-import no.scienta.unearth.dto.FaultIdDto;
-import no.scienta.unearth.dto.Submission;
-import no.scienta.unearth.munch.parser.ThrowableParser;
-import no.scienta.unearth.munch.util.Throwables;
-import okhttp3.MediaType;
-import okhttp3.RequestBody;
-import okhttp3.ResponseBody;
-import retrofit2.Call;
-import retrofit2.Converter;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.jackson.JacksonConverterFactory;
+import no.scienta.unearth.dto.*;
 
-import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.UUID;
 
-@SuppressWarnings("WeakerAccess")
-public class UnearthlyClient implements UnearthlyService {
+public interface UnearthlyClient {
 
-    private final UnearthlyService unearthlyService;
-
-    private final ObjectMapper objectMapper;
-
-    public static UnearthlyClient connect(URI uri) {
-        return new UnearthlyClient(uri);
+    static UnearthlyClient connect(URI uri) {
+        return new DefaultUnearthlyClient(uri);
     }
 
-    public UnearthlyClient(URI uri) {
-        this.objectMapper = new ObjectMapper()
-            .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-            .registerModule(new Jdk8Module())
-            .registerModule(new KotlinModule());
-        this.unearthlyService = new Retrofit.Builder()
-            .baseUrl(uri.toASCIIString())
-            .addConverterFactory(JacksonConverterFactory.create(objectMapper))
-            .addConverterFactory(new ThrowablesConverterFactory())
-            .build()
-            .create(UnearthlyService.class);
+    Submission submit(Path path);
+
+    Submission submit(String string);
+
+    Submission submit(Throwable t);
+
+    Throwable throwable(FaultIdDto faultId);
+
+    default FaultDto fault(FaultIdDto faultIdDto) {
+        return fault(faultIdDto, StackType.NONE);
     }
 
-    public Submission submit(Path path) {
-        try {
-            return submit(new String(Files.readAllBytes(path), StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Failed to read " + path, e);
-        }
+    FaultDto fault(FaultIdDto faultIdDto, StackType stackType);
+
+    default FaultStrandDto faultStrand(FaultStrandIdDto faultIdDto) {
+        return faultStrand(faultIdDto, StackType.NONE);
     }
 
-    public Throwable retrieve(FaultIdDto faultId) {
-        try {
-            return throwable(faultId.getUuid()).execute().body();
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to retrieve " + faultId, e);
-        }
+    FaultStrandDto faultStrand(FaultStrandIdDto faultIdDto, StackType stackType);
+
+    default CauseDto cause(CauseIdDto id) {
+        return cause(id, StackType.NONE);
     }
 
-    public Submission submit(String string) {
-        return submit(ThrowableParser.parse(string));
+    CauseDto cause(CauseIdDto id, StackType stackType);
+
+    default CauseStrandDto causeStrand(CauseStrandIdDto id) {
+        return causeStrand(id, StackType.NONE);
     }
 
-    public Submission submit(Throwable t) {
-        Response<Submission> response;
-        try {
-            response = throwable(t).execute();
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to submit: " + t, e);
-        }
-        if (response.code() < 300) {
-            return response.body();
-        }
-        String errorBody;
-        try {
-            errorBody = response.errorBody() == null ? "<no body>" : response.errorBody().string();
-        } catch (IOException e) {
-            errorBody = response.errorBody().toString();
-        }
-        throw new IllegalStateException(
-            "Unexpected response: " + response.code() + ": " + response.message() + "\n  " + errorBody);
-    }
+    CauseStrandDto causeStrand(CauseStrandIdDto id, StackType stackType);
 
-    public String print(Submission submit) {
-        try {
-            return objectMapper.writeValueAsString(submit);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Failed to print " + submit, e);
-        }
-    }
+    FaultEventDto faultEvent(FaultEventIdDto faultEventId);
 
-    @Override
-    public Call<Submission> throwable(Throwable throwable) {
-        return unearthlyService.throwable(throwable);
-    }
+    enum StackType {
 
-    @Override
-    public Call<Throwable> throwable(UUID uuid) {
-        return unearthlyService.throwable(uuid);
-    }
+        FULL,
 
-    private static class ThrowablesConverterFactory extends Converter.Factory {
+        PRINT,
 
-        @Override
-        public Converter<ResponseBody, ?> responseBodyConverter(
-            Type type,
-            Annotation[] annotations,
-            Retrofit retrofit
-        ) {
-            if (type == Throwable.class) {
-                return responseBody ->
-                    ThrowableParser.parse(responseBody.string());
-            }
-            return null;
-        }
-
-        @Override
-        public Converter<Throwable, RequestBody> requestBodyConverter(
-            Type type,
-            Annotation[] parameterAnnotations,
-            Annotation[] methodAnnotations,
-            Retrofit retrofit
-        ) {
-            if (type == Throwable.class) {
-                return (Throwable t) ->
-                    RequestBody.create(MediaType.get("text/plain"), Throwables.string(t));
-            }
-            return null;
-        }
+        NONE
     }
 }

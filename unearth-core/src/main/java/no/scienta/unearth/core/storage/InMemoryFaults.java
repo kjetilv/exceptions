@@ -80,15 +80,33 @@ public class InMemoryFaults
     }
 
     @Override
+    public void reset() {
+        Stream.of(
+            faults,
+            faultStrands,
+            causes,
+            causeStrands,
+            faultStrandFaults,
+            hashCodes,
+            faultStrandSequence,
+            faultSequence,
+            faultStrandFaultEvents,
+            faultFaultEvents,
+            events
+        ).forEach(Map::clear);
+        faultEvents.clear();
+        globalSequence.set(0);
+    }
+
+    @Override
     public FaultEvents store(LogEntry logEntry, Fault fault, Throwable throwable) {
         synchronized (lock) {
-            FaultEvent faultEvent = storedEvent(
-                new FaultEvent(
-                    System.identityHashCode(throwable),
-                    fault,
-                    logEntry,
-                    Instant.now(clock),
-                    null));
+            FaultEvent faultEvent = new FaultEvent(
+                System.identityHashCode(throwable),
+                fault,
+                logEntry,
+                Instant.now(clock),
+                null);
 
             UniqueIncident existing = hashCodes.putIfAbsent(
                 System.identityHashCode(throwable),
@@ -125,6 +143,7 @@ public class InMemoryFaults
     }
 
     private FaultEvents registered(FaultEvent sequenced, FaultEvent previous) {
+        stored(this.events, sequenced);
         faultSensor.register(sequenced);
         FaultStrand faultStrand = sequenced.getFault().getFaultStrand();
         putInto(this.faultStrands, faultStrand);
@@ -351,10 +370,10 @@ public class InMemoryFaults
 
     private static <I extends Id, T extends Identifiable<I>> T stored(Map<I, T> map, T t) {
         T existing = map.putIfAbsent(t.getId(), t);
-        if (existing != null) {
-            throw new IllegalStateException("Already stored: " + existing.getId());
+        if (existing == null) {
+            return t;
         }
-        return t;
+        throw new IllegalStateException("Already stored: " + existing.getId());
     }
 
     private static <K, V> void addTo(Map<K, Collection<V>> map, K k, V v) {

@@ -21,7 +21,7 @@ import no.scienta.unearth.munch.ChameleonException;
 import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
 import no.scienta.unearth.munch.id.CauseStrandId;
 import no.scienta.unearth.munch.print.CauseFrame;
-import no.scienta.unearth.munch.util.Util;
+import no.scienta.unearth.util.Util;
 
 import java.util.Arrays;
 import java.util.Collections;

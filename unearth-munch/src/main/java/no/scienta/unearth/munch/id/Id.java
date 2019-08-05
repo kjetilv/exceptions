@@ -54,25 +54,7 @@ public abstract class Id {
     Id(UUID hash) {
         this.hash = Objects.requireNonNull(hash, "hash");
         this.hashCode = this.hash.hashCode();
-        this.type = NAMES.computeIfAbsent(getClass(), cl -> {
-            String simpleName = cl.getSimpleName();
-            int tail = simpleName.lastIndexOf(TAIL);
-            String baseName = simpleName.substring(0, tail);
-            String lowerCased = baseName.substring(0, 1).toLowerCase() + baseName.substring(1);
-            int dashedLength =
-                lowerCased.length() + lowerCased.chars().filter(Character::isUpperCase).map(b -> 1).sum();
-            char[] source = lowerCased.substring(0, tail).toCharArray();
-            char[] dashed = new char[dashedLength];
-            for (int i = 0, c = 0; i < source.length; i++, c++) {
-                if (Character.isUpperCase(source[i])) {
-                    dashed[c++] = '-';
-                    dashed[c] = Character.toLowerCase(source[i]);
-                } else {
-                    dashed[c] = source[i];
-                }
-            }
-            return new String(dashed);
-        });
+        this.type = NAMES.computeIfAbsent(getClass(), Id::type);
     }
 
     public String getType() {
@@ -104,5 +86,25 @@ public abstract class Id {
     @Override
     public String toString() {
         return type + ":" + getHash();
+    }
+
+    private static String type(Class<?> cl) {
+        String simpleName = cl.getSimpleName();
+        int tail = simpleName.lastIndexOf(TAIL);
+        String baseName = simpleName.substring(0, tail);
+        String lowerCased = baseName.substring(0, 1).toLowerCase() + baseName.substring(1);
+        int dashedLength =
+            lowerCased.length() + lowerCased.chars().filter(Character::isUpperCase).map(b -> 1).sum();
+        char[] source = lowerCased.substring(0, tail).toCharArray();
+        char[] dashed = new char[dashedLength];
+        for (int i = 0, c = 0; i < source.length; i++, c++) {
+            if (Character.isUpperCase(source[i])) {
+                dashed[c++] = '-';
+                dashed[c] = Character.toLowerCase(source[i]);
+            } else {
+                dashed[c] = source[i];
+            }
+        }
+        return new String(dashed);
     }
 }

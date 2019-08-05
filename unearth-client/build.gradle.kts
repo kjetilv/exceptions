@@ -16,6 +16,7 @@ tasks.withType<KotlinCompile> {
 
 dependencies {
     compile(project(":unearth-dto"))
+    compile(project(":unearth-util"))
     compile(project(":unearth-munch"))
 
     compile("com.squareup.retrofit2:retrofit")

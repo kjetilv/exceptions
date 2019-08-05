@@ -32,7 +32,7 @@ import java.time.ZoneId
 class UnearthlyController(
         private val storage: FaultStorage,
         private val feed: FaultFeed,
-        stats: FaultStats,
+        private val stats: FaultStats,
         private val renderer: UnearthlyRenderer,
         private val configuration: UnearthlyConfig,
         clock: Clock = Clock.systemDefaultZone()
@@ -139,7 +139,7 @@ class UnearthlyController(
             fullEvent: Boolean = false
     ): FaultEventDto =
             FaultEventDto(
-                    FaultEventIdDto(faultEvent.hash, link(faultEvent), feed(faultEvent)),
+                    FaultEventIdDto(faultEvent.hash, link(faultEvent)),
                     if (fullEvent) faultDto(faultEvent.fault, fullStack, printStack) else null,
                     faultEvent.time.atZone(ZoneId.of("UTC")),
                     faultEvent.globalSequenceNo,
@@ -151,6 +151,12 @@ class UnearthlyController(
         val renderer = SimpleCausesRenderer(ConfigurableStackRenderer().group(
                 SimplePackageGrouper(groups?.toList())))
         return causeChainDto(renderer.render(fault))
+    }
+
+    fun reset() {
+        storage.reset()
+        feed.reset()
+        stats.reset()
     }
 
     private fun causeChainDto(
@@ -203,7 +209,7 @@ class UnearthlyController(
                 FaultIdDto(
                         handling.faultId.hash, link(handling.faultId), feed(handling.faultId)),
                 FaultEventIdDto(
-                        handling.faultEventId.hash, link(handling.faultEventId), feed(handling.faultEventId)),
+                        handling.faultEventId.hash, link(handling.faultEventId)),
                 handling.globalSequence,
                 handling.faultStrandSequence,
                 handling.faultSequence,

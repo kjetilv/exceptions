@@ -41,10 +41,6 @@ public class FaultStrand extends AbstractHashableIdentifiable<FaultStrandId> {
         return causeStrands;
     }
 
-    public FaultStrand withCauseStrands(List<CauseStrand> causeStrands) {
-        return new FaultStrand(causeStrands);
-    }
-
     int getCauseCount() {
         return causeStrands.size();
     }

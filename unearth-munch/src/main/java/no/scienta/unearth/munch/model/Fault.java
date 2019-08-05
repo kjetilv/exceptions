@@ -19,8 +19,8 @@ package no.scienta.unearth.munch.model;
 
 import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
 import no.scienta.unearth.munch.id.FaultId;
-import no.scienta.unearth.munch.util.Streams;
-import no.scienta.unearth.munch.util.Util;
+import no.scienta.unearth.util.Streams;
+import no.scienta.unearth.util.Util;
 
 import java.util.Collection;
 import java.util.List;

@@ -53,7 +53,7 @@ package no.scienta.unearth.munch.base;
 
 import no.scienta.unearth.munch.id.Id;
 import no.scienta.unearth.munch.id.Identifiable;
-import no.scienta.unearth.munch.util.Memoizer;
+import no.scienta.unearth.util.MostlyOnce;
 
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -65,7 +65,7 @@ public abstract class AbstractHashableIdentifiable<I extends Id>
     /**
      * A supplier which computes {@link Identifiable this identifiable's} {@link Id id} once-only.
      */
-    private final Supplier<I> id = Memoizer.get(() -> id(getHash()));
+    private final Supplier<I> id = MostlyOnce.get(() -> id(getHash()));
 
     @Override
     public final I getId() {

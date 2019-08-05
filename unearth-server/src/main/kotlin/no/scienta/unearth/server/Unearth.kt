@@ -47,6 +47,8 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
 
         fun port(): Int
 
+        fun reset()
+
         fun close()
     }
 
@@ -73,7 +75,7 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
         registerShutdown(server)
 
         server.start {
-            logger.info("Ready at http://${callableHost(configuration)}:${configuration.port}")
+            logger.info("Ready at http://${callableHost(configuration)}:${server.port()}")
         }
 
         return object : State {
@@ -81,6 +83,10 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
                 server.stop {
                     logger.info("Stopped by demand: $it")
                 }
+            }
+
+            override fun reset() {
+                server.reset()
             }
 
             override fun url(): URI = URI.create(

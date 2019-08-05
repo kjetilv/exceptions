@@ -152,6 +152,11 @@ public class JdbcStorage implements FaultStorage {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void reset() {
+        throw new UnsupportedOperationException("reset");
+    }
+
     private <T> T inSession(Function<Session, T> fun) {
         try (Session session = session()) {
             return fun.apply(session);

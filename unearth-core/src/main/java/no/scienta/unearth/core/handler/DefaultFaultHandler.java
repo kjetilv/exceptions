@@ -23,7 +23,7 @@ import no.scienta.unearth.core.FaultStorage;
 import no.scienta.unearth.core.HandlingPolicy;
 import no.scienta.unearth.core.HandlingPolicy.Action;
 import no.scienta.unearth.munch.model.*;
-import no.scienta.unearth.munch.util.Util;
+import no.scienta.unearth.util.Util;
 
 import java.time.Clock;
 import java.time.Duration;

@@ -25,8 +25,6 @@ data class FaultEventIdDto(
 
         val link: String? = null,
 
-        val feed: String? = null,
-
         val type: String = "fault-event"
 )
 

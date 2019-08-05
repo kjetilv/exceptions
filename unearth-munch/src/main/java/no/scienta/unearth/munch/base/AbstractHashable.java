@@ -35,7 +35,7 @@
 package no.scienta.unearth.munch.base;
 
 import no.scienta.unearth.munch.id.Id;
-import no.scienta.unearth.munch.util.Memoizer;
+import no.scienta.unearth.util.MostlyOnce;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -51,11 +51,11 @@ import java.util.function.Supplier;
 public abstract class AbstractHashable implements Hashable {
 
     /**
-     * A supplier which computes {@link Hashable this hashable's} uuid with a {@link Memoizer}.
+     * A supplier which computes {@link Hashable this hashable's} uuid with a {@link MostlyOnce}.
      */
-    private final Supplier<UUID> supplier = Memoizer.get(uuid(this));
+    private final Supplier<UUID> hash = MostlyOnce.get(uuid(this));
 
-    private final Supplier<String> toString = Memoizer.get(() ->
+    private final Supplier<String> toString = MostlyOnce.get(() ->
         getClass().getSimpleName() + "[" + toStringIdentifier() + toStringContents() + "]");
 
     /**
@@ -65,7 +65,7 @@ public abstract class AbstractHashable implements Hashable {
      * @return UUID supplier
      */
     private static Supplier<UUID> uuid(Hashable hashable) {
-        return Memoizer.get(() -> {
+        return MostlyOnce.get(() -> {
             MessageDigest md5 = md5();
             hashable.hashTo(md5::update);
             return UUID.nameUUIDFromBytes(md5.digest());
@@ -166,7 +166,7 @@ public abstract class AbstractHashable implements Hashable {
 
     @Override
     public final UUID getHash() {
-        return supplier.get();
+        return hash.get();
     }
 
     @Override

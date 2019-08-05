@@ -31,12 +31,12 @@ public class SubmitMain {
 
     public static void main(String[] args) {
         URI uri = arg(args, 0, URI::create);
-        UnearthlyClient client = new UnearthlyClient(uri);
+        UnearthlyClient client = UnearthlyClient.connect(uri);
         args(args, 1).forEach(arg -> {
             System.out.println("Uploading " + arg + " ...");
             Submission submit = client.submit(Paths.get(arg));
-            System.out.println("Uploaded: " + client.print(submit));
-            client.retrieve(submit.getFaultId()).printStackTrace(System.out);
+            System.out.println("Uploaded: " + Print.toString(submit));
+            client.throwable(submit.getFaultId()).printStackTrace(System.out);
         });
     }
 

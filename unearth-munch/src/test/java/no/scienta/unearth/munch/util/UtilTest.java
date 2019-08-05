@@ -17,6 +17,7 @@
 
 package no.scienta.unearth.munch.util;
 
+import no.scienta.unearth.util.Util;
 import org.junit.Test;
 
 import java.time.Duration;

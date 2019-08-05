@@ -19,8 +19,8 @@ package no.scienta.unearth.munch.print;
 
 import no.scienta.unearth.munch.model.Cause;
 import no.scienta.unearth.munch.model.CauseChain;
-import no.scienta.unearth.munch.util.Streams;
-import no.scienta.unearth.munch.util.Util;
+import no.scienta.unearth.util.Streams;
+import no.scienta.unearth.util.Util;
 
 import java.util.*;
 import java.util.function.BiFunction;

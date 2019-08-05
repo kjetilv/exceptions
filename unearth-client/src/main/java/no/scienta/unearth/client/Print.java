@@ -17,20 +17,19 @@
 
 package no.scienta.unearth.client;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import no.scienta.unearth.dto.Submission;
-import retrofit2.Call;
-import retrofit2.http.Body;
-import retrofit2.http.GET;
-import retrofit2.http.POST;
-import retrofit2.http.Path;
 
-import java.util.UUID;
+public class Print {
 
-public interface UnearthlyService {
-
-    @POST("catch")
-    Call<Submission> throwable(@Body Throwable throwable);
-
-    @GET("catch/{uuid}")
-    Call<Throwable> throwable(@Path("uuid") UUID uuid);
+    public static String toString(Submission submit) {
+        try {
+            return DefaultUnearthlyClient.OBJECT_MAPPER.copy()
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .writeValueAsString(submit);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to print " + submit, e);
+        }
+    }
 }

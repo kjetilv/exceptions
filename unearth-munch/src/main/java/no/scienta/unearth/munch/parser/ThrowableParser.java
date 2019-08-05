@@ -39,8 +39,6 @@ import no.scienta.unearth.munch.print.CauseFrame;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -49,11 +47,9 @@ public class ThrowableParser {
 
     private static final String CAUSED_BY = "Caused by: ";
 
-    private static final String EXCEPTION = "Exception: ";
+    private static final String EXCEPTION = Exception.class.getSimpleName();
 
-    private static final String ERROR = "Error: ";
-
-    private static final Pattern HEADING = Pattern.compile(".*\\s+([\\w.]+): (.*)");
+    private static final String ERROR = Error.class.getSimpleName();
 
     public static Throwable parse(ByteBuffer buffer) {
         return parse(new String(buffer.array(), StandardCharsets.UTF_8));
@@ -85,7 +81,8 @@ public class ThrowableParser {
             .filter(index ->
                 !lines.get(index).trim().startsWith("at "))
             .filter(index ->
-                Stream.of(EXCEPTION, CAUSED_BY, ERROR).anyMatch(lines.get(index)::startsWith))
+                Stream.of(EXCEPTION + ": ", ERROR + ": ").anyMatch(lines.get(index)::contains)
+                    || lines.get(index).startsWith(CAUSED_BY))
             .boxed()
             .collect(Collectors.toList());
     }
@@ -93,33 +90,70 @@ public class ThrowableParser {
     private static List<String> trimmed(String in) {
         return Arrays.stream(in.trim().split("\n"))
             .filter(Objects::nonNull)
-            .filter(line -> !line.trim()
-                .isEmpty())
+            .filter(line -> !line.trim().isEmpty())
             .map(String::trim)
             .collect(Collectors.toList());
     }
 
     private static List<ParsedThrowable> parsed(List<String> lines, List<Integer> causeIndices) {
         return IntStream.range(0, causeIndices.size()).mapToObj(causeIndex -> {
-            int endIndex = causeIndex >= causeIndices.size() - 1
-                ? lines.size()
-                : causeIndices.get(causeIndex + 1);
-            CauseFrame[] parsedStackTrace = parsed(
-                lines,
-                causeIndices.get(causeIndex) + 1,
-                endIndex);
-            Matcher matcher = matcher(lines.get(causeIndices.get(causeIndex)));
-            return new ParsedThrowable(matcher.group(1), matcher.group(2), parsedStackTrace);
-        }).collect(Collectors.toList());
+                CauseFrame[] causeFrames =
+                    stackTrace(lines, causeIndices, causeIndex);
+                ExceptionHeading exceptionHeading =
+                    getExceptionHeading(lines, causeIndex);
+                return new ParsedThrowable(
+                    exceptionHeading.getName(),
+                    exceptionHeading.getMessage(),
+                    causeFrames);
+            }
+        ).collect(Collectors.toList());
     }
 
-    private static Matcher matcher(String line) {
-        Matcher matcher = HEADING.matcher(line);
-        if (matcher.matches()) {
-            return matcher;
+    private static ExceptionHeading getExceptionHeading(List<String> lines, int causeIndex) {
+        String line = lines.get(causeIndex);
+        Optional<String> simple = Stream.of(EXCEPTION, ERROR)
+            .filter(type -> line.contains(type + ": "))
+            .findFirst();
+        Optional<ExceptionHeading> simpleParsed = simple.map(type ->
+            getExceptionHeading(type, line));
+        if (simpleParsed.isPresent()) {
+            return simpleParsed.get();
         }
-        throw new IllegalStateException("Could not parse heading: " +
-            (line.length() > 20 ? line.substring(0, 20) + " ..." : line));
+        if (line.contains(CAUSED_BY)) {
+            return getCauseExceptionHeading(line);
+        }
+        throw new IllegalStateException("Not cause index: " + causeIndex + ": " + lines.get(causeIndex));
+    }
+
+    private static ExceptionHeading getExceptionHeading(String type, String line) {
+        int hit = line.indexOf(type + ": ");
+        int i = hit;
+        while (true) {
+            if (i == 0 || Character.isWhitespace(line.charAt(i - 1))) {
+                String exceptionName = line.substring(i, hit) + type;
+                String message = line.substring(hit + type.length() + 2);
+                return new ExceptionHeading(exceptionName, message);
+            }
+            i--;
+        }
+    }
+
+    private static ExceptionHeading getCauseExceptionHeading(String line) {
+        int startIndex = line.indexOf(CAUSED_BY);
+        int nextIndex = line.indexOf(":", startIndex);
+        String exceptionName = line.substring(startIndex + CAUSED_BY.length(), nextIndex);
+        String message = line.substring(startIndex + CAUSED_BY.length() + 2);
+        return new ExceptionHeading(exceptionName, message);
+    }
+
+    private static CauseFrame[] stackTrace(List<String> lines, List<Integer> causeIndices, int causeIndex) {
+        int endIndex = causeIndex >= causeIndices.size() - 1
+            ? lines.size()
+            : causeIndices.get(causeIndex + 1);
+        return parsed(
+            lines,
+            causeIndices.get(causeIndex) + 1,
+            endIndex);
     }
 
     private static <T> T failedParse(String in, Exception e) {
@@ -139,5 +173,25 @@ public class ThrowableParser {
         return matches.length == 0
             ? Stream.empty()
             : new StackTraceParts(pattern, matches).reconstruct();
+    }
+
+    private static class ExceptionHeading {
+
+        private final String name;
+
+        private final String message;
+
+        private ExceptionHeading(String name, String message) {
+            this.name = name;
+            this.message = message;
+        }
+
+        String getName() {
+            return name;
+        }
+
+        String getMessage() {
+            return message;
+        }
     }
 }

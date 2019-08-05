@@ -20,7 +20,7 @@ package no.scienta.unearth.munch.model;
 import no.scienta.unearth.munch.base.AbstractHashable;
 import no.scienta.unearth.munch.print.CauseFrame;
 import no.scienta.unearth.munch.print.CausesRendering;
-import no.scienta.unearth.munch.util.Streams;
+import no.scienta.unearth.util.Streams;
 
 import java.util.ArrayList;
 import java.util.Collection;

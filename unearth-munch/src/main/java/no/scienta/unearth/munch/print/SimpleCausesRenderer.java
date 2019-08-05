@@ -18,7 +18,7 @@
 package no.scienta.unearth.munch.print;
 
 import no.scienta.unearth.munch.model.Cause;
-import no.scienta.unearth.munch.util.Streams;
+import no.scienta.unearth.util.Streams;
 
 import java.util.Collection;
 

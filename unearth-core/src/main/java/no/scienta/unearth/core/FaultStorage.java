@@ -48,4 +48,6 @@ public interface FaultStorage {
     Optional<CauseStrand> getCauseStrand(CauseStrandId causeStrandId);
 
     Optional<Cause> getCause(CauseId causeId);
+
+    void reset();
 }

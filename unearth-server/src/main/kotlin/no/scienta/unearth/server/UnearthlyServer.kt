@@ -23,9 +23,9 @@ import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.model.Fault
 import no.scienta.unearth.munch.parser.ThrowableParser
-import no.scienta.unearth.munch.util.Throwables
 import no.scienta.unearth.server.JSON.auto
 import no.scienta.unearth.statik.Statik
+import no.scienta.unearth.util.Throwables
 import org.http4k.asString
 import org.http4k.contract.contract
 import org.http4k.contract.div
@@ -78,6 +78,10 @@ class UnearthlyServer(
         after(server)
     }
 
+    fun reset() {
+        controller.reset()
+    }
+
     fun stop(after: (Http4kServer) -> Unit = {}): UnearthlyServer = apply {
         server.stop()
         after(server)
@@ -86,7 +90,7 @@ class UnearthlyServer(
     fun port(): Int = server.port()
 
     private fun submitExceptionRoute() =
-            "/catch" meta {
+            "catch" meta {
                 summary = "Submit an exception"
                 consumes += TEXT_PLAIN
                 produces += APPLICATION_JSON
@@ -97,7 +101,7 @@ class UnearthlyServer(
             }
 
     private fun retrieveExceptionRoute() =
-            "/throwable" / uuid(::FaultId) meta {
+            "throwable" / uuid(::FaultId) meta {
                 summary = "Print an exception"
                 produces += TEXT_PLAIN
                 returning(OK, exception to Swaggex.exception())
@@ -108,7 +112,7 @@ class UnearthlyServer(
             }
 
     private fun retrieveExceptionReduxRoute() =
-            "/throwable-redux" / uuid(::FaultId) meta {
+            "throwable-redux" / uuid(::FaultId) meta {
                 summary = "Print an exception"
                 produces += APPLICATION_JSON
                 queries += groupsQuery
@@ -122,7 +126,7 @@ class UnearthlyServer(
             }
 
     private fun faultEventRoute() =
-            "/fault-event" / uuid(::FaultEventId) meta {
+            "fault-event" / uuid(::FaultEventId) meta {
                 summary = "Lookup a fault event"
                 queries += listOf(fullStack, printStack)
                 produces += APPLICATION_JSON
@@ -140,7 +144,7 @@ class UnearthlyServer(
             }
 
     private fun faultStrandRoute() =
-            "/fault-strand" / uuid(::FaultStrandId) meta {
+            "fault-strand" / uuid(::FaultStrandId) meta {
                 summary = "Lookup a fault strand"
                 queries += listOf(fullStack, printStack, offsetQuery, countQuery)
                 produces += APPLICATION_JSON
@@ -156,7 +160,7 @@ class UnearthlyServer(
             }
 
     private fun faultRoute() =
-            "/fault" / uuid(::FaultId) meta {
+            "fault" / uuid(::FaultId) meta {
                 summary = "Lookup a fault"
                 queries += listOf(fullStack, printStack)
                 produces += APPLICATION_JSON
@@ -172,7 +176,7 @@ class UnearthlyServer(
             }
 
     private fun causeStrandRoute() =
-            "/cause-strand" / uuid(::CauseStrandId) meta {
+            "cause-strand" / uuid(::CauseStrandId) meta {
                 summary = "Lookup a cause strand"
                 queries += listOf(fullStack, printStack)
                 produces += APPLICATION_JSON
@@ -188,7 +192,7 @@ class UnearthlyServer(
             }
 
     private fun causeRoute() =
-            "/cause" / uuid(::CauseId) meta {
+            "cause" / uuid(::CauseId) meta {
                 summary = "Lookup a cause"
                 queries += listOf(fullStack, printStack)
                 produces += APPLICATION_JSON
@@ -204,7 +208,7 @@ class UnearthlyServer(
             }
 
     private fun globalLimit() =
-            "/feed/limit" meta {
+            "feed/limit" meta {
                 summary = "Event limits global"
                 produces += APPLICATION_JSON
                 returning(OK, limit to Swaggex.limit())
@@ -213,7 +217,7 @@ class UnearthlyServer(
             }
 
     private fun globalFeedRoute() =
-            "/feed" meta {
+            "feed" meta {
                 summary = "Events global"
                 produces += APPLICATION_JSON
                 queries += listOf(offsetQuery, countQuery, fullStack, printStack)
@@ -230,7 +234,7 @@ class UnearthlyServer(
 
 
     private fun faultStrandLimit() =
-            "/feed/fault-strand/limit" / uuid(::FaultStrandId) meta {
+            "feed/fault-strand/limit" / uuid(::FaultStrandId) meta {
                 summary = "Event limits for a fault strand"
                 produces += APPLICATION_JSON
                 returning(OK, limit to Swaggex.limit())
@@ -241,7 +245,7 @@ class UnearthlyServer(
             }
 
     private fun feedLookupFaultStrandRoute() =
-            "/feed/fault-strand" / uuid(::FaultStrandId) meta {
+            "feed/fault-strand" / uuid(::FaultStrandId) meta {
                 summary = "Events for a fault strand"
                 produces += APPLICATION_JSON
                 queries += listOf(offsetQuery, countQuery, fullStack, printStack)
@@ -259,7 +263,7 @@ class UnearthlyServer(
             }
 
     private fun feedLimitsFaultRoute() =
-            "/feed/fault/limit" / uuid(::FaultId) meta {
+            "feed/fault/limit" / uuid(::FaultId) meta {
                 summary = "Event limits for a fault"
                 produces += APPLICATION_JSON
                 returning(OK, limit to Swaggex.limit())
@@ -270,7 +274,7 @@ class UnearthlyServer(
             }
 
     private fun feedLookupFaultRoute() =
-            "/feed/fault" / uuid(::FaultId) meta {
+            "feed/fault" / uuid(::FaultId) meta {
                 summary = "Events for a fault"
                 produces += APPLICATION_JSON
                 queries += listOf(offsetQuery, countQuery, fullStack, printStack, fullEvent)
