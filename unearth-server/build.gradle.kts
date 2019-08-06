@@ -1,23 +1,9 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
-    application
-    id("com.github.johnrengelman.shadow")
     kotlin("jvm")
 }
 
-application {
-    mainClassName = "no.scienta.unearth.server.MainKt"
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "1.8"
-}
-
 dependencies {
-
     compile(project(":unearth-core"))
-    compile(project(":unearth-dto"))
     compile(project(":unearth-metrics"))
     compile(project(":unearth-static"))
     compile(project(":unearth-turbo"))

@@ -19,7 +19,7 @@
 
 package no.scienta.unearth.server
 
-import no.scienta.unearth.dto.*
+import no.scienta.unearth.server.dto.*
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.model.Fault
 import no.scienta.unearth.munch.parser.ThrowableParser

@@ -18,7 +18,7 @@
 package no.scienta.unearth.test;
 
 import no.scienta.unearth.client.UnearthlyClient;
-import no.scienta.unearth.dto.*;
+import no.scienta.unearth.client.dto.*;
 import no.scienta.unearth.server.Unearth;
 import no.scienta.unearth.server.UnearthlyConfig;
 import no.scienta.unearth.util.Throwables;
@@ -28,7 +28,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -43,43 +42,43 @@ public class IntegrationTest {
     @Test
     public void submitExceptionAsLogged() {
         Exception barf = new IOException("Barf");
-        Submission submit = client.submit("Exception in thread \"foobar\" " + Throwables.string(barf));
+        no.scienta.unearth.client.dto.Submission submit = client.submit("Exception in thread \"foobar\" " + Throwables.string(barf));
 
-        Throwable throwable = client.throwable(submit.getFaultId());
+        Throwable throwable = client.throwable(submit.faultId);
         assertThat(throwable.getMessage(), equalTo("Barf"));
 
-        FaultDto fault = client.fault(submit.getFaultId());
-        assertThat(fault.getId(), is(submit.getFaultId()));
+        FaultDto fault = client.fault(submit.faultId);
+        assertThat(fault.id.uuid, is(submit.faultId.uuid));
 
-        FaultStrandDto faultStrand = client.faultStrand(submit.getFaultStrandId());
-        assertThat(faultStrand.getId(), is(submit.getFaultStrandId()));
+        FaultStrandDto faultStrand = client.faultStrand(submit.faultStrandId);
+        assertThat(faultStrand.id.uuid, is(submit.faultStrandId.uuid));
 
-        FaultEventDto faultEvent = client.faultEvent(submit.getFaultEventId());
-        assertThat(faultEvent.getId(), is(submit.getFaultEventId()));
+        FaultEventDto faultEvent = client.faultEvent(submit.faultEventId);
+        assertThat(faultEvent.id.uuid, is(submit.faultEventId.uuid));
 
-        assertThat(faultEvent.getSequenceNo(), is(0L));
-        assertThat(faultEvent.getFaultSequenceNo(), is(0L));
-        assertThat(faultEvent.getFaultStrandSequenceNo(), is(0L));
+        assertThat(faultEvent.sequenceNo, is(0L));
+        assertThat(faultEvent.faultSequenceNo, is(0L));
+        assertThat(faultEvent.faultStrandSequenceNo, is(0L));
 
-        List<CauseDto> causes = fault.getCauses();
-        List<CauseStrandDto> causeStrands = faultStrand.getCauseStrands();
+        CauseDto[] causes = fault.causes;
+        CauseStrandDto[] causeStrands = faultStrand.causeStrands;
 
-        assertThat(causes.size(), is(causeStrands.size()));
+        assertThat(causes.length, is(causeStrands.length));
 
-        assertThat(causes.get(0).getCauseStrand().getId(), is(causeStrands.get(0).getId()));
-        CauseIdDto id = causes.get(0).getId();
+        assertThat(causes[0].causeStrand.id.uuid, is(causeStrands[0].id.uuid));
+        CauseIdDto id = causes[0].id;
 
         CauseDto cause = client.cause(id);
-        assertThat(cause.getMessage(), is("Barf"));
+        assertThat(cause.message, is("Barf"));
 
-        CauseStrandDto causeStrand = client.causeStrand(causeStrands.get(0).getId());
-        assertThat(causeStrand.getClassName(), is(IOException.class.getName()));
+        CauseStrandDto causeStrand = client.causeStrand(causeStrands[0].id);
+        assertThat(causeStrand.className, is(IOException.class.getName()));
     }
 
     @Test
     public void submitActualException() {
         Submission submit = client.submit(new IOException("Dang it!"));
-        FaultIdDto faultId = submit.getFaultId();
+        FaultIdDto faultId = submit.faultId;
         Throwable retrieve = client.throwable(faultId);
         assertThat(retrieve.getMessage(), equalTo("Dang it!"));
     }

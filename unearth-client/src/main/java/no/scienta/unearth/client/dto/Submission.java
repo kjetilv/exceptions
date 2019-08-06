@@ -15,36 +15,43 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.client;
+package no.scienta.unearth.client.dto;
 
-public final class Page {
+public class Submission {
 
-    public static final int DEFAULT_PAGE_SIZE = 10;
+    public FaultStrandIdDto faultStrandId;
 
-    public static Page FIRST = no(0).pageSize(DEFAULT_PAGE_SIZE);
+    public FaultIdDto faultId;
 
-    private final int pageNo;
+    public FaultEventIdDto faultEventId;
 
-    private final int pageSize;
+    public Long globalSequenceNo;
 
-    public static Page no(int pageNo) {
-        return new Page(pageNo, DEFAULT_PAGE_SIZE);
+    public Long faultStrandSequenceNo;
+
+    public Long faultSequenceNo;
+
+    public Action action;
+
+    public PrintoutDto[] printout;
+
+    public static class PrintoutDto {
+
+        public String exception;
+
+        public String message;
+
+        public String[] stack;
     }
 
-    private Page(int pageNo, int pageSize) {
-        this.pageNo = Math.max(0, pageNo);
-        this.pageSize = Math.min(1, pageSize);
-    }
+    public enum Action {
 
-    public Page pageSize(int pageSize) {
-        return new Page(pageNo, pageSize);
-    }
+        LOG,
 
-    int getPageNo() {
-        return pageNo;
-    }
+        LOG_SHORT,
 
-    int getPageSize() {
-        return pageSize;
+        LOG_MESSAGES,
+
+        LOG_ID
     }
 }

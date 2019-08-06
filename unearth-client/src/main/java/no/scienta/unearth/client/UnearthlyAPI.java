@@ -17,12 +17,10 @@
 
 package no.scienta.unearth.client;
 
-import no.scienta.unearth.dto.*;
+import no.scienta.unearth.client.dto.*;
 import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.http.*;
-
-import java.util.UUID;
 
 public interface UnearthlyAPI {
 
@@ -31,9 +29,6 @@ public interface UnearthlyAPI {
 
     @POST("catch")
     Call<Submission> throwable(@Body RequestBody throwable);
-
-    @GET("throwable/{uuid}")
-    Call<Throwable> throwable(@Path("uuid") UUID uuid);
 
     @GET("fault/{uuid}")
     Call<FaultDto> fault(@Path("uuid") FaultIdDto faultId,

@@ -15,36 +15,14 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.client;
+package no.scienta.unearth.server.dto
 
-public final class Page {
+data class CauseStrandDto(
 
-    public static final int DEFAULT_PAGE_SIZE = 10;
+        val id: CauseStrandIdDto,
 
-    public static Page FIRST = no(0).pageSize(DEFAULT_PAGE_SIZE);
+        val className: String,
 
-    private final int pageNo;
+        val fullStack: List<StackTraceElementDto>?,
 
-    private final int pageSize;
-
-    public static Page no(int pageNo) {
-        return new Page(pageNo, DEFAULT_PAGE_SIZE);
-    }
-
-    private Page(int pageNo, int pageSize) {
-        this.pageNo = Math.max(0, pageNo);
-        this.pageSize = Math.min(1, pageSize);
-    }
-
-    public Page pageSize(int pageSize) {
-        return new Page(pageNo, pageSize);
-    }
-
-    int getPageNo() {
-        return pageNo;
-    }
-
-    int getPageSize() {
-        return pageSize;
-    }
-}
+        val printStack: List<String>?)

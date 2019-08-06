@@ -81,7 +81,7 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
         return object : State {
             override fun close() {
                 server.stop {
-                    logger.info("Stopped by demand: $it")
+                    logger.debug("Stopped by demand: $it")
                 }
             }
 

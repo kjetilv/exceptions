@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 val jacksonVer = "2.9.9"
 
 val http4kVer = "3.169.0"
@@ -20,15 +22,13 @@ val junitVer = "4.12"
 
 val swaggerUiVer = "3.23.0"
 
-val clientJavaVer = JavaVersion.VERSION_1_8
+val kotlinVer = "1.3.40"
 
 val serverJavaVer = JavaVersion.VERSION_11
 
-val kotlinVer = "1.3.40"
-
 plugins {
     kotlin("jvm") version "1.3.40"
-    id("com.github.johnrengelman.shadow") version "5.0.0"
+    id("com.github.johnrengelman.shadow") version "5.1.0"
     maven
     `maven-publish`
 }
@@ -39,9 +39,13 @@ allprojects {
     apply(plugin = "maven")
     apply(plugin = "maven-publish")
 
+    tasks.withType<KotlinCompile> {
+        kotlinOptions.jvmTarget = "11"
+    }
+
     configure<JavaPluginConvention> {
-        sourceCompatibility = clientJavaVer
-        targetCompatibility = clientJavaVer
+        sourceCompatibility = serverJavaVer
+        targetCompatibility = serverJavaVer
     }
 
     group = "no.scienta.unearth"

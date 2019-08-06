@@ -15,36 +15,26 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.client;
+package no.scienta.unearth.client.dto;
 
-public final class Page {
+import java.util.function.Function;
 
-    public static final int DEFAULT_PAGE_SIZE = 10;
+public enum SequenceType implements Function<FaultEventDto, Long>{
 
-    public static Page FIRST = no(0).pageSize(DEFAULT_PAGE_SIZE);
+    GLOBAL(dto -> dto.sequenceNo),
 
-    private final int pageNo;
+    FAULT_STRAND(dto -> dto.faultStrandSequenceNo),
 
-    private final int pageSize;
+    FAULT(dto -> dto.faultSequenceNo);
 
-    public static Page no(int pageNo) {
-        return new Page(pageNo, DEFAULT_PAGE_SIZE);
+    private final Function<FaultEventDto, Long> seqNo;
+
+    SequenceType(Function<FaultEventDto, Long> seqNo) {
+        this.seqNo = seqNo;
     }
 
-    private Page(int pageNo, int pageSize) {
-        this.pageNo = Math.max(0, pageNo);
-        this.pageSize = Math.min(1, pageSize);
-    }
-
-    public Page pageSize(int pageSize) {
-        return new Page(pageNo, pageSize);
-    }
-
-    int getPageNo() {
-        return pageNo;
-    }
-
-    int getPageSize() {
-        return pageSize;
+    @Override
+    public Long apply(FaultEventDto faultEventDto) {
+        return seqNo.apply(faultEventDto);
     }
 }

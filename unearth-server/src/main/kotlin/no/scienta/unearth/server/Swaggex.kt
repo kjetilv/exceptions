@@ -17,7 +17,7 @@
 
 package no.scienta.unearth.server
 
-import no.scienta.unearth.dto.*
+import no.scienta.unearth.server.dto.*
 import java.time.ZonedDateTime
 import java.util.*
 

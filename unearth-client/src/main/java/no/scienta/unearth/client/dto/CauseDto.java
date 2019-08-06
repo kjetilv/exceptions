@@ -15,36 +15,13 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.client;
+package no.scienta.unearth.client.dto;
 
-public final class Page {
+public class CauseDto {
 
-    public static final int DEFAULT_PAGE_SIZE = 10;
+    public CauseIdDto id;
 
-    public static Page FIRST = no(0).pageSize(DEFAULT_PAGE_SIZE);
+    public String message;
 
-    private final int pageNo;
-
-    private final int pageSize;
-
-    public static Page no(int pageNo) {
-        return new Page(pageNo, DEFAULT_PAGE_SIZE);
-    }
-
-    private Page(int pageNo, int pageSize) {
-        this.pageNo = Math.max(0, pageNo);
-        this.pageSize = Math.min(1, pageSize);
-    }
-
-    public Page pageSize(int pageSize) {
-        return new Page(pageNo, pageSize);
-    }
-
-    int getPageNo() {
-        return pageNo;
-    }
-
-    int getPageSize() {
-        return pageSize;
-    }
+    public CauseStrandDto causeStrand;
 }

@@ -15,36 +15,29 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.client;
+package no.scienta.unearth.munch.parser;
 
-public final class Page {
+final class ExceptionHeading {
 
-    public static final int DEFAULT_PAGE_SIZE = 10;
+    private final String name;
 
-    public static Page FIRST = no(0).pageSize(DEFAULT_PAGE_SIZE);
+    private final String message;
 
-    private final int pageNo;
-
-    private final int pageSize;
-
-    public static Page no(int pageNo) {
-        return new Page(pageNo, DEFAULT_PAGE_SIZE);
+    ExceptionHeading(String name, String message) {
+        this.name = name;
+        this.message = message;
     }
 
-    private Page(int pageNo, int pageSize) {
-        this.pageNo = Math.max(0, pageNo);
-        this.pageSize = Math.min(1, pageSize);
+    String getName() {
+        return name;
     }
 
-    public Page pageSize(int pageSize) {
-        return new Page(pageNo, pageSize);
+    String getMessage() {
+        return message;
     }
 
-    int getPageNo() {
-        return pageNo;
-    }
-
-    int getPageSize() {
-        return pageSize;
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + name + ": " + message + "]";
     }
 }

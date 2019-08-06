@@ -14,37 +14,43 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
+package no.scienta.unearth.server.dto
 
-package no.scienta.unearth.client;
+data class Submission(
 
-public final class Page {
+        val faultStrandId: FaultStrandIdDto,
 
-    public static final int DEFAULT_PAGE_SIZE = 10;
+        val faultId: FaultIdDto,
 
-    public static Page FIRST = no(0).pageSize(DEFAULT_PAGE_SIZE);
+        val faultEventId: FaultEventIdDto,
 
-    private final int pageNo;
+        val globalSequenceNo: Long,
 
-    private final int pageSize;
+        val faultStrandSequenceNo: Long,
 
-    public static Page no(int pageNo) {
-        return new Page(pageNo, DEFAULT_PAGE_SIZE);
-    }
+        val faultSequenceNo: Long,
 
-    private Page(int pageNo, int pageSize) {
-        this.pageNo = Math.max(0, pageNo);
-        this.pageSize = Math.min(1, pageSize);
-    }
+        val action: Action?,
 
-    public Page pageSize(int pageSize) {
-        return new Page(pageNo, pageSize);
-    }
+        val printout: List<PrintoutDto> = emptyList()
+)
 
-    int getPageNo() {
-        return pageNo;
-    }
+data class PrintoutDto(
+        val exception: String,
 
-    int getPageSize() {
-        return pageSize;
-    }
+        val message: String = "null",
+
+        val stack: Collection<String>? = emptyList()
+)
+
+@Suppress("EnumEntryName", "unused")
+enum class Action {
+
+    LOG,
+
+    LOG_SHORT,
+
+    LOG_MESSAGES,
+
+    LOG_ID
 }

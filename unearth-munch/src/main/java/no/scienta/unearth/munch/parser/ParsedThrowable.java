@@ -24,20 +24,18 @@ import java.util.Arrays;
 
 class ParsedThrowable {
 
-    private final String exceptionName;
-
-    private final String exceptionMessage;
+    private final ExceptionHeading exceptionHeading;
 
     private final CauseFrame[] parsedStackTrace;
 
-    ParsedThrowable(String exceptionName, String exceptionMessage, CauseFrame[] parsedStackTrace) {
-        this.exceptionName = exceptionName;
-        this.exceptionMessage = exceptionMessage;
+    ParsedThrowable(ExceptionHeading exceptionHeading, CauseFrame[] parsedStackTrace) {
+        this.exceptionHeading = exceptionHeading;
         this.parsedStackTrace = parsedStackTrace;
     }
 
     ChameleonException reconstruct(Throwable caused) {
-        ChameleonException chameleonException = new ChameleonException(exceptionName, exceptionMessage, caused);
+        ChameleonException chameleonException = new ChameleonException(
+            exceptionHeading.getName(), exceptionHeading.getMessage(), caused);
         chameleonException.setStackTrace(Arrays.stream(parsedStackTrace)
             .map(CauseFrame::toStackTraceElement)
             .toArray(StackTraceElement[]::new));

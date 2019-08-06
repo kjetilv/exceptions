@@ -1,28 +1,18 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
-    application
-    kotlin("jvm")
     id("com.github.johnrengelman.shadow")
 }
 
-application {
-    mainClassName = "no.scienta.unearth.client.SubmitMain"
-}
+val clientJavaVer = JavaVersion.VERSION_1_8
 
-tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "1.8"
+configure<JavaPluginConvention> {
+    sourceCompatibility = clientJavaVer
+    targetCompatibility = clientJavaVer
 }
 
 dependencies {
-    compile(project(":unearth-dto"))
-    compile(project(":unearth-util"))
-    compile(project(":unearth-munch"))
-
     compile("com.squareup.retrofit2:retrofit")
     compile("com.squareup.retrofit2:converter-jackson")
 
     compile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
-    compile("com.fasterxml.jackson.module:jackson-module-kotlin")
 }

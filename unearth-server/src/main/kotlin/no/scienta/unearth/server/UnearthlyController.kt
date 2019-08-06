@@ -19,13 +19,13 @@ package no.scienta.unearth.server
 
 import no.scienta.unearth.core.*
 import no.scienta.unearth.core.handler.DefaultFaultHandler
-import no.scienta.unearth.dto.*
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.model.Cause
 import no.scienta.unearth.munch.model.CauseStrand
 import no.scienta.unearth.munch.model.Fault
 import no.scienta.unearth.munch.model.FaultEvent
 import no.scienta.unearth.munch.print.*
+import no.scienta.unearth.server.dto.*
 import java.time.Clock
 import java.time.ZoneId
 
@@ -190,7 +190,7 @@ class UnearthlyController(
             printStack: Boolean = false
     ): CauseStrandDto {
         return CauseStrandDto(
-                CauseStrandIdDto(causeStrand.hash, link(causeStrand), feed(causeStrand)),
+                CauseStrandIdDto(causeStrand.hash, link(causeStrand)),
                 causeStrand.className,
                 if (fullStack)
                     stackTrace(causeStrand.causeFrames)

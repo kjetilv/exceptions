@@ -17,7 +17,7 @@
 
 package no.scienta.unearth.server
 
-import no.scienta.unearth.dto.Submission
+import no.scienta.unearth.server.dto.Submission
 
 data class UnearthlyError(
 

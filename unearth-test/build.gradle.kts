@@ -18,6 +18,4 @@
 dependencies {
     testCompile(project(":unearth-server"))
     testCompile(project(":unearth-client"))
-
-    testCompile("junit:junit")
 }

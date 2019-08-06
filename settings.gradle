@@ -1,7 +1,6 @@
 rootProject.name = "unearth"
 include("unearth-client",
         "unearth-util",
-        "unearth-dto",
         "unearth-core",
         "unearth-munch",
         "unearth-metrics",
@@ -9,5 +8,6 @@ include("unearth-client",
         "unearth-static",
         "unearth-turbo",
         "unearth-server",
-        "unearth-test")
+        "unearth-test",
+        "unearth-main")
 

@@ -17,18 +17,15 @@
 
 package no.scienta.unearth.client;
 
-import no.scienta.unearth.dto.*;
+import no.scienta.unearth.client.dto.*;
 
 import java.net.URI;
-import java.nio.file.Path;
 
 public interface UnearthlyClient {
 
     static UnearthlyClient connect(URI uri) {
         return new DefaultUnearthlyClient(uri);
     }
-
-    Submission submit(Path path);
 
     Submission submit(String string);
 

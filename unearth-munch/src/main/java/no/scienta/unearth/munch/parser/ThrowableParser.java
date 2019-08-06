@@ -78,13 +78,20 @@ public class ThrowableParser {
 
     private static List<Integer> causeIndices(List<String> lines) {
         return IntStream.range(0, lines.size())
-            .filter(index ->
-                !lines.get(index).trim().startsWith("at "))
-            .filter(index ->
-                Stream.of(EXCEPTION + ": ", ERROR + ": ").anyMatch(lines.get(index)::contains)
-                    || lines.get(index).startsWith(CAUSED_BY))
+            .filter(index -> {
+                String line = lines.get(index);
+                return !line.startsWith("at ");
+            })
+            .filter(index -> {
+                String line = lines.get(index);
+                return types(EXCEPTION, ERROR).anyMatch(line::contains) || line.startsWith(CAUSED_BY);
+            })
             .boxed()
             .collect(Collectors.toList());
+    }
+
+    private static Stream<String> types(String... types) {
+        return Arrays.stream(types).map(type -> type + ": ");
     }
 
     private static List<String> trimmed(String in) {
@@ -96,17 +103,17 @@ public class ThrowableParser {
     }
 
     private static List<ParsedThrowable> parsed(List<String> lines, List<Integer> causeIndices) {
-        return IntStream.range(0, causeIndices.size()).mapToObj(causeIndex -> {
-                CauseFrame[] causeFrames =
-                    stackTrace(lines, causeIndices, causeIndex);
-                ExceptionHeading exceptionHeading =
-                    getExceptionHeading(lines, causeIndex);
-                return new ParsedThrowable(
-                    exceptionHeading.getName(),
-                    exceptionHeading.getMessage(),
-                    causeFrames);
-            }
-        ).collect(Collectors.toList());
+        return IntStream.range(0, causeIndices.size())
+            .map(causeIndices::get)
+            .mapToObj(causeIndex -> {
+                    CauseFrame[] causeFrames =
+                        stackTrace(lines, causeIndices, causeIndex);
+                    ExceptionHeading exceptionHeading =
+                        getExceptionHeading(lines, causeIndex);
+                    return new ParsedThrowable(
+                        exceptionHeading, causeFrames);
+                }
+            ).collect(Collectors.toList());
     }
 
     private static ExceptionHeading getExceptionHeading(List<String> lines, int causeIndex) {
@@ -148,11 +155,11 @@ public class ThrowableParser {
 
     private static CauseFrame[] stackTrace(List<String> lines, List<Integer> causeIndices, int causeIndex) {
         int endIndex = causeIndex >= causeIndices.size() - 1
-            ? lines.size()
+            ? lines.size() - 1
             : causeIndices.get(causeIndex + 1);
         return parsed(
             lines,
-            causeIndices.get(causeIndex) + 1,
+            causeIndex + 1,
             endIndex);
     }
 
@@ -175,23 +182,4 @@ public class ThrowableParser {
             : new StackTraceParts(pattern, matches).reconstruct();
     }
 
-    private static class ExceptionHeading {
-
-        private final String name;
-
-        private final String message;
-
-        private ExceptionHeading(String name, String message) {
-            this.name = name;
-            this.message = message;
-        }
-
-        String getName() {
-            return name;
-        }
-
-        String getMessage() {
-            return message;
-        }
-    }
 }

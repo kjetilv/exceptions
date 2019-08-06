@@ -15,36 +15,15 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.client;
+package no.scienta.unearth.server.dto
 
-public final class Page {
+enum class SequenceType(
+        val seq: (FaultEventDto) -> Long
+) : (FaultEventDto) -> Long {
 
-    public static final int DEFAULT_PAGE_SIZE = 10;
+    GLOBAL(FaultEventDto::sequenceNo),
+    FAULT_STRAND(FaultEventDto::faultStrandSequenceNo),
+    FAULT(FaultEventDto::faultSequenceNo);
 
-    public static Page FIRST = no(0).pageSize(DEFAULT_PAGE_SIZE);
-
-    private final int pageNo;
-
-    private final int pageSize;
-
-    public static Page no(int pageNo) {
-        return new Page(pageNo, DEFAULT_PAGE_SIZE);
-    }
-
-    private Page(int pageNo, int pageSize) {
-        this.pageNo = Math.max(0, pageNo);
-        this.pageSize = Math.min(1, pageSize);
-    }
-
-    public Page pageSize(int pageSize) {
-        return new Page(pageNo, pageSize);
-    }
-
-    int getPageNo() {
-        return pageNo;
-    }
-
-    int getPageSize() {
-        return pageSize;
-    }
+    override fun invoke(dto: FaultEventDto): Long = seq(dto)
 }

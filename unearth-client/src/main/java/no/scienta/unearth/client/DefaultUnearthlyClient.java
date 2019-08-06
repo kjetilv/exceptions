@@ -21,28 +21,24 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.kotlin.KotlinModule;
-import no.scienta.unearth.dto.*;
-import no.scienta.unearth.munch.parser.ThrowableParser;
-import no.scienta.unearth.util.Throwables;
+import no.scienta.unearth.client.dto.*;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
-import okhttp3.ResponseBody;
-import org.jetbrains.annotations.NotNull;
 import retrofit2.Call;
 import retrofit2.Converter;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class DefaultUnearthlyClient implements UnearthlyClient {
 
@@ -57,18 +53,13 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     }
 
     @Override
-    public Submission submit(Path path) {
-        try {
-            return submit(new String(Files.readAllBytes(path), StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Failed to read " + path, e);
-        }
-    }
-
-    @Override
     public Throwable throwable(FaultIdDto faultId) {
         try {
-            return unearthlyService.throwable(faultId.getUuid()).execute().body();
+            FaultDto body = unearthlyService.fault(faultId, true, false).execute().body();
+            if (body == null) {
+                throw new IllegalArgumentException("No fault returned: " + faultId);
+            }
+            return toChameleon(body);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to retrieve " + faultId, e);
         }
@@ -77,14 +68,14 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     @Override
     public Submission submit(String string) {
         try {
-             return get(unearthlyService.throwable(
-                 RequestBody.create(
-                     MediaType.get("text/plain;charset=UTF-8"),
-                     string.getBytes(StandardCharsets.UTF_8))));
-         } catch (Exception e) {
-             throw new IllegalStateException(
-                 "Failed to submit " + (string.length() > 20 ? string.substring(0, 20) + " ..." : string), e);
-         }
+            return get(unearthlyService.throwable(
+                RequestBody.create(
+                    MediaType.get("text/plain;charset=UTF-8"),
+                    string.getBytes(StandardCharsets.UTF_8))));
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                "Failed to submit " + (string.length() > 20 ? string.substring(0, 20) + " ..." : string), e);
+        }
     }
 
     @Override
@@ -153,7 +144,6 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
         }
     }
 
-    @NotNull
     private <T> String errorBody(Response<T> response) {
         return Optional.ofNullable(response.errorBody())
             .map(body -> {
@@ -171,45 +161,73 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
             .orElse("");
     }
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+        .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+        .registerModule(new Jdk8Module())
+        .registerModule(new JavaTimeModule());
+
+    private static Throwable toChameleon(FaultDto faultDto) {
+        List<CauseDto> list =
+            Arrays.stream(faultDto.causes).collect(Collectors.toCollection(ArrayList::new));
+        Collections.reverse(list);
+        return list.stream().reduce(
+            null,
+            DefaultUnearthlyClient::toChameleon,
+            (t1, t2) -> {
+                throw new IllegalStateException("No combine: " + t1 + " <> " + t2);
+            });
+    }
+
+    private static Throwable toChameleon(Throwable throwable, CauseDto cause) {
+        Throwable exception =
+            new ChameleonException(cause.causeStrand.className, cause.message, throwable);
+        Optional.of(cause.causeStrand)
+            .map(dto -> dto.fullStack)
+            .map(DefaultUnearthlyClient::stackTrace)
+            .ifPresent(exception::setStackTrace);
+        return exception;
+    }
+
+    private static StackTraceElement[] stackTrace(StackTraceElementDto[] fullStack) {
+        return Arrays.stream(fullStack)
+            .map(frame ->
+                new StackTraceElement(
+                    frame.declaringClass,
+                    frame.methodName,
+                    frame.fileName,
+                    frame.lineNumber == null
+                        ? -1
+                        : frame.lineNumber
+                )).toArray(StackTraceElement[]::new);
+    }
+
     private static class IdConverterFactory extends Converter.Factory {
+
         @Override
         public Converter<?, String> stringConverter(Type type, Annotation[] annotations, Retrofit retrofit) {
             if (type == FaultIdDto.class) {
-                return (Converter<FaultIdDto, String>) value -> value.getUuid().toString();
+                return (Converter<FaultIdDto, String>) value -> value.uuid.toString();
             }
             if (type == FaultStrandIdDto.class) {
-                return (Converter<FaultStrandIdDto, String>) value -> value.getUuid().toString();
+                return (Converter<FaultStrandIdDto, String>) value -> value.uuid.toString();
             }
             if (type == CauseIdDto.class) {
-                return (Converter<CauseIdDto, String>) value -> value.getUuid().toString();
+                return (Converter<CauseIdDto, String>) value -> value.uuid.toString();
             }
             if (type == CauseStrandIdDto.class) {
-                return (Converter<CauseStrandIdDto, String>) value -> value.getUuid().toString();
+                return (Converter<CauseStrandIdDto, String>) value -> value.uuid.toString();
             }
             if (type == FaultEventIdDto.class) {
-                return (Converter<FaultEventIdDto, String>) value -> value.getUuid().toString();
+                return (Converter<FaultEventIdDto, String>) value -> value.uuid.toString();
             }
             if (type == IdDto.class) {
-                return (Converter<IdDto, String>) value -> value.getUuid().toString();
+                return (Converter<IdDto, String>) value -> value.uuid.toString();
             }
             return null;
         }
     }
 
     private static class ThrowablesConverterFactory extends Converter.Factory {
-
-        @Override
-        public Converter<ResponseBody, ?> responseBodyConverter(
-            Type type,
-            Annotation[] annotations,
-            Retrofit retrofit
-        ) {
-            if (type instanceof Class<?> && Throwable.class.isAssignableFrom((Class<?>) type)) {
-                return responseBody ->
-                    ThrowableParser.parse(responseBody.string());
-            }
-            return null;
-        }
 
         @Override
         public Converter<Throwable, RequestBody> requestBodyConverter(
@@ -220,15 +238,25 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
         ) {
             if (type == Throwable.class) {
                 return (Throwable t) ->
-                    RequestBody.create(MediaType.get("text/plain"), Throwables.string(t));
+                    RequestBody.create(MediaType.get("text/plain"), DefaultUnearthlyClient.toString(t));
             }
             return null;
         }
     }
 
-    static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-        .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-        .registerModule(new Jdk8Module())
-        .registerModule(new JavaTimeModule())
-        .registerModule(new KotlinModule());
+    private static String toString(Throwable throwable) {
+        return new String(bytes(throwable), StandardCharsets.UTF_8);
+    }
+
+    private static byte[] bytes(Throwable throwable) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            try (PrintWriter pw = new PrintWriter(baos)) {
+                throwable.printStackTrace(pw);
+            }
+            return baos.toByteArray();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to serialize: " + throwable, e);
+        }
+    }
+
 }

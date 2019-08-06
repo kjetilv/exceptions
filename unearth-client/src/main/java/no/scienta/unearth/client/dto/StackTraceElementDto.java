@@ -15,36 +15,22 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.client;
+package no.scienta.unearth.client.dto;
 
-public final class Page {
+@SuppressWarnings({"unused"})
+public class StackTraceElementDto {
 
-    public static final int DEFAULT_PAGE_SIZE = 10;
+    public String classLoaderName;
 
-    public static Page FIRST = no(0).pageSize(DEFAULT_PAGE_SIZE);
+    public String moduleName;
 
-    private final int pageNo;
+    public String moduleVersion;
 
-    private final int pageSize;
+    public String declaringClass;
 
-    public static Page no(int pageNo) {
-        return new Page(pageNo, DEFAULT_PAGE_SIZE);
-    }
+    public String methodName;
 
-    private Page(int pageNo, int pageSize) {
-        this.pageNo = Math.max(0, pageNo);
-        this.pageSize = Math.min(1, pageSize);
-    }
+    public String fileName;
 
-    public Page pageSize(int pageSize) {
-        return new Page(pageNo, pageSize);
-    }
-
-    int getPageNo() {
-        return pageNo;
-    }
-
-    int getPageSize() {
-        return pageSize;
-    }
+    public Integer lineNumber;
 }

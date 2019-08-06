@@ -15,36 +15,20 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.client;
+package no.scienta.unearth.server.dto
 
-public final class Page {
+import java.time.ZonedDateTime
 
-    public static final int DEFAULT_PAGE_SIZE = 10;
+data class FaultEventDto(
 
-    public static Page FIRST = no(0).pageSize(DEFAULT_PAGE_SIZE);
+        val id: FaultEventIdDto,
 
-    private final int pageNo;
+        val fault: FaultDto?,
 
-    private final int pageSize;
+        val time: ZonedDateTime,
 
-    public static Page no(int pageNo) {
-        return new Page(pageNo, DEFAULT_PAGE_SIZE);
-    }
+        val sequenceNo: Long,
 
-    private Page(int pageNo, int pageSize) {
-        this.pageNo = Math.max(0, pageNo);
-        this.pageSize = Math.min(1, pageSize);
-    }
+        val faultSequenceNo: Long,
 
-    public Page pageSize(int pageSize) {
-        return new Page(pageNo, pageSize);
-    }
-
-    int getPageNo() {
-        return pageNo;
-    }
-
-    int getPageSize() {
-        return pageSize;
-    }
-}
+        val faultStrandSequenceNo: Long)
