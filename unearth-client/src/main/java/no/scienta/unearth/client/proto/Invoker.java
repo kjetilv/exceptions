@@ -43,6 +43,9 @@ class Invoker implements InvocationHandler {
     Invoker(URI uri, ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
         this.uri = uri;
+        if (!this.uri.toASCIIString().endsWith("/")) {
+            throw new IllegalArgumentException("Expected slashed URI: " + uri);
+        }
     }
 
     private MethodMeta handlerFor(Method method) {
@@ -69,25 +72,29 @@ class Invoker implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) {
         MethodMeta methodHandler = handlerFor(method);
-        URI uri = URI.create(this.uri.toASCIIString() + methodHandler.path(args));
+        URI uri = requestUri(args, methodHandler);
 
-        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
-        requestBuilder.uri(uri);
-        if (methodHandler.post()) {
-            byte[] body = methodHandler.body(args);
-            requestBuilder.POST(HttpRequest.BodyPublishers.ofByteArray(body, 0, body.length));
-        }
-
-        HttpClient.Builder clientBuilder = HttpClient.newBuilder();
-        clientBuilder.connectTimeout(Duration.ofMinutes(1));
-        clientBuilder.followRedirects(HttpClient.Redirect.NEVER);
-        clientBuilder.version(HttpClient.Version.HTTP_2);
-
-        HttpRequest request = requestBuilder.build();
-        HttpClient client = clientBuilder.build();
+        HttpRequest request = requestBuilder(uri, methodHandler, args).build();
+        HttpClient client = clientBuilder().build();
 
         HttpResponse<InputStream> response = getHttpResponse(request, client);
         return handle(methodHandler, response);
+    }
+
+    private URI requestUri(Object[] args, MethodMeta methodHandler) {
+        String base = this.uri.toASCIIString();
+        return URI.create(base + methodHandler.path(args));
+    }
+
+    private HttpRequest.Builder requestBuilder(URI uri, MethodMeta methodHandler, Object[] args) {
+        return withBody(HttpRequest.newBuilder().uri(uri), methodHandler, args);
+    }
+
+    private HttpClient.Builder clientBuilder() {
+        return HttpClient.newBuilder()
+            .connectTimeout(Duration.ofMinutes(1))
+            .followRedirects(HttpClient.Redirect.NEVER)
+            .version(HttpClient.Version.HTTP_2);
     }
 
     private Object handle(MethodMeta methodHandler, HttpResponse<InputStream> response) {
@@ -109,5 +116,17 @@ class Invoker implements InvocationHandler {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to send " + request, e);
         }
+    }
+
+    private static HttpRequest.Builder withBody(
+        HttpRequest.Builder requestBuilder,
+        MethodMeta methodHandler,
+        Object[] args
+    ) {
+        if (methodHandler.post()) {
+            byte[] body = methodHandler.body(args);
+            return requestBuilder.POST(HttpRequest.BodyPublishers.ofByteArray(body, 0, body.length));
+        }
+        return requestBuilder;
     }
 }

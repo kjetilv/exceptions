@@ -60,9 +60,12 @@ final class MethodMeta {
         GET get = method.getAnnotation(GET.class);
 
         this.post = post != null;
-        this.path = post != null ? post.value()
+        this.path = (post != null ? post.value()
             : get != null ? get.value()
-            : "";
+            : "").trim();
+        if (this.path.startsWith("/")) {
+            throw new IllegalArgumentException("Got pre-slashed path in " + method + ": " + path);
+        }
         Annotation[][] parameterAnnotations = method.getParameterAnnotations();
         Class<?>[] parameterTypes = method.getParameterTypes();
 
@@ -106,29 +109,27 @@ final class MethodMeta {
             return path;
         }
         Object arg = args[pathParam];
-        String fullPath = path.replace("{}", arg instanceof IdDto
-            ? ((IdDto) arg).uuid.toString()
-            : arg.toString());
+        String fullPath =
+            path.replace("{}", arg instanceof IdDto ? ((IdDto) arg).uuid.toString() : arg.toString());
+        String queryPath = queryPath(args);
+        return queryPath.isEmpty()
+            ? fullPath
+            : fullPath + '?' + queryPath;
+    }
+
+    private String queryPath(Object[] args) {
         Map<String, String> params = queries.entrySet().stream()
             .filter(e -> args[e.getKey()] != null)
             .collect(Collectors.toMap(
                 Map.Entry::getValue,
-                e ->
-                    String.valueOf(args[e.getKey()])));
-        String queryPath = params.entrySet().stream().map(e ->
+                e -> String.valueOf(args[e.getKey()])));
+        return params.entrySet().stream().map(e ->
             e.getKey() + '=' + e.getValue())
             .collect(Collectors.joining("&"));
-        return queryPath.isEmpty() ? fullPath : fullPath + '?' + queryPath;
     }
 
     Object res(InputStream inputStream) {
         return returnType.cast(reader.apply(returnType, inputStream));
-    }
-
-    private byte[] stringWriter(Object string) {
-        return string == null
-            ? MethodMeta.EMPTY
-            : bytes(string);
     }
 
     private byte[] bytes(Object string) {
