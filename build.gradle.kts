@@ -24,8 +24,6 @@ val swaggerUiVer = "3.23.0"
 
 val kotlinVer = "1.3.40"
 
-val serverJavaVer = JavaVersion.VERSION_11
-
 plugins {
     kotlin("jvm") version "1.3.40"
     id("com.github.johnrengelman.shadow") version "5.1.0"
@@ -44,8 +42,8 @@ allprojects {
     }
 
     configure<JavaPluginConvention> {
-        sourceCompatibility = serverJavaVer
-        targetCompatibility = serverJavaVer
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     group = "no.scienta.unearth"

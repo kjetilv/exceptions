@@ -18,38 +18,35 @@
 package no.scienta.unearth.client;
 
 import no.scienta.unearth.client.dto.*;
-import okhttp3.RequestBody;
-import retrofit2.Call;
-import retrofit2.http.*;
+import no.scienta.unearth.client.proto.GET;
+import no.scienta.unearth.client.proto.POST;
+import no.scienta.unearth.client.proto.Q;
 
 public interface UnearthlyAPI {
 
     @POST("catch")
-    Call<Submission> throwable(@Body Throwable throwable);
+    Submission throwable(String throwable);
 
-    @POST("catch")
-    Call<Submission> throwable(@Body RequestBody throwable);
+    @GET("fault/{}")
+    FaultDto fault(FaultIdDto faultId,
+                   @Q("fullStack") Boolean fullStack,
+                   @Q("printStack") Boolean printStack);
 
-    @GET("fault/{uuid}")
-    Call<FaultDto> fault(@Path("uuid") FaultIdDto faultId,
-                         @Query("fullStack") boolean fullStack,
-                         @Query("printStack") boolean printStack);
+    @GET("fault-strand/{}")
+    FaultStrandDto faultStrand(FaultStrandIdDto faultId,
+                               @Q("fullStack") Boolean fullStack,
+                               @Q("printStack") Boolean printStack);
 
-    @GET("fault-strand/{uuid}")
-    Call<FaultStrandDto> faultStrand(@Path("uuid") FaultStrandIdDto faultId,
-                                     @Query("fullStack") boolean fullStack,
-                                     @Query("printStack") boolean printStack);
+    @GET("cause/{}")
+    CauseDto cause(CauseIdDto causeIdDto,
+                   @Q("fullStack") Boolean fullStack,
+                   @Q("printStack") Boolean printStack);
 
-    @GET("cause/{uuid}")
-    Call<CauseDto> cause(@Path("uuid") CauseIdDto causeIdDto,
-                         @Query("fullStack") boolean fullStack,
-                         @Query("printStack") boolean printStack);
+    @GET("cause-strand/{}")
+    CauseStrandDto causeStrand(CauseStrandIdDto causeIdDto,
+                               @Q("fullStack") Boolean fullStack,
+                               @Q("printStack") Boolean printStack);
 
-    @GET("cause-strand/{uuid}")
-    Call<CauseStrandDto> causeStrand(@Path("uuid") CauseStrandIdDto causeIdDto,
-                                     @Query("fullStack") boolean fullStack,
-                                     @Query("printStack") boolean printStack);
-
-    @GET("fault-event/{uuid}")
-    Call<FaultEventDto> faultEvent(@Path("uuid") FaultEventIdDto faultEventIdDto);
+    @GET("fault-event/{}")
+    FaultEventDto faultEvent(FaultEventIdDto faultEventIdDto);
 }
