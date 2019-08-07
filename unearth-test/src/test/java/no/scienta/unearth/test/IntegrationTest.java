@@ -29,8 +29,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class IntegrationTest {
@@ -41,10 +40,11 @@ public class IntegrationTest {
 
     @Test
     public void submitExceptionAsLogged() {
-        Exception barf = new IOException("Barf");
+        Exception barf = new IOException("Barf"), barf2 = new IOException("Barf2");
 
         assertThat(client.globalFeedMax(), is(0L));
         Submission submit = client.submit("Exception in thread \"foobar\" " + Throwables.string(barf));
+
         assertThat(client.globalFeedMax(), is(1L));
         assertThat(client.faultFeedMax(submit.faultId), is(1L));
         assertThat(client.faultStrandFeedMax(submit.faultStrandId), is(1L));
@@ -52,6 +52,23 @@ public class IntegrationTest {
         assertThat(client.globalFeed().events.size(), is(1));
         assertThat(client.faultFeed(submit.faultId).events.size(), is(1));
         assertThat(client.faultStrandFeed(submit.faultStrandId).events.size(), is(1));
+
+        client.submit(barf);
+        client.submit(barf);
+        client.submit(barf);
+        client.submit(barf2);
+        Submission submitBarf2 = client.submit(barf2);
+        Submission submitAgain = client.submit(barf);
+
+        assertThat(client.globalFeed().events.size(), is(7));
+        assertThat(client.faultFeed(submit.faultId).events.size(), is(5));
+        assertThat(client.faultFeed(submitBarf2.faultId).events.size(), is(2));
+        assertThat(client.faultStrandFeed(submit.faultStrandId).events.size(), is(7));
+
+        assertThat(submitAgain.faultId.uuid, is(submit.faultId.uuid));
+        assertThat(submitBarf2.faultId.uuid, not(is(submit.faultId.uuid)));
+        assertThat(submitAgain.faultStrandId.uuid, is(submit.faultStrandId.uuid));
+        assertThat(submitBarf2.faultStrandId.uuid, is(submit.faultStrandId.uuid));
 
         Throwable throwable = client.throwable(submit.faultId);
         assertThat(throwable.getMessage(), equalTo("Barf"));
@@ -82,14 +99,6 @@ public class IntegrationTest {
 
         CauseStrandDto causeStrand = client.causeStrand(causeStrands[0].id);
         assertThat(causeStrand.className, is(IOException.class.getName()));
-    }
-
-    @Test
-    public void submitActualException() {
-        Submission submit = client.submit(new IOException("Dang it!"));
-        FaultIdDto faultId = submit.faultId;
-        Throwable retrieve = client.throwable(faultId);
-        assertThat(retrieve.getMessage(), equalTo("Dang it!"));
     }
 
     @BeforeClass
