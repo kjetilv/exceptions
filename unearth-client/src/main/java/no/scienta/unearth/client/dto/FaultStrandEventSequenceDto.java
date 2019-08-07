@@ -21,8 +21,4 @@ package no.scienta.unearth.client.dto;
 public class FaultStrandEventSequenceDto extends SequenceDto {
 
     public FaultStrandIdDto id;
-
-    {
-        sequenceType = SequenceType.FAULT_STRAND;
-    }
 }

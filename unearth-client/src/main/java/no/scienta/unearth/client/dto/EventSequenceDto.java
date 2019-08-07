@@ -17,10 +17,5 @@
 
 package no.scienta.unearth.client.dto;
 
-@SuppressWarnings("unused")
 public class EventSequenceDto extends SequenceDto {
-
-    {
-        sequenceType = SequenceType.GLOBAL;
-    }
 }

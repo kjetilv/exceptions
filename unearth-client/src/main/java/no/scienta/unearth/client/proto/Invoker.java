@@ -38,7 +38,7 @@ class Invoker implements InvocationHandler {
 
     private final ObjectMapper objectMapper;
 
-    private final Map<Method, MethodMeta> meta = new HashMap<>();
+    private final Map<Method, Meta> meta = new HashMap<>();
 
     Invoker(URI uri, ObjectMapper objectMapper) {
         this.uri = uri;
@@ -48,9 +48,36 @@ class Invoker implements InvocationHandler {
         }
     }
 
-    private MethodMeta meta(Method method) {
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) {
+        Meta meta = meta(method);
+        HttpRequest request = request(meta, args);
+        HttpResponse<InputStream> response = response(request);
+        return responseBody(meta, response);
+    }
+
+    private Meta meta(Method method) {
         return meta.computeIfAbsent(method, m ->
-            new MethodMeta(m, this::writeBytes, this::readBytes));
+            new Meta(m, this::writeBytes, this::readBytes));
+    }
+
+    private HttpRequest request(Meta meta, Object[] args) {
+        return withBody(meta, HttpRequest.newBuilder().uri(uri(meta, args)), args)
+            .header(CONTENT_TYPE, meta.contentType())
+            .build();
+    }
+
+    private HttpResponse<InputStream> response(HttpRequest request) {
+        try {
+            return newClient().send(request, HttpResponse.BodyHandlers.ofInputStream());
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to send " + request, e);
+        }
+    }
+
+    private Object responseBody(Meta meta, HttpResponse<InputStream> response) {
+        failOnError(response);
+        return read(meta, response);
     }
 
     private byte[] writeBytes(Object value) {
@@ -65,36 +92,16 @@ class Invoker implements InvocationHandler {
         try {
             return objectMapper.readerFor(type).readValue(inputStream);
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to read response: " + type, e);
+            throw new IllegalStateException("Failed to read response: " + type + " <= " + inputStream, e);
         }
     }
 
-    @Override
-    public Object invoke(Object proxy, Method method, Object[] args) {
-        MethodMeta meta = meta(method);
-        URI uri = URI.create(this.uri.toASCIIString() + meta.path(args));
-        HttpRequest request = newrRequest(meta, uri, args);
-        HttpResponse<InputStream> response = getHttpResponse(request);
-        failOnError(response);
-        return responseBody(meta, response);
-    }
-
-    private HttpRequest newrRequest(MethodMeta meta, URI uri, Object[] args) {
-        return withBody(meta, HttpRequest.newBuilder().uri(uri), args)
-                .header("Content-Type", meta.contentType())
-                .build();
+    private URI uri(Meta meta, Object[] args) {
+        return URI.create(this.uri.toASCIIString() + meta.path(args));
     }
 
     private HttpClient newClient() {
         return HttpClient.newBuilder().connectTimeout(TIMEOUT).build();
-    }
-
-    private Object responseBody(MethodMeta meta, HttpResponse<InputStream> response) {
-        try (InputStream body = response.body()) {
-            return meta.response(body);
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to read response: " + response, e);
-        }
     }
 
     private void failOnError(HttpResponse<InputStream> response) {
@@ -110,17 +117,19 @@ class Invoker implements InvocationHandler {
         }
     }
 
-    private HttpResponse<InputStream> getHttpResponse(HttpRequest request) {
-        try {
-            return newClient().send(request, HttpResponse.BodyHandlers.ofInputStream());
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to send " + request, e);
+    private Object read(Meta meta, HttpResponse<InputStream> response) {
+        try (InputStream body = response.body()) {
+            return meta.response(body);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read response: " + response, e);
         }
     }
 
+    private static final String CONTENT_TYPE = "Content-Type";
+
     private static final Duration TIMEOUT = Duration.ofMinutes(1);
 
-    private static HttpRequest.Builder withBody(MethodMeta meta, HttpRequest.Builder requestBuilder, Object[] args) {
+    private static HttpRequest.Builder withBody(Meta meta, HttpRequest.Builder requestBuilder, Object[] args) {
         if (meta.post()) {
             byte[] body = meta.body(args);
             return requestBuilder.POST(HttpRequest.BodyPublishers.ofByteArray(body, 0, body.length));

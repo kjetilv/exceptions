@@ -29,13 +29,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-final class MethodMeta {
-
-    private static final byte[] EMPTY = new byte[0];
-
-    private static final String POST = "POST";
-
-    private static final String GET = "GET";
+final class Meta {
 
     private final boolean post;
 
@@ -55,7 +49,7 @@ final class MethodMeta {
 
     private final Class<?> returnType;
 
-    MethodMeta(Method method, Function<Object, byte[]> writer, BiFunction<Class<?>, InputStream, Object> reader) {
+    Meta(Method method, Function<Object, byte[]> writer, BiFunction<Class<?>, InputStream, Object> reader) {
         POST post = method.getAnnotation(POST.class);
         GET get = method.getAnnotation(GET.class);
 
@@ -94,7 +88,7 @@ final class MethodMeta {
     }
 
     String contentType() {
-        return stringBody ? "text/plain" : "application/json";
+        return stringBody ? TEXT : JSON;
     }
 
     byte[] body(Object[] args) {
@@ -117,7 +111,7 @@ final class MethodMeta {
     }
 
     Object response(InputStream inputStream) {
-        return returnType.cast(reader.apply(returnType, inputStream));
+        return reader.apply(returnType, inputStream);
     }
 
     private String queryPath(Object[] args) {
@@ -134,6 +128,16 @@ final class MethodMeta {
     private byte[] bytes(Object string) {
         return string.toString().getBytes(StandardCharsets.UTF_8);
     }
+
+    private static final byte[] EMPTY = new byte[0];
+
+    private static final String POST = "POST";
+
+    private static final String GET = "GET";
+
+    private static final String JSON = "application/json;charset=UTF-8";
+
+    private static final String TEXT = "text/plain;charset=UTF-8";
 
     @Override
     public String toString() {

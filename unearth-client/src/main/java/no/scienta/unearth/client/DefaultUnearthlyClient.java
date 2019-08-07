@@ -50,21 +50,12 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
 
     @Override
     public Submission submit(String throwable) {
-        try {
-            return unearthlyService.throwable(throwable);
-        } catch (Exception e) {
-            throw new IllegalStateException(
-                "Failed to submit " + (throwable.length() > 20 ? throwable.substring(0, 20) + " ..." : throwable), e);
-        }
+        return unearthlyService.throwable(throwable);
     }
 
     @Override
     public Submission submit(Throwable throwable) {
-        try {
-            return unearthlyService.throwable(toString(throwable));
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to submit " + throwable, e);
-        }
+        return unearthlyService.throwable(toString(throwable));
     }
 
     @Override
