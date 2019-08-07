@@ -17,6 +17,7 @@
 
 package no.scienta.unearth.test;
 
+import no.scienta.unearth.client.Page;
 import no.scienta.unearth.client.UnearthlyClient;
 import no.scienta.unearth.client.dto.*;
 import no.scienta.unearth.server.Unearth;
@@ -76,6 +77,14 @@ public class IntegrationTest {
         assertThat(faultEvent.sequenceNo, is(0L));
         assertThat(faultEvent.faultSequenceNo, is(0L));
         assertThat(faultEvent.faultStrandSequenceNo, is(0L));
+
+        assertThat(client.faultStrandFeed(submit.faultStrandId).count, is(7L));
+
+        FaultStrandEventSequenceDto dto = client.faultStrandFeed(submit.faultStrandId, Page.no(2).pageSize(2));
+        assertThat(dto.count, is(2L));
+        assertThat(dto.last, is(3L));
+        assertThat(dto.offset, is(2L));
+        assertThat(dto.sequenceType, is(SequenceType.FAULT_STRAND));
     }
 
     @Test
