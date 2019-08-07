@@ -35,4 +35,9 @@ public class IdDto {
     public String type;
 
     public String link;
+
+    @Override
+    public String toString() {
+        return type + ":" + uuid;
+    }
 }

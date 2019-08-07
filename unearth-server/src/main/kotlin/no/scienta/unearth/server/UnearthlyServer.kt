@@ -89,6 +89,15 @@ class UnearthlyServer(
 
     fun port(): Int = server.port()
 
+    private fun pingRoute() =
+            "ping" meta {
+                summary = "Ping"
+                consumes += TEXT_PLAIN
+                produces += TEXT_PLAIN
+            } bindContract GET to { request ->
+                Response(OK).body("pong\n")
+            }
+
     private fun submitExceptionRoute() =
             "catch" meta {
                 summary = "Submit an exception"
@@ -359,6 +368,7 @@ class UnearthlyServer(
                         retrieveExceptionRoute(),
                         retrieveExceptionReduxRoute()
                 )
+                routes += pingRoute()
             }
 
     private fun handledResponse(response: Response, request: Request): Response =

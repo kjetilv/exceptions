@@ -97,22 +97,22 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
 
     @Override
     public long globalFeedMax() {
-        return unearthlyService.globalSequenceMax();
+        return unearthlyService.globalFeedLimit();
     }
 
     @Override
     public long faultFeedMax(FaultIdDto faultId) {
-        return unearthlyService.faultSequenceMax(faultId);
+        return unearthlyService.faultFeedLimit(faultId);
     }
 
     @Override
     public long faultStrandFeedMax(FaultStrandIdDto faultStrandId) {
-        return unearthlyService.faultStrandSequenceMax(faultStrandId);
+        return unearthlyService.faultStrandFeedLimit(faultStrandId);
     }
 
     @Override
     public EventSequenceDto globalFeed(Page page, StackType stackType) {
-        return unearthlyService.globalSequence(
+        return unearthlyService.globalFeed(
             page.getPageNo() * page.getPageSize(),
             page.getPageNo(),
             stackType == StackType.FULL,
@@ -121,7 +121,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
 
     @Override
     public FaultEventSequenceDto faultFeed(FaultIdDto faultId, Page page, StackType stackType) {
-        return unearthlyService.faultSequence(
+        return unearthlyService.faultFeed(
             faultId,
             page.getPageNo() * page.getPageSize(),
             page.getPageNo(),
@@ -131,7 +131,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
 
     @Override
     public FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultStrandId, Page page, StackType stackType) {
-        return unearthlyService.faultStrandSequence(
+        return unearthlyService.faultStrandFeed(
             faultStrandId,
             page.getPageNo() * page.getPageSize(),
             page.getPageNo(),

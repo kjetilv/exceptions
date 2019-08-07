@@ -20,17 +20,22 @@ package no.scienta.unearth.client.proto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 class Invoker implements InvocationHandler {
 
@@ -41,7 +46,9 @@ class Invoker implements InvocationHandler {
     private final Map<Method, Meta> meta = new HashMap<>();
 
     Invoker(URI uri, ObjectMapper objectMapper) {
-        this.uri = uri;
+        this.uri = Objects.requireNonNull(uri, "uri").toASCIIString().endsWith("/")
+            ? uri
+            : URI.create(uri.toASCIIString() + "/");
         this.objectMapper = objectMapper;
         if (!this.uri.toASCIIString().endsWith("/")) {
             throw new IllegalArgumentException("Expected slashed URI: " + uri);
@@ -107,13 +114,23 @@ class Invoker implements InvocationHandler {
     private void failOnError(HttpResponse<InputStream> response) {
         int result = response.statusCode();
         if (result >= 500) {
-            throw new IllegalStateException("Internal server error: " + response);
+            throw new IllegalStateException("Internal server error: " + response + "\n" + error(response));
         }
         if (result >= 400) {
-            throw new IllegalArgumentException("Invalid request: " + response);
+            throw new IllegalArgumentException("Invalid request: " + response + "\n" + error(response));
         }
         if (result >= 300) {
-            throw new IllegalArgumentException("Unsupported redirect: " + response);
+            throw new IllegalArgumentException("Unsupported redirect: " + response + "\n" + error(response));
+        }
+    }
+
+    private String error(HttpResponse<InputStream> response) {
+        try (BufferedReader reader =
+                 new BufferedReader(new InputStreamReader(response.body(), StandardCharsets.UTF_8))
+        ) {
+            return reader.lines().collect(Collectors.joining("\n"));
+        } catch (IOException e) {
+            return "<Failed to read error response: " + e + ">";
         }
     }
 

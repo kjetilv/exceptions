@@ -51,23 +51,23 @@ public interface UnearthlyAPI {
     FaultEventDto faultEvent(FaultEventIdDto faultEventIdDto);
 
     @GET("feed/limit")
-    Long globalSequenceMax();
+    Long globalFeedLimit();
 
     @GET("feed/limit/fault-strand/{}")
-    Long faultStrandSequenceMax(FaultStrandIdDto faultId);
+    Long faultStrandFeedLimit(FaultStrandIdDto faultId);
 
     @GET("feed/limit/fault/{}")
-    Long faultSequenceMax(FaultIdDto faultId);
+    Long faultFeedLimit(FaultIdDto faultId);
 
     @GET("feed")
-    EventSequenceDto globalSequence(
+    EventSequenceDto globalFeed(
         @Q("offset") Integer offset,
         @Q("count") Integer count,
         @Q("fullStack") Boolean fullStack,
         @Q("printStack") Boolean printStack);
 
     @GET("feed/fault/{}")
-    FaultEventSequenceDto faultSequence(
+    FaultEventSequenceDto faultFeed(
         FaultIdDto faultId,
         @Q("offset") Integer offset,
         @Q("count") Integer count,
@@ -75,7 +75,7 @@ public interface UnearthlyAPI {
         @Q("printStack") Boolean printStack);
 
     @GET("feed/fault-strand/{}")
-    FaultStrandEventSequenceDto faultStrandSequence(
+    FaultStrandEventSequenceDto faultStrandFeed(
         FaultStrandIdDto faultId,
         @Q("offset") Integer offset,
         @Q("count") Integer count,
