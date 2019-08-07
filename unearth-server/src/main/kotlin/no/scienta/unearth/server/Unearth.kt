@@ -70,7 +70,7 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
             reconfigureLogging(controller)
         }
 
-        logger.info("Created $server!!")
+        logger.info("Created $server")
 
         registerShutdown(server)
 
