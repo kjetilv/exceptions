@@ -19,13 +19,13 @@ package no.scienta.unearth.server.dto
 
 import java.util.*
 
-data class FaultEventSequence(
+data class FaultStrandEventSequenceDto(
 
-        val id: FaultIdDto,
+        val id: FaultStrandIdDto,
 
         val events: List<FaultEventDto> = Collections.emptyList(),
 
-        val sequenceType: SequenceType = SequenceType.FAULT
+        val sequenceType: SequenceType = SequenceType.FAULT_STRAND
 ) {
 
     val offset = seqs().min().orElse(0L)

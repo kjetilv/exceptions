@@ -18,8 +18,9 @@
 package no.scienta.unearth.client.dto;
 
 import java.util.function.Function;
+import java.util.function.ToLongFunction;
 
-public enum SequenceType implements Function<FaultEventDto, Long>{
+public enum SequenceType implements ToLongFunction<FaultEventDto> {
 
     GLOBAL(dto -> dto.sequenceNo),
 
@@ -34,7 +35,7 @@ public enum SequenceType implements Function<FaultEventDto, Long>{
     }
 
     @Override
-    public Long apply(FaultEventDto faultEventDto) {
-        return seqNo.apply(faultEventDto);
+    public long applyAsLong(FaultEventDto dto) {
+        return seqNo.apply(dto);
     }
 }

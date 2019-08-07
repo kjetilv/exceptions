@@ -38,18 +38,18 @@ class Invoker implements InvocationHandler {
 
     private final ObjectMapper objectMapper;
 
-    private final Map<Method, MethodMeta> analysisMap = new HashMap<>();
+    private final Map<Method, MethodMeta> meta = new HashMap<>();
 
     Invoker(URI uri, ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
         this.uri = uri;
+        this.objectMapper = objectMapper;
         if (!this.uri.toASCIIString().endsWith("/")) {
             throw new IllegalArgumentException("Expected slashed URI: " + uri);
         }
     }
 
-    private MethodMeta handlerFor(Method method) {
-        return analysisMap.computeIfAbsent(method, m ->
+    private MethodMeta meta(Method method) {
+        return meta.computeIfAbsent(method, m ->
             new MethodMeta(m, this::writeBytes, this::readBytes));
     }
 
@@ -71,60 +71,58 @@ class Invoker implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) {
-        MethodMeta methodHandler = handlerFor(method);
-        URI uri = requestUri(args, methodHandler);
-
-        HttpRequest request = requestBuilder(uri, methodHandler, args).build();
-        HttpClient client = clientBuilder().build();
-
-        HttpResponse<InputStream> response = getHttpResponse(request, client);
-        return handle(methodHandler, response);
+        MethodMeta meta = meta(method);
+        URI uri = URI.create(this.uri.toASCIIString() + meta.path(args));
+        HttpRequest request = newrRequest(meta, uri, args);
+        HttpResponse<InputStream> response = getHttpResponse(request);
+        failOnError(response);
+        return responseBody(meta, response);
     }
 
-    private URI requestUri(Object[] args, MethodMeta methodHandler) {
-        String base = this.uri.toASCIIString();
-        return URI.create(base + methodHandler.path(args));
+    private HttpRequest newrRequest(MethodMeta meta, URI uri, Object[] args) {
+        return withBody(meta, HttpRequest.newBuilder().uri(uri), args)
+                .header("Content-Type", meta.contentType())
+                .build();
     }
 
-    private HttpRequest.Builder requestBuilder(URI uri, MethodMeta methodHandler, Object[] args) {
-        return withBody(HttpRequest.newBuilder().uri(uri), methodHandler, args);
+    private HttpClient newClient() {
+        return HttpClient.newBuilder().connectTimeout(TIMEOUT).build();
     }
 
-    private HttpClient.Builder clientBuilder() {
-        return HttpClient.newBuilder()
-            .connectTimeout(Duration.ofMinutes(1))
-            .followRedirects(HttpClient.Redirect.NEVER)
-            .version(HttpClient.Version.HTTP_2);
+    private Object responseBody(MethodMeta meta, HttpResponse<InputStream> response) {
+        try (InputStream body = response.body()) {
+            return meta.response(body);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read response: " + response, e);
+        }
     }
 
-    private Object handle(MethodMeta methodHandler, HttpResponse<InputStream> response) {
-        if (response.statusCode() >= 500) {
+    private void failOnError(HttpResponse<InputStream> response) {
+        int result = response.statusCode();
+        if (result >= 500) {
             throw new IllegalStateException("Internal server error: " + response);
         }
-        if (response.statusCode() >= 400) {
+        if (result >= 400) {
             throw new IllegalArgumentException("Invalid request: " + response);
         }
-        if (response.statusCode() >= 300) {
+        if (result >= 300) {
             throw new IllegalArgumentException("Unsupported redirect: " + response);
         }
-        return methodHandler.res(response.body());
     }
 
-    private HttpResponse<InputStream> getHttpResponse(HttpRequest request, HttpClient client) {
+    private HttpResponse<InputStream> getHttpResponse(HttpRequest request) {
         try {
-            return client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+            return newClient().send(request, HttpResponse.BodyHandlers.ofInputStream());
         } catch (Exception e) {
             throw new IllegalStateException("Failed to send " + request, e);
         }
     }
 
-    private static HttpRequest.Builder withBody(
-        HttpRequest.Builder requestBuilder,
-        MethodMeta methodHandler,
-        Object[] args
-    ) {
-        if (methodHandler.post()) {
-            byte[] body = methodHandler.body(args);
+    private static final Duration TIMEOUT = Duration.ofMinutes(1);
+
+    private static HttpRequest.Builder withBody(MethodMeta meta, HttpRequest.Builder requestBuilder, Object[] args) {
+        if (meta.post()) {
+            byte[] body = meta.body(args);
             return requestBuilder.POST(HttpRequest.BodyPublishers.ofByteArray(body, 0, body.length));
         }
         return requestBuilder;

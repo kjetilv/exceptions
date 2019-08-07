@@ -34,14 +34,14 @@ object Swaggex {
             2000L + random.nextLong() % 1000,
             if (random.nextBoolean()) Action.LOG else Action.LOG_SHORT)
 
-    internal fun eventSequence(): EventSequence =
-            EventSequence(listOf(faultEventDto()))
+    internal fun eventSequence(): EventSequenceDto =
+            EventSequenceDto(listOf(faultEventDto()))
 
-    internal fun faultEventSequence(): FaultEventSequence =
-            FaultEventSequence(FaultIdDto(uuid()), listOf(faultEventDto()))
+    internal fun faultEventSequence(): FaultEventSequenceDto =
+            FaultEventSequenceDto(FaultIdDto(uuid()), listOf(faultEventDto()))
 
-    internal fun faultStrandEventSequence(): FaultStrandEventSequence =
-            FaultStrandEventSequence(FaultStrandIdDto(uuid()), listOf(faultEventDto()))
+    internal fun faultStrandEventSequence(): FaultStrandEventSequenceDto =
+            FaultStrandEventSequenceDto(FaultStrandIdDto(uuid()), listOf(faultEventDto()))
 
     internal fun faultStrandDto() = FaultStrandDto(FaultStrandIdDto(uuid()), listOf(causeStrandDto()))
 

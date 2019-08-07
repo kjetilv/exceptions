@@ -98,8 +98,8 @@ class UnearthlyController(
             fullStack: Boolean = false,
             printStack: Boolean = false,
             fullEvent: Boolean = false
-    ): EventSequence =
-            EventSequence(
+    ): EventSequenceDto =
+            EventSequenceDto(
                     feed.feed(offset, count).map {
                         faultEventDto(it, fullStack, printStack, fullEvent)
                     })
@@ -111,8 +111,8 @@ class UnearthlyController(
             fullStack: Boolean = false,
             printStack: Boolean = false,
             fullEvent: Boolean = false
-    ): FaultEventSequence =
-            FaultEventSequence(
+    ): FaultEventSequenceDto =
+            FaultEventSequenceDto(
                     FaultIdDto(faultId.hash, link(faultId)),
                     feed.feed(faultId, offset, count).map {
                         faultEventDto(it, fullStack, printStack, fullEvent)
@@ -125,8 +125,8 @@ class UnearthlyController(
             fullStack: Boolean = false,
             printStack: Boolean = false,
             fullEvent: Boolean = false
-    ): FaultStrandEventSequence =
-            FaultStrandEventSequence(
+    ): FaultStrandEventSequenceDto =
+            FaultStrandEventSequenceDto(
                     FaultStrandIdDto(faultStrandId.hash, link(faultStrandId)),
                     feed.feed(faultStrandId, offset, count).map {
                         faultEventDto(it, fullStack, printStack, fullEvent)

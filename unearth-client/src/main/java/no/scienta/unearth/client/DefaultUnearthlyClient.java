@@ -104,6 +104,50 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
         return unearthlyService.faultEvent(faultEventId);
     }
 
+    @Override
+    public long globalFeedMax() {
+        return unearthlyService.globalSequenceMax();
+    }
+
+    @Override
+    public long faultFeedMax(FaultIdDto faultId) {
+        return unearthlyService.faultSequenceMax(faultId);
+    }
+
+    @Override
+    public long faultStrandFeedMax(FaultStrandIdDto faultStrandId) {
+        return unearthlyService.faultStrandSequenceMax(faultStrandId);
+    }
+
+    @Override
+    public EventSequenceDto globalFeed(Page page, StackType stackType) {
+        return unearthlyService.globalSequence(
+            page.getPageNo() * page.getPageSize(),
+            page.getPageNo(),
+            stackType == StackType.FULL,
+            stackType == StackType.PRINT);
+    }
+
+    @Override
+    public FaultEventSequenceDto faultFeed(FaultIdDto faultId, Page page, StackType stackType) {
+        return unearthlyService.faultSequence(
+            faultId,
+            page.getPageNo() * page.getPageSize(),
+            page.getPageNo(),
+            stackType == StackType.FULL,
+            stackType == StackType.PRINT);
+    }
+
+    @Override
+    public FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultStrandId, Page page, StackType stackType) {
+        return unearthlyService.faultStrandSequence(
+            faultStrandId,
+            page.getPageNo() * page.getPageSize(),
+            page.getPageNo(),
+            stackType == StackType.FULL,
+            stackType == StackType.PRINT);
+    }
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
         .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
         .registerModule(new Jdk8Module())

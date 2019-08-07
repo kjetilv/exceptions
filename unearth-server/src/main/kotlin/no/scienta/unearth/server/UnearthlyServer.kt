@@ -19,11 +19,11 @@
 
 package no.scienta.unearth.server
 
-import no.scienta.unearth.server.dto.*
 import no.scienta.unearth.munch.id.*
 import no.scienta.unearth.munch.model.Fault
 import no.scienta.unearth.munch.parser.ThrowableParser
 import no.scienta.unearth.server.JSON.auto
+import no.scienta.unearth.server.dto.*
 import no.scienta.unearth.statik.Statik
 import no.scienta.unearth.util.Throwables
 import org.http4k.asString
@@ -216,6 +216,29 @@ class UnearthlyServer(
                 controller.feedLimit()
             }
 
+    private fun feedLimitsFaultRoute() =
+            "feed/limit/fault" / uuid(::FaultId) meta {
+                summary = "Event limits for a fault"
+                produces += APPLICATION_JSON
+                returning(OK, limit to Swaggex.limit())
+            } bindContract GET to { faultId ->
+                simpleGet(limit) {
+                    controller.feedLimit(faultId)
+                }
+            }
+
+
+    private fun faultStrandLimit() =
+            "feed/limit/fault-strand" / uuid(::FaultStrandId) meta {
+                summary = "Event limits for a fault strand"
+                produces += APPLICATION_JSON
+                returning(OK, limit to Swaggex.limit())
+            } bindContract GET to { faultId ->
+                simpleGet(limit) {
+                    controller.feedLimit(faultId)
+                }
+            }
+
     private fun globalFeedRoute() =
             "feed" meta {
                 summary = "Events global"
@@ -229,47 +252,6 @@ class UnearthlyServer(
                             countQuery[req] ?: 0L,
                             fullStack[req] ?: false,
                             printStack[req] ?: false)
-                }
-            }
-
-
-    private fun faultStrandLimit() =
-            "feed/fault-strand/limit" / uuid(::FaultStrandId) meta {
-                summary = "Event limits for a fault strand"
-                produces += APPLICATION_JSON
-                returning(OK, limit to Swaggex.limit())
-            } bindContract GET to { faultId ->
-                simpleGet(limit) {
-                    controller.feedLimit(faultId)
-                }
-            }
-
-    private fun feedLookupFaultStrandRoute() =
-            "feed/fault-strand" / uuid(::FaultStrandId) meta {
-                summary = "Events for a fault strand"
-                produces += APPLICATION_JSON
-                queries += listOf(offsetQuery, countQuery, fullStack, printStack)
-                returning(OK, faultStrandSequence to Swaggex.faultStrandEventSequence())
-            } bindContract GET to { faultStrandId ->
-                { req ->
-                    get(faultStrandSequence) {
-                        controller.feed(faultStrandId,
-                                offsetQuery[req] ?: 0L,
-                                countQuery[req] ?: 0L,
-                                fullStack[req] ?: false,
-                                printStack[req] ?: false)
-                    }
-                }
-            }
-
-    private fun feedLimitsFaultRoute() =
-            "feed/fault/limit" / uuid(::FaultId) meta {
-                summary = "Event limits for a fault"
-                produces += APPLICATION_JSON
-                returning(OK, limit to Swaggex.limit())
-            } bindContract GET to { faultId ->
-                simpleGet(limit) {
-                    controller.feedLimit(faultId)
                 }
             }
 
@@ -289,6 +271,24 @@ class UnearthlyServer(
                                 fullStack[req] ?: false,
                                 printStack[req] ?: false,
                                 fullEvent[req] ?: false)
+                    }
+                }
+            }
+
+    private fun feedLookupFaultStrandRoute() =
+            "feed/fault-strand" / uuid(::FaultStrandId) meta {
+                summary = "Events for a fault strand"
+                produces += APPLICATION_JSON
+                queries += listOf(offsetQuery, countQuery, fullStack, printStack)
+                returning(OK, faultStrandSequence to Swaggex.faultStrandEventSequence())
+            } bindContract GET to { faultStrandId ->
+                { req ->
+                    get(faultStrandSequence) {
+                        controller.feed(faultStrandId,
+                                offsetQuery[req] ?: 0L,
+                                countQuery[req] ?: 0L,
+                                fullStack[req] ?: false,
+                                printStack[req] ?: false)
                     }
                 }
             }
@@ -506,7 +506,7 @@ class UnearthlyServer(
                     msg.body(Throwables.string(thr))
                 })
 
-        private fun <T : Id> uuid(read: (UUID) -> T) = PathLens(
+        private fun <T : Id> uuid(read: (UUID) -> T): PathLens<T> = PathLens(
                 meta = Meta(required = true, location = "path", paramMeta = ParamMeta.StringParam, name = "uuid"),
                 get = { uuid ->
                     loggingLens(uuid) {
@@ -535,11 +535,11 @@ class UnearthlyServer(
 
         private val submission = Body.auto<Submission>().toLens()
 
-        private val sequence = Body.auto<EventSequence>().toLens()
+        private val sequence = Body.auto<EventSequenceDto>().toLens()
 
-        private val faultSequence = Body.auto<FaultEventSequence>().toLens()
+        private val faultSequence = Body.auto<FaultEventSequenceDto>().toLens()
 
-        private val faultStrandSequence = Body.auto<FaultStrandEventSequence>().toLens()
+        private val faultStrandSequence = Body.auto<FaultStrandEventSequenceDto>().toLens()
 
         private val faultEvent = Body.auto<FaultEventDto>().toLens()
 

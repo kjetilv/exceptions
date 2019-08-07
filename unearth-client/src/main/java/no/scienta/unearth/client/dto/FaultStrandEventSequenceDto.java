@@ -18,41 +18,11 @@
 package no.scienta.unearth.client.dto;
 
 @SuppressWarnings("unused")
-public class Submission {
+public class FaultStrandEventSequenceDto extends SequenceDto {
 
-    public FaultStrandIdDto faultStrandId;
+    public FaultStrandIdDto id;
 
-    public FaultIdDto faultId;
-
-    public FaultEventIdDto faultEventId;
-
-    public Long globalSequenceNo;
-
-    public Long faultStrandSequenceNo;
-
-    public Long faultSequenceNo;
-
-    public Action action;
-
-    public PrintoutDto[] printout;
-
-    public static class PrintoutDto {
-
-        public String exception;
-
-        public String message;
-
-        public String[] stack;
-    }
-
-    public enum Action {
-
-        LOG,
-
-        LOG_SHORT,
-
-        LOG_MESSAGES,
-
-        LOG_ID
+    {
+        sequenceType = SequenceType.FAULT_STRAND;
     }
 }

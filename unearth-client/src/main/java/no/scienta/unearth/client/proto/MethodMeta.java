@@ -66,16 +66,16 @@ final class MethodMeta {
         if (this.path.startsWith("/")) {
             throw new IllegalArgumentException("Got pre-slashed path in " + method + ": " + path);
         }
+        if (this.path.endsWith("/")) {
+            throw new IllegalArgumentException("Got post-slashed path in " + method + ": " + path);
+        }
+
         Annotation[][] parameterAnnotations = method.getParameterAnnotations();
         Class<?>[] parameterTypes = method.getParameterTypes();
 
-        int pathOrBody = IntStream.range(0, parameterAnnotations.length)
-            .filter(i -> parameterAnnotations[i].length == 0)
-            .findFirst()
-            .orElse(-1);
         this.returnType = method.getReturnType();
-        this.pathParam = this.post ? -1 : pathOrBody;
-        this.bodyParam = this.post ? pathOrBody : -1;
+        this.pathParam = this.post ? -1 : 0;
+        this.bodyParam = this.post ? 0 : -1;
         this.stringBody = this.post && parameterTypes[this.bodyParam] == String.class;
         this.queries = IntStream.range(0, parameterAnnotations.length)
             .filter(i ->
@@ -93,19 +93,18 @@ final class MethodMeta {
         return post;
     }
 
+    String contentType() {
+        return stringBody ? "text/plain" : "application/json";
+    }
+
     byte[] body(Object[] args) {
-        if (bodyParam < 0) {
-            return EMPTY;
-        }
-        Object arg = args[bodyParam];
-        if (stringBody) {
-            return arg == null ? EMPTY : bytes(arg.toString());
-        }
-        return writer.apply(arg);
+        return bodyParam < 0 || args[bodyParam] == null ? EMPTY
+            : stringBody ? bytes(args[bodyParam].toString())
+            : writer.apply(args[bodyParam]);
     }
 
     String path(Object[] args) {
-        if (pathParam < 0) {
+        if (args == null || args.length == 0 || pathParam < 0) {
             return path;
         }
         Object arg = args[pathParam];
@@ -117,6 +116,10 @@ final class MethodMeta {
             : fullPath + '?' + queryPath;
     }
 
+    Object response(InputStream inputStream) {
+        return returnType.cast(reader.apply(returnType, inputStream));
+    }
+
     private String queryPath(Object[] args) {
         Map<String, String> params = queries.entrySet().stream()
             .filter(e -> args[e.getKey()] != null)
@@ -126,10 +129,6 @@ final class MethodMeta {
         return params.entrySet().stream().map(e ->
             e.getKey() + '=' + e.getValue())
             .collect(Collectors.joining("&"));
-    }
-
-    Object res(InputStream inputStream) {
-        return returnType.cast(reader.apply(returnType, inputStream));
     }
 
     private byte[] bytes(Object string) {

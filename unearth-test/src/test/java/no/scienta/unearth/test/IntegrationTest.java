@@ -42,7 +42,16 @@ public class IntegrationTest {
     @Test
     public void submitExceptionAsLogged() {
         Exception barf = new IOException("Barf");
-        no.scienta.unearth.client.dto.Submission submit = client.submit("Exception in thread \"foobar\" " + Throwables.string(barf));
+
+        assertThat(client.globalFeedMax(), is(0L));
+        Submission submit = client.submit("Exception in thread \"foobar\" " + Throwables.string(barf));
+        assertThat(client.globalFeedMax(), is(1L));
+        assertThat(client.faultFeedMax(submit.faultId), is(1L));
+        assertThat(client.faultStrandFeedMax(submit.faultStrandId), is(1L));
+
+        assertThat(client.globalFeed().events.size(), is(1));
+        assertThat(client.faultFeed(submit.faultId).events.size(), is(1));
+        assertThat(client.faultStrandFeed(submit.faultStrandId).events.size(), is(1));
 
         Throwable throwable = client.throwable(submit.faultId);
         assertThat(throwable.getMessage(), equalTo("Barf"));

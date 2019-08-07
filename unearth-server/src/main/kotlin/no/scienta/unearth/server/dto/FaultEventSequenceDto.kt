@@ -15,44 +15,24 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.client.dto;
+package no.scienta.unearth.server.dto
 
-@SuppressWarnings("unused")
-public class Submission {
+import java.util.*
 
-    public FaultStrandIdDto faultStrandId;
+data class FaultEventSequenceDto(
 
-    public FaultIdDto faultId;
+        val id: FaultIdDto,
 
-    public FaultEventIdDto faultEventId;
+        val events: List<FaultEventDto> = Collections.emptyList(),
 
-    public Long globalSequenceNo;
+        val sequenceType: SequenceType = SequenceType.FAULT
+) {
 
-    public Long faultStrandSequenceNo;
+    val offset = seqs().min().orElse(0L)
 
-    public Long faultSequenceNo;
+    val count = events.size
 
-    public Action action;
+    val last = seqs().max().orElse(-1L)
 
-    public PrintoutDto[] printout;
-
-    public static class PrintoutDto {
-
-        public String exception;
-
-        public String message;
-
-        public String[] stack;
-    }
-
-    public enum Action {
-
-        LOG,
-
-        LOG_SHORT,
-
-        LOG_MESSAGES,
-
-        LOG_ID
-    }
+    private fun seqs() = events.stream().mapToLong(sequenceType)
 }

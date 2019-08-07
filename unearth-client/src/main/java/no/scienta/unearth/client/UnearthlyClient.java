@@ -21,6 +21,7 @@ import no.scienta.unearth.client.dto.*;
 
 import java.net.URI;
 
+@SuppressWarnings("unused")
 public interface UnearthlyClient {
 
     static UnearthlyClient connect(URI uri) {
@@ -58,6 +59,50 @@ public interface UnearthlyClient {
     CauseStrandDto causeStrand(CauseStrandIdDto id, StackType stackType);
 
     FaultEventDto faultEvent(FaultEventIdDto faultEventId);
+
+    long globalFeedMax();
+
+    long faultFeedMax(FaultIdDto faultId);
+
+    long faultStrandFeedMax(FaultStrandIdDto faultStrandId);
+
+    default EventSequenceDto globalFeed() {
+        return globalFeed(Page.FIRST, StackType.NONE);
+    }
+
+    default EventSequenceDto globalFeed(Page page) {
+        return globalFeed(page, StackType.NONE);
+    }
+
+    EventSequenceDto globalFeed(Page page, StackType stackType);
+
+    default FaultEventSequenceDto faultFeed(FaultIdDto faultId) {
+        return faultFeed(faultId, Page.FIRST, StackType.NONE);
+    }
+
+    default FaultEventSequenceDto faultFeed(FaultIdDto faultId, Page page) {
+        return faultFeed(faultId, page, StackType.NONE);
+    }
+
+    default FaultEventSequenceDto faultFeed(FaultIdDto faultId, StackType stackType) {
+        return faultFeed(faultId, Page.FIRST, stackType);
+    }
+
+    FaultEventSequenceDto faultFeed(FaultIdDto faultId, Page page, StackType stackType);
+
+    default FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultStrandId) {
+        return faultStrandFeed(faultStrandId, Page.FIRST, StackType.NONE);
+    }
+
+    default FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultStrandId, StackType stackType) {
+        return faultStrandFeed(faultStrandId, Page.FIRST, stackType);
+    }
+
+    default FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultStrandId, Page page) {
+        return faultStrandFeed(faultStrandId, page, StackType.NONE);
+    }
+
+    FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultStrandId, Page page, StackType stackType);
 
     enum StackType {
 
