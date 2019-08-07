@@ -39,7 +39,7 @@ public class IntegrationTest {
     private static UnearthlyClient client;
 
     @Test
-    public void submitExceptionAsLogged() {
+    public void verifyFeedCounters() {
         Exception barf = new IOException("Barf"), barf2 = new IOException("Barf2");
 
         assertThat(client.globalFeedMax(), is(0L));
@@ -70,6 +70,29 @@ public class IntegrationTest {
         assertThat(submitAgain.faultStrandId.uuid, is(submit.faultStrandId.uuid));
         assertThat(submitBarf2.faultStrandId.uuid, is(submit.faultStrandId.uuid));
 
+        FaultEventDto faultEvent = client.faultEvent(submit.faultEventId);
+        assertThat(faultEvent.id.uuid, is(submit.faultEventId.uuid));
+
+        assertThat(faultEvent.sequenceNo, is(0L));
+        assertThat(faultEvent.faultSequenceNo, is(0L));
+        assertThat(faultEvent.faultStrandSequenceNo, is(0L));
+    }
+
+    @Test
+    public void submitExceptionAsLogged() {
+        Exception barf = new IOException("Barf"), barf2 = new IOException("Barf2");
+
+        assertThat(client.globalFeedMax(), is(0L));
+        Submission submit = client.submit("Exception in thread \"foobar\" " + Throwables.string(barf));
+
+        Submission submitBarf2 = client.submit(barf2);
+        Submission submitAgain = client.submit(barf);
+
+        assertThat(submitAgain.faultId.uuid, is(submit.faultId.uuid));
+        assertThat(submitBarf2.faultId.uuid, not(is(submit.faultId.uuid)));
+        assertThat(submitAgain.faultStrandId.uuid, is(submit.faultStrandId.uuid));
+        assertThat(submitBarf2.faultStrandId.uuid, is(submit.faultStrandId.uuid));
+
         Throwable throwable = client.throwable(submit.faultId);
         assertThat(throwable.getMessage(), equalTo("Barf"));
 
@@ -81,10 +104,6 @@ public class IntegrationTest {
 
         FaultEventDto faultEvent = client.faultEvent(submit.faultEventId);
         assertThat(faultEvent.id.uuid, is(submit.faultEventId.uuid));
-
-        assertThat(faultEvent.sequenceNo, is(0L));
-        assertThat(faultEvent.faultSequenceNo, is(0L));
-        assertThat(faultEvent.faultStrandSequenceNo, is(0L));
 
         CauseDto[] causes = fault.causes;
         CauseStrandDto[] causeStrands = faultStrand.causeStrands;
