@@ -15,10 +15,10 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-@file:Suppress("UNNECESSARY_NOT_NULL_ASSERTION") // It can't be!!
+@file:Suppress("UNNECESSARY_NOT_NULL_ASSERTION") // Can't be!
 
-package no.scienta.unearth.server
+package no.scienta.unearth.main
 
 fun main() {
-    Unearth()()!!
+    no.scienta.unearth.server.Unearth()()!!
 }
