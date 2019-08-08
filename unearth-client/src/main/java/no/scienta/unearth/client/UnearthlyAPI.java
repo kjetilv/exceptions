@@ -20,7 +20,9 @@ package no.scienta.unearth.client;
 import no.scienta.unearth.client.dto.*;
 import no.scienta.unearth.client.proto.GET;
 import no.scienta.unearth.client.proto.POST;
-import no.scienta.unearth.client.proto.Q;
+import no.scienta.unearth.client.proto.Qry;
+
+import java.util.Optional;
 
 public interface UnearthlyAPI {
 
@@ -28,27 +30,27 @@ public interface UnearthlyAPI {
     Submission throwable(String throwable);
 
     @GET("fault/{}")
-    FaultDto fault(FaultIdDto faultId,
-                   @Q("fullStack") Boolean fullStack,
-                   @Q("printStack") Boolean printStack);
+    Optional<FaultDto> fault(FaultIdDto faultId,
+                             @Qry("fullStack") Boolean fullStack,
+                             @Qry("printStack") Boolean printStack);
 
     @GET("fault-strand/{}")
-    FaultStrandDto faultStrand(FaultStrandIdDto faultId,
-                               @Q("fullStack") Boolean fullStack,
-                               @Q("printStack") Boolean printStack);
+    Optional<FaultStrandDto> faultStrand(FaultStrandIdDto faultId,
+                                         @Qry("fullStack") Boolean fullStack,
+                                         @Qry("printStack") Boolean printStack);
 
     @GET("cause/{}")
-    CauseDto cause(CauseIdDto causeIdDto,
-                   @Q("fullStack") Boolean fullStack,
-                   @Q("printStack") Boolean printStack);
+    Optional<CauseDto> cause(CauseIdDto causeIdDto,
+                             @Qry("fullStack") Boolean fullStack,
+                             @Qry("printStack") Boolean printStack);
 
     @GET("cause-strand/{}")
-    CauseStrandDto causeStrand(CauseStrandIdDto causeIdDto,
-                               @Q("fullStack") Boolean fullStack,
-                               @Q("printStack") Boolean printStack);
+    Optional<CauseStrandDto> causeStrand(CauseStrandIdDto causeIdDto,
+                                         @Qry("fullStack") Boolean fullStack,
+                                         @Qry("printStack") Boolean printStack);
 
     @GET("fault-event/{}")
-    FaultEventDto faultEvent(FaultEventIdDto faultEventIdDto);
+    Optional<FaultEventDto> faultEvent(FaultEventIdDto faultEventIdDto);
 
     @GET("feed/limit")
     Long globalFeedLimit();
@@ -60,25 +62,22 @@ public interface UnearthlyAPI {
     Long faultFeedLimit(FaultIdDto faultId);
 
     @GET("feed")
-    EventSequenceDto globalFeed(
-        @Q("offset") Integer offset,
-        @Q("count") Integer count,
-        @Q("fullStack") Boolean fullStack,
-        @Q("printStack") Boolean printStack);
+    EventSequenceDto globalFeed(@Qry("offset") Integer offset,
+                                @Qry("count") Integer count,
+                                @Qry("fullStack") Boolean fullStack,
+                                @Qry("printStack") Boolean printStack);
 
     @GET("feed/fault/{}")
-    FaultEventSequenceDto faultFeed(
-        FaultIdDto faultId,
-        @Q("offset") Integer offset,
-        @Q("count") Integer count,
-        @Q("fullStack") Boolean fullStack,
-        @Q("printStack") Boolean printStack);
+    FaultEventSequenceDto faultFeed(FaultIdDto faultId,
+                                    @Qry("offset") Integer offset,
+                                    @Qry("count") Integer count,
+                                    @Qry("fullStack") Boolean fullStack,
+                                    @Qry("printStack") Boolean printStack);
 
     @GET("feed/fault-strand/{}")
-    FaultStrandEventSequenceDto faultStrandFeed(
-        FaultStrandIdDto faultId,
-        @Q("offset") Integer offset,
-        @Q("count") Integer count,
-        @Q("fullStack") Boolean fullStack,
-        @Q("printStack") Boolean printStack);
+    FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultId,
+                                                @Qry("offset") Integer offset,
+                                                @Qry("count") Integer count,
+                                                @Qry("fullStack") Boolean fullStack,
+                                                @Qry("printStack") Boolean printStack);
 }

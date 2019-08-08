@@ -39,7 +39,7 @@ import org.http4k.core.ContentType.Companion.TEXT_PLAIN
 import org.http4k.core.Method.GET
 import org.http4k.core.Method.POST
 import org.http4k.core.Status.Companion.INTERNAL_SERVER_ERROR
-import org.http4k.core.Status.Companion.NOT_FOUND
+import org.http4k.core.Status.Companion.NO_CONTENT
 import org.http4k.core.Status.Companion.OK
 import org.http4k.filter.CorsPolicy
 import org.http4k.filter.ServerFilters
@@ -310,7 +310,7 @@ class UnearthlyServer(
             try {
                 result()?.let {
                     outLens.set(withContentType(Response(OK), type), it)
-                } ?: Response(NOT_FOUND)
+                } ?: Response(NO_CONTENT)
             } catch (e: Exception) {
                 throw IllegalStateException("Failed GET", e)
             }
@@ -323,7 +323,7 @@ class UnearthlyServer(
         try {
             result()?.let<O, Response> {
                 outLens.set(withContentType(Response(OK), type), it)
-            } ?: withContentType(Response(NOT_FOUND))
+            } ?: withContentType(Response(NO_CONTENT))
         } catch (e: Exception) {
             throw IllegalStateException("Failed GET", e)
         }

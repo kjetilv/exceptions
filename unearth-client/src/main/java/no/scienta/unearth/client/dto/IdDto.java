@@ -17,6 +17,7 @@
 
 package no.scienta.unearth.client.dto;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
@@ -39,5 +40,18 @@ public class IdDto {
     @Override
     public String toString() {
         return type + ":" + uuid;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        return o != null && getClass() == o.getClass() &&
+            Objects.equals(uuid, ((IdDto) o).uuid) &&
+            Objects.equals(type, ((IdDto) o).type);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(uuid, link);
     }
 }

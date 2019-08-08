@@ -41,11 +41,7 @@ import java.net.URI;
 
 public final class Proto {
 
-    public static <T> T type(
-        Class<T> api,
-        URI uri,
-        ObjectMapper objectMapper
-    ) {
+    public static <T> T type(Class<T> api, URI uri, ObjectMapper objectMapper) {
         return api.cast(Proxy.newProxyInstance(
             Thread.currentThread().getContextClassLoader(),
             new Class<?>[]{api},
@@ -54,6 +50,5 @@ public final class Proto {
     }
 
     private Proto() {
-
     }
 }

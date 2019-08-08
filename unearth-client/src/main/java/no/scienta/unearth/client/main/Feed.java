@@ -53,7 +53,8 @@ public class Feed {
 
         uuids.stream()
             .map(Feed::faultId)
-            .map(client::fault)
+            .map(faultIdDto ->
+                client.fault(faultIdDto, UnearthlyClient.StackType.FULL))
             .map(value -> {
                 try {
                     return OBJECT_MAPPER.writeValueAsString(value);

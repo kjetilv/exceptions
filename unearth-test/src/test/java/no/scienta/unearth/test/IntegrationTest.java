@@ -33,6 +33,7 @@ import java.io.IOException;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class IntegrationTest {
 
     private static Unearth.State state;
@@ -45,6 +46,7 @@ public class IntegrationTest {
 
         assertThat(client.globalFeedMax(), is(0L));
         Submission submit = client.submit("Exception in thread \"foobar\" " + Throwables.string(barf));
+        assertThat(submit, not(nullValue()));
 
         assertThat(client.globalFeedMax(), is(1L));
         assertThat(client.faultFeedMax(submit.faultId), is(1L));
@@ -66,13 +68,13 @@ public class IntegrationTest {
         assertThat(client.faultFeed(submitBarf2.faultId).events.size(), is(2));
         assertThat(client.faultStrandFeed(submit.faultStrandId).events.size(), is(7));
 
-        assertThat(submitAgain.faultId.uuid, is(submit.faultId.uuid));
-        assertThat(submitBarf2.faultId.uuid, not(is(submit.faultId.uuid)));
-        assertThat(submitAgain.faultStrandId.uuid, is(submit.faultStrandId.uuid));
-        assertThat(submitBarf2.faultStrandId.uuid, is(submit.faultStrandId.uuid));
+        assertThat(submitAgain.faultId, is(submit.faultId));
+        assertThat(submitBarf2.faultId, not(is(submit.faultId)));
+        assertThat(submitAgain.faultStrandId, is(submit.faultStrandId));
+        assertThat(submitBarf2.faultStrandId, is(submit.faultStrandId));
 
-        FaultEventDto faultEvent = client.faultEvent(submit.faultEventId);
-        assertThat(faultEvent.id.uuid, is(submit.faultEventId.uuid));
+        FaultEventDto faultEvent = client.faultEvent(submit.faultEventId).get();
+        assertThat(faultEvent.id, is(submit.faultEventId));
 
         assertThat(faultEvent.sequenceNo, is(0L));
         assertThat(faultEvent.faultSequenceNo, is(0L));
@@ -97,35 +99,35 @@ public class IntegrationTest {
         Submission submitBarf2 = client.submit(barf2);
         Submission submitAgain = client.submit(barf);
 
-        assertThat(submitAgain.faultId.uuid, is(submit.faultId.uuid));
-        assertThat(submitBarf2.faultId.uuid, not(is(submit.faultId.uuid)));
-        assertThat(submitAgain.faultStrandId.uuid, is(submit.faultStrandId.uuid));
-        assertThat(submitBarf2.faultStrandId.uuid, is(submit.faultStrandId.uuid));
+        assertThat(submitAgain.faultId, is(submit.faultId));
+        assertThat(submitBarf2.faultId, not(is(submit.faultId)));
+        assertThat(submitAgain.faultStrandId, is(submit.faultStrandId));
+        assertThat(submitBarf2.faultStrandId, is(submit.faultStrandId));
 
-        Throwable throwable = client.throwable(submit.faultId);
+        Throwable throwable = client.throwable(submit.faultId).get();
         assertThat(throwable.getMessage(), equalTo("Barf"));
 
-        FaultDto fault = client.fault(submit.faultId);
-        assertThat(fault.id.uuid, is(submit.faultId.uuid));
+        FaultDto fault = client.fault(submit.faultId).get();
+        assertThat(fault.id, is(submit.faultId));
 
-        FaultStrandDto faultStrand = client.faultStrand(submit.faultStrandId);
-        assertThat(faultStrand.id.uuid, is(submit.faultStrandId.uuid));
+        FaultStrandDto faultStrand = client.faultStrand(submit.faultStrandId).get();
+        assertThat(faultStrand.id, is(submit.faultStrandId));
 
-        FaultEventDto faultEvent = client.faultEvent(submit.faultEventId);
-        assertThat(faultEvent.id.uuid, is(submit.faultEventId.uuid));
+        FaultEventDto faultEvent = client.faultEvent(submit.faultEventId).get();
+        assertThat(faultEvent.id, is(submit.faultEventId));
 
         CauseDto[] causes = fault.causes;
         CauseStrandDto[] causeStrands = faultStrand.causeStrands;
 
         assertThat(causes.length, is(causeStrands.length));
 
-        assertThat(causes[0].causeStrand.id.uuid, is(causeStrands[0].id.uuid));
+        assertThat(causes[0].causeStrand.id, is(causeStrands[0].id));
         CauseIdDto id = causes[0].id;
 
-        CauseDto cause = client.cause(id);
+        CauseDto cause = client.cause(id).get();
         assertThat(cause.message, is("Barf"));
 
-        CauseStrandDto causeStrand = client.causeStrand(causeStrands[0].id);
+        CauseStrandDto causeStrand = client.causeStrand(causeStrands[0].id).get();
         assertThat(causeStrand.className, is(IOException.class.getName()));
     }
 

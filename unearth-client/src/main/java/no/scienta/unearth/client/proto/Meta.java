@@ -22,8 +22,11 @@ import no.scienta.unearth.client.dto.IdDto;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -49,6 +52,10 @@ final class Meta {
 
     private final Class<?> returnType;
 
+    private final boolean optional;
+
+    private final boolean noResponse;
+
     Meta(Method method, Function<Object, byte[]> writer, BiFunction<Class<?>, InputStream, Object> reader) {
         POST post = method.getAnnotation(POST.class);
         GET get = method.getAnnotation(GET.class);
@@ -67,17 +74,22 @@ final class Meta {
         Annotation[][] parameterAnnotations = method.getParameterAnnotations();
         Class<?>[] parameterTypes = method.getParameterTypes();
 
-        this.returnType = method.getReturnType();
+        Class<?> returnType = method.getReturnType();
+        this.optional = Optional.class.isAssignableFrom(returnType);
+        this.noResponse = returnType == void.class || Void.class.isAssignableFrom(returnType);
+        this.returnType = getActualReturnType(method, returnType);
+
         this.pathParam = this.post ? -1 : 0;
         this.bodyParam = this.post ? 0 : -1;
         this.stringBody = this.post && parameterTypes[this.bodyParam] == String.class;
+
         this.queries = IntStream.range(0, parameterAnnotations.length)
             .filter(i ->
                 parameterAnnotations[i].length > 0)
             .boxed()
             .collect(Collectors.toMap(
                 i -> i,
-                i -> ((Q) parameterAnnotations[i][0]).value()
+                i -> ((Qry) parameterAnnotations[i][0]).value()
             ));
         this.writer = writer;
         this.reader = reader;
@@ -112,6 +124,29 @@ final class Meta {
 
     Object response(InputStream inputStream) {
         return reader.apply(returnType, inputStream);
+    }
+
+    boolean noResponse() {
+        return noResponse;
+    }
+
+    boolean optional() {
+        return optional;
+    }
+
+    private Class<?> getActualReturnType(Method method, Class<?> nominalReturnType) {
+        if (Optional.class.isAssignableFrom(nominalReturnType)) {
+            Type genType = method.getGenericReturnType();
+            if (genType instanceof ParameterizedType) {
+                Type[] args = ((ParameterizedType) genType).getActualTypeArguments();
+                if (args[0] instanceof Class<?>) {
+                    return (Class<?>) args[0];
+                }
+                throw new IllegalStateException("Could not resolve generic type of " + genType + ": " + method);
+            }
+            throw new IllegalStateException("Could not resolve generic type of " + genType + ": " + method);
+        }
+        return nominalReturnType;
     }
 
     private String queryPath(Object[] args) {

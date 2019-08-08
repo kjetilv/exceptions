@@ -6,10 +6,12 @@ plugins {
 }
 
 tasks.withType<ShadowJar>() {
+    mergeServiceFiles()
     relocate("com.fasterxml", "unearthly.xml")
 }
 
 application {
+    applicationName = "feed"
     mainClassName = "no.scienta.unearth.client.main.Feed"
 }
 

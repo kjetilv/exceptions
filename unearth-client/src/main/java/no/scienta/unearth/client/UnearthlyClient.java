@@ -20,6 +20,7 @@ package no.scienta.unearth.client;
 import no.scienta.unearth.client.dto.*;
 
 import java.net.URI;
+import java.util.Optional;
 
 @SuppressWarnings("unused")
 public interface UnearthlyClient {
@@ -32,33 +33,33 @@ public interface UnearthlyClient {
 
     Submission submit(Throwable t);
 
-    Throwable throwable(FaultIdDto faultId);
+    Optional<Throwable> throwable(FaultIdDto faultId);
 
-    default FaultDto fault(FaultIdDto faultIdDto) {
+    default Optional<FaultDto> fault(FaultIdDto faultIdDto) {
         return fault(faultIdDto, StackType.NONE);
     }
 
-    FaultDto fault(FaultIdDto faultIdDto, StackType stackType);
+    Optional<FaultDto> fault(FaultIdDto faultIdDto, StackType stackType);
 
-    default FaultStrandDto faultStrand(FaultStrandIdDto faultIdDto) {
+    default Optional<FaultStrandDto> faultStrand(FaultStrandIdDto faultIdDto) {
         return faultStrand(faultIdDto, StackType.NONE);
     }
 
-    FaultStrandDto faultStrand(FaultStrandIdDto faultIdDto, StackType stackType);
+    Optional<FaultStrandDto> faultStrand(FaultStrandIdDto faultIdDto, StackType stackType);
 
-    default CauseDto cause(CauseIdDto id) {
+    default Optional<CauseDto> cause(CauseIdDto id) {
         return cause(id, StackType.NONE);
     }
 
-    CauseDto cause(CauseIdDto id, StackType stackType);
+    Optional<CauseDto> cause(CauseIdDto id, StackType stackType);
 
-    default CauseStrandDto causeStrand(CauseStrandIdDto id) {
+    default Optional<CauseStrandDto> causeStrand(CauseStrandIdDto id) {
         return causeStrand(id, StackType.NONE);
     }
 
-    CauseStrandDto causeStrand(CauseStrandIdDto id, StackType stackType);
+    Optional<CauseStrandDto> causeStrand(CauseStrandIdDto id, StackType stackType);
 
-    FaultEventDto faultEvent(FaultEventIdDto faultEventId);
+    Optional<FaultEventDto> faultEvent(FaultEventIdDto faultEventId);
 
     long globalFeedMax();
 

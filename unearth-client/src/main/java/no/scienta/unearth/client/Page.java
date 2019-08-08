@@ -17,9 +17,10 @@
 
 package no.scienta.unearth.client;
 
+@SuppressWarnings("WeakerAccess")
 public final class Page {
 
-    public static final int DEFAULT_PAGE_SIZE = 10;
+    private static final int DEFAULT_PAGE_SIZE = 10;
 
     public static Page FIRST = no(0).pageSize(DEFAULT_PAGE_SIZE);
 

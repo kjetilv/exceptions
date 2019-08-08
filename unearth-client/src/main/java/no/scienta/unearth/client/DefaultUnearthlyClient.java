@@ -40,12 +40,9 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     }
 
     @Override
-    public Throwable throwable(FaultIdDto faultId) {
-        FaultDto body = unearthlyService.fault(faultId, true, false);
-        if (body == null) {
-            throw new IllegalArgumentException("No fault returned: " + faultId);
-        }
-        return toChameleon(body);
+    public Optional<Throwable> throwable(FaultIdDto faultId) {
+        Optional<FaultDto> fault = unearthlyService.fault(faultId, true, false);
+        return fault.map(DefaultUnearthlyClient::toChameleon);
     }
 
     @Override
@@ -59,7 +56,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     }
 
     @Override
-    public FaultDto fault(FaultIdDto faultId, StackType stackType) {
+    public Optional<FaultDto> fault(FaultIdDto faultId, StackType stackType) {
         return unearthlyService.fault(
             faultId,
             stackType == StackType.FULL,
@@ -67,7 +64,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     }
 
     @Override
-    public FaultStrandDto faultStrand(FaultStrandIdDto faultStrandId, StackType stackType) {
+    public Optional<FaultStrandDto> faultStrand(FaultStrandIdDto faultStrandId, StackType stackType) {
         return unearthlyService.faultStrand(
             faultStrandId,
             stackType == StackType.FULL,
@@ -75,7 +72,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     }
 
     @Override
-    public CauseDto cause(CauseIdDto causeId, StackType stackType) {
+    public Optional<CauseDto> cause(CauseIdDto causeId, StackType stackType) {
         return unearthlyService.cause(
             causeId,
             stackType == StackType.FULL,
@@ -83,7 +80,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     }
 
     @Override
-    public CauseStrandDto causeStrand(CauseStrandIdDto causeStrandId, StackType stackType) {
+    public Optional<CauseStrandDto> causeStrand(CauseStrandIdDto causeStrandId, StackType stackType) {
         return unearthlyService.causeStrand(
             causeStrandId,
             stackType == StackType.FULL,
@@ -91,7 +88,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     }
 
     @Override
-    public FaultEventDto faultEvent(FaultEventIdDto faultEventId) {
+    public Optional<FaultEventDto> faultEvent(FaultEventIdDto faultEventId) {
         return unearthlyService.faultEvent(faultEventId);
     }
 

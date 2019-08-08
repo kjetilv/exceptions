@@ -35,6 +35,9 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 class Invoker implements InvocationHandler {
@@ -43,7 +46,11 @@ class Invoker implements InvocationHandler {
 
     private final ObjectMapper objectMapper;
 
-    private final Map<Method, Meta> meta = new HashMap<>();
+    private final Map<Method, Meta> metas = new HashMap<>();
+
+    private final Function<Object, byte[]> writeBytes = this::writeBytes;
+
+    private final BiFunction<Class<?>, InputStream, Object> readBytes = this::readBytes;
 
     Invoker(URI uri, ObjectMapper objectMapper) {
         this.uri = Objects.requireNonNull(uri, "uri").toASCIIString().endsWith("/")
@@ -59,13 +66,32 @@ class Invoker implements InvocationHandler {
     public Object invoke(Object proxy, Method method, Object[] args) {
         Meta meta = meta(method);
         HttpRequest request = request(meta, args);
+        if (meta.noResponse()) {
+            HttpResponse<InputStream> response = response(request);
+            failOnError(response);
+            return null;
+        }
         HttpResponse<InputStream> response = response(request);
-        return responseBody(meta, response);
+        if (response.statusCode() == 204 && meta.optional()) {
+            return Optional.empty();
+        }
+        failOnError(response);
+        Object object = readResponse(meta, response);
+        return returnValue(meta, object);
+    }
+
+    private Object returnValue(Meta meta, Object object) {
+        if (object != null) {
+            return meta.optional() ? Optional.of(object) : object;
+        }
+        if (meta.optional()) {
+            return Optional.empty();
+        }
+        throw new IllegalStateException("No object returned");
     }
 
     private Meta meta(Method method) {
-        return meta.computeIfAbsent(method, m ->
-            new Meta(m, this::writeBytes, this::readBytes));
+        return metas.computeIfAbsent(method, __ -> new Meta(method, writeBytes, readBytes));
     }
 
     private HttpRequest request(Meta meta, Object[] args) {
@@ -82,9 +108,12 @@ class Invoker implements InvocationHandler {
         }
     }
 
-    private Object responseBody(Meta meta, HttpResponse<InputStream> response) {
-        failOnError(response);
-        return read(meta, response);
+    private HttpResponse<Void> voidResponse(HttpRequest request) {
+        try {
+            return newClient().send(request, HttpResponse.BodyHandlers.discarding());
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to send " + request, e);
+        }
     }
 
     private byte[] writeBytes(Object value) {
@@ -114,14 +143,18 @@ class Invoker implements InvocationHandler {
     private void failOnError(HttpResponse<InputStream> response) {
         int result = response.statusCode();
         if (result >= 500) {
-            throw new IllegalStateException("Internal server error: " + response + "\n" + error(response));
+            throw new IllegalStateException("Internal server error: " + response + possibly(error(response)));
         }
         if (result >= 400) {
-            throw new IllegalArgumentException("Invalid request: " + response + "\n" + error(response));
+            throw new IllegalArgumentException("Invalid request: " + response + possibly(error(response)));
         }
         if (result >= 300) {
-            throw new IllegalArgumentException("Unsupported redirect: " + response + "\n" + error(response));
+            throw new IllegalArgumentException("Unsupported redirect: " + response + possibly(error(response)));
         }
+    }
+
+    private String possibly(String error) {
+        return error == null || error.trim().isEmpty() ? "" : "\n" + error.trim();
     }
 
     private String error(HttpResponse<InputStream> response) {
@@ -134,7 +167,7 @@ class Invoker implements InvocationHandler {
         }
     }
 
-    private Object read(Meta meta, HttpResponse<InputStream> response) {
+    private Object readResponse(Meta meta, HttpResponse<InputStream> response) {
         try (InputStream body = response.body()) {
             return meta.response(body);
         } catch (IOException e) {
