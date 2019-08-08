@@ -17,7 +17,7 @@
 
 package no.scienta.unearth.client.dto;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class FaultIdDto extends FeedIdDto {
 
     public FaultIdDto() {

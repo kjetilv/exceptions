@@ -17,6 +17,7 @@
 
 package no.scienta.unearth.client.dto;
 
+@SuppressWarnings("unused")
 class FeedIdDto extends IdDto {
 
     FeedIdDto(String type) {

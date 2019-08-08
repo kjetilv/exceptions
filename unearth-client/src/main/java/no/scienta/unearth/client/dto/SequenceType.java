@@ -20,6 +20,7 @@ package no.scienta.unearth.client.dto;
 import java.util.function.Function;
 import java.util.function.ToLongFunction;
 
+@SuppressWarnings("unused")
 public enum SequenceType implements ToLongFunction<FaultEventDto> {
 
     GLOBAL(dto -> dto.sequenceNo),

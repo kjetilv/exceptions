@@ -17,6 +17,7 @@
 
 package no.scienta.unearth.client.dto;
 
+@SuppressWarnings("unused")
 public class CauseStrandDto {
 
     public CauseStrandIdDto id;

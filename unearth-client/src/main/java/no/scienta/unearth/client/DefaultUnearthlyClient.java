@@ -136,7 +136,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
             stackType == StackType.PRINT);
     }
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+    static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
         .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
         .registerModule(new Jdk8Module())
         .registerModule(new JavaTimeModule());

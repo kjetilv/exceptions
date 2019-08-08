@@ -19,6 +19,7 @@ package no.scienta.unearth.client.dto;
 
 import java.time.ZonedDateTime;
 
+@SuppressWarnings("unused")
 public class FaultEventDto {
 
     public FaultEventIdDto id;
