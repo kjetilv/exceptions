@@ -154,7 +154,7 @@ class Invoker implements InvocationHandler {
     }
 
     private String possibly(String error) {
-        return error == null || error.trim().isEmpty() ? "" : "\n" + error.trim();
+        return error == null || error.isBlank() ? "" : "\n" + error.trim();
     }
 
     private String error(HttpResponse<InputStream> response) {

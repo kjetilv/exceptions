@@ -35,25 +35,28 @@
 package no.scienta.unearth.util;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BinaryOperator;
 
 public final class Util {
 
     public static <T> Collection<T> orEmpty(Collection<T> t) {
-        return t == null || t.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(t));
+        return t == null || t.isEmpty() ? Collections.emptyList() : List.copyOf(t);
     }
 
     public static <T> List<T> orEmptyList(Collection<T> t) {
-        return t == null || t.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(t));
+        return t == null || t.isEmpty() ? Collections.emptyList() : List.copyOf(t);
     }
 
     public static <K, V> Map<K, V> orEmptyMap(Map<K, V> t) {
-        return t == null || t.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(new HashMap<>(t));
+        return t == null || t.isEmpty() ? Collections.emptyMap() : Map.copyOf(t);
     }
 
     public static <T> List<T> orEmpty(List<T> t) {
-        return t == null || t.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(t));
+        return t == null || t.isEmpty() ? Collections.emptyList() : List.copyOf(t);
     }
 
     public static boolean isLongerThan(Duration time, Duration comparedValue) {

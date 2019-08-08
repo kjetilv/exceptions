@@ -117,7 +117,7 @@ final class Meta {
         String fullPath =
             path.replace("{}", arg instanceof IdDto ? ((IdDto) arg).uuid.toString() : arg.toString());
         String queryPath = queryPath(args);
-        return queryPath.isEmpty()
+        return queryPath == null || queryPath.isBlank()
             ? fullPath
             : fullPath + '?' + queryPath;
     }

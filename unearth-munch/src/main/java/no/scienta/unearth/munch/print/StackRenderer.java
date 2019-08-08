@@ -18,13 +18,10 @@
 package no.scienta.unearth.munch.print;
 
 import no.scienta.unearth.munch.model.Cause;
-import no.scienta.unearth.munch.model.CauseChain;
 
 import java.util.List;
 
 public interface StackRenderer {
 
     List<String> render(Cause cause);
-
-    List<String> render(CauseChain causeChain);
 }

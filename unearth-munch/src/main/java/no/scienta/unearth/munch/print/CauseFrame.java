@@ -159,7 +159,7 @@ public class CauseFrame extends AbstractHashable {
     }
 
     private static boolean blank(String s) {
-        return s == null || s.length() == 0 || s.trim().isEmpty();
+        return s == null || s.length() == 0 || s.isBlank();
     }
 
     public StringBuilder defaultPrint(StringBuilder sb) {

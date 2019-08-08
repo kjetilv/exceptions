@@ -18,7 +18,6 @@
 package no.scienta.unearth.munch.print;
 
 import no.scienta.unearth.munch.model.Cause;
-import no.scienta.unearth.munch.model.CauseChain;
 import no.scienta.unearth.util.Streams;
 import no.scienta.unearth.util.Util;
 
@@ -103,11 +102,6 @@ public class ConfigurableStackRenderer implements StackRenderer {
     @Override
     public List<String> render(Cause cause) {
         return renderFrames(cause.getCauseStrand().getCauseFrames());
-    }
-
-    @Override
-    public List<String> render(CauseChain causeChain) {
-        return renderFrames(causeChain.getCauseFrames());
     }
 
     private List<String> renderFrames(List<CauseFrame> causeFrames) {

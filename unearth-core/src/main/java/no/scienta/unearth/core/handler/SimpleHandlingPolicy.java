@@ -18,15 +18,9 @@
 package no.scienta.unearth.core.handler;
 
 import no.scienta.unearth.core.HandlingPolicy;
-import no.scienta.unearth.munch.model.CauseChain;
 import no.scienta.unearth.munch.model.Fault;
 import no.scienta.unearth.munch.model.FaultEvent;
 import no.scienta.unearth.munch.model.FaultStrand;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Supplier;
 
 class SimpleHandlingPolicy implements HandlingPolicy {
 
@@ -36,24 +30,18 @@ class SimpleHandlingPolicy implements HandlingPolicy {
 
     private final Action action;
 
-    private final Map<Action, Supplier<CauseChain>> causeChains;
-
     SimpleHandlingPolicy(FaultEvent faultEvent) {
-        this(null, faultEvent, null, null);
+        this(null, faultEvent, null);
     }
 
     private SimpleHandlingPolicy(
         String summary,
         FaultEvent faultEvent,
-        Action action,
-        Map<Action, Supplier<CauseChain>> causeChains
+        Action action
     ) {
         this.summary = summary;
         this.faultEvent = faultEvent;
         this.action = action;
-        this.causeChains = causeChains == null || causeChains.isEmpty()
-            ? Collections.emptyMap()
-            : Collections.unmodifiableMap(new HashMap<>(causeChains));
     }
 
     @Override
@@ -97,10 +85,10 @@ class SimpleHandlingPolicy implements HandlingPolicy {
     }
 
     SimpleHandlingPolicy withSummary(String summary) {
-        return new SimpleHandlingPolicy(summary, faultEvent, action, causeChains);
+        return new SimpleHandlingPolicy(summary, faultEvent, action);
     }
 
     SimpleHandlingPolicy withAction(Action action) {
-        return new SimpleHandlingPolicy(summary, faultEvent, action, causeChains);
+        return new SimpleHandlingPolicy(summary, faultEvent, action);
     }
 }

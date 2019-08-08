@@ -72,7 +72,7 @@ public class GroupedList<G, T> {
     }
 
     private List<Group<G, T>> groups() {
-        return Collections.unmodifiableList(new ArrayList<>(groups));
+        return List.copyOf(groups);
     }
 
     private Group<G, T> group(G g) {

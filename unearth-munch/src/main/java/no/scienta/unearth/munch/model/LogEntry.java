@@ -47,7 +47,7 @@ public class LogEntry extends AbstractHashableIdentifiable<FaultLogId> {
             .orElseGet(Stream::empty)
             .map(String::valueOf)
             .toArray(String[]::new);
-        if (this.logMessage.trim().isEmpty()) {
+        if (this.logMessage.isBlank()) {
             throw new IllegalArgumentException("Empty log statement");
         }
     }

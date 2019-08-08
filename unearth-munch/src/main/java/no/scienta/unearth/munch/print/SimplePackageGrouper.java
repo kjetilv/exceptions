@@ -25,10 +25,6 @@ public class SimplePackageGrouper implements ConfigurableStackRenderer.PackageGr
 
     private final Collection<Collection<String>> groups;
 
-    public SimplePackageGrouper(String... groups) {
-        this(Arrays.asList(groups));
-    }
-
     public SimplePackageGrouper(List<String> groups) {
         this(Collections.singleton(groups));
     }

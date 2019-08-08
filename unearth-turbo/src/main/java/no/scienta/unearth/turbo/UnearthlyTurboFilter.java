@@ -52,7 +52,7 @@ public class UnearthlyTurboFilter extends TurboFilter {
         this.renderer = renderer;
         this.renderers = renderers == null || renderers.isEmpty()
             ? Collections.emptyMap()
-            : Collections.unmodifiableMap(new HashMap<>(renderers));
+            : Map.copyOf(renderers);
     }
 
     @Override

@@ -97,7 +97,7 @@ public class ThrowableParser {
     private static List<String> trimmed(String in) {
         return Arrays.stream(in.trim().split("\n"))
             .filter(Objects::nonNull)
-            .filter(line -> !line.trim().isEmpty())
+            .filter(line -> !line.isBlank())
             .map(String::trim)
             .collect(Collectors.toList());
     }

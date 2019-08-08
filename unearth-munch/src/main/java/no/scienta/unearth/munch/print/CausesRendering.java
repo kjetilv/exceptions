@@ -39,7 +39,7 @@ public class CausesRendering implements Iterable<CausesRendering> {
 
     CausesRendering(String className, String message, Collection<String> stack, CausesRendering cause) {
         this.className = className;
-        this.message = message == null || message.trim().isEmpty() ? "null" : message.trim();
+        this.message = message == null || message.isBlank() ? "null" : message.trim();
         this.stack = Util.orEmpty(stack);
         this.cause = cause;
     }

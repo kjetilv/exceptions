@@ -94,7 +94,7 @@ class UnearthlyServer(
                 summary = "Ping"
                 consumes += TEXT_PLAIN
                 produces += TEXT_PLAIN
-            } bindContract GET to { request ->
+            } bindContract GET to {
                 Response(OK).body("pong\n")
             }
 
