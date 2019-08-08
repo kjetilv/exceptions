@@ -1,0 +1,26 @@
+Exception in thread "main" java.lang.IllegalStateException: Failed to read response: class no.scienta.unearth.client.dto.FaultDto <= jdk.internal.net.http.ResponseSubscribers$HttpResponseInputStream@5f8edcc5
+	at no.scienta.unearth.client.proto.Invoker.readBytes(Invoker.java:107)
+	at no.scienta.unearth.client.proto.Meta.response(Meta.java:114)
+	at no.scienta.unearth.client.proto.Invoker.read(Invoker.java:148)
+	at no.scienta.unearth.client.proto.Invoker.responseBody(Invoker.java:92)
+	at no.scienta.unearth.client.proto.Invoker.invoke(Invoker.java:69)
+	at com.sun.proxy.$Proxy0.fault(Unknown Source)
+	at no.scienta.unearth.client.DefaultUnearthlyClient.fault(DefaultUnearthlyClient.java:63)
+	at no.scienta.unearth.client.main.Feed.lambda$main$0(Feed.java:57)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:195)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:195)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(Arrautil.stream.AbstractPipeline.copyInto(AbstractPipeline.java:484)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:474)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:497)
+	at no.scienta.unearth.client.main.Feed.main(Feed.java:65)
+Caused by: unearthly.xml.jackson.databind.exc.MismatchedInputException: No content to map due to end-of-input
+ at [Source: (jdk.internal.net.http.ResponseSubscribers$HttpResponseInputStream); line: 1, column: 0]
+	at unearthly.xml.jackson.databind.exc.MismatchedInputException.from(MismatchedInputException.java:59)
+	at unearthly.xml.jackson.databind.DeserializationContext.reportInputMismatch(DeserializationContext.java:1t unearthly.xml.jackson.databind.ObjectReader._initForReading(ObjectReader.java:358)
+	at unearthly.xml.jackson.databind.ObjectReader._bindAndClose(ObjectReader.java:1596)
+	at unearthly.xml.jackson.databind.ObjectReader.readValue(ObjectReader.java:1188)
+	at no.scienta.unearth.client.proto.Invoker.readBytes(Invoker.java:105)
+	... 17 more
