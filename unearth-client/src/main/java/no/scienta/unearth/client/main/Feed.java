@@ -24,17 +24,15 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import no.scienta.unearth.client.UnearthlyClient;
-import no.scienta.unearth.client.dto.FaultIdDto;
-import no.scienta.unearth.client.dto.Submission;
+import no.scienta.unearth.client.dto.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class Feed {
@@ -47,21 +45,15 @@ public class Feed {
 
     public static void main(String[] args) {
         URI uri = URI.create(args[0]);
-        Collection<UUID> uuids =
-            Arrays.stream(args).skip(1).map(UUID::fromString).collect(Collectors.toList());
+        Collection<IdDto> uuids =
+            Arrays.stream(args).skip(1).map(Feed::fromString).collect(Collectors.toList());
         UnearthlyClient client = UnearthlyClient.connect(uri);
 
         uuids.stream()
-            .map(Feed::faultId)
-            .map(faultIdDto ->
-                client.fault(faultIdDto, UnearthlyClient.StackType.FULL))
-            .map(value -> {
-                try {
-                    return OBJECT_MAPPER.writeValueAsString(value);
-                } catch (JsonProcessingException e) {
-                    throw new IllegalStateException(e);
-                }
-            })
+            .map(fetchFrom(client))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .map(Feed::serialize)
             .forEach(System.out::println);
 
         String input = stdin();
@@ -71,10 +63,56 @@ public class Feed {
         System.out.println(submit.faultEventId);
     }
 
-    private static FaultIdDto faultId(UUID id) {
-        return new FaultIdDto() {{
-            uuid = id;
-        }};
+    private static String serialize(Object value) {
+        try {
+            return OBJECT_MAPPER.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static Function<IdDto, Optional<?>> fetchFrom(UnearthlyClient client) {
+        return id -> {
+            if (id instanceof FaultIdDto) {
+                return client.fault((FaultIdDto) id, UnearthlyClient.StackType.FULL);
+            }
+            if (id instanceof FaultStrandIdDto) {
+                return client.faultStrand((FaultStrandIdDto) id, UnearthlyClient.StackType.FULL);
+            }
+            if (id instanceof CauseIdDto) {
+                return client.cause((CauseIdDto) id, UnearthlyClient.StackType.FULL);
+            }
+            if (id instanceof CauseStrandIdDto) {
+                return client.causeStrand((CauseStrandIdDto) id, UnearthlyClient.StackType.FULL);
+            }
+            if (id instanceof FaultEventIdDto) {
+                return client.faultEvent((FaultEventIdDto) id);
+            }
+            throw new IllegalArgumentException("Invalid id: " + id);
+        };
+    }
+
+    private static IdDto fromString(String input) {
+        int split = input.indexOf(":");
+        if (split == -1) {
+            throw new IllegalStateException("Invalid reference: " + input);
+        }
+        UUID uuid = UUID.fromString(input.substring(split + 1));
+        String type = input.substring(0, split).toLowerCase(Locale.ROOT);
+        switch (type) {
+            case "fault":
+                return new FaultIdDto(uuid);
+            case "fault-strand":
+                return new FaultStrandIdDto(uuid);
+            case "cause":
+                return new CauseIdDto(uuid);
+            case "cause-strand":
+                return new CauseStrandIdDto(uuid);
+            case "fault-event":
+                return new FaultEventIdDto(uuid);
+            default:
+                throw new IllegalStateException("Unused type " + type + ":" + uuid);
+        }
     }
 
     private static String stdin() {

@@ -24,11 +24,16 @@ import java.util.UUID;
 public class IdDto {
 
     public IdDto() {
-        this(null);
+        this(null, null);
     }
 
     IdDto(String type) {
+        this(type, null);
+    }
+
+    IdDto(String type, UUID uuid) {
         this.type = type;
+        this.uuid = uuid;
     }
 
     public UUID uuid;

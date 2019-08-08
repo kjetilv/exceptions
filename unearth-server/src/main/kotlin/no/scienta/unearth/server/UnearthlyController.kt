@@ -24,7 +24,7 @@ import no.scienta.unearth.munch.model.Cause
 import no.scienta.unearth.munch.model.CauseStrand
 import no.scienta.unearth.munch.model.Fault
 import no.scienta.unearth.munch.model.FaultEvent
-import no.scienta.unearth.munch.print.*
+import no.scienta.unearth.munch.print.CauseFrame
 import no.scienta.unearth.server.dto.*
 import java.time.Clock
 import java.time.ZoneId
@@ -146,34 +146,11 @@ class UnearthlyController(
                     faultEvent.faultSequenceNo,
                     faultEvent.faultStrandSequenceNo)
 
-    fun rewriteThrowable(faultId: FaultId, groups: Collection<String>?): CauseChainDto? {
-        val fault: Fault? = storage.getFault(faultId).orElse(null)
-        val renderer = SimpleCausesRenderer(ConfigurableStackRenderer().group(
-                SimplePackageGrouper(groups?.toList())))
-        return causeChainDto(renderer.render(fault))
-    }
-
     fun reset() {
         storage.reset()
         feed.reset()
         stats.reset()
     }
-
-    private fun causeChainDto(
-            chain: CausesRendering,
-            fullStack: Boolean = false,
-            printStack: Boolean = false,
-            thin: Boolean = false
-    ): CauseChainDto =
-            CauseChainDto(
-                    className = chain.className,
-                    message = chain.message,
-                    printedCauseFrames = if (chain.stack.isEmpty()) null else chain.stack,
-//                    causeStrand = if (thin) null else
-//                        causeStrandDto(chain.cause, fullStack, printStack),
-                    cause = chain.cause?.let {
-                        causeChainDto(it, fullStack)
-                    })
 
     private fun faultDto(fault: Fault, fullStack: Boolean, printStack: Boolean): FaultDto =
             FaultDto(

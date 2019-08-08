@@ -1,11 +1,17 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
-    application
     id("com.github.johnrengelman.shadow")
     kotlin("jvm")
 }
 
-application {
-    mainClassName = "no.scienta.unearth.main.MainKt"
+tasks.withType<ShadowJar>() {
+    manifest {
+        attributes(
+                mapOf(Pair("Main-Class", "no.scienta.unearth.main.MainKt"))
+        )
+    }
+    mergeServiceFiles()
 }
 
 dependencies {

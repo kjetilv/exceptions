@@ -34,10 +34,16 @@
 
 package no.scienta.unearth.client.dto;
 
-@SuppressWarnings("unused")
+import java.util.UUID;
+
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class CauseIdDto extends IdDto {
 
-    CauseIdDto() {
-        super("cause");
+    public CauseIdDto() {
+        this(null);
+    }
+
+    public CauseIdDto(UUID uuid) {
+        super("cause", uuid);
     }
 }

@@ -17,10 +17,16 @@
 
 package no.scienta.unearth.client.dto;
 
+import java.util.UUID;
+
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class FaultIdDto extends FeedIdDto {
 
     public FaultIdDto() {
-        super("fault");
+        this(null);
+    }
+
+    public FaultIdDto(UUID uuid) {
+        super("fault", uuid);
     }
 }

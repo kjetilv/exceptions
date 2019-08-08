@@ -17,11 +17,17 @@
 
 package no.scienta.unearth.client.dto;
 
+import java.util.UUID;
+
 @SuppressWarnings("unused")
 class FeedIdDto extends IdDto {
 
     FeedIdDto(String type) {
         super(type);
+    }
+
+    FeedIdDto(String type, UUID uuid) {
+        super(type, uuid);
     }
 
     public String feed;

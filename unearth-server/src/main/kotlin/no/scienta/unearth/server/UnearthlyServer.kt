@@ -120,20 +120,6 @@ class UnearthlyServer(
                 }
             }
 
-    private fun retrieveExceptionReduxRoute() =
-            "throwable-redux" / uuid(::FaultId) meta {
-                summary = "Print an exception"
-                produces += APPLICATION_JSON
-                queries += groupsQuery
-                returning(OK, causeChain to Swaggex.causeChainDto())
-            } bindContract GET to { faultId ->
-                { req ->
-                    get(causeChain) {
-                        controller.rewriteThrowable(faultId, groupsQuery[req])
-                    }
-                }
-            }
-
     private fun faultEventRoute() =
             "fault-event" / uuid(::FaultEventId) meta {
                 summary = "Lookup a fault event"
@@ -216,7 +202,7 @@ class UnearthlyServer(
                 }
             }
 
-    private fun globalLimit() =
+    private fun feedLimitRoute() =
             "feed/limit" meta {
                 summary = "Event limits global"
                 produces += APPLICATION_JSON
@@ -225,7 +211,7 @@ class UnearthlyServer(
                 controller.feedLimit()
             }
 
-    private fun feedLimitsFaultRoute() =
+    private fun faultFeedLimitRoute() =
             "feed/limit/fault" / uuid(::FaultId) meta {
                 summary = "Event limits for a fault"
                 produces += APPLICATION_JSON
@@ -237,7 +223,7 @@ class UnearthlyServer(
             }
 
 
-    private fun faultStrandLimit() =
+    private fun faultStrandFeedLimitRoute() =
             "feed/limit/fault-strand" / uuid(::FaultStrandId) meta {
                 summary = "Event limits for a fault strand"
                 produces += APPLICATION_JSON
@@ -248,7 +234,7 @@ class UnearthlyServer(
                 }
             }
 
-    private fun globalFeedRoute() =
+    private fun feedRoute() =
             "feed" meta {
                 summary = "Events global"
                 produces += APPLICATION_JSON
@@ -264,7 +250,7 @@ class UnearthlyServer(
                 }
             }
 
-    private fun feedLookupFaultRoute() =
+    private fun faultFeedRoute() =
             "feed/fault" / uuid(::FaultId) meta {
                 summary = "Events for a fault"
                 produces += APPLICATION_JSON
@@ -284,7 +270,7 @@ class UnearthlyServer(
                 }
             }
 
-    private fun feedLookupFaultStrandRoute() =
+    private fun faultStrandFeedRoute() =
             "feed/fault-strand" / uuid(::FaultStrandId) meta {
                 summary = "Events for a fault strand"
                 produces += APPLICATION_JSON
@@ -343,42 +329,37 @@ class UnearthlyServer(
             configuration.prefix bind contract {
                 renderer = OpenApi3(
                         apiInfo = ApiInfo("Unearth", "v1", "Taking exceptions seriously"),
-                        json = JSON
-                )
-                descriptionPath =
-                        "/swagger.json"
-                routes +=
-                        submitExceptionRoute()
+                        json = JSON)
+                descriptionPath = "/swagger.json"
                 routes += listOf(
+                        submitExceptionRoute(),
                         faultRoute(),
                         faultStrandRoute(),
-                        faultEventRoute(),
+
                         causeRoute(),
-                        causeStrandRoute()
-                )
-                routes += listOf(
-                        globalLimit(),
-                        feedLimitsFaultRoute(),
-                        faultStrandLimit(),
-                        globalFeedRoute(),
-                        feedLookupFaultRoute(),
-                        feedLookupFaultStrandRoute()
-                )
-                routes += listOf(
+                        causeStrandRoute(),
+
+                        faultEventRoute(),
+
+                        feedLimitRoute(),
+                        feedRoute(),
+
+                        faultFeedLimitRoute(),
+                        faultFeedRoute(),
+
+                        faultStrandFeedLimitRoute(),
+                        faultStrandFeedRoute(),
+
                         retrieveExceptionRoute(),
-                        retrieveExceptionReduxRoute()
-                )
-                routes += pingRoute()
+
+                        pingRoute())
             }
 
     private fun handledResponse(response: Response, request: Request): Response =
-            when {
-                response.status.successful || response.status.redirection || response.status.clientError ->
-                    response
-                else ->
-                    handledException(
-                            RuntimeException("Internal server error: ${request.uri}"), request, response)
-            }
+            if (response.status.successful || response.status.redirection || response.status.clientError)
+                response
+            else
+                handledException(RuntimeException("Internal server error: ${request.uri}"), request, response)
 
     private fun handledException(e: Throwable, request: Request, response: Response? = null): Response {
         val message = "Exception occurred: ${request?.method ?: "?"} ${request?.uri ?: "?"}"
@@ -494,9 +475,6 @@ class UnearthlyServer(
 
         private val countQuery =
                 Query.long().optional("count", "No. of elements to retrieve from start point in feed")
-
-        private val groupsQuery =
-                Query.string().multi.optional("group", "Group to collapse")
 
         private val swaggerUiPattern =
                 Pattern.compile("^.*swagger-ui-([\\d.]+).jar!.*$")
