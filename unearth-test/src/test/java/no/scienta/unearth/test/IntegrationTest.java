@@ -136,15 +136,17 @@ public class IntegrationTest {
 
     @BeforeClass
     public static void up() {
-        state = new Unearth(new UnearthlyConfig(
-            "/api/test",
-            "localhost",
-            0,
-            true,
-            true,
-            CASSANDRA.getContainerIpAddress(),
-            CASSANDRA.getFirstMappedPort()
-        )).invoke();
+        state = new Unearth(
+            new UnearthlyConfig(
+                "/api/test",
+                "localhost",
+                0,
+                true,
+                true,
+                CASSANDRA.getContainerIpAddress(),
+                CASSANDRA.getFirstMappedPort()
+            )
+        ).invoke();
         client = UnearthlyClient.connect(state.url());
     }
 

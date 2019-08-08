@@ -21,7 +21,6 @@ plugins {
 
 dependencies {
     compile(project(":unearth-core"))
-    compile(project(":unearth-metrics"))
     compile(project(":unearth-static"))
     compile(project(":unearth-turbo"))
     compile(project(":unearth-analysis"))
