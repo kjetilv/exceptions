@@ -19,6 +19,7 @@ package no.scienta.unearth.analysis;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Host;
+import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
 import no.scienta.unearth.core.FaultSensor;
 import no.scienta.unearth.munch.model.FaultEvent;
@@ -32,14 +33,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class CassandraSensor implements FaultSensor {
-
-    private static final Logger log = LoggerFactory.getLogger(CassandraSensor.class);
-
-    private static final String RELEASE_VERSION = "release_version";
-
-    private static final String VERSION_QUERY = "select " + RELEASE_VERSION + " from system.local";
-
-    private final Cluster cluster;
 
     public CassandraSensor(String host, int port) {
         this.cluster = Cluster.builder()
@@ -57,11 +50,48 @@ public class CassandraSensor implements FaultSensor {
                     .collect(Collectors.joining(", ")),
                 version);
         });
+
+        inSession(session -> {
+            session.execute("CREATE KEYSPACE" +
+                " IF NOT EXISTS " + KEYSPACE +
+                " WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor' : 1}");
+        });
+
+        inKeyspace(session -> {
+            session.execute(
+                "CREATE TABLE IF NOT EXISTS fault (" +
+                    "id uuid PRIMARY KEY," +
+                    "faultStrand uuid" +
+                    ")"
+            );
+            session.execute(
+                "CREATE TABLE IF NOT EXISTS faultStrand(" +
+                    "id uuid PRIMARY KEY" +
+                    ")"
+            );
+        });
     }
 
     @Override
     public void register(FaultEvent faultEvent) {
+        inKeyspace(session -> {
+            exec(session, "INSERT INTO fault (id, faultStrand) VALUES (?, ?)",
+                faultEvent.getFault().getId().getHash(), faultEvent.getFault().getFaultStrand().getId().getHash());
+            exec(session, "INSERT INTO faultStrand (id) VALUES (?)",
+                faultEvent.getFault().getFaultStrand().getId().getHash());
+        });
+    }
 
+    private void exec(Session session, String stmt, Object... args) {
+        PreparedStatement prepared = session.prepare(stmt);
+        session.execute(prepared.bind(args));
+    }
+
+    private <T> T inKeyspace(Function<Session, T> action) {
+        return inSession(session -> {
+            session.execute(USE_KEYSPACE);
+            return action.apply(session);
+        });
     }
 
     private <T> T inSession(Function<Session, T> action) {
@@ -70,6 +100,13 @@ public class CassandraSensor implements FaultSensor {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to perform action", e);
         }
+    }
+
+    private void inKeyspace(Consumer<Session> action) {
+        inSession(session -> {
+            session.execute(USE_KEYSPACE);
+            action.accept(session);
+        });
     }
 
     private void inSession(Consumer<Session> action) {
@@ -94,6 +131,17 @@ public class CassandraSensor implements FaultSensor {
             throw new IllegalStateException("Failed to resolve " + addr, e);
         }
     }
+
+    private static final Logger log = LoggerFactory.getLogger(CassandraSensor.class);
+
+    private static final String RELEASE_VERSION = "release_version";
+
+    private static final String VERSION_QUERY = "select " + RELEASE_VERSION + " from system.local";
+
+    private static final String KEYSPACE = "unearth";
+    private static final String USE_KEYSPACE = " USE " + KEYSPACE;
+
+    private final Cluster cluster;
 
     private static InetAddress inetAddr(String host) {
         try {
