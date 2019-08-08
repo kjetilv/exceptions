@@ -17,12 +17,11 @@
 
 package no.scienta.unearth.server
 
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import no.scienta.unearth.core.storage.InMemoryFaults
+import no.scienta.unearth.core.poc.InMemoryFaultSensor
+import no.scienta.unearth.core.poc.InMemoryFaults
+import no.scienta.unearth.server.JSON.auto
 import no.scienta.unearth.server.dto.FaultStrandDto
 import no.scienta.unearth.server.dto.Submission
-import no.scienta.unearth.metrics.MeteringThrowablesSensor
-import no.scienta.unearth.server.JSON.auto
 import org.http4k.client.ApacheClient
 import org.http4k.core.Body
 import org.http4k.core.Method
@@ -31,7 +30,7 @@ import java.time.Clock
 
 fun main() {
 
-    val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
+    val sensor = InMemoryFaultSensor()
 
     val storage = InMemoryFaults(sensor)
 

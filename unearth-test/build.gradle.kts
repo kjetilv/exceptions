@@ -18,4 +18,10 @@
 dependencies {
     testCompile(project(":unearth-server"))
     testCompile(project(":unearth-client"))
+
+    testCompile("org.testcontainers:cassandra")
+
+    testRuntime("org.webjars:swagger-ui")
+    testRuntime("io.dropwizard.metrics:metrics-jmx")
+    testRuntime("ch.qos.logback:logback-classic")
 }

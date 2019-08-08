@@ -27,5 +27,9 @@ data class UnearthlyConfig(
 
         val selfDiagnose: Boolean = false,
 
-        val unearthlyLogging: Boolean = false
+        val unearthlyLogging: Boolean = false,
+
+        val cassandraHost: String = "127.0.0.1",
+
+        val cassandraPort: Int = 9042
 )

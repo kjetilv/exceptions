@@ -24,6 +24,7 @@ dependencies {
     compile(project(":unearth-metrics"))
     compile(project(":unearth-static"))
     compile(project(":unearth-turbo"))
+    compile(project(":unearth-analysis"))
 
     compile("org.http4k:http4k-core")
     compile("org.http4k:http4k-contract")
@@ -36,13 +37,9 @@ dependencies {
     compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 
     compile("io.swagger.core.v3:swagger-core")
-    runtime("org.webjars:swagger-ui")
-
     compile("io.micrometer:micrometer-registry-jmx")
 
     compile("com.natpryce:konfig:1.6.10.0")
-
-    runtime("ch.qos.logback:logback-classic")
 
     testCompile("junit:junit:4.12")
 

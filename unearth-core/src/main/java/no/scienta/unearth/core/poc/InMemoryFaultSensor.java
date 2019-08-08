@@ -15,27 +15,19 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+package no.scienta.unearth.core.poc;
 
-plugins {
-    id("com.github.johnrengelman.shadow")
-    kotlin("jvm")
-}
+import no.scienta.unearth.core.FaultSensor;
+import no.scienta.unearth.munch.model.FaultEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-tasks.withType<ShadowJar>() {
-    manifest {
-        attributes(
-                mapOf(Pair("Main-Class", "no.scienta.unearth.main.MainKt"))
-        )
+public class InMemoryFaultSensor implements FaultSensor {
+
+    private static final Logger log = LoggerFactory.getLogger(InMemoryFaultSensor.class);
+
+    @Override
+    public void register(FaultEvent faultEvent) {
+        log.info("Sensed {}", faultEvent);
     }
-    mergeServiceFiles()
-}
-
-dependencies {
-    compile(project(":unearth-server"))
-
-    runtime("org.webjars:swagger-ui")
-    runtime("ch.qos.logback:logback-classic")
-
-    implementation(kotlin("stdlib"))
 }

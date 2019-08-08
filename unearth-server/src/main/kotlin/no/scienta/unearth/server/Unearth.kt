@@ -20,10 +20,9 @@ package no.scienta.unearth.server
 import ch.qos.logback.classic.LoggerContext
 import com.natpryce.konfig.*
 import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import no.scienta.unearth.analysis.CassandraSensor
 import no.scienta.unearth.core.HandlingPolicy
-import no.scienta.unearth.core.storage.InMemoryFaults
-import no.scienta.unearth.metrics.MeteringThrowablesSensor
+import no.scienta.unearth.core.poc.InMemoryFaults
 import no.scienta.unearth.munch.model.FrameFun
 import no.scienta.unearth.munch.print.*
 import no.scienta.unearth.turbo.UnearthlyTurboFilter
@@ -37,7 +36,7 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
 
     private val clock: Clock = Clock.systemDefaultZone()
 
-    private val sensor = MeteringThrowablesSensor(SimpleMeterRegistry())
+    private val sensor = CassandraSensor(customConfiguration?.cassandraHost!!, customConfiguration.cassandraPort)
 
     private val storage = InMemoryFaults(sensor, clock)
 
@@ -105,7 +104,10 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
                 host = config[Key("server.host", stringType)],
                 port = config[Key("server.port", intType)],
                 selfDiagnose = config[Key("unearth.self-diagnose", booleanType)],
-                unearthlyLogging = config[Key("unearth.logging", booleanType)])
+                unearthlyLogging = config[Key("unearth.logging", booleanType)],
+                cassandraHost = config[Key("unearth.cassandra-host", stringType)],
+                cassandraPort = config[Key("unearth.cassandra-port", intType)]
+        )
     }
 
     private fun reconfigureLogging(controller: UnearthlyController) {
@@ -153,8 +155,6 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
             if (configuration.host == UnearthlyConfig().host) "127.0.0.1" else configuration.host
 
     companion object {
-
-        fun conf(name: String): String = loadConfiguration()[Key(name, stringType)]
 
         private val logger: Logger = LoggerFactory.getLogger(Unearth::class.java)
 

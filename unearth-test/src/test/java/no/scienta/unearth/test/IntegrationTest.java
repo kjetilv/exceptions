@@ -23,10 +23,8 @@ import no.scienta.unearth.client.dto.*;
 import no.scienta.unearth.server.Unearth;
 import no.scienta.unearth.server.UnearthlyConfig;
 import no.scienta.unearth.util.Throwables;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
+import org.testcontainers.containers.GenericContainer;
 
 import java.io.IOException;
 
@@ -39,6 +37,11 @@ public class IntegrationTest {
     private static Unearth.State state;
 
     private static UnearthlyClient client;
+
+    @ClassRule
+    public static final GenericContainer CASSANDRA =
+        new GenericContainer<>("cassandra:3.11")
+            .withExposedPorts(9042);
 
     @Test
     public void verifyFeedCounters() {
@@ -138,18 +141,24 @@ public class IntegrationTest {
             "localhost",
             0,
             true,
-            true
+            true,
+            CASSANDRA.getContainerIpAddress(),
+            CASSANDRA.getFirstMappedPort()
         )).invoke();
         client = UnearthlyClient.connect(state.url());
     }
 
     @AfterClass
     public static void down() {
-        state.close();
+        if (state != null) {
+            state.close();
+        }
     }
 
     @After
     public void reset() {
-        state.reset();
+        if (state != null) {
+            state.reset();
+        }
     }
 }

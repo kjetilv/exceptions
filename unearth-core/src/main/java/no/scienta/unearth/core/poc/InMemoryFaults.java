@@ -15,12 +15,13 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.core.storage;
+package no.scienta.unearth.core.poc;
 
 import no.scienta.unearth.core.FaultFeed;
 import no.scienta.unearth.core.FaultSensor;
 import no.scienta.unearth.core.FaultStats;
 import no.scienta.unearth.core.FaultStorage;
+import no.scienta.unearth.munch.base.AbstractHashable;
 import no.scienta.unearth.munch.id.*;
 import no.scienta.unearth.munch.model.*;
 
@@ -378,5 +379,32 @@ public class InMemoryFaults
 
     private static <K, V> void addTo(Map<K, Collection<V>> map, K k, V v) {
         map.computeIfAbsent(k, __ -> new ArrayList<>()).add(v);
+    }
+
+    static class UniqueIncident extends AbstractHashable {
+
+        private final int systemHashCode;
+
+        private final FaultEvents faultEvents;
+
+        UniqueIncident(int systemHashCode, FaultEvents faultEvents) {
+            this.systemHashCode = systemHashCode;
+            this.faultEvents = Objects.requireNonNull(faultEvents, "faultEvent");
+        }
+
+        FaultEvents getFaultEvents() {
+            return faultEvents;
+        }
+
+        @Override
+        protected String toStringBody() {
+            return systemHashCode + ":" + faultEvents;
+        }
+
+        @Override
+        public void hashTo(Consumer<byte[]> h) {
+            hash(h, systemHashCode);
+            hash(h, faultEvents);
+        }
     }
 }
