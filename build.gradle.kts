@@ -21,15 +21,15 @@ val jacksonVer = "2.9.9"
 
 val http4kVer = "3.169.0"
 
-val retrofitVer = "2.6.1"
-
-val micrometerVer = "1.1.4"
+val micrometerVer = "1.2.0"
 
 val konfigVer = "1.6.10.0"
 
 val swaggerVer = "2.0.8"
 
 val logbackVer = "1.3.0-alpha4"
+
+val cassandraVer = "3.1.4"
 
 val flywayVer = "6.0.0-beta2"
 
@@ -86,9 +86,6 @@ allprojects {
 
             compile("com.natpryce:konfig:$konfigVer")
 
-            compile("com.squareup.retrofit2:retrofit:$retrofitVer")
-            compile("com.squareup.retrofit2:converter-jackson:$retrofitVer")
-
             compile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jacksonVer")
             compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVer")
             compile("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVer")
@@ -96,6 +93,9 @@ allprojects {
 
             compile("io.swagger.core.v3:swagger-core:$swaggerVer")
             runtime("org.webjars:swagger-ui:$swaggerUiVer")
+
+            compile("com.datastax.cassandra:cassandra-driver-core:$cassandraVer")
+            compile("com.datastax.cassandra:cassandra-driver-mapping:$cassandraVer")
 
             compile("io.micrometer:micrometer-registry-jmx:$micrometerVer")
             compile("io.micrometer:micrometer-core:$micrometerVer")

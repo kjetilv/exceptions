@@ -15,7 +15,7 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.persistence;
+package no.scienta.unearth.jdbc;
 
 import no.scienta.unearth.munch.base.Hashable;
 
