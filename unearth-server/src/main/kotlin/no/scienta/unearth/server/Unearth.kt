@@ -120,7 +120,8 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
                 cassandra = UnearthlyCassandraConfig(
                         host = config[Key("unearth.cassandra-host", stringType)],
                         port = config[Key("unearth.cassandra-port", intType)],
-                        dc = config[Key("unearth.cassandra-dc", stringType)]))
+                        dc = config[Key("unearth.cassandra-dc", stringType)],
+                        keyspace = config[Key("unearth.cassandra-keyspace", stringType)]))
     }
 
     private fun reconfigureLogging(controller: UnearthlyController) {
