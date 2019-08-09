@@ -36,8 +36,12 @@ class UnearthlyController(
         private val renderer: UnearthlyRenderer,
         private val configuration: UnearthlyConfig,
         clock: Clock = Clock.systemDefaultZone()
-) {
+) : AutoCloseable {
     val handler: FaultHandler = DefaultFaultHandler(storage, stats, clock)
+
+    override fun close() {
+        listOf(storage, feed, stats).forEach(AutoCloseable::close)
+    }
 
     fun submitRaw(t: Throwable): HandlingPolicy = handler.handle(t)!!
 

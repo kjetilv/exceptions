@@ -17,38 +17,40 @@
 
 package no.scienta.unearth.analysis;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Host;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.metadata.EndPoint;
+import com.datastax.oss.driver.api.core.metadata.Node;
 import no.scienta.unearth.core.FaultSensor;
 import no.scienta.unearth.munch.model.FaultEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CassandraSensor implements FaultSensor {
 
-    public CassandraSensor(String host, int port) {
-        this.cluster = Cluster.builder()
-            .withoutJMXReporting()
-            .addContactPoints(resolve(host))
-            .withPort(port)
+    private final CqlSession cqlSession;
+
+    public CassandraSensor(String host, int port, String dc) {
+        this.cqlSession = CqlSession.builder()
+            .addContactPoint(InetSocketAddress.createUnresolved(host, port))
+            .withLocalDatacenter(dc)
             .build();
 
         inSession(session -> {
-            String version = session.execute(VERSION_QUERY).one().getString(RELEASE_VERSION);
+            Row row = session.execute(VERSION_QUERY).one();
+            if (row == null) {
+                throw new IllegalStateException("Failed to obtain version information");
+            }
             log.info("Connected to Cassandra @ {}: {}",
-                cluster.getMetadata().getAllHosts().stream()
-                    .map(Host::getSocketAddress)
-                    .map(InetSocketAddress::getHostString)
-                    .collect(Collectors.joining(", ")),
-                version);
+                endPoints(session).map(EndPoint::asMetricPrefix).collect(Collectors.joining(", ")),
+                row.getString(RELEASE_VERSION));
         });
 
         inSession(session -> {
@@ -69,7 +71,19 @@ public class CassandraSensor implements FaultSensor {
                     "id uuid PRIMARY KEY" +
                     ")"
             );
+            session.execute(
+                "CREATE TABLE IF NOT EXISTS faultEvent(" +
+                    "id uuid PRIMARY KEY," +
+                    "fault uuid," +
+                    "faultStrand uuid" +
+                    ")"
+            );
         });
+    }
+
+    @Override
+    public void close() {
+        cqlSession.close();
     }
 
     @Override
@@ -79,57 +93,50 @@ public class CassandraSensor implements FaultSensor {
                 faultEvent.getFault().getId().getHash(), faultEvent.getFault().getFaultStrand().getId().getHash());
             exec(session, "INSERT INTO faultStrand (id) VALUES (?)",
                 faultEvent.getFault().getFaultStrand().getId().getHash());
+            exec(session, "INSERT INTO faultEvent (id, fault, faultStrand) VALUES (?, ?, ?)",
+                faultEvent.getId().getHash(),
+                faultEvent.getFault().getId().getHash(),
+                faultEvent.getFault().getFaultStrand().getId().getHash());
         });
     }
 
-    private void exec(Session session, String stmt, Object... args) {
+    private void exec(CqlSession session, String stmt, Object... args) {
         PreparedStatement prepared = session.prepare(stmt);
         session.execute(prepared.bind(args));
     }
 
-    private <T> T inKeyspace(Function<Session, T> action) {
+    private <T> T inKeyspace(Function<CqlSession, T> action) {
         return inSession(session -> {
             session.execute(USE_KEYSPACE);
             return action.apply(session);
         });
     }
 
-    private <T> T inSession(Function<Session, T> action) {
-        try (Session session = cluster.connect()) {
-            return action.apply(session);
+    private <T> T inSession(Function<CqlSession, T> action) {
+        try {
+            return action.apply(cqlSession);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to perform action", e);
         }
     }
 
-    private void inKeyspace(Consumer<Session> action) {
+    private void inKeyspace(Consumer<CqlSession> action) {
         inSession(session -> {
             session.execute(USE_KEYSPACE);
             action.accept(session);
         });
     }
 
-    private void inSession(Consumer<Session> action) {
-        try (Session session = cluster.connect()) {
-            action.accept(session);
+    private void inSession(Consumer<CqlSession> action) {
+        try {
+            action.accept(cqlSession);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to perform action", e);
         }
     }
 
-    private InetAddress resolve(String addr) {
-        if (addr == null) {
-            try {
-                return InetAddress.getLoopbackAddress();
-            } catch (Exception e) {
-                throw new IllegalStateException("Failed to resolve localhost", e);
-            }
-        }
-        try {
-            return InetAddress.getByName(addr);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to resolve " + addr, e);
-        }
+    private Stream<EndPoint> endPoints(CqlSession session) {
+        return session.getMetadata().getNodes().values().stream().map(Node::getEndPoint);
     }
 
     private static final Logger log = LoggerFactory.getLogger(CassandraSensor.class);
@@ -139,15 +146,6 @@ public class CassandraSensor implements FaultSensor {
     private static final String VERSION_QUERY = "select " + RELEASE_VERSION + " from system.local";
 
     private static final String KEYSPACE = "unearth";
+
     private static final String USE_KEYSPACE = " USE " + KEYSPACE;
-
-    private final Cluster cluster;
-
-    private static InetAddress inetAddr(String host) {
-        try {
-            return InetAddress.getByName(host);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid host: " + host, e);
-        }
-    }
 }

@@ -36,10 +36,6 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
 
     private val clock: Clock = Clock.systemDefaultZone()
 
-    private val sensor = CassandraSensor(customConfiguration?.cassandraHost!!, customConfiguration.cassandraPort)
-
-    private val storage = InMemoryFaults(sensor, clock)
-
     interface State {
 
         fun url(): URI
@@ -56,6 +52,11 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
 
         val configuration = customConfiguration ?: loadUnearthlyConfig()
 
+        val sensor = CassandraSensor(
+                configuration.cassandra.host, configuration.cassandra.port, configuration.cassandra.dc)
+
+        val storage = InMemoryFaults(sensor, clock)
+
         val controller = UnearthlyController(
                 storage,
                 storage,
@@ -63,7 +64,7 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
                 UnearthlyRenderer(),
                 configuration)
 
-        val server = UnearthlyServer(configuration, controller)
+        val server = UnearthlyServer(controller, configuration)
 
         if (configuration.unearthlyLogging) {
             reconfigureLogging(controller)
@@ -74,7 +75,7 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
         registerShutdown(server)
 
         server.start {
-            logger.info("Ready at http://${callableHost(configuration)}:${server.port()}")
+            logger.info("Ready at http://${configuration.host}:${server.port()}")
         }
 
         return object : State {
@@ -105,9 +106,10 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
                 port = config[Key("server.port", intType)],
                 selfDiagnose = config[Key("unearth.self-diagnose", booleanType)],
                 unearthlyLogging = config[Key("unearth.logging", booleanType)],
-                cassandraHost = config[Key("unearth.cassandra-host", stringType)],
-                cassandraPort = config[Key("unearth.cassandra-port", intType)]
-        )
+                cassandra = UnearthlyCassandraConfig(
+                        host = config[Key("unearth.cassandra-host", stringType)],
+                        port = config[Key("unearth.cassandra-port", intType)],
+                        dc = config[Key("unearth.cassandra-dc", stringType)]))
     }
 
     private fun reconfigureLogging(controller: UnearthlyController) {
@@ -150,9 +152,6 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
             }
         }, "Shutdown"))
     }
-
-    private fun callableHost(configuration: UnearthlyConfig): String =
-            if (configuration.host == UnearthlyConfig().host) "127.0.0.1" else configuration.host
 
     companion object {
 

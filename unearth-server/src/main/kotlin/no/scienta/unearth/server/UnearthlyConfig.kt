@@ -29,7 +29,13 @@ data class UnearthlyConfig(
 
         val unearthlyLogging: Boolean = false,
 
-        val cassandraHost: String = "127.0.0.1",
+        val cassandra: UnearthlyCassandraConfig = UnearthlyCassandraConfig())
 
-        val cassandraPort: Int = 9042
+data class UnearthlyCassandraConfig(
+
+    val host: String = "127.0.0.1",
+
+    val port: Int = 9042,
+
+    val dc: String = "datacenter1"
 )

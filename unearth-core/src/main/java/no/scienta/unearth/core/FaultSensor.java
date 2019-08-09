@@ -19,7 +19,11 @@ package no.scienta.unearth.core;
 
 import no.scienta.unearth.munch.model.FaultEvent;
 
-public interface FaultSensor {
+public interface FaultSensor extends AutoCloseable{
+
+    @Override
+    default void close() {
+    }
 
     void register(FaultEvent faultEvent);
 }

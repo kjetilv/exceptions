@@ -100,6 +100,10 @@ public class InMemoryFaults
     }
 
     @Override
+    public void close() {
+    }
+
+    @Override
     public FaultEvents store(LogEntry logEntry, Fault fault, Throwable throwable) {
         synchronized (lock) {
             FaultEvent faultEvent = new FaultEvent(
@@ -159,10 +163,6 @@ public class InMemoryFaults
         addTo(faultFaultEvents, sequenced.getFault().getId(), sequenced);
 
         return new FaultEvents(sequenced, previous);
-    }
-
-    private FaultEvent storedEvent(FaultEvent t) {
-        return stored(this.events, t);
     }
 
     @Override

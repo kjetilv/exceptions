@@ -18,31 +18,18 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val jacksonVer = "2.9.9"
-
 val http4kVer = "3.169.0"
-
 val micrometerVer = "1.2.0"
-
 val konfigVer = "1.6.10.0"
-
 val swaggerVer = "2.0.8"
-
 val logbackVer = "1.3.0-alpha4"
-
-val cassandraVer = "3.1.4"
-
+val cassandraDriverVer = "4.1.0"
 val metricsVer = "4.1.0"
-
 val flywayVer = "6.0.0-beta2"
-
 val slf4jVer = "1.8.0-beta4"
-
 val junitVer = "4.12"
-
 val swaggerUiVer = "3.23.0"
-
 val kotlinVer = "1.3.40"
-
 val testcontainersVer = "1.12.0"
 
 plugins {
@@ -97,9 +84,9 @@ allprojects {
 
             compile("io.swagger.core.v3:swagger-core:$swaggerVer")
 
-            compile("com.datastax.cassandra:cassandra-driver-core:$cassandraVer")
-            compile("com.datastax.cassandra:cassandra-driver-mapping:$cassandraVer")
-            compile("com.datastax.cassandra:cassandra-driver-extras:$cassandraVer")
+            compile("com.datastax.oss:java-driver-core:$cassandraDriverVer")
+            compile("com.datastax.oss:java-driver-query-builder:$cassandraDriverVer")
+            compile("com.datastax.oss:java-driver-mapper-runtime:$cassandraDriverVer")
 
             compile("io.micrometer:micrometer-registry-jmx:$micrometerVer")
             compile("io.micrometer:micrometer-core:$micrometerVer")

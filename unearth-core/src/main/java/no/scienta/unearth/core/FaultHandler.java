@@ -17,7 +17,11 @@
 
 package no.scienta.unearth.core;
 
-public interface FaultHandler {
+public interface FaultHandler extends AutoCloseable {
+
+    @Override
+    default void close() {
+    }
 
     default HandlingPolicy handle(Throwable throwable) {
         return handle(throwable, null);

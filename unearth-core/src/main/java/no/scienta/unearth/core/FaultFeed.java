@@ -23,7 +23,11 @@ import no.scienta.unearth.munch.model.FaultEvent;
 
 import java.util.List;
 
-public interface FaultFeed {
+public interface FaultFeed extends AutoCloseable {
+
+    @Override
+    default void close() {
+    }
 
     long limit();
 

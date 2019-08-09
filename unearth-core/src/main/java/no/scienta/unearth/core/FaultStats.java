@@ -26,7 +26,11 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-public interface FaultStats {
+public interface FaultStats extends AutoCloseable {
+
+    @Override
+    default void close() {
+    }
 
     default long getFaultEventCount(FaultStrandId id) {
         return getFaultEventCount(id, null);

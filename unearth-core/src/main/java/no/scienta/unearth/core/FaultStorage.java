@@ -23,7 +23,11 @@ import no.scienta.unearth.munch.model.*;
 import java.util.Collection;
 import java.util.Optional;
 
-public interface FaultStorage {
+public interface FaultStorage extends AutoCloseable {
+
+    @Override
+    default void close() {
+    }
 
     FaultEvents store(LogEntry logEntry, Fault fault, Throwable throwable);
 

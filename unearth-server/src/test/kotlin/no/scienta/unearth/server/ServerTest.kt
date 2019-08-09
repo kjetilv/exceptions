@@ -34,9 +34,8 @@ fun main() {
 
     val storage = InMemoryFaults(sensor)
 
-    val server = UnearthlyServer(
-            controller = UnearthlyController(
-                    storage, storage, storage, UnearthlyRenderer(), UnearthlyConfig(), Clock.systemDefaultZone()));
+    val server = UnearthlyServer(UnearthlyController(
+            storage, storage, storage, UnearthlyRenderer(), UnearthlyConfig(), Clock.systemDefaultZone()));
 
     val lookupLens = Body.auto<FaultStrandDto>().toLens()
 

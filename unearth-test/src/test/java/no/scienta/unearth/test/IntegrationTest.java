@@ -21,6 +21,7 @@ import no.scienta.unearth.client.Page;
 import no.scienta.unearth.client.UnearthlyClient;
 import no.scienta.unearth.client.dto.*;
 import no.scienta.unearth.server.Unearth;
+import no.scienta.unearth.server.UnearthlyCassandraConfig;
 import no.scienta.unearth.server.UnearthlyConfig;
 import no.scienta.unearth.util.Throwables;
 import org.junit.*;
@@ -143,10 +144,11 @@ public class IntegrationTest {
                 0,
                 true,
                 true,
-                CASSANDRA.getContainerIpAddress(),
-                CASSANDRA.getFirstMappedPort()
-            )
-        ).invoke();
+                new UnearthlyCassandraConfig(
+                    CASSANDRA.getContainerIpAddress(),
+                    CASSANDRA.getFirstMappedPort(),
+                    "datacenter1")))
+            .invoke();
         client = UnearthlyClient.connect(state.url());
     }
 

@@ -37,8 +37,7 @@ dependencies {
     runtime("io.dropwizard.metrics:metrics-core")
     runtime("io.dropwizard.metrics:metrics-jmx")
 
-    compile("com.datastax.cassandra:cassandra-driver-core")
-    compile("com.datastax.cassandra:cassandra-driver-mapping")
-    compile("com.datastax.cassandra:cassandra-driver-extras")
+    compile("com.datastax.oss:java-driver-core")
+    compile("com.datastax.oss:java-driver-query-builder")
 }
 

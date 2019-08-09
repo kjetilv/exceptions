@@ -59,8 +59,8 @@ import java.util.jar.JarFile
 import java.util.regex.Pattern
 
 class UnearthlyServer(
-        private val configuration: UnearthlyConfig = UnearthlyConfig(),
-        val controller: UnearthlyController
+        val controller: UnearthlyController,
+        private val configuration: UnearthlyConfig = UnearthlyConfig()
 ) {
 
     private val server = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
@@ -83,8 +83,12 @@ class UnearthlyServer(
     }
 
     fun stop(after: (Http4kServer) -> Unit = {}): UnearthlyServer = apply {
-        server.stop()
-        after(server)
+        try {
+            server.stop()
+            after(server)
+        } finally {
+            controller.close()
+        }
     }
 
     fun port(): Int = server.port()
