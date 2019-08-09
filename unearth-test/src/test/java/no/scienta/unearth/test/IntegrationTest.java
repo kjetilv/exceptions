@@ -17,6 +17,7 @@
 
 package no.scienta.unearth.test;
 
+import no.scienta.unearth.analysis.CassandraInit;
 import no.scienta.unearth.client.Page;
 import no.scienta.unearth.client.UnearthlyClient;
 import no.scienta.unearth.client.dto.*;
@@ -24,7 +25,10 @@ import no.scienta.unearth.server.Unearth;
 import no.scienta.unearth.server.UnearthlyCassandraConfig;
 import no.scienta.unearth.server.UnearthlyConfig;
 import no.scienta.unearth.util.Throwables;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
 
 import java.io.IOException;
@@ -39,10 +43,9 @@ public class IntegrationTest {
 
     private static UnearthlyClient client;
 
-    @ClassRule
-    public static final GenericContainer CASSANDRA =
-        new GenericContainer<>("cassandra:3.11")
-            .withExposedPorts(9042);
+    private static GenericContainer cassandra;
+
+    private static CassandraInit init;
 
     @Test
     public void verifyFeedCounters() {
@@ -137,18 +140,29 @@ public class IntegrationTest {
 
     @BeforeClass
     public static void up() {
-        state = new Unearth(
-            new UnearthlyConfig(
-                "/api/test",
-                "localhost",
-                0,
-                true,
-                true,
-                new UnearthlyCassandraConfig(
-                    CASSANDRA.getContainerIpAddress(),
-                    CASSANDRA.getFirstMappedPort(),
-                    "datacenter1")))
-            .invoke();
+        cassandra =
+            new GenericContainer<>("cassandra:3.11").withExposedPorts(9042);
+        cassandra.start();
+
+        UnearthlyConfig config = new UnearthlyConfig(
+            "/api/test",
+            "localhost",
+            0,
+            true,
+            true,
+            new UnearthlyCassandraConfig(
+                cassandra.getContainerIpAddress(),
+                cassandra.getFirstMappedPort(),
+                "datacenter1"));
+
+        init = new CassandraInit(
+            config.getCassandra().getHost(),
+            config.getCassandra().getPort(),
+            config.getCassandra().getDc()
+        ).init();
+
+        state = new Unearth(config).invoke();
+
         client = UnearthlyClient.connect(state.url());
     }
 
@@ -156,6 +170,13 @@ public class IntegrationTest {
     public static void down() {
         if (state != null) {
             state.close();
+        }
+        if (init != null) {
+            init.close();
+        }
+        if (cassandra != null) {
+            cassandra.stop();
+            cassandra.close();
         }
     }
 
