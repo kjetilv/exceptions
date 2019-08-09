@@ -20,6 +20,7 @@ package no.scienta.unearth.server
 import ch.qos.logback.classic.LoggerContext
 import com.natpryce.konfig.*
 import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
+import no.scienta.unearth.analysis.CassandraInit
 import no.scienta.unearth.analysis.CassandraSensor
 import no.scienta.unearth.core.HandlingPolicy
 import no.scienta.unearth.core.poc.InMemoryFaults
@@ -52,8 +53,18 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
 
         val configuration = customConfiguration ?: loadUnearthlyConfig()
 
+        val cassandraConfig = configuration.cassandra
+
+        CassandraInit(cassandraConfig.host,
+                cassandraConfig.port,
+                cassandraConfig.dc,
+                cassandraConfig.keyspace).init()
+
         val sensor = CassandraSensor(
-                configuration.cassandra.host, configuration.cassandra.port, configuration.cassandra.dc)
+                cassandraConfig.host,
+                cassandraConfig.port,
+                cassandraConfig.dc,
+                cassandraConfig.keyspace)
 
         val storage = InMemoryFaults(sensor, clock)
 

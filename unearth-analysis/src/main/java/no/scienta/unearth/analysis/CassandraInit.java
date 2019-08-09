@@ -19,18 +19,21 @@ package no.scienta.unearth.analysis;
 
 public class CassandraInit extends AbstractCassandraConnected {
 
-    public CassandraInit(String host, int port, String dc) {
-        super(host, port, dc);
+    private final String keyspace;
+
+    public CassandraInit(String host, int port, String dc, String keyspace) {
+        super(host, port, dc, null);
+        this.keyspace = keyspace;
     }
 
     public CassandraInit init() {
         inSession(session -> {
-            session.execute("CREATE KEYSPACE" +
-                " IF NOT EXISTS " + KEYSPACE +
-                " WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor' : 1}");
-        });
-
-        inKeyspace(session -> {
+            session.execute(
+                "CREATE KEYSPACE" +
+                    " IF NOT EXISTS " + keyspace +
+                    " WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor' : 1}");
+            session.execute(
+                "USE " + keyspace);
             session.execute(
                 "CREATE TABLE IF NOT EXISTS fault " +
                     "(id UUID PRIMARY KEY," +

@@ -140,30 +140,44 @@ public class IntegrationTest {
 
     @BeforeClass
     public static void up() {
-        cassandra =
-            new GenericContainer<>("cassandra:3.11").withExposedPorts(9042);
-        cassandra.start();
+        cassandra = startCassandra();
 
-        UnearthlyConfig config = new UnearthlyConfig(
+        UnearthlyConfig config = testConfig(cassandra);
+
+        init = initCassandra(config);
+
+        state = new Unearth(config).invoke();
+
+        client = UnearthlyClient.connect(state.url());
+    }
+
+    private static GenericContainer<?> startCassandra() {
+        GenericContainer<?> cassandra = new GenericContainer<>("cassandra:3.11").withExposedPorts(9042);
+        cassandra.start();
+        return cassandra;
+    }
+
+    private static CassandraInit initCassandra(UnearthlyConfig config) {
+        return new CassandraInit(
+            config.getCassandra().getHost(),
+            config.getCassandra().getPort(),
+            config.getCassandra().getDc(),
+            config.getCassandra().getKeyspace()
+        ).init();
+    }
+
+    private static UnearthlyConfig testConfig(GenericContainer<?> container) {
+        return new UnearthlyConfig(
             "/api/test",
             "localhost",
             0,
             true,
             true,
             new UnearthlyCassandraConfig(
-                cassandra.getContainerIpAddress(),
-                cassandra.getFirstMappedPort(),
-                "datacenter1"));
-
-        init = new CassandraInit(
-            config.getCassandra().getHost(),
-            config.getCassandra().getPort(),
-            config.getCassandra().getDc()
-        ).init();
-
-        state = new Unearth(config).invoke();
-
-        client = UnearthlyClient.connect(state.url());
+                container.getContainerIpAddress(),
+                container.getFirstMappedPort(),
+                "datacenter1",
+                "testing"));
     }
 
     @AfterClass

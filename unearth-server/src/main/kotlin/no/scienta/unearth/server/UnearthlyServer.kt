@@ -55,6 +55,7 @@ import java.io.File
 import java.net.URI
 import java.net.URL
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.jar.JarFile
 import java.util.regex.Pattern
 
@@ -73,9 +74,15 @@ class UnearthlyServer(
                     contracts()))
             .asServer(NettyConfig(configuration.host, configuration.port))
 
+    private val started = AtomicBoolean()
+
+    private val stopped = AtomicBoolean()
+
     fun start(after: (Http4kServer) -> Unit = {}): UnearthlyServer = apply {
-        server.start()
-        after(server)
+        if (started.compareAndSet(false, true)) {
+            server.start()
+            after(server)
+        }
     }
 
     fun reset() {
@@ -83,11 +90,13 @@ class UnearthlyServer(
     }
 
     fun stop(after: (Http4kServer) -> Unit = {}): UnearthlyServer = apply {
-        try {
-            server.stop()
-            after(server)
-        } finally {
-            controller.close()
+        if (stopped.compareAndSet(false, true)) {
+            try {
+                server.stop()
+                after(server)
+            } finally {
+                controller.close()
+            }
         }
     }
 

@@ -37,5 +37,7 @@ data class UnearthlyCassandraConfig(
 
     val port: Int = 9042,
 
-    val dc: String = "datacenter1"
+    val dc: String = "datacenter1",
+    
+    val keyspace: String = "unearth"
 )

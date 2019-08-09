@@ -17,7 +17,9 @@
 
 package no.scienta.unearth.analysis;
 
+import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.metadata.EndPoint;
@@ -36,13 +38,9 @@ public class AbstractCassandraConnected {
 
     private final CqlSession cqlSession;
 
-    static final String KEYSPACE = "unearth";
+    AbstractCassandraConnected(String host, int port, String dc, String keyspace) {
+        this.cqlSession = builder(host, port, dc, keyspace).build();
 
-    AbstractCassandraConnected(String host, int port, String dc) {
-        this.cqlSession = CqlSession.builder()
-            .addContactPoint(InetSocketAddress.createUnresolved(host, port))
-            .withLocalDatacenter(dc)
-            .build();
         inSession(session -> {
             Row row = session.execute(VERSION_QUERY).one();
             if (row == null) {
@@ -54,16 +52,20 @@ public class AbstractCassandraConnected {
         });
     }
 
+    private CqlSessionBuilder builder(String host, int port, String dc, String keyspace) {
+        CqlSessionBuilder cqlSessionBuilder = CqlSession.builder()
+            .addContactPoint(InetSocketAddress.createUnresolved(host, port))
+            .withLocalDatacenter(dc);
+        if (keyspace == null) {
+            return cqlSessionBuilder;
+        }
+        return cqlSessionBuilder
+            .withKeyspace(CqlIdentifier.fromCql("\"" + keyspace + "\""));
+    }
+
     void exec(CqlSession session, String stmt, Object... args) {
         PreparedStatement prepared = session.prepare(stmt);
         session.execute(prepared.bind(args));
-    }
-
-    <T> T inKeyspace(Function<CqlSession, T> action) {
-        return inSession(session -> {
-            session.execute(USE_KEYSPACE);
-            return action.apply(session);
-        });
     }
 
     <T> T inSession(Function<CqlSession, T> action) {
@@ -72,13 +74,6 @@ public class AbstractCassandraConnected {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to perform action", e);
         }
-    }
-
-    void inKeyspace(Consumer<CqlSession> action) {
-        inSession(session -> {
-            session.execute(USE_KEYSPACE);
-            action.accept(session);
-        });
     }
 
     void inSession(Consumer<CqlSession> action) {
@@ -102,6 +97,4 @@ public class AbstractCassandraConnected {
     private static final String RELEASE_VERSION = "release_version";
 
     private static final String VERSION_QUERY = "select " + RELEASE_VERSION + " from system.local";
-
-    private static final String USE_KEYSPACE = " USE " + KEYSPACE;
 }

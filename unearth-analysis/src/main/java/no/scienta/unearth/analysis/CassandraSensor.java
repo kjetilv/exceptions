@@ -39,20 +39,18 @@ import no.scienta.unearth.munch.id.Identifiable;
 import no.scienta.unearth.munch.model.Fault;
 import no.scienta.unearth.munch.model.FaultEvent;
 import no.scienta.unearth.munch.model.FaultStrand;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
 public class CassandraSensor extends AbstractCassandraConnected implements FaultSensor {
 
-    public CassandraSensor(String host, int port, String dc) {
-        super(host, port, dc);
+    public CassandraSensor(String host, int port, String dc, String keyspace) {
+        super(host, port, dc, keyspace);
     }
 
     @Override
     public void register(FaultEvent faultEvent) {
-        inKeyspace(session -> {
+        inSession(session -> {
             Fault fault = faultEvent.getFault();
             FaultStrand faultStrand = fault.getFaultStrand();
 
@@ -90,6 +88,4 @@ public class CassandraSensor extends AbstractCassandraConnected implements Fault
     private UUID uuid(Identifiable<?> identifiable) {
         return identifiable.getId().getHash();
     }
-
-    private static final Logger log = LoggerFactory.getLogger(CassandraSensor.class);
 }
