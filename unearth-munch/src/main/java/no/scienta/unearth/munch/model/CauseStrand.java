@@ -39,6 +39,10 @@ public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
         return new CauseStrand(className(throwable), causeFrames(throwable.getStackTrace()));
     }
 
+    public static CauseStrand create(String className, List<CauseFrame> stackFrames) {
+        return new CauseStrand(className, stackFrames);
+    }
+
     private final String className;
 
     private final List<CauseFrame> causeFrames;

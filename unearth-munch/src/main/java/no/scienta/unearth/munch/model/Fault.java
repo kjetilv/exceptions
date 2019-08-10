@@ -39,6 +39,10 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
         return new Fault(faultStrand, causes);
     }
 
+    public static Fault create(FaultStrand faultStrand, Collection<Cause> causes) {
+        return new Fault(faultStrand, causes);
+    }
+
     private final FaultStrand faultStrand;
 
     private final List<Cause> causes;

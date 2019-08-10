@@ -17,14 +17,14 @@
 
 package no.scienta.unearth.jdbc;
 
-import no.scienta.unearth.munch.base.Hashable;
-
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.*;
 
-class Session implements AutoCloseable {
+final class Session implements AutoCloseable {
 
     private final Connection connection;
 
@@ -36,15 +36,75 @@ class Session implements AutoCloseable {
         }
     }
 
-    final <T extends Hashable> void insert(String sql, JdbcStorage.Inserter set) {
+    <T> Optional<T> selectOne(
+        String sql,
+        Sel<T> selector
+    ) {
+        return selectOne(sql, stmt -> {
+        }, selector);
+    }
+
+    <T> Optional<T> selectOne(
+        String sql,
+        Set parSet,
+        Sel<T> selector
+    ) {
+        return select(sql, parSet, selector).stream().findFirst();
+    }
+
+    <T> List<T> select(
+        String sql,
+        Set parSet,
+        Sel<T> selector
+    ) {
         try (
-            PreparedStatement ps = connection.prepareStatement(sql)
+            PreparedStatement ps = connection.prepareCall(sql);
+            Stmt stmt = new StmtImpl(ps);
         ) {
-            JdbcStorage.Prep prep = new PrepImpl(ps);
+            parSet.setParams(stmt);
+            ResultSet resultSet = ps.executeQuery();
+            Res resGet = new ResImpl(resultSet);
+            if (resultSet.next()) {
+                List<T> collection = new ArrayList<>();
+                do {
+                    collection.add(selector.select(resGet));
+                } while (resultSet.next());
+                return collection;
+            }
+            return Collections.emptyList();
+        } catch (Exception e) {
+            throw new IllegalStateException("Call failed: " + sql, e);
+        }
+    }
+
+    <T> void insert(String sql, Set set) {
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            Stmt prep = new StmtImpl(ps);
             set.setParams(prep);
             ps.executeUpdate();
         } catch (Exception e) {
             throw new IllegalStateException("Statement failed: " + sql, e);
+        }
+    }
+
+    <T> void insertBatch(String sql, Collection<T> items, BatchParSet<T> set) {
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            Stmt prep = new StmtImpl(ps);
+            items.forEach(item -> {
+                set.setParams(prep, item);
+                addBatch(ps);
+            });
+            ps.executeBatch();
+        } catch (Exception e) {
+            throw new IllegalStateException("Statement failed: " + sql, e);
+        }
+    }
+
+    private void addBatch(PreparedStatement ps) {
+        try {
+            ps.addBatch();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to batch " + ps, e);
         }
     }
 

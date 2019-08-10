@@ -18,55 +18,76 @@
 package no.scienta.unearth.jdbc;
 
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.UUID;
 
-class PrepImpl implements JdbcStorage.Prep {
+class StmtImpl implements Stmt {
 
     private final PreparedStatement statement;
 
     private int i;
 
-    PrepImpl(PreparedStatement statement) {
+    StmtImpl(PreparedStatement statement) {
         this.statement = statement;
     }
 
     @Override
-    public JdbcStorage.Prep set(String string) {
+    public Stmt set(String string) {
         try {
             statement.setString(++i, string);
-        } catch (SQLException e) {
-            throw new IllegalStateException("Could not set #" + i + ": " + string, e);
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not set string #" + i + ": " + string, e);
         }
         return this;
     }
 
     @Override
-    public JdbcStorage.Prep set(boolean bool) {
+    public Stmt set(boolean bool) {
         try {
             statement.setBoolean(++i, bool);
-        } catch (SQLException e) {
-            throw new IllegalStateException("Could not set #" + i + ": " + bool, e);
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not set truth #" + i + ": " + bool, e);
         }
         return this;
     }
 
     @Override
-    public JdbcStorage.Prep set(int i) {
+    public Stmt set(Instant instant) {
         try {
-            statement.setInt(++i, i);
-        } catch (SQLException e) {
-            throw new IllegalStateException("Could not set #" + i + ": " + i, e);
+            statement.setTimestamp(++i, Timestamp.from(instant));
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not set instant #" + i + ": " + instant, e);
         }
         return this;
     }
 
     @Override
-    public JdbcStorage.Prep set(UUID uuid) {
+    public Stmt set(long value) {
+        try {
+            statement.setLong(++i, value);
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not set long #" + i + ": " + value, e);
+        }
+        return this;
+    }
+
+    @Override
+    public Stmt set(int value) {
+        try {
+            statement.setInt(++i, value);
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not set int #" + i + ": " + i, e);
+        }
+        return this;
+    }
+
+    @Override
+    public Stmt set(UUID uuid) {
         try {
             statement.setObject(++i, uuid);
-        } catch (SQLException e) {
-            throw new IllegalStateException("Could not set #" + i + ": " + uuid, e);
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not set UUID #" + i + ": " + uuid, e);
         }
         return this;
     }

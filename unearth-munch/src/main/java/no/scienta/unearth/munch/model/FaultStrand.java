@@ -40,6 +40,10 @@ public class FaultStrand extends AbstractHashableIdentifiable<FaultStrandId> {
         return new FaultStrand(causeStrands);
     }
 
+    public static FaultStrand create(Collection<CauseStrand> causeStrands) {
+        return new FaultStrand(causeStrands);
+    }
+
     public List<CauseStrand> getCauseStrands() {
         return causeStrands;
     }

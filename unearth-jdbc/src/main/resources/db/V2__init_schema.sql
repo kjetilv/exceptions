@@ -76,19 +76,34 @@ create table cause_strand_2_cause_frame
     unique (seq, cause_strand, cause_frame)
 );
 
-create sequence eventSequence no maxvalue;
-
 create table fault_event
 (
-    id           uuid,
-    fault        uuid,
-    fault_strand uuid,
-    cause        uuid,
-    cause_strand uuid,
-    time         timestamp,
-    seq          int not null,
-    event_seq    int default nextval(eventSequence),
+    id               uuid,
+    fault            uuid,
+    fault_strand     uuid,
+    time             timestamp,
+    global_seq       int not null,
+    fault_seq        int not null,
+    fault_strand_seq int not null,
 
     primary key (id),
     foreign key (fault) references fault (id)
+);
+
+create table global_sequence
+(
+    id int,
+    seq int
+);
+
+create table fault_sequence
+(
+    id  uuid,
+    seq int
+);
+
+create table fault_strand_sequence
+(
+    id  uuid,
+    seq int
 );

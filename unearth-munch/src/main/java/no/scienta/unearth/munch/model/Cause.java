@@ -37,17 +37,21 @@ public class Cause extends AbstractHashableIdentifiable<CauseId> {
     public static List<Cause> causes(Throwable throwable) {
         return Streams.reverse(Streams.causes(throwable))
             .map(t ->
-                new Cause(CauseStrand.create(t), t.getMessage()))
+                new Cause(t.getMessage(), CauseStrand.create(t)))
             .collect(Collectors.toList());
     }
 
-    private final CauseStrand causeStrand;
+    public static Cause create(String message, CauseStrand causeStrand) {
+        return new Cause(message, causeStrand);
+    }
 
     private final String message;
 
-    private Cause(CauseStrand causeStrand, String message) {
-        this.causeStrand = Objects.requireNonNull(causeStrand);
+    private final CauseStrand causeStrand;
+
+    private Cause(String message, CauseStrand causeStrand) {
         this.message = message;
+        this.causeStrand = Objects.requireNonNull(causeStrand);
     }
 
     public CauseStrand getCauseStrand() {
