@@ -29,6 +29,15 @@ final class DefaultSession implements Session {
 
     private final Connection connection;
 
+    DefaultSession(DataSource dataSource, String schema) {
+        try {
+            connection = dataSource.getConnection();
+            connection.setSchema(schema);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to init session", e);
+        }
+    }
+
     @Override
     public <T> Existence<T> exists(String sql, Set set, Sel<T> sel) {
         return new DefaultExistence<T>(this, sql, set, sel);
@@ -37,15 +46,6 @@ final class DefaultSession implements Session {
     @Override
     public <T> MultiExistence<T> multiExists(String sql, Collection<T> items, Set set, Sel<T> selector) {
         return new DefaultMultiExistence<T>(this, items, sql, set, selector);
-    }
-
-    DefaultSession(DataSource dataSource, String schema) {
-        try {
-            connection = dataSource.getConnection();
-            connection.setSchema(schema);
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to init session", e);
-        }
     }
 
     @Override
