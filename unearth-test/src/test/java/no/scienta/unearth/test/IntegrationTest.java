@@ -24,6 +24,7 @@ import no.scienta.unearth.client.dto.*;
 import no.scienta.unearth.server.Unearth;
 import no.scienta.unearth.server.UnearthlyCassandraConfig;
 import no.scienta.unearth.server.UnearthlyConfig;
+import no.scienta.unearth.server.UnearthlyDbConfig;
 import no.scienta.unearth.util.Throwables;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -32,6 +33,9 @@ import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
 
 import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -45,7 +49,11 @@ public class IntegrationTest {
 
     private static GenericContainer cassandra;
 
+    private static GenericContainer postgres;
+
     private static CassandraInit init;
+
+    private static ScheduledExecutorService EXEC = Executors.newScheduledThreadPool(2);
 
     @Test
     public void verifyFeedCounters() {
@@ -140,11 +148,20 @@ public class IntegrationTest {
 
     @BeforeClass
     public static void up() {
-        cassandra = startCassandra();
+        Future<? extends GenericContainer<?>> cassandraFuture = EXEC.submit(IntegrationTest::startCassandra);
+        Future<? extends GenericContainer<?>> postgresFuture = EXEC.submit(IntegrationTest::startPostgres);
+        EXEC.shutdown();
 
-        UnearthlyConfig config = testConfig(cassandra);
+        try {
+            cassandra = cassandraFuture.get();
+            postgres = postgresFuture.get();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed", e);
+        }
 
-        init = initCassandra(config);
+        UnearthlyConfig config = testConfig(cassandra, postgres);
+
+        init = initCassandra(config.getCassandra());
 
         state = new Unearth(config).invoke();
 
@@ -157,27 +174,55 @@ public class IntegrationTest {
         return cassandra;
     }
 
-    private static CassandraInit initCassandra(UnearthlyConfig config) {
+    private static GenericContainer<?> startPostgres() {
+        GenericContainer<?> postgres = new GenericContainer<>("postgres:12").withExposedPorts(5432);
+        postgres.start();
+        return postgres;
+    }
+
+    private static CassandraInit initCassandra(UnearthlyCassandraConfig cassandra) {
         return new CassandraInit(
-            config.getCassandra().getHost(),
-            config.getCassandra().getPort(),
-            config.getCassandra().getDc(),
-            config.getCassandra().getKeyspace()
+            cassandra.getHost(),
+            cassandra.getPort(),
+            cassandra.getDc(),
+            cassandra.getKeyspace()
         ).init();
     }
 
-    private static UnearthlyConfig testConfig(GenericContainer<?> container) {
+    private static UnearthlyConfig testConfig(
+        GenericContainer<?> cassandraContainer,
+        GenericContainer<?> postgresContainer
+    ) {
         return new UnearthlyConfig(
             "/api/test",
             "localhost",
             0,
             true,
             true,
-            new UnearthlyCassandraConfig(
-                container.getContainerIpAddress(),
-                container.getFirstMappedPort(),
-                "datacenter1",
-                "testing"));
+            cassandraConfig(cassandraContainer),
+            postgresConfig(postgresContainer));
+    }
+
+    private static UnearthlyCassandraConfig cassandraConfig(GenericContainer<?> cassandraContainer) {
+        return new UnearthlyCassandraConfig(
+            cassandraContainer.getContainerIpAddress(),
+            cassandraContainer.getFirstMappedPort(),
+            "datacenter1",
+            "testing");
+    }
+
+    private static UnearthlyDbConfig postgresConfig(GenericContainer<?> postgresContainer) {
+        String postgresIP = postgresContainer.getContainerIpAddress();
+        Integer postgresPort = postgresContainer.getFirstMappedPort();
+        String postgresSchema = "postgres";
+        String postgresJdbc = "jdbc:postgresql://" + postgresIP + ":" + postgresPort + "/" + postgresSchema;
+        return new UnearthlyDbConfig(
+            postgresIP,
+            "postgres",
+            "",
+            postgresPort,
+            postgresSchema,
+            postgresJdbc);
     }
 
     @AfterClass

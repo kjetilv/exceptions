@@ -17,7 +17,7 @@
 
 package no.scienta.unearth.jdbc;
 
-interface BatchParSet<T> {
+interface S<T, R> {
 
-    void setParams(Stmt stmt, T item);
+    R set(T t);
 }

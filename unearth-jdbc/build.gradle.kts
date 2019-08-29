@@ -16,9 +16,13 @@
  */
 
 dependencies {
-    compile(project(":unearth-munch"))
-    compile(project(":unearth-core"))
+    implementation(project(":unearth-util"))
+    implementation(project(":unearth-munch"))
+    implementation(project(":unearth-core"))
 
     compile("org.flywaydb:flyway-core")
+
+    testImplementation("com.zaxxer:HikariCP")
+    testRuntime("org.hsqldb:hsqldb")
 }
 

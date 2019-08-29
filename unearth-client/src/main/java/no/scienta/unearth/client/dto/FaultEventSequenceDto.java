@@ -17,7 +17,6 @@
 
 package no.scienta.unearth.client.dto;
 
-@SuppressWarnings("unused")
 public class FaultEventSequenceDto extends SequenceDto {
 
     public FaultIdDto id;

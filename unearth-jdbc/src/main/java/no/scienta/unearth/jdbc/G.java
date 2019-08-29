@@ -17,7 +17,7 @@
 
 package no.scienta.unearth.jdbc;
 
-interface Set {
+interface G<T, R> {
 
-    void setParams(Stmt stmt);
+    T get(T t);
 }

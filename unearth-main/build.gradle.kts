@@ -32,10 +32,18 @@ tasks.withType<ShadowJar>() {
 }
 
 dependencies {
-    compile(project(":unearth-server"))
+    implementation(project(":unearth-core"))
+    implementation(project(":unearth-util"))
+    implementation(project(":unearth-static"))
+    implementation(project(":unearth-turbo"))
+    implementation(project(":unearth-munch"))
+    implementation(project(":unearth-jdbc"))
+    implementation(project(":unearth-analysis"))
+    implementation(project(":unearth-server"))
+
+    implementation("org.postgresql:postgresql")
+    implementation(kotlin("stdlib"))
 
     runtime("org.webjars:swagger-ui")
     runtime("ch.qos.logback:logback-classic")
-
-    implementation(kotlin("stdlib"))
 }

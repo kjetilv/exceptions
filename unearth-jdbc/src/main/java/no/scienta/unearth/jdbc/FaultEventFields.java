@@ -15,16 +15,32 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.client.proto;
+package no.scienta.unearth.jdbc;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import no.scienta.unearth.util.MostlyOnce;
 
-@Target(ElementType.PARAMETER)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Qry {
+import java.util.Arrays;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
-    String value();
+public enum FaultEventFields {
+
+    FAULT,
+
+    FAULT_STRAND,
+
+    TIME,
+
+    GLOBAL_SEQ,
+
+    FAULT_STRAND_SEQ,
+
+    FAULT_SEQ;
+
+    private static Supplier<String> fields = MostlyOnce.get(() ->
+        Arrays.stream(values()).map(Enum::name).map(String::toLowerCase).collect(Collectors.joining(", ")));
+
+    static String list() {
+        return fields.get();
+    }
 }

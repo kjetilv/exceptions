@@ -13,6 +13,14 @@ create table cause_frame
     primary key (id)
 );
 
+create table cause_strand
+(
+    id         uuid not null,
+    class_name text not null,
+
+    primary key (id)
+);
+
 create table cause
 (
     id           uuid not null,
@@ -23,15 +31,11 @@ create table cause
     foreign key (cause_strand) references cause_strand (id)
 );
 
-create table cause_strand
-(
-    id         uuid not null,
-    class_name text not null
-);
-
 create table fault_strand
 (
-    id uuid not null
+    id uuid not null,
+
+    primary key (id)
 );
 
 create table fault

@@ -25,7 +25,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 public class LogEntry extends AbstractHashableIdentifiable<FaultLogId> {
 
@@ -42,9 +41,8 @@ public class LogEntry extends AbstractHashableIdentifiable<FaultLogId> {
         Object... args
     ) {
         this.logMessage = Objects.requireNonNull(logMessage, "logMessage");
-        this.args = Optional.ofNullable(args)
-            .map(Arrays::stream)
-            .orElseGet(Stream::empty)
+        this.args = Optional.ofNullable(args).stream()
+            .flatMap(Arrays::stream)
             .map(String::valueOf)
             .toArray(String[]::new);
         if (this.logMessage.isBlank()) {

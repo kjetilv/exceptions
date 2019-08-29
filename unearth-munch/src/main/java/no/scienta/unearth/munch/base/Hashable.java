@@ -37,9 +37,7 @@ package no.scienta.unearth.munch.base;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-public interface Hashable {
-
-    UUID getHash();
+public interface Hashable extends Hashed {
 
     void hashTo(Consumer<byte[]> h);
 }

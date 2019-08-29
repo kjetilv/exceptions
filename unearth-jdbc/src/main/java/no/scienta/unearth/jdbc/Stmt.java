@@ -17,7 +17,7 @@
 
 package no.scienta.unearth.jdbc;
 
-import no.scienta.unearth.munch.base.Hashable;
+import no.scienta.unearth.munch.base.Hashed;
 import no.scienta.unearth.munch.id.Id;
 
 import java.time.Instant;
@@ -26,8 +26,8 @@ import java.util.UUID;
 @SuppressWarnings("UnusedReturnValue")
 interface Stmt extends AutoCloseable {
 
-    default Stmt set(Hashable hashable) {
-        return set(hashable.getHash());
+    default Stmt set(Hashed hashed) {
+        return set(hashed.getHash());
     }
 
     default Stmt set(Id id) {
@@ -36,13 +36,15 @@ interface Stmt extends AutoCloseable {
 
     Stmt set(String string);
 
-    Stmt set(boolean bool);
+    Stmt set(Boolean bool);
 
-    Stmt set(int i);
+    Stmt set(Integer i);
 
-    Stmt set(long l);
+    Stmt set(Long l);
 
     Stmt set(Instant instant);
 
     Stmt set(UUID uuid);
+
+    void reset();
 }

@@ -19,6 +19,8 @@ package no.scienta.unearth.munch.model;
 
 import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
 import no.scienta.unearth.munch.id.FaultEventId;
+import no.scienta.unearth.munch.id.FaultId;
+import no.scienta.unearth.munch.id.FaultStrandId;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -30,15 +32,19 @@ import java.util.function.Consumer;
 @SuppressWarnings("unused")
 public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
 
-    private final int throwableHashCode;
+    private final Integer throwableHashCode;
 
     private final Fault fault;
+
+    private final FaultId faultId;
+
+    private final FaultStrandId faultStrandId;
 
     private final LogEntry logEntry;
 
     private final EventSuppression suppression;
 
-    private final long time;
+    private final Instant time;
 
     private final long globalSequenceNo;
 
@@ -47,16 +53,72 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
     private final long faultSequenceNo;
 
     public FaultEvent(
-        int throwableHashCode,
         Fault fault,
         LogEntry logEntry,
         Instant time,
         EventSuppression suppression
     ) {
-        this(throwableHashCode,
-            fault,
+        this(
+            null,
+            Objects.requireNonNull(fault, "fault"),
             logEntry,
-            Objects.requireNonNull(time, "time").toEpochMilli(),
+            time,
+            suppression);
+    }
+
+    public FaultEvent(
+        FaultId faultId,
+        FaultStrandId faultStrandId,
+        Instant time,
+        Long globalSequenceNo,
+        Long faultStrandSequenceNo,
+        Long faultSequenceNo
+    ) {
+        this(
+            null,
+            null,
+            faultId,
+            faultStrandId,
+            null,
+            time,
+            globalSequenceNo,
+            faultStrandSequenceNo,
+            faultSequenceNo,
+            null);
+    }
+
+    public FaultEvent(
+        FaultId faultId,
+        FaultStrandId faultStrandId,
+        Instant time
+    ) {
+        this(
+            null,
+            null,
+            faultId,
+            faultStrandId,
+            null,
+            time,
+            null,
+            null,
+            null,
+            null);
+    }
+
+    public FaultEvent(
+        Integer throwableHashCode,
+        Fault fault,
+        LogEntry logEntry,
+        Instant time,
+        EventSuppression suppression
+    ) {
+        this(
+            throwableHashCode,
+            Objects.requireNonNull(fault, "fault"),
+            fault.getId(),
+            fault.getFaultStrand().getId(),
+            logEntry,
+            time,
             -1L,
             -1L,
             -1L,
@@ -64,19 +126,47 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
     }
 
     private FaultEvent(
-        int throwableHashCode,
+        Integer throwableHashCode,
         Fault fault,
         LogEntry logEntry,
-        long time,
-        long globalSequenceNo,
-        long faultStrandSequenceNo,
-        long faultSequenceNo,
+        Instant time,
+        Long globalSequenceNo,
+        Long faultStrandSequenceNo,
+        Long faultSequenceNo,
+        EventSuppression suppression
+    ) {
+        this(
+            throwableHashCode,
+            Objects.requireNonNull(fault, "fault"),
+            fault.getId(),
+            fault.getFaultStrand().getId(),
+            logEntry,
+            time,
+            globalSequenceNo,
+            faultStrandSequenceNo,
+            faultSequenceNo,
+            suppression
+        );
+    }
+
+    private FaultEvent(
+        Integer throwableHashCode,
+        Fault fault,
+        FaultId faultId,
+        FaultStrandId faultStrandId,
+        LogEntry logEntry,
+        Instant time,
+        Long globalSequenceNo,
+        Long faultStrandSequenceNo,
+        Long faultSequenceNo,
         EventSuppression suppression
     ) {
         this.throwableHashCode = throwableHashCode;
         this.fault = Objects.requireNonNull(fault, "fault");
+        this.faultId = faultId;
+        this.faultStrandId = faultStrandId;
         this.logEntry = logEntry;
-        this.time = time;
+        this.time = Objects.requireNonNull(time, "time");
         this.globalSequenceNo = globalSequenceNo;
         this.faultStrandSequenceNo = faultStrandSequenceNo;
         this.faultSequenceNo = faultSequenceNo;
@@ -93,12 +183,20 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
         return fault;
     }
 
+    public FaultId getFaultId() {
+        return faultId;
+    }
+
+    public FaultStrandId getFaultStrandId() {
+        return faultStrandId;
+    }
+
     public LogEntry getLogEntry() {
         return logEntry;
     }
 
     public Instant getTime() {
-        return Instant.ofEpochMilli(time);
+        return time;
     }
 
     public Long getGlobalSequenceNo() {
@@ -137,7 +235,7 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
             suppression);
     }
 
-    private static long valid(long seqNo) {
+    private static Long valid(long seqNo) {
         if (seqNo < 0) {
             throw new IllegalArgumentException("Invalid seqNo: " + seqNo);
         }
@@ -161,7 +259,7 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
 
     @Override
     public void hashTo(Consumer<byte[]> h) {
-        hash(h, time, faultSequenceNo, faultStrandSequenceNo, globalSequenceNo);
+        hash(h, faultSequenceNo, time.toEpochMilli(), faultStrandSequenceNo, globalSequenceNo);
         hash(h, fault, logEntry);
     }
 }

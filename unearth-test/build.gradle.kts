@@ -16,11 +16,16 @@
  */
 
 dependencies {
-    testCompile(project(":unearth-server"))
-    testCompile(project(":unearth-client"))
+    testImplementation(project(":unearth-server"))
+    testImplementation(project(":unearth-analysis"))
+    testImplementation(project(":unearth-util"))
+    testImplementation(project(":unearth-munch"))
+    testImplementation(project(":unearth-core"))
+    testImplementation(project(":unearth-client"))
 
-    testCompile("org.testcontainers:cassandra")
+    testImplementation("org.testcontainers:cassandra")
 
+    testRuntime("org.postgresql:postgresql")
     testRuntime("org.webjars:swagger-ui")
     testRuntime("io.dropwizard.metrics:metrics-jmx")
     testRuntime("ch.qos.logback:logback-classic")

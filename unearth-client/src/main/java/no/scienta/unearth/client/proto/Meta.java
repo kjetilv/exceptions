@@ -22,6 +22,7 @@ import no.scienta.unearth.client.dto.IdDto;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
@@ -83,13 +84,17 @@ final class Meta {
         this.bodyParam = this.post ? 0 : -1;
         this.stringBody = this.post && parameterTypes[this.bodyParam] == String.class;
 
+        Parameter[] parameters = method.getParameters();
+
         this.queries = IntStream.range(0, parameterAnnotations.length)
             .filter(i ->
                 parameterAnnotations[i].length > 0)
             .boxed()
             .collect(Collectors.toMap(
                 i -> i,
-                i -> ((Qry) parameterAnnotations[i][0]).value()
+                i -> Optional.of(((Q) parameterAnnotations[i][0]).value())
+                    .filter(s -> !s.isBlank())
+                    .orElseGet(() -> parameters[i].getName())
             ));
         this.writer = writer;
         this.reader = reader;
@@ -115,7 +120,7 @@ final class Meta {
         }
         Object arg = args[pathParam];
         String fullPath =
-            path.replace("{}", arg instanceof IdDto ? ((IdDto) arg).uuid.toString() : arg.toString());
+            path.replace(PAR, arg instanceof IdDto ? ((IdDto) arg).uuid.toString() : arg.toString());
         String queryPath = queryPath(args);
         return queryPath == null || queryPath.isBlank()
             ? fullPath
@@ -173,6 +178,8 @@ final class Meta {
     private static final String JSON = "application/json;charset=UTF-8";
 
     private static final String TEXT = "text/plain;charset=UTF-8";
+
+    private static final String PAR = "{}";
 
     @Override
     public String toString() {

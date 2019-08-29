@@ -29,15 +29,32 @@ data class UnearthlyConfig(
 
         val unearthlyLogging: Boolean = false,
 
-        val cassandra: UnearthlyCassandraConfig = UnearthlyCassandraConfig())
+        val cassandra: UnearthlyCassandraConfig = UnearthlyCassandraConfig(),
+
+        val db: UnearthlyDbConfig = UnearthlyDbConfig())
+
+data class UnearthlyDbConfig(
+
+        val host: String = "127.0.0.1",
+
+        val username: String = "postgres",
+
+        val password: String = "",
+
+        val port: Int = 5432,
+
+        val schema: String = "unearth",
+
+        val jdbc: String = "jdbc:postgresql://127.0.0.1:54332/unearth"
+)
 
 data class UnearthlyCassandraConfig(
 
-    val host: String = "127.0.0.1",
+        val host: String = "127.0.0.1",
 
-    val port: Int = 9042,
+        val port: Int = 9042,
 
-    val dc: String = "datacenter1",
-    
-    val keyspace: String = "unearth"
+        val dc: String = "datacenter1",
+
+        val keyspace: String = "unearth"
 )

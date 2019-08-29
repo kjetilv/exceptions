@@ -17,27 +17,42 @@
 
 package no.scienta.unearth.jdbc;
 
+import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 interface Res {
 
-    String getString(String name);
-
     String getString();
-
-    Boolean getBoolean(String name);
 
     Boolean getBoolean();
 
-    Integer getInt(String name);
-
     Integer getInt();
-
-    Long getLong(String name);
 
     Long getLong();
 
-    UUID getUUID(String name);
-
     UUID getUUID();
+
+    Instant getInstant();
+
+    boolean next();
+
+    default <T> Stream<T> ifNext(Function<Res, T> apply) {
+        return next() ? Optional.ofNullable(apply.apply(this)).stream(): Stream.empty();
+    }
+
+    default <T> Stream<T> ifNext(Supplier<T> apply) {
+        return next() ? Optional.ofNullable(apply.get()).stream() : Stream.empty();
+    }
+
+    default <T> Optional<T> ifNextOne(Function<Res, T> apply) {
+        return next() ? Optional.ofNullable(apply.apply(this)): Optional.empty();
+    }
+
+    default <T> Optional<T> ifNextOne(Supplier<T> apply) {
+        return next() ? Optional.ofNullable(apply.get()) : Optional.empty();
+    }
 }

@@ -28,15 +28,26 @@ import no.scienta.unearth.munch.print.CauseFrame
 import no.scienta.unearth.server.dto.*
 import java.time.Clock
 import java.time.ZoneId
+import java.util.*
 
 class UnearthlyController(
         private val storage: FaultStorage,
         private val feed: FaultFeed,
         private val stats: FaultStats,
+        private val sensor: FaultSensor,
         private val renderer: UnearthlyRenderer,
         private val configuration: UnearthlyConfig,
         clock: Clock = Clock.systemDefaultZone()
 ) : AutoCloseable {
+
+    init {
+        try {
+            storage.initStorage().run();
+        } catch (e: Exception) {
+            throw IllegalStateException("$this failed to init $storage", e);
+        }
+    }
+
     val handler: FaultHandler = DefaultFaultHandler(storage, stats, clock)
 
     override fun close() {
@@ -68,10 +79,9 @@ class UnearthlyController(
     fun lookupFaultEventDto(
             id: FaultEventId,
             fullStack: Boolean = false,
-            printStack: Boolean = false,
-            fullEvent: Boolean = false
+            printStack: Boolean = false
     ): FaultEventDto? =
-            storage.getFaultEvent(id).orElse(null)?.let { faultEventDto(it, fullStack, printStack, fullEvent) }
+            storage.getFaultEvent(id).orElse(null)?.let { faultEventDto(it, fullStack, printStack) }
 
     fun lookupCauseStrandDto(
             causeStrandId: CauseStrandId,
@@ -88,24 +98,23 @@ class UnearthlyController(
             storage.getCause(causeId).orElse(null)?.let { causeDto(it, fullStack, printStack) }
 
     fun lookupThrowable(faultId: FaultId): Throwable? =
-            storage.getFault(faultId).orElse(null)?.let(Fault::toChameleon)
+            storage.getFault(faultId).map(Fault::toChameleon).orElse(null)
 
-    fun feedLimit(faultId: FaultId): Long = feed.limit(faultId)
+    fun feedLimit(faultId: FaultId): OptionalLong = feed.limit(faultId)
 
-    fun feedLimit(faultStrandId: FaultStrandId): Long = feed.limit(faultStrandId)
+    fun feedLimit(faultStrandId: FaultStrandId): OptionalLong = feed.limit(faultStrandId)
 
-    fun feedLimit() = feed.limit()
+    fun feedLimit(): OptionalLong = feed.limit()
 
     fun feed(
             offset: Long,
             count: Long,
             fullStack: Boolean = false,
-            printStack: Boolean = false,
-            fullEvent: Boolean = false
+            printStack: Boolean = false
     ): EventSequenceDto =
             EventSequenceDto(
                     feed.feed(offset, count).map {
-                        faultEventDto(it, fullStack, printStack, fullEvent)
+                        faultEventDto(it, fullStack, printStack)
                     })
 
     fun feed(
@@ -113,13 +122,12 @@ class UnearthlyController(
             offset: Long,
             count: Long,
             fullStack: Boolean = false,
-            printStack: Boolean = false,
-            fullEvent: Boolean = false
+            printStack: Boolean = false
     ): FaultEventSequenceDto =
             FaultEventSequenceDto(
                     FaultIdDto(faultId.hash, link(faultId)),
                     feed.feed(faultId, offset, count).map {
-                        faultEventDto(it, fullStack, printStack, fullEvent)
+                        faultEventDto(it, fullStack, printStack)
                     })
 
     fun feed(
@@ -127,28 +135,30 @@ class UnearthlyController(
             offset: Long,
             count: Long,
             fullStack: Boolean = false,
-            printStack: Boolean = false,
-            fullEvent: Boolean = false
+            printStack: Boolean = false
     ): FaultStrandEventSequenceDto =
             FaultStrandEventSequenceDto(
                     FaultStrandIdDto(faultStrandId.hash, link(faultStrandId)),
                     feed.feed(faultStrandId, offset, count).map {
-                        faultEventDto(it, fullStack, printStack, fullEvent)
+                        faultEventDto(it, fullStack, printStack)
                     })
 
     private fun faultEventDto(
             faultEvent: FaultEvent,
             fullStack: Boolean = false,
-            printStack: Boolean = false,
-            fullEvent: Boolean = false
-    ): FaultEventDto =
-            FaultEventDto(
-                    FaultEventIdDto(faultEvent.hash, link(faultEvent)),
-                    if (fullEvent) faultDto(faultEvent.fault, fullStack, printStack) else null,
-                    faultEvent.time.atZone(ZoneId.of("UTC")),
-                    faultEvent.globalSequenceNo,
-                    faultEvent.faultSequenceNo,
-                    faultEvent.faultStrandSequenceNo)
+            printStack: Boolean = false
+    ): FaultEventDto {
+        val faultDto = faultDto(faultEvent.fault, fullStack, printStack)
+        return FaultEventDto(
+                FaultEventIdDto(faultEvent.hash, link(faultEvent)),
+                faultDto,
+                faultDto.id,
+                faultDto.faultStrandId,
+                faultEvent.time.atZone(ZoneId.of("UTC")),
+                faultEvent.globalSequenceNo,
+                faultEvent.faultSequenceNo,
+                faultEvent.faultStrandSequenceNo)
+    }
 
     fun reset() {
         storage.reset()
@@ -229,12 +239,12 @@ class UnearthlyController(
     ): List<StackTraceElementDto>? =
             stackTrace.map { element ->
                 StackTraceElementDto(
-                        classLoaderName = element.classLoader(),
-                        moduleName = element.module(),
-                        moduleVersion = element.moduleVer(),
-                        declaringClass = element.className(),
-                        methodName = element.method(),
-                        fileName = element.file(),
+                        classLoaderName = element.classLoader().getValue(),
+                        moduleName = element.module().getValue(),
+                        moduleVersion = element.moduleVer().getValue(),
+                        declaringClass = element.className().getValue(),
+                        methodName = element.method().getValue(),
+                        fileName = element.file().getValue(),
                         lineNumber = element.line())
             }.toList()
 }

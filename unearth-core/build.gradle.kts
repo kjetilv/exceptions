@@ -16,7 +16,9 @@
  */
 
 dependencies {
-    compile(project(":unearth-munch"))
+    implementation(project(":unearth-util"))
+    implementation(project(":unearth-munch"))
+
     compile("org.slf4j:slf4j-api")
 }
 

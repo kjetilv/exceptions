@@ -15,16 +15,16 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.server.dto
+package no.scienta.unearth.client.proto;
 
-data class CauseChainDto(
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-        val className: String,
+@Target(ElementType.PARAMETER)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Q {
 
-        val message: String?,
-
-        val printedCauseFrames: Collection<String>? = null,
-
-        val causeStrand: CauseStrandDto? = null,
-
-        val cause: CauseChainDto? = null)
+    String value() default "";
+}

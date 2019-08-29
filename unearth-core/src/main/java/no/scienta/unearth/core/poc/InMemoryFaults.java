@@ -191,27 +191,17 @@ public class InMemoryFaults
     }
 
     @Override
-    public Collection<FaultEvent> getEvents(FaultStrandId faultStrandId, Long offset, Long count) {
-        return listLookup(this.faultStrandFaultEvents, faultStrandId, offset, count);
+    public OptionalLong limit() {
+        return opt(globalSequence.get());
     }
 
     @Override
-    public Collection<FaultEvent> getEvents(FaultId faultId, Long offset, Long count) {
-        return listLookup(faultFaultEvents, faultId, offset, count);
-    }
-
-    @Override
-    public long limit() {
-        return globalSequence.get();
-    }
-
-    @Override
-    public long limit(FaultStrandId id) {
+    public OptionalLong limit(FaultStrandId id) {
         return getLimit(this.faultStrandSequence, id);
     }
 
     @Override
-    public long limit(FaultId id) {
+    public OptionalLong limit(FaultId id) {
         return getLimit(this.faultSequence, id);
     }
 
@@ -242,7 +232,7 @@ public class InMemoryFaults
     @Override
     public Optional<FaultEvent> getLastFaultEvent(FaultId id, Instant sinceTime) {
         return filter(
-            sinceTime,
+            null,
             streamLookup(faultFaultEvents, id),
             FaultEvent::getFaultStrandSequenceNo,
             null);
@@ -259,26 +249,52 @@ public class InMemoryFaults
 
     @Override
     public long getFaultEventCount(FaultStrandId id, Instant sinceTime, Duration interval) {
-        return getFaultEvents(id, sinceTime, interval).count();
+        return getFaultEvents(id, sinceTime, interval).size();
     }
 
     @Override
-    public Stream<FaultEvent> getFaultEvents(FaultStrandId id, Instant sinceTime, Duration period) {
+    public long getFaultEventCount(FaultId id, Instant sinceTime, Duration period) {
+        return faultEvents.stream()
+            .filter(event -> event.getFault().getId().equals(id))
+            .filter(event -> event.getTime().isAfter(sinceTime) && event.getTime().isBefore(sinceTime.plus(period)))
+            .count();
+    }
+
+    @Override
+    public long getFaultEventCount(Instant sinceTime, Duration interval) {
+        return faultEvents.size();
+    }
+
+    @Override
+    public List<FaultEvent> getFaultEvents(FaultId id, Instant sinceTime, Duration period) {
+        return faultEvents.stream()
+            .filter(event -> event.getFaultId().equals(id))
+            .filter(event -> event.getTime().isAfter(sinceTime) && event.getTime().isBefore(sinceTime.plus(period)))
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<FaultEvent> getFaultEvents(FaultStrandId id, Instant sinceTime, Duration period) {
         Instant limitTime = period == null ? null : sinceTime.plus(period);
-        return getFaultEvents(id)
-            .filter(event ->
-                event.getTime().equals(sinceTime) || event.getTime().isAfter(sinceTime))
-            .filter(event ->
-                limitTime == null || limitTime.isBefore(event.getTime()));
+        return getFaultEvents(id).stream()
+            .filter(event -> event.getTime().isAfter(sinceTime) && event.getTime().isBefore(sinceTime.plus(period)))
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<FaultEvent> getFaultEvents(Instant sinceTime, Duration period) {
+        return faultEvents.stream()
+            .filter(event -> event.getTime().isAfter(sinceTime) && event.getTime().isBefore(sinceTime.plus(period)))
+            .collect(Collectors.toList());
     }
 
     private <I extends Id, T> Optional<T> get(I id, Map<I, T> memoryMap) {
         return Optional.ofNullable(memoryMap.get(id));
     }
 
-    public Stream<FaultEvent> getFaultEvents(FaultStrandId id) {
+    public List<FaultEvent> getFaultEvents(FaultStrandId id) {
         return streamLookup(faultStrandFaults, id).flatMap(fault ->
-            streamLookup(faultFaultEvents, fault.getId()));
+            streamLookup(faultFaultEvents, fault.getId())).collect(Collectors.toList());
     }
 
     private Optional<FaultEvent> filter(
@@ -325,8 +341,8 @@ public class InMemoryFaults
         return count > 0 ? candidates.limit(count) : candidates;
     }
 
-    private static <I extends Id> long getLimit(Map<I, AtomicLong> seq, I id) {
-        return Optional.ofNullable(seq.get(id)).map(AtomicLong::longValue).orElse(0L);
+    private static <I extends Id> OptionalLong getLimit(Map<I, AtomicLong> seq, I id) {
+        return opt(Optional.ofNullable(seq.get(id)).map(AtomicLong::longValue).orElse(0L));
     }
 
     private static <K> long increment(Map<K, AtomicLong> sequences, K id) {
@@ -381,7 +397,12 @@ public class InMemoryFaults
         map.computeIfAbsent(k, __ -> new ArrayList<>()).add(v);
     }
 
+    private static OptionalLong opt(long l) {
+        return l == 0 ? OptionalLong.empty() : OptionalLong.of(l);
+    }
+
     static class UniqueIncident extends AbstractHashable {
+
 
         private final int systemHashCode;
 

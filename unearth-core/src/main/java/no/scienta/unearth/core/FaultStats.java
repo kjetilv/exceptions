@@ -23,8 +23,8 @@ import no.scienta.unearth.munch.model.FaultEvent;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 public interface FaultStats extends AutoCloseable {
 
@@ -38,14 +38,6 @@ public interface FaultStats extends AutoCloseable {
 
     default long getFaultEventCount(FaultStrandId id, Instant sinceTime) {
         return getFaultEventCount(id, sinceTime, null);
-    }
-
-    default Stream<FaultEvent> getFaultEvents(FaultStrandId id) {
-        return getFaultEvents(id, null);
-    }
-
-    default Stream<FaultEvent> getFaultEvents(FaultStrandId id, Instant sinceTime) {
-        return getFaultEvents(id, sinceTime, null);
     }
 
     default Optional<FaultEvent> getLastFaultEvent(FaultId id) {
@@ -62,9 +54,41 @@ public interface FaultStats extends AutoCloseable {
 
     Optional<FaultEvent> getLastFaultEvent(FaultId id, Instant sinceTime, Long ceiling);
 
+    long getFaultEventCount(Instant sinceTime, Duration interval);
+
     long getFaultEventCount(FaultStrandId id, Instant sinceTime, Duration interval);
 
-    Stream<FaultEvent> getFaultEvents(FaultStrandId id, Instant sinceTime, Duration period);
+    long getFaultEventCount(FaultId id, Instant sinceTime, Duration interval);
+
+    default List<FaultEvent> getFaultEvents(FaultStrandId id) {
+        return getFaultEvents(id, null);
+    }
+
+    default List<FaultEvent> getFaultEvents(FaultStrandId id, Instant sinceTime) {
+        return getFaultEvents(id, sinceTime, null);
+    }
+
+    List<FaultEvent> getFaultEvents(FaultStrandId id, Instant sinceTime, Duration period);
+
+    default List<FaultEvent> getFaultEvents() {
+        return getFaultEvents((Instant) null);
+    }
+
+    default List<FaultEvent> getFaultEvents(Instant sinceTime) {
+        return getFaultEvents(sinceTime, null);
+    }
+
+    List<FaultEvent> getFaultEvents(Instant sinceTime, Duration period);
+
+    default List<FaultEvent> getFaultEvents(FaultId id) {
+        return getFaultEvents(id, null);
+    }
+
+    default List<FaultEvent> getFaultEvents(FaultId id, Instant sinceTime) {
+        return getFaultEvents(id, sinceTime, null);
+    }
+
+    List<FaultEvent> getFaultEvents(FaultId id, Instant sinceTime, Duration period);
 
     void reset();
 }

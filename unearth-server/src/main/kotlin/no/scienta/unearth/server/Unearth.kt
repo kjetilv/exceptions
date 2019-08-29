@@ -20,10 +20,12 @@ package no.scienta.unearth.server
 import ch.qos.logback.classic.LoggerContext
 import com.natpryce.konfig.*
 import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import no.scienta.unearth.analysis.CassandraInit
 import no.scienta.unearth.analysis.CassandraSensor
 import no.scienta.unearth.core.HandlingPolicy
-import no.scienta.unearth.core.poc.InMemoryFaults
+import no.scienta.unearth.jdbc.JdbcStorage
 import no.scienta.unearth.munch.model.FrameFun
 import no.scienta.unearth.munch.print.*
 import no.scienta.unearth.turbo.UnearthlyTurboFilter
@@ -31,7 +33,9 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.time.Clock
+import java.util.*
 import java.util.stream.Stream
+import javax.sql.DataSource
 
 class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> Unearth.State {
 
@@ -51,7 +55,7 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
     override fun invoke(): State {
         logger.info("Building ${UnearthlyServer::class.simpleName}...")
 
-        val configuration = customConfiguration ?: loadUnearthlyConfig()
+        val configuration = customConfiguration ?: unearthlyConfig(loadConfiguration())
 
         val cassandraConfig = configuration.cassandra
 
@@ -66,12 +70,21 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
                 cassandraConfig.dc,
                 cassandraConfig.keyspace)
 
-        val storage = InMemoryFaults(sensor, clock)
+        val dbProperties: Properties = Properties().apply {
+            setProperty("jdbcUrl", configuration.db.jdbc)
+            setProperty("username", configuration.db.username)
+            setProperty("password", configuration.db.password)
+        }
+
+        val db: DataSource = HikariDataSource(HikariConfig(dbProperties))
+
+        val storage = JdbcStorage(db, configuration.db.schema)
 
         val controller = UnearthlyController(
                 storage,
                 storage,
                 storage,
+                sensor,
                 UnearthlyRenderer(),
                 configuration)
 
@@ -107,21 +120,6 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
 
             override fun port(): Int = server.port()
         }
-    }
-
-    private fun loadUnearthlyConfig(): UnearthlyConfig {
-        val config = loadConfiguration()
-        return UnearthlyConfig(
-                prefix = config[Key("server.api", stringType)],
-                host = config[Key("server.host", stringType)],
-                port = config[Key("server.port", intType)],
-                selfDiagnose = config[Key("unearth.self-diagnose", booleanType)],
-                unearthlyLogging = config[Key("unearth.logging", booleanType)],
-                cassandra = UnearthlyCassandraConfig(
-                        host = config[Key("unearth.cassandra-host", stringType)],
-                        port = config[Key("unearth.cassandra-port", intType)],
-                        dc = config[Key("unearth.cassandra-dc", stringType)],
-                        keyspace = config[Key("unearth.cassandra-keyspace", stringType)]))
     }
 
     private fun reconfigureLogging(controller: UnearthlyController) {
@@ -168,6 +166,28 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
     companion object {
 
         private val logger: Logger = LoggerFactory.getLogger(Unearth::class.java)
+
+        private fun unearthlyConfig(config: Configuration): UnearthlyConfig {
+            return UnearthlyConfig(
+                    prefix = config[Key("server.api", stringType)],
+                    host = config[Key("server.host", stringType)],
+                    port = config[Key("server.port", intType)],
+                    selfDiagnose = config[Key("unearth.self-diagnose", booleanType)],
+                    unearthlyLogging = config[Key("unearth.logging", booleanType)],
+                    cassandra = UnearthlyCassandraConfig(
+                            host = config[Key("unearth.cassandra-host", stringType)],
+                            port = config[Key("unearth.cassandra-port", intType)],
+                            dc = config[Key("unearth.cassandra-dc", stringType)],
+                            keyspace = config[Key("unearth.cassandra-keyspace", stringType)]),
+                    db = UnearthlyDbConfig(
+                            host = config[Key("unearth.db-host", stringType)],
+                            port = config[Key("unearth.db-port", intType)],
+                            username = config[Key("unearth.db-username", stringType)],
+                            password = config[Key("unearth.db-password", stringType)],
+                            schema = config[Key("unearth.db-schema", stringType)]
+                    )
+            )
+        }
 
         private fun loadConfiguration(): Configuration {
             return systemProperties() overriding

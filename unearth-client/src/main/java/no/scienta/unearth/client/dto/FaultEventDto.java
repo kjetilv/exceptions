@@ -26,6 +26,10 @@ public class FaultEventDto {
 
     public FaultDto fault;
 
+    public FaultIdDto faultId;
+
+    public FaultStrandIdDto faultStrandId;
+
     public ZonedDateTime time;
 
     public Long sequenceNo;

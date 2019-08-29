@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * A fault has a {@link FaultStrand fault strand} and a list of {@link Cause causes}.
@@ -62,6 +63,10 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
 
     public List<Cause> getCauses() {
         return causes;
+    }
+
+    public List<CauseStrand> getCauseStrands() {
+        return causes.stream().map(Cause::getCauseStrand).collect(Collectors.toList());
     }
 
     public Throwable toChameleon() {

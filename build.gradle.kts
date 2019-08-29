@@ -27,10 +27,13 @@ val cassandraDriverVer = "4.1.0"
 val metricsVer = "4.1.0"
 val flywayVer = "6.0.0-beta2"
 val slf4jVer = "1.8.0-beta4"
+val hikariVer = "2.7.8"
+val postgresJdbcVer = "42.2.6.jre7"
 val junitVer = "4.12"
 val swaggerUiVer = "3.23.0"
 val kotlinVer = "1.3.40"
 val testcontainersVer = "1.12.0"
+val hsqldbVer = "2.5.0"
 
 plugins {
     kotlin("jvm") version "1.3.40"
@@ -93,6 +96,9 @@ allprojects {
 
             compile("org.slf4j:slf4j-api:$slf4jVer")
 
+            compile("com.zaxxer:HikariCP:$hikariVer")
+            runtime("org.postgresql:postgresql:$postgresJdbcVer")
+
             compile("org.flywaydb:flyway-core:$flywayVer")
             compile("ch.qos.logback:logback-classic:$logbackVer")
 
@@ -105,6 +111,8 @@ allprojects {
             testCompile("junit:junit:$junitVer")
 
             testCompile("org.testcontainers:cassandra:$testcontainersVer")
+
+            testRuntime("org.hsqldb:hsqldb:$hsqldbVer")
         }
     }
 }

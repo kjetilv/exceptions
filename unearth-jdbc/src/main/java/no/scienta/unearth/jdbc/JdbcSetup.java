@@ -18,18 +18,32 @@
 package no.scienta.unearth.jdbc;
 
 import org.flywaydb.core.Flyway;
-import org.flywaydb.core.api.configuration.FluentConfiguration;
+
+import javax.sql.DataSource;
+import java.util.Objects;
 
 public class JdbcSetup implements Runnable {
 
-    @Override
-    public void run() {
-        new Flyway(conf()
-            .locations("classpath:db")
-        ).migrate();
+    private final DataSource dataSource;
+
+    private final String schema;
+
+    JdbcSetup(DataSource dataSource, String schema) {
+        this.dataSource = Objects.requireNonNull(dataSource, "dataSource");
+        this.schema = Objects.requireNonNull(schema, "schema");
+        if (schema.isBlank()) {
+            throw new IllegalArgumentException("Empty schema ref: '" + schema + "'");
+        }
     }
 
-    private FluentConfiguration conf() {
-        return Flyway.configure(Thread.currentThread().getContextClassLoader());
+    @Override
+    public void run() {
+        new Flyway(Flyway.configure(Thread.currentThread().getContextClassLoader())
+            .dataSource(dataSource)
+            .schemas(schema)
+            .baselineOnMigrate(true)
+            .validateOnMigrate(true)
+            .locations("classpath:db")
+        ).migrate();
     }
 }

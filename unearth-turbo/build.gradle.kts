@@ -16,6 +16,8 @@
  */
 
 dependencies {
-    compile(project(":unearth-core"))
-    compile("ch.qos.logback:logback-classic")
+    implementation(project(":unearth-core"))
+    implementation(project(":unearth-munch"))
+
+    implementation("ch.qos.logback:logback-classic")
 }

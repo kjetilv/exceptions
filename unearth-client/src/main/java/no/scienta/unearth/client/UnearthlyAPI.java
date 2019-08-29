@@ -20,7 +20,7 @@ package no.scienta.unearth.client;
 import no.scienta.unearth.client.dto.*;
 import no.scienta.unearth.client.proto.GET;
 import no.scienta.unearth.client.proto.POST;
-import no.scienta.unearth.client.proto.Qry;
+import no.scienta.unearth.client.proto.Q;
 
 import java.util.Optional;
 
@@ -30,24 +30,16 @@ public interface UnearthlyAPI {
     Submission throwable(String throwable);
 
     @GET("fault/{}")
-    Optional<FaultDto> fault(FaultIdDto faultId,
-                             @Qry("fullStack") Boolean fullStack,
-                             @Qry("printStack") Boolean printStack);
+    Optional<FaultDto> fault(FaultIdDto faultId, @Q Boolean fullStack, @Q Boolean printStack);
 
     @GET("fault-strand/{}")
-    Optional<FaultStrandDto> faultStrand(FaultStrandIdDto faultId,
-                                         @Qry("fullStack") Boolean fullStack,
-                                         @Qry("printStack") Boolean printStack);
+    Optional<FaultStrandDto> faultStrand(FaultStrandIdDto faultId, @Q Boolean fullStack, @Q Boolean printStack);
 
     @GET("cause/{}")
-    Optional<CauseDto> cause(CauseIdDto causeIdDto,
-                             @Qry("fullStack") Boolean fullStack,
-                             @Qry("printStack") Boolean printStack);
+    Optional<CauseDto> cause(CauseIdDto causeIdDto, @Q Boolean fullStack, @Q Boolean printStack);
 
     @GET("cause-strand/{}")
-    Optional<CauseStrandDto> causeStrand(CauseStrandIdDto causeIdDto,
-                                         @Qry("fullStack") Boolean fullStack,
-                                         @Qry("printStack") Boolean printStack);
+    Optional<CauseStrandDto> causeStrand(CauseStrandIdDto causeIdDto, @Q Boolean fullStack, @Q Boolean printStack);
 
     @GET("fault-event/{}")
     Optional<FaultEventDto> faultEvent(FaultEventIdDto faultEventIdDto);
@@ -62,22 +54,22 @@ public interface UnearthlyAPI {
     Long faultFeedLimit(FaultIdDto faultId);
 
     @GET("feed")
-    EventSequenceDto globalFeed(@Qry("offset") Integer offset,
-                                @Qry("count") Integer count,
-                                @Qry("fullStack") Boolean fullStack,
-                                @Qry("printStack") Boolean printStack);
+    EventSequenceDto globalFeed(@Q Integer offset,
+                                @Q Integer count,
+                                @Q Boolean fullStack,
+                                @Q Boolean printStack);
 
     @GET("feed/fault/{}")
     FaultEventSequenceDto faultFeed(FaultIdDto faultId,
-                                    @Qry("offset") Integer offset,
-                                    @Qry("count") Integer count,
-                                    @Qry("fullStack") Boolean fullStack,
-                                    @Qry("printStack") Boolean printStack);
+                                    @Q Integer offset,
+                                    @Q Integer count,
+                                    @Q Boolean fullStack,
+                                    @Q Boolean printStack);
 
     @GET("feed/fault-strand/{}")
     FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultId,
-                                                @Qry("offset") Integer offset,
-                                                @Qry("count") Integer count,
-                                                @Qry("fullStack") Boolean fullStack,
-                                                @Qry("printStack") Boolean printStack);
+                                                @Q Integer offset,
+                                                @Q Integer count,
+                                                @Q Boolean fullStack,
+                                                @Q Boolean printStack);
 }

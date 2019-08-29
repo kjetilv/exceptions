@@ -17,104 +17,96 @@
 
 package no.scienta.unearth.jdbc;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
 
-final class Session implements AutoCloseable {
+public interface Session extends AutoCloseable {
 
-    private final Connection connection;
+    default <T> Optional<T> selectOne(String sql, Sel<T> selector) {
+        return selectOne(sql, null, selector);
+    }
 
-    Session(DataSource dataSource) {
-        try {
-            connection = dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to init session", e);
+    <T> Optional<T> selectOne(String sql, Set parSet, Sel<T> selector);
+
+    default <T> Optional<T> selectMaybeOne(String sql, Sel<Optional<T>> selector) {
+        return selectMaybeOne(sql, null, selector);
+    }
+
+    <T> Optional<T> selectMaybeOne(String sql, Set parSet, Sel<Optional<T>> selector);
+
+    default <T> List<T> select(String sql, Sel<T> selector) {
+        return select(sql, null, selector);
+    }
+
+    <T> List<T> select(String sql, Set parSet, Sel<T> sel);
+
+    default<T> List<T> selectOpt(String sql, Sel<Optional<T>> sel) {
+        return selectOpt(sql, null, sel);
+    }
+
+    <T> List<T> selectOpt(String sql, Set set, Sel<Optional<T>> sel);
+
+    default void setParams(Stmt stmt, Set set) {
+        if (set != null) {
+            set.set(stmt);
         }
     }
 
-    <T> Optional<T> selectOne(
-        String sql,
-        Sel<T> selector
-    ) {
-        return selectOne(sql, stmt -> {
-        }, selector);
-    }
+    <T> Existence<T> exists(String sql, Set set, Sel<T> selector);
 
-    <T> Optional<T> selectOne(
-        String sql,
-        Set parSet,
-        Sel<T> selector
-    ) {
-        return select(sql, parSet, selector).stream().findFirst();
-    }
+    <T> MultiExistence<T> multiExists(String sql, Collection<T> items, Set set, Sel<T> selector);
 
-    <T> List<T> select(
-        String sql,
-        Set parSet,
-        Sel<T> selector
-    ) {
-        try (
-            PreparedStatement ps = connection.prepareCall(sql);
-            Stmt stmt = new StmtImpl(ps);
-        ) {
-            parSet.setParams(stmt);
-            ResultSet resultSet = ps.executeQuery();
-            Res resGet = new ResImpl(resultSet);
-            if (resultSet.next()) {
-                List<T> collection = new ArrayList<>();
-                do {
-                    collection.add(selector.select(resGet));
-                } while (resultSet.next());
-                return collection;
-            }
-            return Collections.emptyList();
-        } catch (Exception e) {
-            throw new IllegalStateException("Call failed: " + sql, e);
-        }
-    }
+    void update(String sql, Set set);
 
-    <T> void insert(String sql, Set set) {
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            Stmt prep = new StmtImpl(ps);
-            set.setParams(prep);
-            ps.executeUpdate();
-        } catch (Exception e) {
-            throw new IllegalStateException("Statement failed: " + sql, e);
-        }
-    }
-
-    <T> void insertBatch(String sql, Collection<T> items, BatchParSet<T> set) {
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            Stmt prep = new StmtImpl(ps);
-            items.forEach(item -> {
-                set.setParams(prep, item);
-                addBatch(ps);
-            });
-            ps.executeBatch();
-        } catch (Exception e) {
-            throw new IllegalStateException("Statement failed: " + sql, e);
-        }
-    }
-
-    private void addBatch(PreparedStatement ps) {
-        try {
-            ps.addBatch();
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to batch " + ps, e);
-        }
-    }
+    <T> void updateBatch(String sql, Collection<T> items, BatchSet<T> set);
 
     @Override
-    public void close() {
-        try {
-            connection.close();
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to close: " + connection, e);
-        }
+    void close();
+
+    <T> T withStatement(String sql, Action<T> action);
+
+    enum Outcome {
+        INSERTED, UPDATED, NOOP
     }
 
+    @FunctionalInterface
+    interface Action<T> {
+
+        T act(PreparedStatement ps, Stmt stmt) throws Exception;
+    }
+
+    @FunctionalInterface
+    interface Sel<T> {
+
+        T select(Res res);
+    }
+
+    @FunctionalInterface
+    interface Set {
+
+        Stmt set(Stmt stmt);
+    }
+
+    @FunctionalInterface
+    interface BatchSet<T> {
+
+        Stmt setParams(Stmt stmt, T item);
+    }
+
+    interface Existence<T> {
+
+        Existence onUpdate(Consumer<T> update);
+
+        Existence onInsert(Runnable insert);
+
+        Outcome go();
+    }
+
+    interface MultiExistence<T> {
+
+        Outcome insert(Consumer<Collection<T>> inserter);
+    }
 }

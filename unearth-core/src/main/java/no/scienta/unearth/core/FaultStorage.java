@@ -20,10 +20,14 @@ package no.scienta.unearth.core;
 import no.scienta.unearth.munch.id.*;
 import no.scienta.unearth.munch.model.*;
 
-import java.util.Collection;
 import java.util.Optional;
 
 public interface FaultStorage extends AutoCloseable {
+
+    default Runnable initStorage() {
+        return () -> {
+        };
+    }
 
     @Override
     default void close() {
@@ -34,18 +38,6 @@ public interface FaultStorage extends AutoCloseable {
     Optional<Fault> getFault(FaultId faultId);
 
     Optional<FaultStrand> getFaultStrand(FaultStrandId faultStrandId);
-
-    default Collection<FaultEvent> getEvents(FaultStrandId faultStrandId) {
-        return getEvents(faultStrandId, null, null);
-    }
-
-    Collection<FaultEvent> getEvents(FaultStrandId faultStrandId, Long offset, Long count);
-
-    default Collection<FaultEvent> getEvents(FaultId faultId) {
-        return getEvents(faultId, null, null);
-    }
-
-    Collection<FaultEvent> getEvents(FaultId faultId, Long offset, Long count);
 
     Optional<FaultEvent> getFaultEvent(FaultEventId faultEventId);
 

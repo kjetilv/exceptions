@@ -15,9 +15,11 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.jdbc;
+package no.scienta.unearth.munch.base;
 
-interface Sel<T> {
+import java.util.UUID;
 
-    T select(Res res);
+public interface Hashed {
+
+    UUID getHash();
 }

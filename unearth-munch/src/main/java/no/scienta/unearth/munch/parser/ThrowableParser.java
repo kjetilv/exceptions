@@ -56,6 +56,7 @@ public class ThrowableParser {
     }
 
     public static Throwable parse(String in) {
+        Objects.requireNonNull(in, "in");
         try {
             List<String> lines = trimmed(in);
             List<Integer> causeIndices = causeIndices(lines);

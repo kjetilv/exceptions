@@ -19,6 +19,7 @@ package no.scienta.unearth.jdbc;
 
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -35,7 +36,11 @@ class StmtImpl implements Stmt {
     @Override
     public Stmt set(String string) {
         try {
-            statement.setString(++i, string);
+            if (string == null) {
+                statement.setNull(++i, Types.VARCHAR);
+            } else {
+                statement.setString(++i, string);
+            }
         } catch (Exception e) {
             throw new IllegalStateException("Could not set string #" + i + ": " + string, e);
         }
@@ -43,9 +48,13 @@ class StmtImpl implements Stmt {
     }
 
     @Override
-    public Stmt set(boolean bool) {
+    public Stmt set(Boolean bool) {
         try {
-            statement.setBoolean(++i, bool);
+            if (bool == null) {
+                statement.setNull(++i, Types.BOOLEAN);
+            } else {
+                statement.setBoolean(++i, bool);
+            }
         } catch (Exception e) {
             throw new IllegalStateException("Could not set truth #" + i + ": " + bool, e);
         }
@@ -55,7 +64,11 @@ class StmtImpl implements Stmt {
     @Override
     public Stmt set(Instant instant) {
         try {
-            statement.setTimestamp(++i, Timestamp.from(instant));
+            if (instant == null) {
+                statement.setNull(++i, Types.TIMESTAMP);
+            } else {
+                statement.setTimestamp(++i, Timestamp.from(instant));
+            }
         } catch (Exception e) {
             throw new IllegalStateException("Could not set instant #" + i + ": " + instant, e);
         }
@@ -63,9 +76,13 @@ class StmtImpl implements Stmt {
     }
 
     @Override
-    public Stmt set(long value) {
+    public Stmt set(Long value) {
         try {
-            statement.setLong(++i, value);
+            if (value == null) {
+                statement.setNull(++i, Types.BIGINT);
+            } else {
+                statement.setLong(++i, value);
+            }
         } catch (Exception e) {
             throw new IllegalStateException("Could not set long #" + i + ": " + value, e);
         }
@@ -73,9 +90,13 @@ class StmtImpl implements Stmt {
     }
 
     @Override
-    public Stmt set(int value) {
+    public Stmt set(Integer value) {
         try {
-            statement.setInt(++i, value);
+            if (value == null) {
+                statement.setNull(++i, Types.INTEGER);
+            } else {
+                statement.setInt(++i, value);
+            }
         } catch (Exception e) {
             throw new IllegalStateException("Could not set int #" + i + ": " + i, e);
         }
@@ -85,11 +106,20 @@ class StmtImpl implements Stmt {
     @Override
     public Stmt set(UUID uuid) {
         try {
-            statement.setObject(++i, uuid);
+            if (uuid == null) {
+                statement.setNull(++i, Types.OTHER);
+            } else {
+                statement.setObject(++i, uuid);
+            }
         } catch (Exception e) {
             throw new IllegalStateException("Could not set UUID #" + i + ": " + uuid, e);
         }
         return this;
+    }
+
+    @Override
+    public void reset() {
+        i = 0;
     }
 
     @Override

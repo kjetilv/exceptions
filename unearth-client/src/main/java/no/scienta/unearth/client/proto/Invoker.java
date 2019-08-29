@@ -17,11 +17,9 @@
 
 package no.scienta.unearth.client.proto;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationHandler;
@@ -53,8 +51,7 @@ class Invoker implements InvocationHandler {
     private final BiFunction<Class<?>, InputStream, Object> readBytes = this::readBytes;
 
     Invoker(URI uri, ObjectMapper objectMapper) {
-        this.uri = Objects.requireNonNull(uri, "uri").toASCIIString().endsWith("/")
-            ? uri
+        this.uri = Objects.requireNonNull(uri, "uri").toASCIIString().endsWith("/") ? uri
             : URI.create(uri.toASCIIString() + "/");
         this.objectMapper = objectMapper;
         if (!this.uri.toASCIIString().endsWith("/")) {
@@ -77,10 +74,6 @@ class Invoker implements InvocationHandler {
         }
         failOnError(response);
         Object object = readResponse(meta, response);
-        return returnValue(meta, object);
-    }
-
-    private Object returnValue(Meta meta, Object object) {
         if (object != null) {
             return meta.optional() ? Optional.of(object) : object;
         }
@@ -108,18 +101,10 @@ class Invoker implements InvocationHandler {
         }
     }
 
-    private HttpResponse<Void> voidResponse(HttpRequest request) {
-        try {
-            return newClient().send(request, HttpResponse.BodyHandlers.discarding());
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to send " + request, e);
-        }
-    }
-
     private byte[] writeBytes(Object value) {
         try {
             return objectMapper.writeValueAsBytes(value);
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Failed to write body: " + value, e);
         }
     }
@@ -127,7 +112,7 @@ class Invoker implements InvocationHandler {
     private Object readBytes(Class<?> type, InputStream inputStream) {
         try {
             return objectMapper.readerFor(type).readValue(inputStream);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Failed to read response: " + type + " <= " + inputStream, e);
         }
     }
@@ -141,14 +126,13 @@ class Invoker implements InvocationHandler {
     }
 
     private void failOnError(HttpResponse<InputStream> response) {
-        int result = response.statusCode();
-        if (result >= 500) {
+        if (response.statusCode() >= 500) {
             throw new IllegalStateException("Internal server error: " + response + possibly(error(response)));
         }
-        if (result >= 400) {
+        if (response.statusCode() >= 400) {
             throw new IllegalArgumentException("Invalid request: " + response + possibly(error(response)));
         }
-        if (result >= 300) {
+        if (response.statusCode() >= 300) {
             throw new IllegalArgumentException("Unsupported redirect: " + response + possibly(error(response)));
         }
     }
@@ -158,11 +142,11 @@ class Invoker implements InvocationHandler {
     }
 
     private String error(HttpResponse<InputStream> response) {
-        try (BufferedReader reader =
-                 new BufferedReader(new InputStreamReader(response.body(), StandardCharsets.UTF_8))
-        ) {
+        try
+            (BufferedReader reader = new BufferedReader(new InputStreamReader(response.body(), StandardCharsets.UTF_8))
+            ) {
             return reader.lines().collect(Collectors.joining("\n"));
-        } catch (IOException e) {
+        } catch (Exception e) {
             return "<Failed to read error response: " + e + ">";
         }
     }
@@ -170,7 +154,7 @@ class Invoker implements InvocationHandler {
     private Object readResponse(Meta meta, HttpResponse<InputStream> response) {
         try (InputStream body = response.body()) {
             return meta.response(body);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Failed to read response: " + response, e);
         }
     }

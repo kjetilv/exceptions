@@ -34,12 +34,14 @@
 
 package no.scienta.unearth.munch.id;
 
+import no.scienta.unearth.munch.base.Hashed;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-public abstract class Id {
+public abstract class Id implements Hashed {
 
     private final UUID hash;
 
@@ -61,6 +63,7 @@ public abstract class Id {
         return type;
     }
 
+    @Override
     public UUID getHash() {
         return hash;
     }

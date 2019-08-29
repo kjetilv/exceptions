@@ -20,10 +20,13 @@ plugins {
 }
 
 dependencies {
-    compile(project(":unearth-core"))
-    compile(project(":unearth-static"))
-    compile(project(":unearth-turbo"))
-    compile(project(":unearth-analysis"))
+    implementation(project(":unearth-util"))
+    implementation(project(":unearth-core"))
+    implementation(project(":unearth-analysis"))
+    implementation(project(":unearth-munch"))
+    implementation(project(":unearth-jdbc"))
+    implementation(project(":unearth-turbo"))
+    implementation(project(":unearth-static"))
 
     compile("org.http4k:http4k-core")
     compile("org.http4k:http4k-contract")
@@ -34,6 +37,10 @@ dependencies {
 
     compile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+
+    compile("com.zaxxer:HikariCP")
+
+    compile("ch.qos.logback:logback-classic")
 
     compile("io.swagger.core.v3:swagger-core")
     compile("io.micrometer:micrometer-registry-jmx")

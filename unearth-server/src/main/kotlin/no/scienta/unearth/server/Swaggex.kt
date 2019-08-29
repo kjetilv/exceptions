@@ -51,22 +51,22 @@ object Swaggex {
 
     internal fun causeDto() = CauseDto(CauseIdDto(uuid()), "Bad stuff", causeStrandDto())
 
-    internal fun faultEventDto(): FaultEventDto = FaultEventDto(
-            FaultEventIdDto(uuid()),
-            faultDto(),
-            ZonedDateTime.now(),
-            random.nextInt().toLong(),
-            random.nextInt().toLong(),
-            random.nextInt().toLong())
+    internal fun faultEventDto(): FaultEventDto {
+        val fault = faultDto()
+        val dto = FaultEventDto(
+                FaultEventIdDto(uuid()),
+                fault,
+                fault.id,
+                fault.faultStrandId,
+                ZonedDateTime.now(),
+                random.nextInt().toLong(),
+                random.nextInt().toLong(),
+                random.nextInt().toLong())
+        return dto
+    }
 
     internal fun causeStrandDto() =
             CauseStrandDto(CauseStrandIdDto(uuid()), "BadStuffException", emptyList(), emptyList())
-
-    internal fun causeChainDto(): CauseChainDto =
-            CauseChainDto(
-                    "mymy.such.a.BadClass",
-                    "Bad class!",
-                    causeStrand = causeStrandDto())
 
     private fun uuid(): UUID = UUID.randomUUID()
 

@@ -48,11 +48,11 @@ class StackTraceParts {
             String file = parser.file(parts);
             return Stream.of(new CauseFrame(
                 null,
-                parser.module(parts),
-                parser.moduleVersion(parts),
-                parser.className(parts),
-                parser.method(parts),
-                file == null ? parser.otherSource(parts) : file,
+                CauseFrame.Module(parser.module(parts)),
+                CauseFrame.ModuleVer(parser.moduleVersion(parts)),
+                CauseFrame.ClassName(parser.className(parts)),
+                CauseFrame.Method(parser.method(parts)),
+                CauseFrame.File(file == null ? parser.otherSource(parts) : file),
                 lineNumber == null ? -1 : lineNumber,
                 parser.isNativeMethod()
             ));

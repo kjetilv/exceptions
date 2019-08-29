@@ -19,6 +19,8 @@
 
 package no.scienta.unearth.main
 
+import org.postgresql.Driver
+
 fun main() {
     no.scienta.unearth.server.Unearth()()!!
 }

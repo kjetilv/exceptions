@@ -25,6 +25,10 @@ data class FaultEventDto(
 
         val fault: FaultDto?,
 
+        val faultId: FaultIdDto,
+
+        val faultStrandId: FaultStrandIdDto,
+
         val time: ZonedDateTime,
 
         val sequenceNo: Long,

@@ -34,11 +34,8 @@
 
 package no.scienta.unearth.statik;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import no.scienta.unearth.util.IO;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,24 +58,6 @@ public final class Statik {
     }
 
     private String readPath(String path) {
-        byte[] buffer = new byte[8192];
-        try (InputStream in = classLoader.getResourceAsStream(prefix + path)) {
-            if (in == null) {
-                return null;
-            }
-            InputStream bin = new BufferedInputStream(in);
-            try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-                while (true) {
-                    int read = bin.read(buffer);
-                    if (read > 0) {
-                        out.write(buffer, 0, read);
-                    } else if (read < 0) {
-                        return new String(out.toByteArray(), StandardCharsets.UTF_8);
-                    }
-                }
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to read " + path, e);
-        }
+        return IO.readPath(this.classLoader, prefix + path);
     }
 }

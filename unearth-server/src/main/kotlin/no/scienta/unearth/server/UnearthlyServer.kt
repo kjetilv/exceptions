@@ -144,8 +144,7 @@ class UnearthlyServer(
                     get(faultEvent) {
                         controller.lookupFaultEventDto(faultEventId,
                                 fullStack[req] ?: false,
-                                printStack[req] ?: false,
-                                true
+                                printStack[req] ?: false
                         )
                     }
                 }
@@ -220,7 +219,7 @@ class UnearthlyServer(
                 summary = "Event limits global"
                 produces += APPLICATION_JSON
                 returning(OK, limit to Swaggex.limit())
-            } bindContract GET to simpleGet(limit) {
+            } bindContract GET to simpleGetLong(limit, ifNull = 0L) {
                 controller.feedLimit()
             }
 
@@ -230,7 +229,7 @@ class UnearthlyServer(
                 produces += APPLICATION_JSON
                 returning(OK, limit to Swaggex.limit())
             } bindContract GET to { faultId ->
-                simpleGet(limit) {
+                simpleGetLong(limit, ifNull = 0L) {
                     controller.feedLimit(faultId)
                 }
             }
@@ -242,7 +241,7 @@ class UnearthlyServer(
                 produces += APPLICATION_JSON
                 returning(OK, limit to Swaggex.limit())
             } bindContract GET to { faultId ->
-                simpleGet(limit) {
+                simpleGetLong(limit, ifNull = 0L) {
                     controller.feedLimit(faultId)
                 }
             }
@@ -277,8 +276,7 @@ class UnearthlyServer(
                                 offsetQuery[req] ?: 0L,
                                 countQuery[req] ?: 0L,
                                 fullStack[req] ?: false,
-                                printStack[req] ?: false,
-                                fullEvent[req] ?: false)
+                                printStack[req] ?: false)
                     }
                 }
             }
@@ -312,6 +310,18 @@ class UnearthlyServer(
                 } ?: Response(NO_CONTENT)
             } catch (e: Exception) {
                 throw IllegalStateException("Failed GET", e)
+            }
+
+    private fun simpleGetLong(
+            outLens: BiDiBodyLens<Long>,
+            type: ContentType = APPLICATION_JSON,
+            ifNull: Long? = null,
+            result: () -> OptionalLong
+    ): (Request) -> Response =
+            simpleGet(outLens, type) {
+                result().let {
+                    if (it.isPresent) it.asLong else ifNull
+                }
             }
 
     private fun <O> simpleGet(
@@ -549,8 +559,6 @@ class UnearthlyServer(
         private val faultStrand = Body.auto<FaultStrandDto>().toLens()
 
         private val cause = Body.auto<CauseDto>().toLens()
-
-        private val causeChain = Body.auto<CauseChainDto>().toLens()
 
         private val causeStrand = Body.auto<CauseStrandDto>().toLens()
 

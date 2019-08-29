@@ -19,103 +19,82 @@ package no.scienta.unearth.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.UUID;
 
 class ResImpl implements Res {
 
     private final ResultSet resultSet;
 
+    private boolean next;
+
+    private int i;
+
     ResImpl(ResultSet resultSet) {
         this.resultSet = resultSet;
     }
 
     @Override
-    public Boolean getBoolean(String name) {
+    public boolean next() {
         try {
-            return resultSet.getBoolean(name);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to get truth '" + name + "': " + resultSet, e);
+            this.next = resultSet.next();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to start iteration: " + resultSet, e);
         }
+        return next;
     }
 
     @Override
     public Boolean getBoolean() {
         try {
-            return resultSet.getBoolean(1);
+            return resultSet.getBoolean(++i);
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to get truth: " + resultSet, e);
-        }
-    }
-
-    @Override
-    public Integer getInt(String name) {
-        try {
-            return resultSet.getInt(name);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to get int '" + name + "': " + resultSet, e);
+            throw new IllegalStateException("Failed to get truth #" + i + ": " + resultSet, e);
         }
     }
 
     @Override
     public Integer getInt() {
         try {
-            return resultSet.getInt(1);
+            return resultSet.getInt(++i);
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to get int: " + resultSet, e);
-        }
-    }
-
-    @Override
-    public Long getLong(String name) {
-        try {
-            return resultSet.getLong(name);
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to get long '" + name + "': " + resultSet, e);
+            throw new IllegalStateException("Failed to get int #" + i + ": " + resultSet, e);
         }
     }
 
     @Override
     public Long getLong() {
         try {
-            return resultSet.getLong(1);
+            return resultSet.getLong(++i);
         } catch (SQLException e) {
-            throw new IllegalStateException("Failed to get long: " + resultSet, e);
-        }
-    }
-
-    @Override
-    public String getString(String name) {
-        try {
-            return resultSet.getString(name);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to get string '" + name + "': " + resultSet, e);
+            throw new IllegalStateException("Failed to get long #" + i + ": " + resultSet, e);
         }
     }
 
     @Override
     public String getString() {
         try {
-            return resultSet.getString(1);
+            return resultSet.getString(++i);
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to get string: " + resultSet, e);
-        }
-    }
-
-    @Override
-    public UUID getUUID(String name) {
-        try {
-            return resultSet.getObject(name, UUID.class);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to get UUID '" + name + "': " + resultSet, e);
+            throw new IllegalStateException("Failed to get string #" + i + ": " + resultSet, e);
         }
     }
 
     @Override
     public UUID getUUID() {
         try {
-            return resultSet.getObject(1, UUID.class);
+            return resultSet.getObject(++i, UUID.class);
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to get UUID: " + resultSet, e);
+            throw new IllegalStateException("Failed to get UUID #" + i + ": " + resultSet, e);
+        }
+    }
+
+    @Override
+    public Instant getInstant() {
+        try {
+            return resultSet.getTimestamp(++i).toInstant();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to get timestamp #" + i + ": " + resultSet, e);
         }
     }
 }

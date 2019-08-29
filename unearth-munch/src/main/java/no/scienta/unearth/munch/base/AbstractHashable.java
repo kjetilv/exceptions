@@ -177,7 +177,7 @@ public abstract class AbstractHashable implements Hashable {
     @Override
     public final boolean equals(Object obj) {
         return obj == this || obj.getClass() == getClass()
-            && ((AbstractHashable) obj).getHash().equals(getHash());
+            && ((Hashed) obj).getHash().equals(getHash());
     }
 
     @Override
