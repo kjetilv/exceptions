@@ -48,7 +48,7 @@ class DefaultExistence<T> implements Session.Existence<T> {
     }
 
     @Override
-    public Session.Existence onInsert(Runnable insert) {
+    public Session.Existence<T> onInsert(Runnable insert) {
         this.insert = insert;
         return this;
     }
@@ -57,11 +57,19 @@ class DefaultExistence<T> implements Session.Existence<T> {
     public Session.Outcome go() {
         Optional<T> existing = session.selectOne(sql, set, sel);
         existing.ifPresentOrElse(
-            update == null ? t -> {
-            } : update,
-            insert == null ? () -> {
-            } : insert
+            update == null ? noUpdate() : update,
+            insert == null ? noInsert() : insert
         );
         return existing.isPresent() ? Session.Outcome.UPDATED : Session.Outcome.INSERTED;
+    }
+
+    private Runnable noInsert() {
+        return () -> {
+        };
+    }
+
+    private Consumer<T> noUpdate() {
+        return t -> {
+        };
     }
 }

@@ -26,8 +26,6 @@ class ResImpl implements Res {
 
     private final ResultSet resultSet;
 
-    private boolean next;
-
     private int i;
 
     ResImpl(ResultSet resultSet) {
@@ -37,11 +35,12 @@ class ResImpl implements Res {
     @Override
     public boolean next() {
         try {
-            this.next = resultSet.next();
+            return resultSet.next();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to start iteration: " + resultSet, e);
+        } finally {
+            i = 0;
         }
-        return next;
     }
 
     @Override

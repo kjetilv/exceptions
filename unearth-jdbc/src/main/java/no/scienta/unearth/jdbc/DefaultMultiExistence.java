@@ -17,46 +17,78 @@
 
 package no.scienta.unearth.jdbc;
 
+import no.scienta.unearth.jdbc.Session.Outcome;
+import no.scienta.unearth.jdbc.Session.Sel;
+
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-class DefaultMultiExistence<T> implements Session.MultiExistence<T> {
+import static no.scienta.unearth.jdbc.Session.Outcome.*;
+import static no.scienta.unearth.jdbc.Session.Set;
 
-    private final DefaultSession session;
+class DefaultMultiExistence<T> implements Session.MultiExistence<T> {
 
     private final Collection<T> items;
 
-    private final String sql;
+    private final Collection<T> existing;
 
-    private final Session.Set set;
+    private Consumer<Collection<T>> inserter;
 
-    private final Session.Sel<T> selector;
-
-    @Override
-    public Session.Outcome insert(Consumer<Collection<T>> inserter) {
-        Collection<T> known = new HashSet<>(session.select(sql, set, selector));
-        Collection<T> unknown = items.stream().filter(known::add).collect(Collectors.toSet());
-        if (unknown.isEmpty()){
-            return Session.Outcome.NOOP;
-        }
-        inserter.accept(unknown);
-        return Session.Outcome.INSERTED;
-    }
+    private Consumer<Collection<T>> updater;
 
     DefaultMultiExistence(
         DefaultSession session,
         Collection<T> items,
         String sql,
-        Session.Set set,
-        Session.Sel<T> selector
+        Set set,
+        Sel<T> selector
     ) {
-        this.session = session;
         this.items = items;
-        this.sql = sql;
-        this.set = set;
-        this.selector = selector;
+        this.existing = new HashSet<>(session.select(sql, set, selector));
     }
+
+    @Override
+    public Session.MultiExistence<T> onUpdate(Consumer<Collection<T>> updater) {
+        this.updater = updater;
+        return this;
+    }
+
+    @Override
+    public Session.MultiExistence<T> onInsert(Consumer<Collection<T>> inserter) {
+        this.inserter = inserter;
+        return this;
+    }
+
+    @Override
+    public Outcome go() {
+        boolean updated = updated();
+        boolean inserted = inserted();
+        return inserted && updated ? INSERTED_AND_UPDATED :
+            inserted ? INSERTED :
+            updated ? UPDATED :
+            NOOP;
+    }
+
+    private boolean inserted() {
+        if (inserter == null) {
+            return false;
+        }
+        Collection<T> unknown = items.stream().filter(existing::add).collect(Collectors.toSet());
+        if (unknown.isEmpty()) {
+            return false;
+        }
+        inserter.accept(unknown);
+        return true;
+    }
+
+    private boolean updated() {
+        if (existing.isEmpty() || updater == null) {
+            return false;
+        }
+        updater.accept(existing);
+        return true;
+    }
+
 }

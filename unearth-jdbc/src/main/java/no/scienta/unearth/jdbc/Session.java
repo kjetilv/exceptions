@@ -57,7 +57,7 @@ public interface Session extends AutoCloseable {
 
     <T> Existence<T> exists(String sql, Set set, Sel<T> selector);
 
-    <T> MultiExistence<T> multiExists(String sql, Collection<T> items, Set set, Sel<T> selector);
+    <T> MultiExistence<T> exists(String sql, Collection<T> items, Set set, Sel<T> selector);
 
     void update(String sql, Set set);
 
@@ -69,7 +69,7 @@ public interface Session extends AutoCloseable {
     <T> T withStatement(String sql, Action<T> action);
 
     enum Outcome {
-        INSERTED, UPDATED, NOOP
+        INSERTED, UPDATED, INSERTED_AND_UPDATED, NOOP
     }
 
     @FunctionalInterface
@@ -98,15 +98,19 @@ public interface Session extends AutoCloseable {
 
     interface Existence<T> {
 
-        Existence onUpdate(Consumer<T> update);
+        Existence<T> onUpdate(Consumer<T> update);
 
-        Existence onInsert(Runnable insert);
+        Existence<T> onInsert(Runnable insert);
 
         Outcome go();
     }
 
     interface MultiExistence<T> {
 
-        Outcome insert(Consumer<Collection<T>> inserter);
+        MultiExistence<T> onUpdate(Consumer<Collection<T>> inserter);
+
+        MultiExistence<T> onInsert(Consumer<Collection<T>> inserter);
+
+        Outcome go();
     }
 }

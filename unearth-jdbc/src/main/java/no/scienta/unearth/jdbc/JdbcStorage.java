@@ -26,6 +26,7 @@ import no.scienta.unearth.munch.id.*;
 import no.scienta.unearth.munch.model.*;
 import no.scienta.unearth.munch.print.CauseFrame;
 import no.scienta.unearth.util.Streams;
+import no.scienta.unearth.util.Util;
 
 import javax.sql.DataSource;
 import java.time.Duration;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static no.scienta.unearth.jdbc.Session.Outcome.INSERTED;
+import static no.scienta.unearth.jdbc.Session.Outcome.NOOP;
 
 public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
 
@@ -66,7 +68,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
                     fault.getCauseStrands().forEach(causeStrand -> {
                         if (causeStrandOutcomes.get(causeStrand) == INSERTED) {
                             Outcome causeFramesOutcome = storeCauseFrames(session, causeStrand.getCauseFrames());
-                            if (causeFramesOutcome == INSERTED){
+                            if (causeFramesOutcome == INSERTED) {
                                 linkCauseFrames(session, causeStrand);
                             }
                         }
@@ -384,21 +386,26 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     }
 
     private Outcome storeCauseFrames(Session session, List<CauseFrame> causeFrames) {
-        return session.multiExists(
+        if (causeFrames.isEmpty()){
+            return NOOP;
+        }
+        Map<UUID, CauseFrame> identifiedFrames = Util.byId(causeFrames, CauseFrame::getHash);
+        return session.exists(
             "select id from cause_frame where id in" +
                 " (" + causeFrames.stream().map(__ -> "?").collect(Collectors.joining(", ")) + ")",
-            causeFrames.stream().map(Hashable::getHash).collect(Collectors.toSet()),
+            causeFrames,
             stmt ->
                 Streams.quickReduce(causeFrames.stream(), (stmt1, causeFrame) -> stmt.set(causeFrame)),
-            Res::getUUID
-        ).insert(uuids ->
+            res ->
+                identifiedFrames.get(res.getUUID())
+        ).onInsert(newFrames ->
             session.updateBatch(
                 "insert into cause_frame (" +
                     "  id, class_loader, module, module_ver, class_name, method, file, line, native" +
                     ") values (" +
                     "  ?, ?, ?, ?, ?, ?, ?, ?, ?" +
                     ")",
-                causeFrames.stream().filter(causeFrame -> !uuids.contains(causeFrame.getHash())).collect(Collectors.toSet()),
+                newFrames,
                 (stmt, cf) -> Setter.causeFrame(stmt, cf)
                     .set(cf.classLoader())
                     .set(cf.module())
@@ -408,7 +415,8 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
                     .set(cf.file())
                     .set(cf.line())
                     .set(cf.naytiv())
-            ));
+            )
+        ).go();
     }
 
     private void linkCauseFrames(Session session, CauseStrand causeStrand) {
@@ -486,7 +494,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
             "insert into fault_event " +
                 "(id, fault, fault_strand, time, global_seq, fault_seq, fault_strand_seq)" +
                 " values " +
-                "(?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "(?, ?, ?, ?, ?, ?, ?)",
             stmt -> Setter.faultEvent(stmt, faultEvent)
                 .set(event.getFault())
                 .set(event.getFault().getFaultStrand())

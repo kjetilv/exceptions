@@ -44,7 +44,7 @@ final class DefaultSession implements Session {
     }
 
     @Override
-    public <T> MultiExistence<T> multiExists(String sql, Collection<T> items, Set set, Sel<T> selector) {
+    public <T> MultiExistence<T> exists(String sql, Collection<T> items, Set set, Sel<T> selector) {
         return new DefaultMultiExistence<T>(this, items, sql, set, selector);
     }
 

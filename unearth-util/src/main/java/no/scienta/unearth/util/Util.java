@@ -35,11 +35,10 @@
 package no.scienta.unearth.util;
 
 import java.time.Duration;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public final class Util {
 
@@ -65,6 +64,27 @@ public final class Util {
 
     public static boolean isShorterThan(Duration time, Duration comparedValue) {
         return time.minus(comparedValue).isNegative();
+    }
+
+    public static <I, T> Map<I, T> byId(Collection<T> vs, Function<T, I> identifier) {
+        return vs.stream()
+            .collect(Collectors.groupingBy(identifier, HashMap::new, Collectors.toSet()))
+            .entrySet().stream()
+            .filter(Util::singleEntry)
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                e -> e.getValue().iterator().next())
+            );
+    }
+
+    private static <K, V> boolean singleEntry(Map.Entry<K, Set<V>> e) {
+        if (e.getValue().isEmpty()) {
+            return false;
+        }
+        if (e.getValue().size() == 1) {
+            return true;
+        }
+        throw new IllegalStateException("Multiple elements for " + e.getKey() + ": " + e.getValue());
     }
 
     static <T> BinaryOperator<T> noCombine() {
