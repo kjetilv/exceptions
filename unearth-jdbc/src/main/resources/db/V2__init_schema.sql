@@ -87,8 +87,8 @@ create table fault_event
     fault_strand     uuid,
     time             timestamp,
     global_seq       int not null,
-    fault_seq        int not null,
     fault_strand_seq int not null,
+    fault_seq        int not null,
 
     primary key (id),
     foreign key (fault) references fault (id)

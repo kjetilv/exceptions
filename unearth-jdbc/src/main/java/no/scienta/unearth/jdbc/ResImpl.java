@@ -20,9 +20,13 @@ package no.scienta.unearth.jdbc;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.util.Spliterator;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
-class ResImpl implements Res {
+class ResImpl implements Session.Res {
 
     private final ResultSet resultSet;
 
@@ -30,6 +34,34 @@ class ResImpl implements Res {
 
     ResImpl(ResultSet resultSet) {
         this.resultSet = resultSet;
+    }
+
+    @Override
+    public <T> Stream<T> get(Session.Sel<T> sel) {
+        return StreamSupport.stream(new Spliterator<T>() {
+            @Override
+            public boolean tryAdvance(Consumer<? super T> action) {
+                if (next()) {
+                    action.accept(sel.select(ResImpl.this));
+                }
+                return false;
+            }
+
+            @Override
+            public Spliterator<T> trySplit() {
+                return null;
+            }
+
+            @Override
+            public long estimateSize() {
+                return Long.MAX_VALUE;
+            }
+
+            @Override
+            public int characteristics() {
+                return IMMUTABLE & ORDERED;
+            }
+        }, false);
     }
 
     @Override

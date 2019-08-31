@@ -22,7 +22,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 @SuppressWarnings("SameParameterValue")
 final class DefaultSession implements Session {
@@ -40,61 +43,40 @@ final class DefaultSession implements Session {
 
     @Override
     public <T> Existence<T> exists(String sql, Set set, Sel<T> sel) {
-        return new DefaultExistence<T>(this, sql, set, sel);
+        return new DefaultExistence<>(this, sql, set, sel);
     }
 
     @Override
     public <T> MultiExistence<T> exists(String sql, Collection<T> items, Set set, Sel<T> selector) {
-        return new DefaultMultiExistence<T>(this, items, sql, set, selector);
-    }
-
-    @Override
-    public <T> Optional<T> selectOne(String sql, Set parSet, Sel<T> selector) {
-        return select(sql, parSet, selector).stream().findFirst();
-    }
-
-    @Override
-    public <T> Optional<T> selectMaybeOne(String sql, Set set, Sel<Optional<T>> selector) {
-        return select(sql, set, selector).stream().flatMap(Optional::stream).findFirst();
+        return new DefaultMultiExistence<>(this, items, sql, set, selector);
     }
 
     @Override
     public <T> List<T> select(String sql, Set set, Sel<T> sel) {
         return withStatement(sql, (ps, stmt) -> {
-            setParams(stmt, set);
-            ResultSet resultSet = ps.executeQuery();
-            Res res = new ResImpl(resultSet);
-            List<T> selected = new ArrayList<>();
-            while (res.next()) {
-                selected.add(sel.select(res));
+            if (set != null) {
+                set.set(stmt);
             }
-            return selected.isEmpty() ? Collections.emptyList() : selected;
-        });
-    }
-
-    @Override
-    public <T> List<T> selectOpt(String sql, Set set, Sel<Optional<T>> sel) {
-        return withStatement(sql, (ps, stmt) -> {
-            setParams(stmt, set);
             ResultSet resultSet = ps.executeQuery();
-            Res res = new ResImpl(resultSet);
-            if (!res.next()) {
+            if (!resultSet.next()) {
                 return Collections.emptyList();
             }
+            Res res = new ResImpl(resultSet);
             List<T> selected = new ArrayList<>();
-            while (res.next()) {
-                sel.select(res).ifPresent(selected::add);
-            }
-            return selected;
+            do {
+                selected.add(sel.select(res));
+            } while (res.next());
+            return selected.isEmpty() ? Collections.emptyList() : selected;
+// NO GO
+            //          Res res = new ResImpl(ps.executeQuery());
+//            return res.get(sel).collect(Collectors.toList());
         });
     }
 
     @Override
     public <T> T withStatement(String sql, Action<T> action) {
-        try (
-            PreparedStatement ps = connection.prepareCall(sql)
-        ) {
-            return action.act(ps, new StmtImpl(ps));
+        try (PreparedStatement ps = connection.prepareCall(sql)) {
+            return action.on(ps, new StmtImpl(ps));
         } catch (Exception e) {
             throw new IllegalStateException("Call failed: " + sql, e);
         }

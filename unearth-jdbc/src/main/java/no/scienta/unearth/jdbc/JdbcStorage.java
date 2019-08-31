@@ -64,7 +64,6 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
                 if (faultStrandOutcome == INSERTED) {
                     Map<CauseStrand, Outcome> causeStrandOutcomes = storeCauseStrands(fault, session);
                     Map<Cause, Outcome> causeOutcomes = storeCauses(fault, session);
-
                     fault.getCauseStrands().forEach(causeStrand -> {
                         if (causeStrandOutcomes.get(causeStrand) == INSERTED) {
                             Outcome causeFramesOutcome = storeCauseFrames(session, causeStrand.getCauseFrames());
@@ -75,16 +74,18 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
                     });
                     fault.getCauses().forEach(cause -> {
                         if (causeOutcomes.get(cause) == INSERTED) {
+                            storeCause(session, cause);
                         }
                     });
                 }
             }
-            FaultEvent stored = storeEvent(session, newFaultEvent(fault, logEntry, throwable));
-            return new FaultEvents(stored, null);
+            return new FaultEvents(
+                storedEvent(session, inputEvent(fault, logEntry, throwable)),
+                null);
         });
     }
 
-    private FaultEvent newFaultEvent(Fault fault, LogEntry logEntry, Throwable throwable) {
+    private FaultEvent inputEvent(Fault fault, LogEntry logEntry, Throwable throwable) {
         return new FaultEvent(
             throwable == null ? null : System.identityHashCode(throwable),
             fault,
@@ -135,12 +136,13 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
 
     @Override
     public Optional<FaultEvent> getFaultEvent(FaultEventId faultEventId) {
-        return loadFaultEvent(
-            "select (" +
-                "fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
-                ") from fault_event where id = ?",
-            stmt -> Setter.byId(stmt, faultEventId)
-                .set(faultEventId));
+        return inSession(session -> session.select(
+            "select " + FaultEventFields.list() + " from fault_event" +
+                " where id = ?",
+            stmt ->
+                Setter.byId(stmt, faultEventId),
+            this::readActualFaultEvent
+        ).stream().findFirst());
     }
 
     @Override
@@ -201,9 +203,8 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     @Override
     public List<FaultEvent> feed(FaultId id, long offset, long count) {
         return loadFaultEvents(
-            "select (" +
-                FaultEventFields.list() +
-                ") from fault_event where fault_strand = ? and global_seq >= ? limit ?",
+            "select (" + FaultEventFields.list() + ") from fault_event" +
+                " where fault_strand = ? and global_seq >= ? limit ?",
             stmt -> stmt
                 .set(id)
                 .set(offset)
@@ -212,36 +213,39 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
 
     @Override
     public Optional<FaultEvent> getLastFaultEvent(FaultId id, Instant sinceTime) {
-        return loadFaultEvent(
+        return inSession(session -> session.select(
             "select (" +
                 FaultEventFields.list() +
                 ") from fault_event where fault = ? and time >= ? order by fault_seq desc limit 1",
             stmt ->
-                stmt.set(id));
+                stmt.set(id),
+            (Session.Sel<FaultEvent>) this::readActualFaultEvent
+        ).stream().findFirst());
     }
 
     @Override
     public Optional<FaultEvent> getLastFaultEvent(FaultStrandId id, Instant sinceTime) {
-        return loadFaultEvent(
-            "select (" +
-                FaultEventFields.list() +
-                ") from fault_event where fault_strand = ? and time >= ? order by fault_seq desc limit 1",
+        return inSession(session -> session.select(
+            "select (" + FaultEventFields.list() + ") from fault_event" +
+                " where fault_strand = ? and time >= ? order by fault_seq desc limit 1",
             stmt -> stmt
                 .set(id)
-                .set(sinceTime));
+                .set(sinceTime),
+            this::readActualFaultEvent
+        ).stream().findFirst());
     }
 
     @Override
     public Optional<FaultEvent> getLastFaultEvent(FaultId id, Instant sinceTime, Long ceiling) {
-        return loadFaultEvent(
-            "select (" +
-                FaultEventFields.list() +
-                ") from fault_event" +
+        return inSession(session -> session.select(
+            "select (" + FaultEventFields.list() + ") from fault_event" +
                 " where fault = ? and time >= ? and fault_seq <= ? order by fault_seq desc limit 1",
             stmt -> stmt
                 .set(id)
                 .set(sinceTime)
-                .set(ceiling));
+                .set(ceiling),
+            this::readActualFaultEvent
+        ).stream().findFirst());
     }
 
     @Override
@@ -269,24 +273,18 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     }
 
     private List<FaultEvent> doGetFaultEvents(Id id, Instant sinceTime, Duration period) {
-        return inSession(session ->
-            session.selectOpt(
-                "select (" + FaultEventFields.list() + ") from fault_events" +
-                    (id == null ? "" : " where " + (id instanceof FaultId ? "fault" : "fault_strand") + " = ?") +
-                    (sinceTime == null ? ""
-                        : " and time >= ?" + (
-                        period == null ? ""
-                            : " and time <= ? ")),
-                stmt -> forPeriod(
-                    sinceTime(id == null ? stmt : stmt.set(id), sinceTime),
-                    sinceTime,
-                    period),
-                faultEventReader()));
-    }
-
-    private Session.Sel<Optional<FaultEvent>> faultEventReader() {
-        return res ->
-            res.ifNextOne(this::readActualFaultEvent);
+        return inSession(session -> session.select(
+            "select (" + FaultEventFields.list() + ") from fault_events" +
+                (id == null ? "" : " where " + (id instanceof FaultId ? "fault" : "fault_strand") + " = ?") +
+                (sinceTime == null ? ""
+                    : " and time >= ?" + (
+                    period == null ? ""
+                        : " and time <= ? ")),
+            stmt -> forPeriod(
+                sinceTime(id == null ? stmt : stmt.set(id), sinceTime),
+                sinceTime,
+                period),
+            this::readActualFaultEvent));
     }
 
     private long count(String countSql, Id id) {
@@ -294,7 +292,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         return inSession(session -> session.selectOne(
             countSql,
             parSet,
-            Res::getLong)
+            Session.Res::getLong)
         ).orElse(0L);
     }
 
@@ -311,19 +309,11 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         }
     }
 
-    private long updateFaultSeq(Session session, FaultEvent faultEvent) {
-        return updateFaultSeq(session, faultEvent.getFault().getId());
-    }
-
     private long updateFaultSeq(Session session, FaultId id) {
         return updateSequence(session, id,
             "select seq from fault_sequence where id = ?",
             "update fault_sequence set seq = ? where id = ?",
             "insert into fault_sequence (seq, id) values (?, ?)");
-    }
-
-    private long updateFaultStrandSeq(Session session, FaultEvent faultEvent) {
-        return updateFaultStrandSeq(session, faultEvent.getFault().getFaultStrand().getId());
     }
 
     private long updateFaultStrandSeq(Session session, FaultStrandId id) {
@@ -344,14 +334,12 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     }
 
     private Long sequenced(Session session, Id hashable, String update, long inc) {
-        session.update(update, stmt -> stmt
-            .set(inc)
-            .set(hashable));
+        session.update(update, stmt -> stmt.set(inc).set(hashable));
         return inc;
     }
 
     private Optional<Long> limit(Session session, Id id, String select) {
-        return session.selectOne(select, stmt -> stmt.set(id), Res::getLong);
+        return session.selectOne(select, stmt -> stmt.set(id), Session.Res::getLong);
     }
 
     private long getGlobalSeq(Session session) {
@@ -376,17 +364,12 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     private Optional<Long> limit(Session session) {
         return session.selectOne(
             "select seq from global_sequence where id = 0",
-            Res::getLong
+            Session.Res::getLong
         );
     }
 
-    private Optional<FaultEvent> loadFaultEvent(String sql, Session.Set set) {
-        return inSession(session ->
-            session.selectMaybeOne(sql, set, faultEventReader()));
-    }
-
     private Outcome storeCauseFrames(Session session, List<CauseFrame> causeFrames) {
-        if (causeFrames.isEmpty()){
+        if (causeFrames.isEmpty()) {
             return NOOP;
         }
         Map<UUID, CauseFrame> identifiedFrames = Util.byId(causeFrames, CauseFrame::getHash);
@@ -478,24 +461,24 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     }
 
     private Session.Sel<UUID> getId() {
-        return Res::getUUID;
+        return Session.Res::getUUID;
     }
 
     private Session.Set setId(Hashable fault1) {
         return stmt -> stmt.set(fault1);
     }
 
-    private FaultEvent storeEvent(Session session, FaultEvent faultEvent) {
-        FaultEvent event = faultEvent.sequence(
+    private FaultEvent storedEvent(Session session, FaultEvent baseEvent) {
+        FaultEvent event = baseEvent.sequence(
             getGlobalSeq(session),
-            updateFaultStrandSeq(session, faultEvent),
-            updateFaultSeq(session, faultEvent));
+            updateFaultStrandSeq(session, baseEvent.getFault().getFaultStrand().getId()),
+            updateFaultSeq(session, baseEvent.getFault().getId()));
         session.update(
             "insert into fault_event " +
                 "(id, fault, fault_strand, time, global_seq, fault_seq, fault_strand_seq)" +
                 " values " +
                 "(?, ?, ?, ?, ?, ?, ?)",
-            stmt -> Setter.faultEvent(stmt, faultEvent)
+            stmt -> Setter.faultEvent(stmt, event)
                 .set(event.getFault())
                 .set(event.getFault().getFaultStrand())
                 .set(event.getTime())
@@ -507,11 +490,10 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     }
 
     private List<FaultEvent> loadFaultEvents(String sql, Session.Set set) {
-        return inSession(session ->
-            session.selectOpt(sql, set, faultEventReader()));
+        return inSession(session -> session.select(sql, set, this::readActualFaultEvent));
     }
 
-    private FaultEvent readActualFaultEvent(Res res) {
+    private FaultEvent readActualFaultEvent(Session.Res res) {
         return new FaultEvent(
             new FaultId(res.getUUID()),
             new FaultStrandId(res.getUUID()),
@@ -596,7 +578,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
             "select (class_name) from cause_strand where id = ?",
             stmt ->
                 stmt.set(causeStrandId),
-            Res::getString
+            Session.Res::getString
         ).map(className ->
         {
             List<CauseFrame> causeFrames = session.select(

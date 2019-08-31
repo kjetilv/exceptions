@@ -55,7 +55,7 @@ class DefaultExistence<T> implements Session.Existence<T> {
 
     @Override
     public Session.Outcome go() {
-        Optional<T> existing = session.selectOne(sql, set, sel);
+        Optional<T> existing = session.select(sql, set, sel).stream().findFirst();
         existing.ifPresentOrElse(
             update == null ? noUpdate() : update,
             insert == null ? noInsert() : insert

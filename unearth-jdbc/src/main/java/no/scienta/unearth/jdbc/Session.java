@@ -18,10 +18,15 @@
 package no.scienta.unearth.jdbc;
 
 import java.sql.PreparedStatement;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public interface Session extends AutoCloseable {
 
@@ -29,31 +34,15 @@ public interface Session extends AutoCloseable {
         return selectOne(sql, null, selector);
     }
 
-    <T> Optional<T> selectOne(String sql, Set parSet, Sel<T> selector);
-
-    default <T> Optional<T> selectMaybeOne(String sql, Sel<Optional<T>> selector) {
-        return selectMaybeOne(sql, null, selector);
+    default <T> Optional<T> selectOne(String sql, Set parSet, Sel<T> selector) {
+        return select(sql, parSet, selector).stream().findFirst();
     }
-
-    <T> Optional<T> selectMaybeOne(String sql, Set parSet, Sel<Optional<T>> selector);
 
     default <T> List<T> select(String sql, Sel<T> selector) {
         return select(sql, null, selector);
     }
 
     <T> List<T> select(String sql, Set parSet, Sel<T> sel);
-
-    default<T> List<T> selectOpt(String sql, Sel<Optional<T>> sel) {
-        return selectOpt(sql, null, sel);
-    }
-
-    <T> List<T> selectOpt(String sql, Set set, Sel<Optional<T>> sel);
-
-    default void setParams(Stmt stmt, Set set) {
-        if (set != null) {
-            set.set(stmt);
-        }
-    }
 
     <T> Existence<T> exists(String sql, Set set, Sel<T> selector);
 
@@ -75,7 +64,7 @@ public interface Session extends AutoCloseable {
     @FunctionalInterface
     interface Action<T> {
 
-        T act(PreparedStatement ps, Stmt stmt) throws Exception;
+        T on(PreparedStatement ps, Stmt stmt) throws Exception;
     }
 
     @FunctionalInterface
@@ -112,5 +101,40 @@ public interface Session extends AutoCloseable {
         MultiExistence<T> onInsert(Consumer<Collection<T>> inserter);
 
         Outcome go();
+    }
+
+    interface Res {
+
+        <T> Stream<T> get(Sel<T> sel);
+
+        String getString();
+
+        Boolean getBoolean();
+
+        Integer getInt();
+
+        Long getLong();
+
+        UUID getUUID();
+
+        Instant getInstant();
+
+        boolean next();
+
+        default <T> Stream<T> ifNext(Function<Res, T> apply) {
+            return next() ? Optional.ofNullable(apply.apply(this)).stream() : Stream.empty();
+        }
+
+        default <T> Stream<T> ifNext(Supplier<T> apply) {
+            return next() ? Optional.ofNullable(apply.get()).stream() : Stream.empty();
+        }
+
+        default <T> Optional<T> ifNextOne(Function<Res, T> apply) {
+            return next() ? Optional.ofNullable(apply.apply(this)) : Optional.empty();
+        }
+
+        default <T> Optional<T> ifNextOne(Supplier<T> apply) {
+            return next() ? Optional.ofNullable(apply.get()) : Optional.empty();
+        }
     }
 }

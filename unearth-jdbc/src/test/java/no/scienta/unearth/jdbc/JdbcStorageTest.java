@@ -22,6 +22,8 @@ import com.zaxxer.hikari.HikariDataSource;
 import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.id.FaultStrandId;
 import no.scienta.unearth.munch.model.Fault;
+import no.scienta.unearth.munch.model.FaultEvent;
+import no.scienta.unearth.munch.model.FaultEvents;
 import no.scienta.unearth.munch.parser.ThrowableParser;
 import no.scienta.unearth.util.IO;
 import org.junit.After;
@@ -29,10 +31,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.sql.DataSource;
+import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.*;
 
 public class JdbcStorageTest {
 
@@ -41,7 +44,7 @@ public class JdbcStorageTest {
     @Before
     public void setup() {
         HikariConfig configuration = new HikariConfig();
-        configuration.setJdbcUrl("jdbc:hsqldb:mem:unearth;sql.syntax_pgs=true");
+        configuration.setJdbcUrl("jdbc:hsqldb:mem:unearth-" + UUID.randomUUID() + ";sql.syntax_pgs=true");
         configuration.setUsername("SA");
         configuration.setPassword("");
         DataSource dataSource = new HikariDataSource(configuration);
@@ -66,10 +69,14 @@ public class JdbcStorageTest {
         String data = IO.readPath("testdata/exception3.txt");
         assertNotNull(data);
         Throwable parse = ThrowableParser.parse(data);
-        unearth.store(
+        FaultEvents store = unearth.store(
             null,
             Fault.create(parse),
             null);
+        FaultEvent event = store.getEvent();
+        Optional<FaultEvent> faultEvent = unearth.getFaultEvent(event.getId());
+        assertThat(faultEvent.isPresent(), is(true));
+        assertThat(faultEvent.get().getId(), is(event.getId()));
     }
 
     @After

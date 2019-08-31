@@ -46,11 +46,11 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
 
     private final Instant time;
 
-    private final long globalSequenceNo;
+    private final Long globalSequenceNo;
 
-    private final long faultStrandSequenceNo;
+    private final Long faultStrandSequenceNo;
 
-    private final long faultSequenceNo;
+    private final Long faultSequenceNo;
 
     public FaultEvent(
         Fault fault,
@@ -162,7 +162,7 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
         EventSuppression suppression
     ) {
         this.throwableHashCode = throwableHashCode;
-        this.fault = Objects.requireNonNull(fault, "fault");
+        this.fault = fault;
         this.faultId = faultId;
         this.faultStrandId = faultStrandId;
         this.logEntry = logEntry;
@@ -227,6 +227,8 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
         return new FaultEvent(
             throwableHashCode,
             fault,
+            faultId,
+            faultStrandId,
             logEntry,
             time,
             valid(globalSequenceNo),
@@ -260,6 +262,7 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
     @Override
     public void hashTo(Consumer<byte[]> h) {
         hash(h, faultSequenceNo, time.toEpochMilli(), faultStrandSequenceNo, globalSequenceNo);
-        hash(h, fault, logEntry);
+        hash(h, faultId);
+        hash(h, logEntry);
     }
 }

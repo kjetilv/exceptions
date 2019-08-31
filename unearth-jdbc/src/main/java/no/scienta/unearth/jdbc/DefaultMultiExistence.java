@@ -43,10 +43,10 @@ class DefaultMultiExistence<T> implements Session.MultiExistence<T> {
         Collection<T> items,
         String sql,
         Set set,
-        Sel<T> selector
+        Sel<T> sel
     ) {
         this.items = items;
-        this.existing = new HashSet<>(session.select(sql, set, selector));
+        this.existing = new HashSet<>(session.select(sql, set, sel));
     }
 
     @Override

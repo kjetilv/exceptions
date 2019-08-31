@@ -65,7 +65,7 @@ public class DefaultFaultHandler implements FaultHandler {
     }
 
     private Action loggingAction(FaultEvents events) {
-        return (Action) events.getPrevious()
+        return events.getPrevious()
             .map(this::actionForWindow)
             .orElse(Action.LOG);
     }
