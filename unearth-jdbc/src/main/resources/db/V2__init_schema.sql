@@ -49,8 +49,8 @@ create table fault
 
 create table fault_2_cause
 (
-    seq   int not null,
     fault uuid,
+    seq   int not null,
     cause uuid,
 
     foreign key (fault) references fault (id),
@@ -60,8 +60,8 @@ create table fault_2_cause
 
 create table fault_strand_2_cause_strand
 (
-    seq          int not null,
     fault_strand uuid,
+    seq          int not null,
     cause_strand uuid,
 
     foreign key (fault_strand) references fault_strand (id),
@@ -71,8 +71,8 @@ create table fault_strand_2_cause_strand
 
 create table cause_strand_2_cause_frame
 (
-    seq          int not null,
     cause_strand uuid,
+    seq          int not null,
     cause_frame  uuid,
 
     foreign key (cause_strand) references cause_strand (id),

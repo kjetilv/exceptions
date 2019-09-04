@@ -169,7 +169,8 @@ public class IntegrationTest {
     }
 
     private static GenericContainer<?> startCassandra() {
-        GenericContainer<?> cassandra = new GenericContainer<>("cassandra:3.11").withExposedPorts(9042);
+        GenericContainer<?> cassandra =
+            new GenericContainer<>("cassandra:3.11.4").withExposedPorts(9042);
         cassandra.start();
         return cassandra;
     }

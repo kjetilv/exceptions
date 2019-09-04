@@ -58,14 +58,11 @@ final class DefaultSession implements Session {
                 set.set(stmt);
             }
             ResultSet resultSet = ps.executeQuery();
-            if (!resultSet.next()) {
-                return Collections.emptyList();
-            }
             Res res = new ResImpl(resultSet);
             List<T> selected = new ArrayList<>();
-            do {
+            while (res.next()) {
                 selected.add(sel.select(res));
-            } while (res.next());
+            };
             return selected.isEmpty() ? Collections.emptyList() : selected;
 // NO GO
             //          Res res = new ResImpl(ps.executeQuery());

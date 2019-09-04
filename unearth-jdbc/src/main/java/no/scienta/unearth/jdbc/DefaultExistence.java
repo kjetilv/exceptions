@@ -19,6 +19,8 @@ package no.scienta.unearth.jdbc;
 
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 class DefaultExistence<T> implements Session.Existence<T> {
 
@@ -54,13 +56,22 @@ class DefaultExistence<T> implements Session.Existence<T> {
     }
 
     @Override
+    public <R> R thenLoad(Function<T, Optional<R>> load, Supplier<R> orElse) {
+        return existing().flatMap(load).orElseGet(orElse);
+    }
+
+    @Override
     public Session.Outcome go() {
-        Optional<T> existing = session.select(sql, set, sel).stream().findFirst();
+        Optional<T> existing = existing();
         existing.ifPresentOrElse(
             update == null ? noUpdate() : update,
             insert == null ? noInsert() : insert
         );
         return existing.isPresent() ? Session.Outcome.UPDATED : Session.Outcome.INSERTED;
+    }
+
+    private Optional<T> existing() {
+        return session.select(sql, set, sel).stream().findFirst();
     }
 
     private Runnable noInsert() {

@@ -36,8 +36,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static no.scienta.unearth.jdbc.Session.Outcome.INSERTED;
-import static no.scienta.unearth.jdbc.Session.Outcome.NOOP;
+import static no.scienta.unearth.jdbc.Session.Outcome.*;
 
 public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
 
@@ -58,31 +57,31 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     @Override
     public FaultEvents store(LogEntry logEntry, Fault fault, Throwable throwable) {
         return inSession(session -> {
-            Outcome faultStrandOutcome = storeFaultStrand(fault.getFaultStrand(), session);
-            Outcome faultOutcome = storeFault(fault, session);
-            if (faultOutcome == INSERTED) {
-                if (faultStrandOutcome == INSERTED) {
-                    Map<CauseStrand, Outcome> causeStrandOutcomes = storeCauseStrands(fault, session);
-                    Map<Cause, Outcome> causeOutcomes = storeCauses(fault, session);
-                    fault.getCauseStrands().forEach(causeStrand -> {
-                        if (causeStrandOutcomes.get(causeStrand) == INSERTED) {
-                            Outcome causeFramesOutcome = storeCauseFrames(session, causeStrand.getCauseFrames());
-                            if (causeFramesOutcome == INSERTED) {
-                                linkCauseFrames(session, causeStrand);
-                            }
-                        }
-                    });
-                    fault.getCauses().forEach(cause -> {
-                        if (causeOutcomes.get(cause) == INSERTED) {
-                            storeCause(session, cause);
+            if (inserted(storeFaultStrand(fault.getFaultStrand(), session))) {
+                if (inserted(storeFault(fault, session))) {
+                    storeCauseStrands(fault, session).forEach((causeStrand, outcome) -> {
+                        if (inserted(outcome)) {
+                            storeCauses(fault, session).forEach((cause, strandOutcome) -> {
+                                if (inserted(strandOutcome))
+                                    if (inserted(storeCauseFrames(session, causeStrand.getCauseFrames()))) {
+                                        linkFaultStrandToCauseStrands(session, fault.getFaultStrand());
+                                        linkFaultToCause(session, fault);
+                                        linkCauseStrandToCauseFrames(session, causeStrand);
+                                    }
+                            });
                         }
                     });
                 }
             }
+            FaultEvent storedEvent = inputEvent(fault, logEntry, throwable);
             return new FaultEvents(
-                storedEvent(session, inputEvent(fault, logEntry, throwable)),
+                storedEvent(session, storedEvent),
                 null);
         });
+    }
+
+    private boolean inserted(Outcome outcome) {
+        return outcome == INSERTED || outcome == INSERTED_AND_UPDATED;
     }
 
     private FaultEvent inputEvent(Fault fault, LogEntry logEntry, Throwable throwable) {
@@ -402,7 +401,37 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         ).go();
     }
 
-    private void linkCauseFrames(Session session, CauseStrand causeStrand) {
+    private void linkFaultToCause(Session session, Fault fault) {
+        session.updateBatch(
+            "insert into fault_2_cause (" +
+                "  fault, seq, cause" +
+                ") values (" +
+                "  ?, ?, ?" +
+                ")",
+            indexed(fault.getCauses()),
+            (stmt, item) ->
+                Setter.list(stmt, fault)
+                    .set(item.getIndex())
+                    .set(item.getT())
+        );
+    }
+
+    private void linkFaultStrandToCauseStrands(Session session, FaultStrand faultStrand) {
+        session.updateBatch(
+            "insert into fault_strand_2_cause_strand (" +
+                "  fault_strand, seq, cause_strand" +
+                ") values (" +
+                "  ?, ?, ?" +
+                ")",
+            indexed(faultStrand.getCauseStrands()),
+            (stmt, item) ->
+                Setter.list(stmt, faultStrand)
+                    .set(item.getIndex())
+                    .set(item.getT())
+        );
+    }
+
+    private void linkCauseStrandToCauseFrames(Session session, CauseStrand causeStrand) {
         session.updateBatch(
             "insert into cause_strand_2_cause_frame (" +
                 "  cause_strand, seq, cause_frame" +
@@ -410,9 +439,10 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
                 "  ?, ?, ?" +
                 ")",
             indexed(causeStrand.getCauseFrames()),
-            (stmt, item) -> Setter.list(stmt, causeStrand)
-                .set(item.getIndex())
-                .set(item.getT()));
+            (stmt, item) ->
+                Setter.list(stmt, causeStrand)
+                    .set(item.getIndex())
+                    .set(item.getT()));
     }
 
     private Outcome storeCauseStrand(Session session, CauseStrand causeStrand) {
@@ -505,13 +535,12 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     }
 
     private Optional<Fault> loadFault(Session session, FaultId faultId) {
-        return session.selectOne(
+        return session.exists(
             "select fault_strand from fault where id = ?",
             stmt ->
                 stmt.set(faultId),
-            res ->
-                new FaultStrandId(res.getUUID())
-        ).flatMap(faultStrandId ->
+            res -> new FaultStrandId(res.getUUID())
+        ).thenLoad(faultStrandId ->
             loadFaultStrand(session, faultStrandId)
         ).map(faultStrand ->
             Fault.create(faultStrand, loadCauses(session, faultId)));
@@ -527,7 +556,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
 
     private List<Cause> loadCauses(Session session, FaultId faultId) {
         List<CauseId> causeIds = session.select(
-            "select cause from fault_2_cause where id = ?",
+            "select cause from fault_2_cause where fault = ?",
             stmt ->
                 stmt.set(faultId),
             res ->
@@ -582,12 +611,14 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         ).map(className ->
         {
             List<CauseFrame> causeFrames = session.select(
-                "select (" +
-                    "  cf.id, cf.class_loader, cf.module, cf.module_ver, " +
-                    "  cf.class_name, cf.method, cf.file, cf.line, cf.native" +
-                    ") from cause_strand cs, cause_strand_2_cause_frame cs2cf, cause_frame c" +
-                    " where cs2cf.cause_frame = cf.id and cs2cf.cause_strand = ?" +
-                    " order by cs2cf.seq asc",
+                "select " +
+                    " cf.class_loader, cf.module, cf.module_ver," +
+                    " cf.class_name, cf.method, cf.file, cf.line, cf.native" +
+                    " from cause_strand cs, cause_strand_2_cause_frame cs2cf, cause_frame cf" +
+                    " where" +
+                    "  cs2cf.cause_frame = cf.id and cs2cf.cause_strand = ?" +
+                    " order by" +
+                    "  cs2cf.seq asc",
                 stmt ->
                     stmt.set(causeStrandId),
                 res ->

@@ -75,8 +75,12 @@ public class JdbcStorageTest {
             null);
         FaultEvent event = store.getEvent();
         Optional<FaultEvent> faultEvent = unearth.getFaultEvent(event.getId());
+
         assertThat(faultEvent.isPresent(), is(true));
         assertThat(faultEvent.get().getId(), is(event.getId()));
+
+        assertThat(unearth.getFault(event.getFaultId()).isPresent(), is(true));
+        assertThat(unearth.getFaultStrand(event.getFaultStrandId()).isPresent(), is(true));
     }
 
     @After
