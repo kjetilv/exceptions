@@ -43,6 +43,7 @@ class ResImpl implements Session.Res {
             public boolean tryAdvance(Consumer<? super T> action) {
                 if (next()) {
                     action.accept(sel.select(ResImpl.this));
+                    return true;
                 }
                 return false;
             }

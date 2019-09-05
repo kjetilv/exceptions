@@ -22,10 +22,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("SameParameterValue")
 final class DefaultSession implements Session {
@@ -58,15 +57,7 @@ final class DefaultSession implements Session {
                 set.set(stmt);
             }
             ResultSet resultSet = ps.executeQuery();
-            Res res = new ResImpl(resultSet);
-            List<T> selected = new ArrayList<>();
-            while (res.next()) {
-                selected.add(sel.select(res));
-            };
-            return selected.isEmpty() ? Collections.emptyList() : selected;
-// NO GO
-            //          Res res = new ResImpl(ps.executeQuery());
-//            return res.get(sel).collect(Collectors.toList());
+            return new ResImpl(resultSet).get(sel).collect(Collectors.toList());
         });
     }
 

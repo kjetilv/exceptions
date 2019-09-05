@@ -310,18 +310,18 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         }
     }
 
-    private long updateFaultSeq(Session session, FaultId id) {
-        return updateSequence(session, id,
-            "select seq from fault_sequence where id = ?",
-            "update fault_sequence set seq = ? where id = ?",
-            "insert into fault_sequence (seq, id) values (?, ?)");
-    }
-
     private long updateFaultStrandSeq(Session session, FaultStrandId id) {
         return updateSequence(session, id,
             "select seq from fault_strand_sequence where id = ?",
             "update fault_strand_sequence set seq = ? where id = ?",
             "insert into fault_strand_sequence (seq, id) values (?, ?)");
+    }
+
+    private long updateFaultSeq(Session session, FaultId id) {
+        return updateSequence(session, id,
+            "select seq from fault_sequence where id = ?",
+            "update fault_sequence set seq = ? where id = ?",
+            "insert into fault_sequence (seq, id) values (?, ?)");
     }
 
     private long updateSequence(
@@ -343,7 +343,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         return session.selectOne(select, stmt -> stmt.set(id), Session.Res::getLong);
     }
 
-    private long getGlobalSeq(Session session) {
+    private long updateGlobalSeq(Session session) {
         return limit(session).map(seq -> {
             long inc = seq + 1L;
             session.update(
@@ -502,7 +502,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
 
     private FaultEvent storedEvent(Session session, FaultEvent baseEvent) {
         FaultEvent event = baseEvent.sequence(
-            getGlobalSeq(session),
+            updateGlobalSeq(session),
             updateFaultStrandSeq(session, baseEvent.getFault().getFaultStrand().getId()),
             updateFaultSeq(session, baseEvent.getFault().getId()));
         session.update(
