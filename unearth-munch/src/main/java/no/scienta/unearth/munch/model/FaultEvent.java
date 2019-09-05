@@ -53,20 +53,6 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
     private final Long faultSequenceNo;
 
     public FaultEvent(
-        Fault fault,
-        LogEntry logEntry,
-        Instant time,
-        EventSuppression suppression
-    ) {
-        this(
-            null,
-            Objects.requireNonNull(fault, "fault"),
-            logEntry,
-            time,
-            suppression);
-    }
-
-    public FaultEvent(
         FaultId faultId,
         FaultStrandId faultStrandId,
         Instant time,

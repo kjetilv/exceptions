@@ -135,13 +135,14 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
 
     @Override
     public Optional<FaultEvent> getFaultEvent(FaultEventId faultEventId) {
-        return inSession(session -> session.select(
-            "select " + FaultEventFields.list() + " from fault_event" +
-                " where id = ?",
-            stmt ->
-                Setter.byId(stmt, faultEventId),
-            this::readActualFaultEvent
-        ).stream().findFirst());
+        return inSession(session ->
+            session.select(
+                "select " + FaultEventFields.list() + " from fault_event" +
+                    " where id = ?",
+                stmt ->
+                    Setter.byId(stmt, faultEventId),
+                this::readActualFaultEvent
+            ).stream().findFirst());
     }
 
     @Override
@@ -521,7 +522,8 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     }
 
     private List<FaultEvent> loadFaultEvents(String sql, Session.Set set) {
-        return inSession(session -> session.select(sql, set, this::readActualFaultEvent));
+        return inSession(session ->
+            session.select(sql, set, this::readActualFaultEvent));
     }
 
     private FaultEvent readActualFaultEvent(Session.Res res) {
