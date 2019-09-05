@@ -179,9 +179,9 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     @Override
     public List<FaultEvent> feed(long offset, long count) {
         return loadFaultEvents(
-            "select (" +
-                "  fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
-                ") from fault_event where global_seq >= ? limit ?",
+            "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
+                "  from fault_event " +
+                "  where global_seq >= ? limit ?",
             stmt -> stmt
                 .set(offset)
                 .set(count));
@@ -190,9 +190,9 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     @Override
     public List<FaultEvent> feed(FaultStrandId id, long offset, long count) {
         return loadFaultEvents(
-            "select (" +
-                "  fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
-                ") from fault_event where fault = ? and global_seq >= ? limit ?",
+            "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
+                "   from fault_event" +
+                "   where fault = ? and global_seq >= ? limit ?",
             stmt -> stmt
                 .set(id)
                 .set(offset)
@@ -202,8 +202,9 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     @Override
     public List<FaultEvent> feed(FaultId id, long offset, long count) {
         return loadFaultEvents(
-            "select (" + FaultEventFields.list() + ") from fault_event" +
-                " where fault_strand = ? and global_seq >= ? limit ?",
+            "select " + FaultEventFields.list() + "" +
+                "  from fault_event" +
+                "  where fault_strand = ? and global_seq >= ? limit ?",
             stmt -> stmt
                 .set(id)
                 .set(offset)
