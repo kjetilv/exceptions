@@ -33,13 +33,13 @@ public interface FaultStorage extends AutoCloseable {
     default void close() {
     }
 
-    FaultEvents store(LogEntry logEntry, Fault fault, Throwable throwable);
+    FeedEntry store(LogEntry logEntry, Fault fault, Throwable throwable);
 
     Optional<Fault> getFault(FaultId faultId);
 
     Optional<FaultStrand> getFaultStrand(FaultStrandId faultStrandId);
 
-    Optional<FaultEvent> getFaultEvent(FaultEventId faultEventId);
+    Optional<FeedEntry> getFeedEntry(FaultEventId faultEventId);
 
     Optional<CauseStrand> getCauseStrand(CauseStrandId causeStrandId);
 

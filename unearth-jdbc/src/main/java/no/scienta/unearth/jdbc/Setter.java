@@ -19,6 +19,8 @@ package no.scienta.unearth.jdbc;
 
 import no.scienta.unearth.munch.base.Hashable;
 import no.scienta.unearth.munch.base.Hashed;
+import no.scienta.unearth.munch.id.FaultId;
+import no.scienta.unearth.munch.id.FaultStrandId;
 import no.scienta.unearth.munch.model.*;
 import no.scienta.unearth.munch.print.CauseFrame;
 
@@ -86,8 +88,10 @@ final class Setter {
         return new CauseStrandSetter(stmt, causeStrand);
     }
 
-    static S<Fault, S<FaultStrand, S<Instant, S<Long, S<Long, D<Long>>>>>> faultEvent(Stmt stmt, FaultEvent faultEvent) {
-        return new FaultEventSetter(stmt, faultEvent);
+    static S<FaultId, S<FaultStrandId, S<Instant, S<Long, S<Long, D<Long>>>>>> feedEntry(
+        Stmt stmt, FeedEntry feedEntry
+    ) {
+        return new FeedEntrySetter(stmt, feedEntry);
     }
 
     private static class CauseStrandSetter extends TypeSafeJdbc<CauseStrand>
@@ -191,16 +195,16 @@ final class Setter {
         }
     }
 
-    private static class FaultEventSetter extends TypeSafeJdbc<FaultEvent>
-        implements S<Fault, S<FaultStrand, S<Instant, S<Long, S<Long, D<Long>>>>>> {
+    private static class FeedEntrySetter extends TypeSafeJdbc<FeedEntry>
+        implements S<FaultId, S<FaultStrandId, S<Instant, S<Long, S<Long, D<Long>>>>>> {
 
-        private FaultEventSetter(Stmt stmt, FaultEvent faultEvent) {
-            super(stmt, faultEvent);
+        private FeedEntrySetter(Stmt stmt, FeedEntry feedEntry) {
+            super(stmt, feedEntry);
         }
 
         @Override
-        public S<FaultStrand, S<Instant, S<Long, S<Long, D<Long>>>>> set(Fault fault) {
-            s(fault);
+        public S<FaultStrandId, S<Instant, S<Long, S<Long, D<Long>>>>> set(FaultId faultId) {
+            s(faultId);
             return faultStrand -> {
                 s(faultStrand);
                 return time -> {

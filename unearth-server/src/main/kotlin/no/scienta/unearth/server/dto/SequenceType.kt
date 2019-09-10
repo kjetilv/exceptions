@@ -18,12 +18,12 @@
 package no.scienta.unearth.server.dto
 
 enum class SequenceType(
-        val seq: (FaultEventDto) -> Long
-) : (FaultEventDto) -> Long {
+        val seq: (FeedEntryDto) -> Long
+) : (FeedEntryDto) -> Long {
 
-    GLOBAL(FaultEventDto::sequenceNo),
-    FAULT_STRAND(FaultEventDto::faultStrandSequenceNo),
-    FAULT(FaultEventDto::faultSequenceNo);
+    GLOBAL(FeedEntryDto::sequenceNo),
+    FAULT_STRAND(FeedEntryDto::faultStrandSequenceNo),
+    FAULT(FeedEntryDto::faultSequenceNo);
 
-    override fun invoke(dto: FaultEventDto): Long = seq(dto)
+    override fun invoke(dto: FeedEntryDto): Long = seq(dto)
 }

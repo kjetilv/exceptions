@@ -19,7 +19,7 @@ package no.scienta.unearth.core;
 
 import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.id.FaultStrandId;
-import no.scienta.unearth.munch.model.FaultEvent;
+import no.scienta.unearth.munch.model.FeedEntry;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -32,63 +32,63 @@ public interface FaultStats extends AutoCloseable {
     default void close() {
     }
 
-    default long getFaultEventCount(FaultStrandId id) {
-        return getFaultEventCount(id, null);
+    default long getFeedEntryCount(FaultStrandId id) {
+        return getFeedEntryCount(id, null);
     }
 
-    default long getFaultEventCount(FaultStrandId id, Instant sinceTime) {
-        return getFaultEventCount(id, sinceTime, null);
+    default long getFeedEntryCount(FaultStrandId id, Instant sinceTime) {
+        return getFeedEntryCount(id, sinceTime, null);
     }
 
-    default Optional<FaultEvent> getLastFaultEvent(FaultId id) {
-        return getLastFaultEvent(id, null);
+    default Optional<FeedEntry> getLastFeedEntry(FaultId id) {
+        return getLastFeedEntry(id, null);
     }
 
-    default Optional<FaultEvent> getLastFaultEvent(FaultStrandId id) {
-        return getLastFaultEvent(id, null);
+    default Optional<FeedEntry> getLastFeedEntry(FaultStrandId id) {
+        return getLastFeedEntry(id, null);
     }
 
-    Optional<FaultEvent> getLastFaultEvent(FaultId id, Instant sinceTime);
+    Optional<FeedEntry> getLastFeedEntry(FaultId id, Instant sinceTime);
 
-    Optional<FaultEvent> getLastFaultEvent(FaultStrandId id, Instant sinceTime);
+    Optional<FeedEntry> getLastFeedEntry(FaultStrandId id, Instant sinceTime);
 
-    Optional<FaultEvent> getLastFaultEvent(FaultId id, Instant sinceTime, Long ceiling);
+    Optional<FeedEntry> getLastFeedEntry(FaultId id, Instant sinceTime, Long ceiling);
 
-    long getFaultEventCount(Instant sinceTime, Duration interval);
+    long getFeedEntryCount(Instant sinceTime, Duration interval);
 
-    long getFaultEventCount(FaultStrandId id, Instant sinceTime, Duration interval);
+    long getFeedEntryCount(FaultStrandId id, Instant sinceTime, Duration interval);
 
-    long getFaultEventCount(FaultId id, Instant sinceTime, Duration interval);
+    long getFeedEntryCount(FaultId id, Instant sinceTime, Duration interval);
 
-    default List<FaultEvent> getFaultEvents(FaultStrandId id) {
-        return getFaultEvents(id, null);
+    default List<FeedEntry> getFeed(FaultStrandId id) {
+        return getFeed(id, null);
     }
 
-    default List<FaultEvent> getFaultEvents(FaultStrandId id, Instant sinceTime) {
-        return getFaultEvents(id, sinceTime, null);
+    default List<FeedEntry> getFeed(FaultStrandId id, Instant sinceTime) {
+        return getFeed(id, sinceTime, null);
     }
 
-    List<FaultEvent> getFaultEvents(FaultStrandId id, Instant sinceTime, Duration period);
+    List<FeedEntry> getFeed(FaultStrandId id, Instant sinceTime, Duration period);
 
-    default List<FaultEvent> getFaultEvents() {
-        return getFaultEvents((Instant) null);
+    default List<FeedEntry> getFeed() {
+        return getFeed((Instant) null);
     }
 
-    default List<FaultEvent> getFaultEvents(Instant sinceTime) {
-        return getFaultEvents(sinceTime, null);
+    default List<FeedEntry> getFeed(Instant sinceTime) {
+        return getFeed(sinceTime, null);
     }
 
-    List<FaultEvent> getFaultEvents(Instant sinceTime, Duration period);
+    List<FeedEntry> getFeed(Instant sinceTime, Duration period);
 
-    default List<FaultEvent> getFaultEvents(FaultId id) {
-        return getFaultEvents(id, null);
+    default List<FeedEntry> getFeed(FaultId id) {
+        return getFeed(id, null);
     }
 
-    default List<FaultEvent> getFaultEvents(FaultId id, Instant sinceTime) {
-        return getFaultEvents(id, sinceTime, null);
+    default List<FeedEntry> getFeed(FaultId id, Instant sinceTime) {
+        return getFeed(id, sinceTime, null);
     }
 
-    List<FaultEvent> getFaultEvents(FaultId id, Instant sinceTime, Duration period);
+    List<FeedEntry> getFeed(FaultId id, Instant sinceTime, Duration period);
 
     void reset();
 }

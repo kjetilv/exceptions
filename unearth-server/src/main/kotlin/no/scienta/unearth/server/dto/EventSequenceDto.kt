@@ -21,7 +21,7 @@ import java.util.*
 
 data class EventSequenceDto(
 
-        val events: List<FaultEventDto> = Collections.emptyList(),
+        val events: List<FeedEntryDto> = Collections.emptyList(),
 
         val sequenceType: SequenceType = SequenceType.GLOBAL
 ) {

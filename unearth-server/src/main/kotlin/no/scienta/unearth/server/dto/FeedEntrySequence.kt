@@ -15,19 +15,24 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.core.poc;
+package no.scienta.unearth.server.dto
 
-import no.scienta.unearth.core.FaultSensor;
-import no.scienta.unearth.munch.model.FaultEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.*
 
-public class InMemoryFaultSensor implements FaultSensor {
+data class FeedEntrySequence(
 
-    private static final Logger log = LoggerFactory.getLogger(InMemoryFaultSensor.class);
+        val id: FaultIdDto,
 
-    @Override
-    public void register(FaultEvent faultEvent) {
-        log.info("Sensed {}", faultEvent);
-    }
+        val events: List<FeedEntryDto> = Collections.emptyList(),
+
+        val sequenceType: SequenceType = SequenceType.FAULT
+) {
+
+    val offset = seqs().min().orElse(0L)
+
+    val count = events.size
+
+    val last = seqs().max().orElse(-1L)
+
+    private fun seqs() = events.stream().mapToLong(sequenceType)
 }

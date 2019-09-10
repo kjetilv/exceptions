@@ -35,13 +35,13 @@ object Swaggex {
             if (random.nextBoolean()) Action.LOG else Action.LOG_SHORT)
 
     internal fun eventSequence(): EventSequenceDto =
-            EventSequenceDto(listOf(faultEventDto()))
+            EventSequenceDto(listOf(feedEntryDto()))
 
-    internal fun faultEventSequence(): FaultEventSequenceDto =
-            FaultEventSequenceDto(FaultIdDto(uuid()), listOf(faultEventDto()))
+    internal fun faultEventSequence(): FeedEntrySequence =
+            FeedEntrySequence(FaultIdDto(uuid()), listOf(feedEntryDto()))
 
     internal fun faultStrandEventSequence(): FaultStrandEventSequenceDto =
-            FaultStrandEventSequenceDto(FaultStrandIdDto(uuid()), listOf(faultEventDto()))
+            FaultStrandEventSequenceDto(FaultStrandIdDto(uuid()), listOf(feedEntryDto()))
 
     internal fun faultStrandDto() = FaultStrandDto(FaultStrandIdDto(uuid()), listOf(causeStrandDto()))
 
@@ -51,18 +51,19 @@ object Swaggex {
 
     internal fun causeDto() = CauseDto(CauseIdDto(uuid()), "Bad stuff", causeStrandDto())
 
-    internal fun faultEventDto(): FaultEventDto {
-        val fault = faultDto()
-        val dto = FaultEventDto(
-                FaultEventIdDto(uuid()),
-                fault,
-                fault.id,
-                fault.faultStrandId,
-                ZonedDateTime.now(),
-                random.nextInt().toLong(),
-                random.nextInt().toLong(),
-                random.nextInt().toLong())
-        return dto
+    internal fun feedEntryDto(): FeedEntryDto {
+        faultDto().let {
+            return FeedEntryDto(
+                    FaultEventDto(
+                            FaultEventIdDto(uuid()),
+                            it,
+                            it.id,
+                            it.faultStrandId,
+                            ZonedDateTime.now()),
+                    random.nextInt().toLong(),
+                    random.nextInt().toLong(),
+                    random.nextInt().toLong())
+        }
     }
 
     internal fun causeStrandDto() =

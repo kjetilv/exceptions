@@ -19,10 +19,9 @@ package no.scienta.unearth.core;
 
 import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.id.FaultStrandId;
-import no.scienta.unearth.munch.model.FaultEvent;
+import no.scienta.unearth.munch.model.FeedEntry;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.OptionalLong;
 
 public interface FaultFeed extends AutoCloseable {
@@ -37,11 +36,11 @@ public interface FaultFeed extends AutoCloseable {
 
     OptionalLong limit(FaultId id);
 
-    List<FaultEvent> feed(long offset, long count);
+    List<FeedEntry> feed(long offset, long count);
 
-    List<FaultEvent> feed(FaultStrandId id, long offset, long count);
+    List<FeedEntry> feed(FaultStrandId id, long offset, long count);
 
-    List<FaultEvent> feed(FaultId id, long offset, long count);
+    List<FeedEntry> feed(FaultId id, long offset, long count);
 
     void reset();
 }

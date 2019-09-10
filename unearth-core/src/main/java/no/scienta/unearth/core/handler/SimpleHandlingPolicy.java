@@ -18,29 +18,35 @@
 package no.scienta.unearth.core.handler;
 
 import no.scienta.unearth.core.HandlingPolicy;
+import no.scienta.unearth.munch.id.FaultEventId;
+import no.scienta.unearth.munch.id.FaultId;
+import no.scienta.unearth.munch.id.FaultStrandId;
 import no.scienta.unearth.munch.model.Fault;
-import no.scienta.unearth.munch.model.FaultEvent;
-import no.scienta.unearth.munch.model.FaultStrand;
+import no.scienta.unearth.munch.model.FeedEntry;
 
 class SimpleHandlingPolicy implements HandlingPolicy {
 
     private final String summary;
 
-    private final FaultEvent faultEvent;
+    private final FeedEntry feedEntry;
+
+    private final Fault fault;
 
     private final Action action;
 
-    SimpleHandlingPolicy(FaultEvent faultEvent) {
-        this(null, faultEvent, null);
+    SimpleHandlingPolicy(FeedEntry feedEntry, Fault fault) {
+        this(null, feedEntry, fault, null);
     }
 
     private SimpleHandlingPolicy(
         String summary,
-        FaultEvent faultEvent,
+        FeedEntry feedEntry,
+        Fault fault,
         Action action
     ) {
         this.summary = summary;
-        this.faultEvent = faultEvent;
+        this.feedEntry = feedEntry;
+        this.fault = fault;
         this.action = action;
     }
 
@@ -50,18 +56,23 @@ class SimpleHandlingPolicy implements HandlingPolicy {
     }
 
     @Override
-    public FaultStrand getFaultStrand() {
-        return faultEvent.getFault().getFaultStrand();
+    public FaultStrandId getFaultStrandId() {
+        return feedEntry.getFaultEvent().getFaultStrandId();
     }
 
     @Override
-    public Fault getFault() {
-        return faultEvent.getFault();
+    public FaultId getFaultId() {
+        return feedEntry.getFaultEvent().getFaultId();
     }
 
     @Override
-    public FaultEvent getFaultEvent() {
-        return faultEvent;
+    public FaultEventId getFaultEventId() {
+        return feedEntry.getId();
+    }
+
+    @Override
+    public FeedEntry getFeedEntry() {
+        return feedEntry;
     }
 
     @Override
@@ -70,25 +81,30 @@ class SimpleHandlingPolicy implements HandlingPolicy {
     }
 
     @Override
+    public Fault getFault() {
+        return fault;
+    }
+
+    @Override
     public long getGlobalSequence() {
-        return faultEvent.getGlobalSequenceNo();
+        return feedEntry.getGlobalSequenceNo();
     }
 
     @Override
     public long getFaultSequence() {
-        return faultEvent.getFaultSequenceNo();
+        return feedEntry.getFaultSequenceNo();
     }
 
     @Override
     public long getFaultStrandSequence() {
-        return faultEvent.getFaultStrandSequenceNo();
+        return feedEntry.getFaultStrandSequenceNo();
     }
 
     SimpleHandlingPolicy withSummary(String summary) {
-        return new SimpleHandlingPolicy(summary, faultEvent, action);
+        return new SimpleHandlingPolicy(summary, feedEntry, fault, action);
     }
 
     SimpleHandlingPolicy withAction(Action action) {
-        return new SimpleHandlingPolicy(summary, faultEvent, action);
+        return new SimpleHandlingPolicy(summary, feedEntry, fault, action);
     }
 }

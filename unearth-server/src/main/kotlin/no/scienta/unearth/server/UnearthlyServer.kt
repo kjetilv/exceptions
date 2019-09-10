@@ -138,11 +138,11 @@ class UnearthlyServer(
                 summary = "Lookup a fault event"
                 queries += listOf(fullStack, printStack)
                 produces += APPLICATION_JSON
-                returning(OK, faultEvent to Swaggex.faultEventDto())
+                returning(OK, feedEntry to Swaggex.feedEntryDto())
             } bindContract GET to { faultEventId ->
                 { req ->
-                    get(faultEvent) {
-                        controller.lookupFaultEventDto(faultEventId,
+                    get(feedEntry) {
+                        controller.lookupFeedEntryDto(faultEventId,
                                 fullStack[req] ?: false,
                                 printStack[req] ?: false
                         )
@@ -548,11 +548,11 @@ class UnearthlyServer(
 
         private val sequence = Body.auto<EventSequenceDto>().toLens()
 
-        private val faultSequence = Body.auto<FaultEventSequenceDto>().toLens()
+        private val faultSequence = Body.auto<FeedEntrySequence>().toLens()
 
         private val faultStrandSequence = Body.auto<FaultStrandEventSequenceDto>().toLens()
 
-        private val faultEvent = Body.auto<FaultEventDto>().toLens()
+        private val feedEntry = Body.auto<FeedEntryDto>().toLens()
 
         private val fault = Body.auto<FaultDto>().toLens()
 

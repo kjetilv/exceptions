@@ -80,9 +80,10 @@ create table cause_strand_2_cause_frame
     unique (seq, cause_strand, cause_frame)
 );
 
-create table fault_event
+create table feed_entry
 (
     id               uuid,
+    fault_event      uuid,
     fault            uuid,
     fault_strand     uuid,
     time             timestamp,
@@ -96,7 +97,7 @@ create table fault_event
 
 create table global_sequence
 (
-    id int,
+    id  int,
     seq int
 );
 

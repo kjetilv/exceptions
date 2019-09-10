@@ -17,22 +17,12 @@
 
 package no.scienta.unearth.server.dto
 
-import java.util.*
+data class FeedEntryDto(
 
-data class FaultEventSequenceDto(
+        val faultEvent: FaultEventDto,
 
-        val id: FaultIdDto,
+        val sequenceNo: Long,
 
-        val events: List<FaultEventDto> = Collections.emptyList(),
+        val faultSequenceNo: Long,
 
-        val sequenceType: SequenceType = SequenceType.FAULT
-) {
-
-    val offset = seqs().min().orElse(0L)
-
-    val count = events.size
-
-    val last = seqs().max().orElse(-1L)
-
-    private fun seqs() = events.stream().mapToLong(sequenceType)
-}
+        val faultStrandSequenceNo: Long)

@@ -23,7 +23,7 @@ data class FaultStrandEventSequenceDto(
 
         val id: FaultStrandIdDto,
 
-        val events: List<FaultEventDto> = Collections.emptyList(),
+        val events: List<FeedEntryDto> = Collections.emptyList(),
 
         val sequenceType: SequenceType = SequenceType.FAULT_STRAND
 ) {

@@ -35,10 +35,9 @@
 package no.scienta.unearth.analysis;
 
 import no.scienta.unearth.core.FaultSensor;
-import no.scienta.unearth.munch.id.Identifiable;
-import no.scienta.unearth.munch.model.Fault;
+import no.scienta.unearth.munch.base.Hashed;
 import no.scienta.unearth.munch.model.FaultEvent;
-import no.scienta.unearth.munch.model.FaultStrand;
+import no.scienta.unearth.munch.model.FeedEntry;
 
 import java.util.UUID;
 
@@ -49,23 +48,20 @@ public class CassandraSensor extends AbstractCassandraConnected implements Fault
     }
 
     @Override
-    public void register(FaultEvent faultEvent) {
+    public void register(FaultEvent faultEvent, FeedEntry feedEntry) {
         inSession(session -> {
-            Fault fault = faultEvent.getFault();
-            FaultStrand faultStrand = fault.getFaultStrand();
-
             exec(session,
                 "INSERT INTO fault " +
                     "(id," +
                     " faultStrand" +
                     ") VALUES (?, ?)",
-                uuid(fault),
-                uuid(faultStrand));
+                uuid(faultEvent.getFaultId()),
+                uuid(faultEvent.getFaultStrandId()));
             exec(session,
                 "INSERT INTO faultStrand (" +
                     "id" +
                     ") VALUES (?)",
-                uuid(faultStrand));
+                uuid(faultEvent.getFaultStrandId()));
             exec(session,
                 "INSERT INTO faultEvent " +
                     "(id," +
@@ -75,17 +71,17 @@ public class CassandraSensor extends AbstractCassandraConnected implements Fault
                     " faultSequenceNo," +
                     " faultStrandSequenceNo" +
                     ") VALUES (?, ?, ?, ?, ?, ?)",
-                uuid(faultEvent),
-                uuid(fault),
-                uuid(faultStrand),
-                faultEvent.getGlobalSequenceNo(),
-                faultEvent.getFaultSequenceNo(),
-                faultEvent.getFaultStrandSequenceNo()
+                uuid(feedEntry.getFaultEvent()),
+                uuid(feedEntry.getFaultEvent().getFaultId()),
+                uuid(feedEntry.getFaultEvent().getFaultStrandId()),
+                feedEntry.getGlobalSequenceNo(),
+                feedEntry.getFaultSequenceNo(),
+                feedEntry.getFaultStrandSequenceNo()
             );
         });
     }
 
-    private UUID uuid(Identifiable<?> identifiable) {
-        return identifiable.getId().getHash();
+    private UUID uuid(Hashed identifiable) {
+        return identifiable.getHash();
     }
 }

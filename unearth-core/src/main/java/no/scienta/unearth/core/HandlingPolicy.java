@@ -21,8 +21,7 @@ import no.scienta.unearth.munch.id.FaultEventId;
 import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.id.FaultStrandId;
 import no.scienta.unearth.munch.model.Fault;
-import no.scienta.unearth.munch.model.FaultEvent;
-import no.scienta.unearth.munch.model.FaultStrand;
+import no.scienta.unearth.munch.model.FeedEntry;
 
 public interface HandlingPolicy {
 
@@ -30,23 +29,15 @@ public interface HandlingPolicy {
 
     Action getAction();
 
-    default FaultStrandId getFaultStrandId() {
-        return getFaultStrand().getId();
-    }
+    FaultStrandId getFaultStrandId();
 
-    FaultStrand getFaultStrand();
+    FaultId getFaultId();
 
-    default FaultId getFaultId() {
-        return getFault().getId();
-    }
+    FaultEventId getFaultEventId();
+
+    FeedEntry getFeedEntry();
 
     Fault getFault();
-
-    default FaultEventId getFaultEventId() {
-        return getFaultEvent().getId();
-    }
-
-    FaultEvent getFaultEvent();
 
     long getGlobalSequence();
 

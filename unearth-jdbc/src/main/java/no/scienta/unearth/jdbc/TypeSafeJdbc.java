@@ -19,12 +19,14 @@ package no.scienta.unearth.jdbc;
 
 import no.scienta.unearth.munch.base.Hashable;
 import no.scienta.unearth.munch.base.Hashed;
+import no.scienta.unearth.munch.id.Id;
 import no.scienta.unearth.util.StringlyTyped;
 
 import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Supplier;
 
+@SuppressWarnings({"unused", "WeakerAccess"})
 class TypeSafeJdbc<T extends Hashed> {
 
     private final Stmt stmt;
@@ -38,6 +40,10 @@ class TypeSafeJdbc<T extends Hashed> {
 
     protected Stmt s(Hashable hashable) {
         return stmt.set(hashable);
+    }
+
+    protected Stmt s(Id id) {
+        return stmt.set(id);
     }
 
     protected Stmt s(Instant instant) {

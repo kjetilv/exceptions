@@ -20,7 +20,6 @@ package no.scienta.unearth.munch.model;
 import no.scienta.unearth.munch.base.AbstractHashable;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 public class FaultEvents extends AbstractHashable {
@@ -28,10 +27,6 @@ public class FaultEvents extends AbstractHashable {
     private final FaultEvent event;
 
     private final FaultEvent previous;
-
-    public FaultEvents(FaultEvent event) {
-        this(event, null);
-    }
 
     public FaultEvents(FaultEvent event, FaultEvent previous) {
         this.event = Objects.requireNonNull(event, "event");
@@ -42,13 +37,9 @@ public class FaultEvents extends AbstractHashable {
         return event;
     }
 
-    public Optional<FaultEvent> getPrevious() {
-        return Optional.ofNullable(previous);
-    }
-
     @Override
     protected String toStringBody() {
-        return event.getId() + "[" + event.getFault().getId() + "@" + event.getTime()
+        return event.getHash() + "[" + event.getFaultId() + "@" + event.getTime()
             + (previous == null ? "" : " previous @" + previous.getTime())
             + "]";
     }

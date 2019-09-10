@@ -25,8 +25,7 @@ import no.scienta.unearth.core.FaultStorage;
 import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.id.FaultStrandId;
 import no.scienta.unearth.munch.model.Fault;
-import no.scienta.unearth.munch.model.FaultEvent;
-import no.scienta.unearth.munch.model.FaultEvents;
+import no.scienta.unearth.munch.model.FeedEntry;
 import no.scienta.unearth.munch.parser.ThrowableParser;
 import no.scienta.unearth.util.IO;
 import org.junit.After;
@@ -46,6 +45,7 @@ public class JdbcStorageTest {
     private FaultStorage storage;
 
     private FaultFeed feed;
+
     private FaultStats stats;
 
     @Before
@@ -55,7 +55,7 @@ public class JdbcStorageTest {
         configuration.setUsername("SA");
         configuration.setPassword("");
         DataSource dataSource = new HikariDataSource(configuration);
-        storage = new JdbcStorage(dataSource, "unearth");
+        storage = storage(dataSource);
         feed = (FaultFeed) storage;
         stats = (FaultStats) storage;
         storage.initStorage().run();
@@ -78,29 +78,31 @@ public class JdbcStorageTest {
         String data = IO.readPath("testdata/exception3.txt");
         assertNotNull(data);
         Throwable parse = ThrowableParser.parse(data);
-        FaultEvents store = storage.store(
+        FeedEntry event = storage.store(
             null,
             Fault.create(parse),
             null);
-        FaultEvent event = store.getEvent();
-        Optional<FaultEvent> faultEvent = storage.getFaultEvent(event.getId());
+        Optional<FeedEntry> faultEvent = storage.getFeedEntry(event.getId());
 
         assertThat(faultEvent.isPresent(), is(true));
         assertThat(faultEvent.get().getId(), is(event.getId()));
 
-        assertThat(storage.getFault(event.getFaultId()).isPresent(), is(true));
-        assertThat(storage.getFaultStrand(event.getFaultStrandId()).isPresent(), is(true));
+        assertThat(storage.getFault(event.getFaultEvent().getFaultId()).isPresent(), is(true));
+        assertThat(storage.getFaultStrand(event.getFaultEvent().getFaultStrandId()).isPresent(), is(true));
 
         assertThat(feed.limit().isEmpty(), is(false));
         assertThat(feed.limit().getAsLong(), is(1L));
 
-        List<FaultEvent> feed = this.feed.feed(0, 10);
+        List<FeedEntry> feed = this.feed.feed(0, 10);
         assertThat(feed.size(), is(1));
-//        assertThat(feed.get(0).getFault(), is(event.getFault()));
     }
 
     @After
     public void teardown() {
         storage.close();
+    }
+
+    private FaultStorage storage(DataSource dataSource) {
+        return new JdbcStorage(dataSource, "unearth");
     }
 }

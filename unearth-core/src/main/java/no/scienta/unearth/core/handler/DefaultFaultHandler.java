@@ -22,11 +22,12 @@ import no.scienta.unearth.core.FaultStats;
 import no.scienta.unearth.core.FaultStorage;
 import no.scienta.unearth.core.HandlingPolicy;
 import no.scienta.unearth.core.HandlingPolicy.Action;
-import no.scienta.unearth.munch.model.*;
-import no.scienta.unearth.util.Util;
+import no.scienta.unearth.munch.model.Cause;
+import no.scienta.unearth.munch.model.Fault;
+import no.scienta.unearth.munch.model.FeedEntry;
+import no.scienta.unearth.munch.model.LogEntry;
 
 import java.time.Clock;
-import java.time.Duration;
 import java.util.stream.Collectors;
 
 public class DefaultFaultHandler implements FaultHandler {
@@ -60,43 +61,14 @@ public class DefaultFaultHandler implements FaultHandler {
         Throwable throwable,
         Fault fault
     ) {
-        FaultEvents events = storage.store(logEntry, fault, throwable);
-        return basePolicy(events).withAction(loggingAction(events));
+        FeedEntry entry = storage.store(logEntry, fault, throwable);
+        return basePolicy(entry, fault).withAction(Action.LOG);
     }
 
-    private Action loggingAction(FaultEvents events) {
-        return events.getPrevious()
-            .map(this::actionForWindow)
-            .orElse(Action.LOG);
+    private SimpleHandlingPolicy basePolicy(FeedEntry entry, Fault fault) {
+        return new SimpleHandlingPolicy(entry, fault)
+            .withSummary(fault.getCauses().stream()
+                .map(Cause::getMessage)
+                .collect(Collectors.joining(" <- ")));
     }
-
-    private SimpleHandlingPolicy basePolicy(FaultEvents events) {
-        return new SimpleHandlingPolicy(events.getEvent())
-            .withSummary(
-                events.getEvent().getFault().getCauses().stream()
-                    .map(Cause::getMessage)
-                    .collect(Collectors.joining(" <- ")));
-    }
-
-    private Action actionForWindow(FaultEvent previousEvent) {
-        return previousEvent == null ? Action.LOG
-            : actionForWindow(Duration.between(previousEvent.getTime(), clock.instant()));
-    }
-
-    private static Action actionForWindow(Duration interval) {
-        return isIn(interval, DELUGE_WINDOW) ? Action.LOG_ID :
-            isIn(interval, SPAM_WINDOW) ? Action.LOG_MESSAGES
-                : isIn(interval, QUIET_WINDOW) ? Action.LOG_SHORT
-                : Action.LOG;
-    }
-
-    private static boolean isIn(Duration eventWindow, Duration window) {
-        return Util.isLongerThan(window, eventWindow);
-    }
-
-    private static final Duration QUIET_WINDOW = Duration.ofMinutes(10);
-
-    private static final Duration SPAM_WINDOW = Duration.ofMinutes(1);
-
-    private static final Duration DELUGE_WINDOW = Duration.ofSeconds(1);
 }
