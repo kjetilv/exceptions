@@ -147,22 +147,20 @@ class UnearthlyController(
             feedEntry: FeedEntry,
             fullStack: Boolean = false,
             printStack: Boolean = false
-    ): FeedEntryDto {
-        val fault =
-                storage.getFault(feedEntry.faultEvent.faultId).orElseThrow {
-                    IllegalStateException()
-                }
-        val faultDto =
-                faultDto(fault, fullStack, printStack)
-        val faultEventDto =
+    ): FeedEntryDto = faultDto(
+            storage.getFault(feedEntry.faultEvent.faultId).orElseThrow {
+                IllegalStateException()
+            },
+            fullStack,
+            printStack
+    ).let {
+        FeedEntryDto(
                 FaultEventDto(
                         FeedEntryIdDto(feedEntry.hash, link(feedEntry)),
-                        faultDto,
-                        faultDto.id,
-                        faultDto.faultStrandId,
-                        feedEntry.faultEvent.time.atZone(ZoneId.of("UTC")))
-        return FeedEntryDto(
-                faultEventDto,
+                        it,
+                        it.id,
+                        it.faultStrandId,
+                        feedEntry.faultEvent.time.atZone(ZoneId.of("UTC"))),
                 feedEntry.globalSequenceNo,
                 feedEntry.faultSequenceNo,
                 feedEntry.faultStrandSequenceNo)
