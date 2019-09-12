@@ -21,7 +21,7 @@ import java.time.ZonedDateTime
 
 data class FaultEventDto(
 
-        val id: FaultEventIdDto,
+        val id: FeedEntryIdDto,
 
         val fault: FaultDto?,
 

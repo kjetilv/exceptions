@@ -60,7 +60,7 @@ public class Feed {
         Submission submit = client.submit(input);
         System.out.println(submit.faultId);
         System.out.println(submit.faultStrandId);
-        System.out.println(submit.faultEventId);
+        System.out.println(submit.feedEntryId);
     }
 
     private static String serialize(Object value) {
@@ -85,8 +85,8 @@ public class Feed {
             if (id instanceof CauseStrandIdDto) {
                 return client.causeStrand((CauseStrandIdDto) id, UnearthlyClient.StackType.FULL);
             }
-            if (id instanceof FaultEventIdDto) {
-                return client.faultEvent((FaultEventIdDto) id);
+            if (id instanceof FeedEntryIdDto) {
+                return client.feedEntry((FeedEntryIdDto) id);
             }
             throw new IllegalArgumentException("Invalid id: " + id);
         };
@@ -108,8 +108,8 @@ public class Feed {
                 return new CauseIdDto(uuid);
             case "cause-strand":
                 return new CauseStrandIdDto(uuid);
-            case "fault-event":
-                return new FaultEventIdDto(uuid);
+            case "feed-entry":
+                return new FeedEntryIdDto(uuid);
             default:
                 throw new IllegalStateException("Unused type " + type + ":" + uuid);
         }

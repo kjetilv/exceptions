@@ -24,7 +24,7 @@ public class Submission {
 
     public FaultIdDto faultId;
 
-    public FaultEventIdDto faultEventId;
+    public FeedEntryIdDto feedEntryId;
 
     public Long globalSequenceNo;
 

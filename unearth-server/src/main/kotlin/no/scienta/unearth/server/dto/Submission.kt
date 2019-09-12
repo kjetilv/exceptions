@@ -22,7 +22,7 @@ data class Submission(
 
         val faultId: FaultIdDto,
 
-        val faultEventId: FaultEventIdDto,
+        val faultEventId: FeedEntryIdDto,
 
         val globalSequenceNo: Long,
 

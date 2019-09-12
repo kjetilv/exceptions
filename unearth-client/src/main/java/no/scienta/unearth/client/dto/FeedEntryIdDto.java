@@ -17,24 +17,16 @@
 
 package no.scienta.unearth.client.dto;
 
-import java.time.ZonedDateTime;
+import java.util.UUID;
 
 @SuppressWarnings("unused")
-public class FaultEventDto {
+public class FeedEntryIdDto extends IdDto {
 
-    public FaultEventIdDto id;
+    public FeedEntryIdDto() {
+        this(null);
+    }
 
-    public FaultDto fault;
-
-    public FaultIdDto faultId;
-
-    public FaultStrandIdDto faultStrandId;
-
-    public ZonedDateTime time;
-
-    public Long sequenceNo;
-
-    public Long faultSequenceNo;
-
-    public Long faultStrandSequenceNo;
+    public FeedEntryIdDto(UUID uuid) {
+        super("feed-entry", uuid);
+    }
 }

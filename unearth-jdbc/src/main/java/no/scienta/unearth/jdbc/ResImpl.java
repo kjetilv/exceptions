@@ -38,7 +38,7 @@ class ResImpl implements Session.Res {
 
     @Override
     public <T> Stream<T> get(Session.Sel<T> sel) {
-        return StreamSupport.stream(new Spliterator<T>() {
+        return StreamSupport.stream(new Spliterator<>() {
             @Override
             public boolean tryAdvance(Consumer<? super T> action) {
                 if (next()) {

@@ -39,7 +39,7 @@ public interface FaultStorage extends AutoCloseable {
 
     Optional<FaultStrand> getFaultStrand(FaultStrandId faultStrandId);
 
-    Optional<FeedEntry> getFeedEntry(FaultEventId faultEventId);
+    Optional<FeedEntry> getFeedEntry(FeedEntryId faultEventId);
 
     Optional<CauseStrand> getCauseStrand(CauseStrandId causeStrandId);
 

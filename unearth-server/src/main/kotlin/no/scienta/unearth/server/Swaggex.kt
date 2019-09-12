@@ -28,7 +28,7 @@ object Swaggex {
     internal fun submission() = Submission(
             FaultStrandIdDto(UUID.randomUUID()),
             FaultIdDto(UUID.randomUUID()),
-            FaultEventIdDto(UUID.randomUUID()),
+            FeedEntryIdDto(UUID.randomUUID()),
             random.nextLong() % 1000,
             1000L + random.nextLong() % 1000,
             2000L + random.nextLong() % 1000,
@@ -55,7 +55,7 @@ object Swaggex {
         faultDto().let {
             return FeedEntryDto(
                     FaultEventDto(
-                            FaultEventIdDto(uuid()),
+                            FeedEntryIdDto(uuid()),
                             it,
                             it.id,
                             it.faultStrandId,

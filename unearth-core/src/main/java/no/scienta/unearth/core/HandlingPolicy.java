@@ -17,9 +17,9 @@
 
 package no.scienta.unearth.core;
 
-import no.scienta.unearth.munch.id.FaultEventId;
 import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.id.FaultStrandId;
+import no.scienta.unearth.munch.id.FeedEntryId;
 import no.scienta.unearth.munch.model.Fault;
 import no.scienta.unearth.munch.model.FeedEntry;
 
@@ -33,7 +33,7 @@ public interface HandlingPolicy {
 
     FaultId getFaultId();
 
-    FaultEventId getFaultEventId();
+    FeedEntryId getFeedEntryId();
 
     FeedEntry getFeedEntry();
 

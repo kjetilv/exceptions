@@ -15,13 +15,16 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package no.scienta.unearth.munch.id;
+package no.scienta.unearth.server.dto
 
-import java.util.UUID;
+import java.util.*
 
-public class FaultEventId extends Id {
+data class FeedEntryIdDto(
 
-    public FaultEventId(UUID hash) {
-        super(hash);
-    }
-}
+        val uuid: UUID,
+
+        val link: String? = null,
+
+        val type: String = "feed-entry"
+)
+

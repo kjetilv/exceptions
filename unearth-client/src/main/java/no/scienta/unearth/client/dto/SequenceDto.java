@@ -22,7 +22,7 @@ import java.util.List;
 @SuppressWarnings("unused")
 abstract class SequenceDto {
 
-    public List<FaultEventDto> events;
+    public List<FeedEntryDto> events;
 
     public SequenceType sequenceType;
 

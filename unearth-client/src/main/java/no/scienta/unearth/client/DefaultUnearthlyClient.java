@@ -92,8 +92,8 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     }
 
     @Override
-    public Optional<FaultEventDto> faultEvent(FaultEventIdDto faultEventId) {
-        return unearthlyService.faultEvent(faultEventId);
+    public Optional<FeedEntryDto> feedEntry(FeedEntryIdDto faultEventId) {
+        return unearthlyService.feedEntry(faultEventId);
     }
 
     @Override

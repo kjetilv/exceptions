@@ -18,9 +18,9 @@
 package no.scienta.unearth.core.handler;
 
 import no.scienta.unearth.core.HandlingPolicy;
-import no.scienta.unearth.munch.id.FaultEventId;
 import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.id.FaultStrandId;
+import no.scienta.unearth.munch.id.FeedEntryId;
 import no.scienta.unearth.munch.model.Fault;
 import no.scienta.unearth.munch.model.FeedEntry;
 
@@ -71,7 +71,7 @@ class SimpleHandlingPolicy implements HandlingPolicy {
     }
 
     @Override
-    public FaultEventId getFaultEventId() {
+    public FeedEntryId getFeedEntryId() {
         return feedEntry.getId();
     }
 

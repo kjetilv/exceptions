@@ -87,7 +87,7 @@ public interface Session extends AutoCloseable {
     @FunctionalInterface
     interface BatchSet<T> {
 
-        Stmt setParams(Stmt stmt, T item);
+        void setParams(Stmt stmt, T item);
     }
 
     interface Existence<T> {

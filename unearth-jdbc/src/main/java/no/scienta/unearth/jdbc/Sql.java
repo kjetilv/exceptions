@@ -144,7 +144,7 @@ final class Sql {
         );
     }
 
-    static Optional<FeedEntry> loadFeedEntry(Session session, FaultEventId faultEventId) {
+    static Optional<FeedEntry> loadFeedEntry(Session session, FeedEntryId faultEventId) {
         return session.select(
             "select " + FeedEntryFields.list() + " from feed_entry where id = ?",
             stmt ->
@@ -235,15 +235,12 @@ final class Sql {
         Hashed id,
         Function<UUID, FaultStrandId> gen
     ) {
-        Function<Session.Res, UUID> getUUID = Session.Res::getUUID;
-        Session.Sel<FaultStrandId> faultStrandIdSel = res ->
-            gen.apply(res.getUUID());
         return session.exists(
             sql,
             stmt ->
                 stmt.set(id),
-            faultStrandIdSel
-        );
+            res ->
+                gen.apply(res.getUUID()));
     }
 
     private static List<CauseFrame> loadCauseFrames(Session session, CauseStrandId causeStrandId) {

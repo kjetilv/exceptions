@@ -41,8 +41,8 @@ public interface UnearthlyAPI {
     @GET("cause-strand/{}")
     Optional<CauseStrandDto> causeStrand(CauseStrandIdDto causeIdDto, @Q Boolean fullStack, @Q Boolean printStack);
 
-    @GET("fault-event/{}")
-    Optional<FaultEventDto> faultEvent(FaultEventIdDto faultEventIdDto);
+    @GET("feed-entry/{}")
+    Optional<FeedEntryDto> feedEntry(FeedEntryIdDto faultEventIdDto);
 
     @GET("feed/limit")
     Long globalFeedLimit();

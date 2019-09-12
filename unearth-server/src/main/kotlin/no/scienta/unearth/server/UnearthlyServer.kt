@@ -60,7 +60,7 @@ import java.util.jar.JarFile
 import java.util.regex.Pattern
 
 class UnearthlyServer(
-        val controller: UnearthlyController,
+        private val controller: UnearthlyController,
         private val configuration: UnearthlyConfig = UnearthlyConfig()
 ) {
 
@@ -91,11 +91,9 @@ class UnearthlyServer(
 
     fun stop(after: (Http4kServer) -> Unit = {}): UnearthlyServer = apply {
         if (stopped.compareAndSet(false, true)) {
-            try {
+            controller.use {
                 server.stop()
                 after(server)
-            } finally {
-                controller.close()
             }
         }
     }
@@ -133,16 +131,16 @@ class UnearthlyServer(
                 }
             }
 
-    private fun faultEventRoute() =
-            "fault-event" / uuid(::FaultEventId) meta {
-                summary = "Lookup a fault event"
+    private fun feedEntryRoute() =
+            "feed-entry" / uuid(::FeedEntryId) meta {
+                summary = "Lookup a feed entry"
                 queries += listOf(fullStack, printStack)
                 produces += APPLICATION_JSON
                 returning(OK, feedEntry to Swaggex.feedEntryDto())
-            } bindContract GET to { faultEventId ->
+            } bindContract GET to { feedEntryId ->
                 { req ->
                     get(feedEntry) {
-                        controller.lookupFeedEntryDto(faultEventId,
+                        controller.lookupFeedEntryDto(feedEntryId,
                                 fullStack[req] ?: false,
                                 printStack[req] ?: false
                         )
@@ -330,7 +328,7 @@ class UnearthlyServer(
             result: () -> O?
     ): (Request) -> Response = {
         try {
-            result()?.let<O, Response> {
+            result()?.let {
                 outLens.set(withContentType(Response(OK), type), it)
             } ?: withContentType(Response(NO_CONTENT))
         } catch (e: Exception) {
@@ -362,7 +360,7 @@ class UnearthlyServer(
                         causeRoute(),
                         causeStrandRoute(),
 
-                        faultEventRoute(),
+                        feedEntryRoute(),
 
                         feedLimitRoute(),
                         feedRoute(),
@@ -418,7 +416,7 @@ class UnearthlyServer(
                         .header("X-SeqNo", policy?.globalSequence?.toString() ?: "-1")
                         .header("X-Fault-Id", policy?.faultId?.toHashString() ?: "-")
                         .header("X-Fault-Strand-Id", policy?.faultStrandId?.toHashString() ?: "-")
-                        .header("X-Fault-Event-Id", policy?.faultEventId?.toHashString() ?: "-")),
+                        .header("X-Fault-Event-Id", policy?.feedEntryId?.toHashString() ?: "-")),
                 UnearthlyError(
                         message = error.toString(),
                         submission = policy?.let { controller.submission(it) }))

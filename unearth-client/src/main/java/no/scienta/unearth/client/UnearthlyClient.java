@@ -59,7 +59,7 @@ public interface UnearthlyClient {
 
     Optional<CauseStrandDto> causeStrand(CauseStrandIdDto id, StackType stackType);
 
-    Optional<FaultEventDto> faultEvent(FaultEventIdDto faultEventId);
+    Optional<FeedEntryDto> feedEntry(FeedEntryIdDto id);
 
     long globalFeedMax();
 

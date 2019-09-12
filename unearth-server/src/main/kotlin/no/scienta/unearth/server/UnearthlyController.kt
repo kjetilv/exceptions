@@ -77,7 +77,7 @@ class UnearthlyController(
             storage.getFault(faultId).orElse(null)?.let { faultDto(it, fullStack, printStack) }
 
     fun lookupFeedEntryDto(
-            id: FaultEventId,
+            id: FeedEntryId,
             fullStack: Boolean = false,
             printStack: Boolean = false
     ): FeedEntryDto? =
@@ -156,7 +156,7 @@ class UnearthlyController(
                 faultDto(fault, fullStack, printStack)
         val faultEventDto =
                 FaultEventDto(
-                        FaultEventIdDto(feedEntry.hash, link(feedEntry)),
+                        FeedEntryIdDto(feedEntry.hash, link(feedEntry)),
                         faultDto,
                         faultDto.id,
                         faultDto.faultStrandId,
@@ -209,8 +209,8 @@ class UnearthlyController(
                         handling.faultStrandId.hash, link(handling.faultStrandId), feed(handling.faultStrandId)),
                 FaultIdDto(
                         handling.faultId.hash, link(handling.faultId), feed(handling.faultId)),
-                FaultEventIdDto(
-                        handling.faultEventId.hash, link(handling.faultEventId)),
+                FeedEntryIdDto(
+                        handling.feedEntryId.hash, link(handling.feedEntryId)),
                 handling.globalSequence,
                 handling.faultStrandSequence,
                 handling.faultSequence,

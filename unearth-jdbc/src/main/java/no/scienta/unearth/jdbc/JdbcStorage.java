@@ -83,7 +83,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     }
 
     @Override
-    public Optional<FeedEntry> getFeedEntry(FaultEventId faultEventId) {
+    public Optional<FeedEntry> getFeedEntry(FeedEntryId faultEventId) {
         return inSession(session -> loadFeedEntry(session, faultEventId));
     }
 

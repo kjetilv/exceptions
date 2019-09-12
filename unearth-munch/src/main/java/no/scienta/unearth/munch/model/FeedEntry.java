@@ -35,13 +35,13 @@
 package no.scienta.unearth.munch.model;
 
 import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
-import no.scienta.unearth.munch.id.FaultEventId;
+import no.scienta.unearth.munch.id.FeedEntryId;
 
 import java.util.UUID;
 import java.util.function.Consumer;
 
 @SuppressWarnings("unused")
-public class FeedEntry extends AbstractHashableIdentifiable<FaultEventId> {
+public class FeedEntry extends AbstractHashableIdentifiable<FeedEntryId> {
 
     private final FaultEvent faultEvent;
 
@@ -103,8 +103,8 @@ public class FeedEntry extends AbstractHashableIdentifiable<FaultEventId> {
     }
 
     @Override
-    protected FaultEventId id(UUID hash) {
-        return new FaultEventId(hash);
+    protected FeedEntryId id(UUID hash) {
+        return new FeedEntryId(hash);
     }
 
     @Override

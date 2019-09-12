@@ -20,7 +20,6 @@ package no.scienta.unearth.jdbc;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
@@ -46,8 +45,7 @@ final class DefaultSession implements Session {
             if (set != null) {
                 set.set(stmt);
             }
-            ResultSet resultSet = ps.executeQuery();
-            return new ResImpl(resultSet).get(sel).collect(Collectors.toList());
+            return new ResImpl(ps.executeQuery()).get(sel).collect(Collectors.toList());
         });
     }
 

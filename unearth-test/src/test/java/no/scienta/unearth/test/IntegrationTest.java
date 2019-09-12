@@ -91,8 +91,8 @@ public class IntegrationTest {
         assertThat(submitAgain.faultStrandId, is(submit.faultStrandId));
         assertThat(submitBarf2.faultStrandId, is(submit.faultStrandId));
 
-        FaultEventDto faultEvent = client.faultEvent(submit.faultEventId).get();
-        assertThat(faultEvent.id, is(submit.faultEventId));
+        FeedEntryDto faultEvent = client.feedEntry(submit.feedEntryId).get();
+        assertThat(faultEvent.id, is(submit.feedEntryId));
 
         assertThat(faultEvent.sequenceNo, is(0L));
         assertThat(faultEvent.faultSequenceNo, is(0L));
@@ -132,8 +132,8 @@ public class IntegrationTest {
         FaultStrandDto faultStrand = client.faultStrand(submit.faultStrandId).get();
         assertThat(faultStrand.id, is(submit.faultStrandId));
 
-        FaultEventDto faultEvent = client.faultEvent(submit.faultEventId).get();
-        assertThat(faultEvent.id, is(submit.faultEventId));
+        FeedEntryDto faultEvent = client.feedEntry(submit.feedEntryId).get();
+        assertThat(faultEvent.id, is(submit.feedEntryId));
 
         CauseDto[] causes = fault.causes;
         CauseStrandDto[] causeStrands = faultStrand.causeStrands;
