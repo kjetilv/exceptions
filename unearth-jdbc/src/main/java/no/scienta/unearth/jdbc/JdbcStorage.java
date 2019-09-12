@@ -27,6 +27,8 @@ import no.scienta.unearth.munch.model.*;
 import no.scienta.unearth.munch.print.CauseFrame;
 import no.scienta.unearth.util.Streams;
 import no.scienta.unearth.util.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.time.Duration;
@@ -39,6 +41,8 @@ import java.util.stream.IntStream;
 import static no.scienta.unearth.jdbc.Session.Outcome.*;
 
 public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
+
+    private static final Logger log = LoggerFactory.getLogger(JdbcStorage.class);
 
     private final DataSource dataSource;
 
@@ -57,9 +61,9 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     @Override
     public FeedEntry store(LogEntry logEntry, Fault fault, Throwable throwable) {
         return inSession(session -> {
-            storeFaultData(fault, session);
+            store(fault, session);
             FaultEvent event = newEvent(logEntry, fault, throwable);
-            return storeEvent(session, event);
+            return store(session, event);
         });
     }
 
@@ -91,8 +95,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     public Optional<FeedEntry> getFeedEntry(FaultEventId faultEventId) {
         return inSession(session ->
             session.select(
-                "select " + FeedEntryFields.list() + " from feed_entry" +
-                    " where id = ?",
+                "select " + FeedEntryFields.list() + " from feed_entry where id = ?",
                 stmt ->
                     Setter.byId(stmt, faultEventId),
                 this::readFeedEntry
@@ -234,26 +237,45 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
             Instant.now());
     }
 
-    private void storeFaultData(Fault fault, Session session) {
-        if (inserted(storeFaultStrand(fault.getFaultStrand(), session))) {
-            if (inserted(storeFault(fault, session))) {
-                storeCauseStrands(fault, session).forEach((causeStrand, outcome) -> {
-                    if (inserted(outcome)) {
-                        storeCauses(fault, session).forEach((cause, strandOutcome) -> {
-                            if (inserted(strandOutcome) || inserted(storeCauseFrames(session, causeStrand))) {
-                                linkFaultStrandToCauseStrands(session, fault.getFaultStrand());
-                                linkFaultToCause(session, fault);
-                                linkCauseStrandToCauseFrames(session, causeStrand);
-                            }
-                        });
-                    }
-                });
-            }
+    private void store(Fault fault, Session session) {
+        log.debug("Storing {}", fault);
+        Outcome faultStrandOutcome = storeFaultStrand(fault.getFaultStrand(), session);
+        if (inserted(faultStrandOutcome)) {
+            log.debug("Inserted fault strand: {}", fault.getFaultStrand());
+        } else {
+            log.debug("Already known fault strand: {}", fault.getFaultStrand());
+        }
+        if (inserted(storeFault(fault, session))) {
+            log.debug("Inserted fault: {}", fault);
+        } else {
+            log.debug("Already known fault: {}", fault);
+        }
+        if (inserted(faultStrandOutcome)) {
+            Map<CauseStrand, Outcome> causeStrandOutcomeMap = storeCauseStrands(fault, session);
+            causeStrandOutcomeMap.forEach((causeStrand, strandOutcome) -> {
+                log.debug("Inserted cause strand: {}", causeStrand);
+                if (inserted(storeCauseFrames(session, causeStrand))) {
+                    log.debug("Inserted cause frames for {}", causeStrand);
+                    linkCauseStrandToCauseFrames(session, causeStrand);
+                } else {
+                    log.debug("No new cause frames inserted for {}", causeStrand);
+                }
+            });
+            Map<Cause, Outcome> causeOutcomeMap = storeCauses(fault, session);
+            causeOutcomeMap.forEach((cause, causeOutCome) -> {
+                if (inserted(causeOutCome)) {
+                    log.debug("Inserted cause: {}", cause);
+                } else {
+                    log.debug("Already known cause: {}", cause);
+                }
+            });
+            linkFaultToCause(session, fault);
+            linkFaultStrandToCauseStrands(session, fault.getFaultStrand());
         }
     }
 
     private boolean inserted(Outcome outcome) {
-        return outcome != INSERTED && outcome != INSERTED_AND_UPDATED;
+        return outcome == INSERTED || outcome == INSERTED_AND_UPDATED;
     }
 
     private Map<CauseStrand, Outcome> storeCauseStrands(Fault fault, Session session) {
@@ -280,10 +302,11 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
                     : " and time >= ?" + (
                     period == null ? ""
                         : " and time <= ? ")),
-            stmt -> forPeriod(
-                sinceTime(id == null ? stmt : stmt.set(id), sinceTime),
-                sinceTime,
-                period),
+            stmt ->
+                forPeriod(
+                    sinceTime(id == null ? stmt : stmt.set(id), sinceTime),
+                    sinceTime,
+                    period),
             this::readFeedEntry));
     }
 
@@ -435,11 +458,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
 
     private void linkCauseStrandToCauseFrames(Session session, CauseStrand causeStrand) {
         session.updateBatch(
-            "insert into cause_strand_2_cause_frame (" +
-                "  cause_strand, seq, cause_frame" +
-                ") values (" +
-                "  ?, ?, ?" +
-                ")",
+            "insert into cause_strand_2_cause_frame (cause_strand, seq, cause_frame) values (?, ?, ?)",
             indexed(causeStrand.getCauseFrames()),
             (stmt, item) ->
                 Setter.list(stmt, causeStrand)
@@ -500,7 +519,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         return stmt -> stmt.set(fault1);
     }
 
-    private FeedEntry storeEvent(Session session, FaultEvent event) {
+    private FeedEntry store(Session session, FaultEvent event) {
         FeedEntry entry = new FeedEntry(
             event,
             updateGlobalSeq(session),

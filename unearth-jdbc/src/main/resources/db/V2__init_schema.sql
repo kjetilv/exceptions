@@ -24,11 +24,12 @@ create table cause_strand
 create table cause
 (
     id           uuid not null,
+
     cause_strand uuid,
     message      text,
 
-    primary key (id),
-    foreign key (cause_strand) references cause_strand (id)
+    foreign key (cause_strand) references cause_strand (id),
+    primary key (id)
 );
 
 create table fault_strand
@@ -41,21 +42,27 @@ create table fault_strand
 create table fault
 (
     id           uuid not null,
+
     fault_strand uuid,
 
-    primary key (id),
-    foreign key (fault_strand) references fault_strand (id)
+    foreign key (fault_strand) references fault_strand (id),
+    primary key (id)
 );
 
-create table fault_2_cause
+create table feed_entry
 (
-    fault uuid,
-    seq   int not null,
-    cause uuid,
+    id               uuid,
+
+    fault            uuid,
+    fault_strand     uuid,
+    time             timestamp,
+    global_seq       int not null,
+    fault_strand_seq int not null,
+    fault_seq        int not null,
 
     foreign key (fault) references fault (id),
-    foreign key (cause) references cause (id),
-    unique (seq, fault, cause)
+    foreign key (fault_strand) references fault_strand (id),
+    primary key (id)
 );
 
 create table fault_strand_2_cause_strand
@@ -69,6 +76,17 @@ create table fault_strand_2_cause_strand
     unique (seq, fault_strand, cause_strand)
 );
 
+create table fault_2_cause
+(
+    fault uuid,
+    seq   int not null,
+    cause uuid,
+
+    foreign key (fault) references fault (id),
+    foreign key (cause) references cause (id),
+    unique (seq, fault, cause)
+);
+
 create table cause_strand_2_cause_frame
 (
     cause_strand uuid,
@@ -78,21 +96,6 @@ create table cause_strand_2_cause_frame
     foreign key (cause_strand) references cause_strand (id),
     foreign key (cause_frame) references cause_frame (id),
     unique (seq, cause_strand, cause_frame)
-);
-
-create table feed_entry
-(
-    id               uuid,
-    fault_event      uuid,
-    fault            uuid,
-    fault_strand     uuid,
-    time             timestamp,
-    global_seq       int not null,
-    fault_strand_seq int not null,
-    fault_seq        int not null,
-
-    primary key (id),
-    foreign key (fault) references fault (id)
 );
 
 create table global_sequence

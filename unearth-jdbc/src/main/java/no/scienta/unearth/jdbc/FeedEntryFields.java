@@ -25,8 +25,6 @@ import java.util.stream.Collectors;
 
 public enum FeedEntryFields {
 
-    FAULT_EVENT,
-
     FAULT,
 
     FAULT_STRAND,
@@ -39,10 +37,10 @@ public enum FeedEntryFields {
 
     FAULT_SEQ;
 
-    private static Supplier<String> fields = MostlyOnce.get(() ->
+    private static Supplier<String> FIELDS = MostlyOnce.get(() ->
         Arrays.stream(values()).map(Enum::name).map(String::toLowerCase).collect(Collectors.joining(", ")));
 
     static String list() {
-        return fields.get();
+        return FIELDS.get();
     }
 }
