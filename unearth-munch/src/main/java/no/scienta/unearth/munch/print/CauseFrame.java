@@ -41,6 +41,35 @@ import java.util.function.Consumer;
 
 public class CauseFrame extends AbstractHashable {
 
+    private final ClassLoader classLoader;
+    private final Module module;
+    private final ModuleVer moduleVer;
+    private final ClassName className;
+    private final Method method;
+    private final File file;
+    private final Integer line;
+    private final Boolean naytiv;
+
+    public CauseFrame(
+        ClassLoader classLoader,
+        Module module,
+        ModuleVer moduleVer,
+        ClassName className,
+        Method method,
+        File file,
+        Integer line,
+        boolean naytiv
+    ) {
+        this.classLoader = classLoader;
+        this.module = module;
+        this.moduleVer = moduleVer;
+        this.className = className;
+        this.method = method;
+        this.file = file;
+        this.line = line == null || line < 1 ? -1 : line;
+        this.naytiv = naytiv;
+    }
+
     public static ClassLoader ClassLoader(String s) {
         return new ClassLoader(s);
     }
@@ -63,78 +92,6 @@ public class CauseFrame extends AbstractHashable {
 
     public static File File(String s) {
         return new File(s);
-    }
-
-    public final static class ClassLoader extends StringlyTyped {
-        private ClassLoader(String value) {
-            super(value);
-        }
-    }
-
-    public final static class Module extends StringlyTyped {
-        private Module(String value) {
-            super(value);
-        }
-    }
-
-    public final static class ModuleVer extends StringlyTyped {
-        private ModuleVer(String value) {
-            super(value);
-        }
-    }
-
-    public final static class ClassName extends StringlyTyped {
-        private ClassName(String value) {
-            super(value);
-        }
-    }
-
-    public final static class Method extends StringlyTyped {
-        private Method(String value) {
-            super(value);
-        }
-    }
-
-    public final static class File extends StringlyTyped {
-        private File(String value) {
-            super(value);
-        }
-    }
-
-    private final ClassLoader classLoader;
-
-    private final Module module;
-
-    private final ModuleVer moduleVer;
-
-    private final ClassName className;
-
-    private final Method method;
-
-    private final File file;
-
-    private final Integer line;
-
-    private final Boolean naytiv;
-
-    public CauseFrame(
-        ClassLoader classLoader,
-        Module module,
-        ModuleVer moduleVer,
-        ClassName className,
-        Method method,
-        File file,
-        Integer line,
-        boolean naytiv
-    ) {
-        this.classLoader = classLoader;
-        this.module = module;
-        this.moduleVer = moduleVer;
-        this.className = className;
-        this.method = method;
-        this.file = file;
-        this.line = line == null || line < 1 ? -1 : line;
-        this.naytiv = naytiv;
     }
 
     public CauseFrame unsetModuleInfo() {
@@ -212,10 +169,6 @@ public class CauseFrame extends AbstractHashable {
             (className.getValue(), method.getValue(), file.getValue(), line);
     }
 
-    private static boolean isSet(StringlyTyped s) {
-        return s != null;
-    }
-
     public StringBuilder defaultPrint(StringBuilder sb) {
         int len = sb.length();
         if (isSet(classLoader)) {
@@ -245,13 +198,53 @@ public class CauseFrame extends AbstractHashable {
     }
 
     @Override
+    public void hashTo(Consumer<byte[]> h) {
+        hash(h, classLoader.getValue(), module.getValue(), moduleVer.getValue(), className.getValue(), file.getValue());
+        hashInts(h, line);
+    }
+
+    @Override
     protected String toStringBody() {
         return defaultPrint(new StringBuilder()).toString();
     }
 
-    @Override
-    public void hashTo(Consumer<byte[]> h) {
-        hash(h, classLoader.getValue(), module.getValue(), moduleVer.getValue(), className.getValue(), file.getValue());
-        hashInts(h, line);
+    private static boolean isSet(StringlyTyped s) {
+        return s != null;
+    }
+
+    public static final class ClassLoader extends StringlyTyped {
+        private ClassLoader(String value) {
+            super(value);
+        }
+    }
+
+    public static final class Module extends StringlyTyped {
+        private Module(String value) {
+            super(value);
+        }
+    }
+
+    public static final class ModuleVer extends StringlyTyped {
+        private ModuleVer(String value) {
+            super(value);
+        }
+    }
+
+    public static final class ClassName extends StringlyTyped {
+        private ClassName(String value) {
+            super(value);
+        }
+    }
+
+    public static final class Method extends StringlyTyped {
+        private Method(String value) {
+            super(value);
+        }
+    }
+
+    public static final class File extends StringlyTyped {
+        private File(String value) {
+            super(value);
+        }
     }
 }

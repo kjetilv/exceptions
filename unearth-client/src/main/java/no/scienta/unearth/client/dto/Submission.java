@@ -36,15 +36,6 @@ public class Submission {
 
     public PrintoutDto[] printout;
 
-    public static class PrintoutDto {
-
-        public String exception;
-
-        public String message;
-
-        public String[] stack;
-    }
-
     public enum Action {
 
         LOG,
@@ -54,5 +45,14 @@ public class Submission {
         LOG_MESSAGES,
 
         LOG_ID
+    }
+
+    public static class PrintoutDto {
+
+        public String exception;
+
+        public String message;
+
+        public String[] stack;
     }
 }

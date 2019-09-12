@@ -38,14 +38,14 @@ public class FaultEvents extends AbstractHashable {
     }
 
     @Override
+    public void hashTo(Consumer<byte[]> h) {
+        hash(h, event, previous);
+    }
+
+    @Override
     protected String toStringBody() {
         return event.getHash() + "[" + event.getFaultId() + "@" + event.getTime()
             + (previous == null ? "" : " previous @" + previous.getTime())
             + "]";
-    }
-
-    @Override
-    public void hashTo(Consumer<byte[]> h) {
-        hash(h, event, previous);
     }
 }

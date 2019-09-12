@@ -34,18 +34,7 @@ import java.util.stream.Collectors;
  */
 public class Fault extends AbstractHashableIdentifiable<FaultId> {
 
-    public static Fault create(Throwable throwable) {
-        List<Cause> causes = Cause.causes(throwable);
-        FaultStrand faultStrand = FaultStrand.create(causes);
-        return new Fault(faultStrand, causes);
-    }
-
-    public static Fault create(FaultStrand faultStrand, Collection<Cause> causes) {
-        return new Fault(faultStrand, causes);
-    }
-
     private final FaultStrand faultStrand;
-
     private final List<Cause> causes;
 
     private Fault(FaultStrand faultStrand, Collection<Cause> causes) {
@@ -55,6 +44,16 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
             throw new IllegalStateException(
                 "Expected same arity: " + this.faultStrand.getCauseStrands().size() + "/" + this.causes.size());
         }
+    }
+
+    public static Fault create(Throwable throwable) {
+        List<Cause> causes = Cause.causes(throwable);
+        FaultStrand faultStrand = FaultStrand.create(causes);
+        return new Fault(faultStrand, causes);
+    }
+
+    public static Fault create(FaultStrand faultStrand, Collection<Cause> causes) {
+        return new Fault(faultStrand, causes);
     }
 
     public FaultStrand getFaultStrand() {
@@ -75,6 +74,12 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
     }
 
     @Override
+    public void hashTo(Consumer<byte[]> h) {
+        hash(h, faultStrand);
+        hash(h, causes);
+    }
+
+    @Override
     protected FaultId id(UUID hash) {
         return new FaultId(hash);
     }
@@ -82,11 +87,5 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
     @Override
     protected String toStringBody() {
         return "faultStrand:" + faultStrand + ": " + causes.size();
-    }
-
-    @Override
-    public void hashTo(Consumer<byte[]> h) {
-        hash(h, faultStrand);
-        hash(h, causes);
     }
 }

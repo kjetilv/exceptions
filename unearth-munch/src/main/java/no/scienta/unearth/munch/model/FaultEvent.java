@@ -91,15 +91,15 @@ public class FaultEvent extends AbstractHashableIdentifiable<FaultEventId> {
     }
 
     @Override
-    protected String toStringBody() {
-        return "F: " + getFaultId() +
-            "@" + getTime().atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_ZONED_DATE_TIME);
-    }
-
-    @Override
     public void hashTo(Consumer<byte[]> h) {
         hash(h, time.toEpochMilli());
         hash(h, faultId);
+    }
+
+    @Override
+    protected String toStringBody() {
+        return "F: " + getFaultId() +
+            "@" + getTime().atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_ZONED_DATE_TIME);
     }
 
     @Override

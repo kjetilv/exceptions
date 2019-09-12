@@ -17,5 +17,5 @@
 
 package no.scienta.unearth.jdbc;
 
-interface D<T> extends S<T, Stmt>{
+interface D<T> extends S<T, Stmt> {
 }

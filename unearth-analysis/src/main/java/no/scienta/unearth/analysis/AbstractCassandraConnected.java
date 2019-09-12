@@ -37,6 +37,9 @@ import java.util.stream.Stream;
 public class AbstractCassandraConnected {
 
     private final CqlSession cqlSession;
+    private static final Logger log = LoggerFactory.getLogger(AbstractCassandraConnected.class);
+    private static final String RELEASE_VERSION = "release_version";
+    private static final String VERSION_QUERY = "select " + RELEASE_VERSION + " from system.local";
 
     AbstractCassandraConnected(String host, int port, String dc, String keyspace) {
         this.cqlSession = builder(host, port, dc, keyspace).build();
@@ -52,15 +55,8 @@ public class AbstractCassandraConnected {
         });
     }
 
-    private CqlSessionBuilder builder(String host, int port, String dc, String keyspace) {
-        CqlSessionBuilder cqlSessionBuilder = CqlSession.builder()
-            .addContactPoint(InetSocketAddress.createUnresolved(host, port))
-            .withLocalDatacenter(dc);
-        if (keyspace == null) {
-            return cqlSessionBuilder;
-        }
-        return cqlSessionBuilder
-            .withKeyspace(CqlIdentifier.fromCql("\"" + keyspace + "\""));
+    public void close() {
+        cqlSession.close();
     }
 
     void exec(CqlSession session, String stmt, Object... args) {
@@ -88,13 +84,14 @@ public class AbstractCassandraConnected {
         return session.getMetadata().getNodes().values().stream().map(Node::getEndPoint);
     }
 
-    public void close() {
-        cqlSession.close();
+    private CqlSessionBuilder builder(String host, int port, String dc, String keyspace) {
+        CqlSessionBuilder cqlSessionBuilder = CqlSession.builder()
+            .addContactPoint(InetSocketAddress.createUnresolved(host, port))
+            .withLocalDatacenter(dc);
+        if (keyspace == null) {
+            return cqlSessionBuilder;
+        }
+        return cqlSessionBuilder
+            .withKeyspace(CqlIdentifier.fromCql("\"" + keyspace + "\""));
     }
-
-    private static final Logger log = LoggerFactory.getLogger(AbstractCassandraConnected.class);
-
-    private static final String RELEASE_VERSION = "release_version";
-
-    private static final String VERSION_QUERY = "select " + RELEASE_VERSION + " from system.local";
 }

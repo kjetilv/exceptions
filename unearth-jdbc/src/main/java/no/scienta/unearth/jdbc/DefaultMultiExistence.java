@@ -67,8 +67,8 @@ class DefaultMultiExistence<T> implements Session.MultiExistence<T> {
         boolean inserted = inserted();
         return inserted && updated ? INSERTED_AND_UPDATED :
             inserted ? INSERTED :
-            updated ? UPDATED :
-            NOOP;
+                updated ? UPDATED :
+                    NOOP;
     }
 
     private boolean inserted() {

@@ -34,6 +34,14 @@ import java.util.stream.Collectors;
  */
 public class Cause extends AbstractHashableIdentifiable<CauseId> {
 
+    private final String message;
+    private final CauseStrand causeStrand;
+
+    private Cause(String message, CauseStrand causeStrand) {
+        this.message = message;
+        this.causeStrand = Objects.requireNonNull(causeStrand);
+    }
+
     public static List<Cause> causes(Throwable throwable) {
         return Streams.reverse(Streams.causes(throwable))
             .map(t ->
@@ -45,21 +53,18 @@ public class Cause extends AbstractHashableIdentifiable<CauseId> {
         return new Cause(message, causeStrand);
     }
 
-    private final String message;
-
-    private final CauseStrand causeStrand;
-
-    private Cause(String message, CauseStrand causeStrand) {
-        this.message = message;
-        this.causeStrand = Objects.requireNonNull(causeStrand);
-    }
-
     public CauseStrand getCauseStrand() {
         return causeStrand;
     }
 
     public String getMessage() {
         return message;
+    }
+
+    @Override
+    public void hashTo(Consumer<byte[]> h) {
+        hash(h, causeStrand);
+        hash(h, message);
     }
 
     Throwable toChameleon(Throwable t) {
@@ -79,11 +84,5 @@ public class Cause extends AbstractHashableIdentifiable<CauseId> {
     @Override
     protected String toStringBody() {
         return "causeStrand:" + causeStrand + " message:" + message;
-    }
-
-    @Override
-    public void hashTo(Consumer<byte[]> h) {
-        hash(h, causeStrand);
-        hash(h, message);
     }
 }

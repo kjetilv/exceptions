@@ -96,7 +96,7 @@ public interface Session extends AutoCloseable {
 
         Existence<T> onInsert(Runnable insert);
 
-        default<R> Optional<R> thenLoad(Function<T, Optional<R>> load) {
+        default <R> Optional<R> thenLoad(Function<T, Optional<R>> load) {
             return Optional.ofNullable(thenLoad(load, () -> null));
         }
 

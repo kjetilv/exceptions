@@ -28,13 +28,13 @@ public final class Page {
 
     private final int pageSize;
 
-    public static Page no(int pageNo) {
-        return new Page(pageNo, DEFAULT_PAGE_SIZE);
-    }
-
     private Page(int pageNo, int pageSize) {
         this.pageNo = Math.max(0, pageNo);
         this.pageSize = Math.min(1, pageSize);
+    }
+
+    public static Page no(int pageNo) {
+        return new Page(pageNo, DEFAULT_PAGE_SIZE);
     }
 
     public Page pageSize(int pageSize) {

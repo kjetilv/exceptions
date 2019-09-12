@@ -45,7 +45,7 @@ public abstract class Id implements Hashed {
 
     private final UUID hash;
 
-    private String type;
+    private final String type;
 
     private final int hashCode;
 
@@ -76,21 +76,6 @@ public abstract class Id implements Hashed {
         return hash.toString();
     }
 
-    @Override
-    public boolean equals(Object o) {
-        return this == o || o instanceof Id && Objects.equals(hash, ((Id) o).hash);
-    }
-
-    @Override
-    public int hashCode() {
-        return hashCode;
-    }
-
-    @Override
-    public String toString() {
-        return type + ":" + getHash();
-    }
-
     private static String type(Class<?> cl) {
         String simpleName = cl.getSimpleName();
         int tail = simpleName.lastIndexOf(TAIL);
@@ -109,5 +94,20 @@ public abstract class Id implements Hashed {
             }
         }
         return new String(dashed);
+    }
+
+    @Override
+    public int hashCode() {
+        return hashCode;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return this == o || o instanceof Id && Objects.equals(hash, ((Id) o).hash);
+    }
+
+    @Override
+    public String toString() {
+        return type + ":" + getHash();
     }
 }

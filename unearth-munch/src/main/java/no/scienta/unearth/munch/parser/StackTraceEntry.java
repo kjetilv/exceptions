@@ -209,7 +209,7 @@ enum StackTraceEntry implements StackTraceElementPicker {
 
     private static final String[] NONE = new String[0];
 
-    private Pattern pattern;
+    private final Pattern pattern;
 
     private final boolean nativeMethod;
 

@@ -23,6 +23,10 @@ import java.util.UUID;
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class IdDto {
 
+    public UUID uuid;
+    public String type;
+    public String link;
+
     public IdDto() {
         this(null, null);
     }
@@ -36,15 +40,9 @@ public class IdDto {
         this.uuid = uuid;
     }
 
-    public UUID uuid;
-
-    public String type;
-
-    public String link;
-
     @Override
-    public String toString() {
-        return type + ":" + uuid;
+    public int hashCode() {
+        return Objects.hash(uuid, link);
     }
 
     @Override
@@ -56,7 +54,7 @@ public class IdDto {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(uuid, link);
+    public String toString() {
+        return type + ":" + uuid;
     }
 }

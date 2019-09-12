@@ -49,6 +49,8 @@ class Invoker implements InvocationHandler {
     private final Function<Object, byte[]> writeBytes = this::writeBytes;
 
     private final BiFunction<Class<?>, InputStream, Object> readBytes = this::readBytes;
+    private static final String CONTENT_TYPE = "Content-Type";
+    private static final Duration TIMEOUT = Duration.ofMinutes(1);
 
     Invoker(URI uri, ObjectMapper objectMapper) {
         this.uri = Objects.requireNonNull(uri, "uri").toASCIIString().endsWith("/") ? uri
@@ -93,7 +95,7 @@ class Invoker implements InvocationHandler {
             .build();
     }
 
-    private HttpResponse<InputStream> response(HttpRequest request) {
+    private static HttpResponse<InputStream> response(HttpRequest request) {
         try {
             return newClient().send(request, HttpResponse.BodyHandlers.ofInputStream());
         } catch (Exception e) {
@@ -121,11 +123,11 @@ class Invoker implements InvocationHandler {
         return URI.create(this.uri.toASCIIString() + meta.path(args));
     }
 
-    private HttpClient newClient() {
+    private static HttpClient newClient() {
         return HttpClient.newBuilder().connectTimeout(TIMEOUT).build();
     }
 
-    private void failOnError(HttpResponse<InputStream> response) {
+    private static void failOnError(HttpResponse<InputStream> response) {
         if (response.statusCode() >= 500) {
             throw new IllegalStateException("Internal server error: " + response + possibly(error(response)));
         }
@@ -137,11 +139,11 @@ class Invoker implements InvocationHandler {
         }
     }
 
-    private String possibly(String error) {
+    private static String possibly(String error) {
         return error == null || error.isBlank() ? "" : "\n" + error.trim();
     }
 
-    private String error(HttpResponse<InputStream> response) {
+    private static String error(HttpResponse<InputStream> response) {
         try
             (BufferedReader reader = new BufferedReader(new InputStreamReader(response.body(), StandardCharsets.UTF_8))
             ) {
@@ -151,17 +153,13 @@ class Invoker implements InvocationHandler {
         }
     }
 
-    private Object readResponse(Meta meta, HttpResponse<InputStream> response) {
+    private static Object readResponse(Meta meta, HttpResponse<InputStream> response) {
         try (InputStream body = response.body()) {
             return meta.response(body);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to read response: " + response, e);
         }
     }
-
-    private static final String CONTENT_TYPE = "Content-Type";
-
-    private static final Duration TIMEOUT = Duration.ofMinutes(1);
 
     private static HttpRequest.Builder withBody(Meta meta, HttpRequest.Builder requestBuilder, Object[] args) {
         if (meta.post()) {

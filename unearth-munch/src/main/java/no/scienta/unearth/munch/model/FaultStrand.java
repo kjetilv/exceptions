@@ -34,6 +34,13 @@ public class FaultStrand extends AbstractHashableIdentifiable<FaultStrandId> {
 
     private final List<CauseStrand> causeStrands;
 
+    private FaultStrand(Collection<CauseStrand> causeStrands) {
+        if (Objects.requireNonNull(causeStrands).isEmpty()) {
+            throw new IllegalArgumentException("Expected one or more causes");
+        }
+        this.causeStrands = List.copyOf(causeStrands);
+    }
+
     public static FaultStrand create(List<Cause> causes) {
         List<CauseStrand> causeStrands =
             causes.stream().map(Cause::getCauseStrand).collect(Collectors.toList());
@@ -48,15 +55,13 @@ public class FaultStrand extends AbstractHashableIdentifiable<FaultStrandId> {
         return causeStrands;
     }
 
-    int getCauseCount() {
-        return causeStrands.size();
+    @Override
+    public void hashTo(Consumer<byte[]> h) {
+        hash(h, causeStrands);
     }
 
-    private FaultStrand(Collection<CauseStrand> causeStrands) {
-        if (Objects.requireNonNull(causeStrands).isEmpty()) {
-            throw new IllegalArgumentException("Expected one or more causes");
-        }
-        this.causeStrands = List.copyOf(causeStrands);
+    int getCauseCount() {
+        return causeStrands.size();
     }
 
     @Override
@@ -64,11 +69,6 @@ public class FaultStrand extends AbstractHashableIdentifiable<FaultStrandId> {
         return "(" +
             causeStrands.stream().map(Objects::toString).collect(Collectors.joining(" <= ")) +
             ")";
-    }
-
-    @Override
-    public void hashTo(Consumer<byte[]> h) {
-        hash(h, causeStrands);
     }
 
     @Override

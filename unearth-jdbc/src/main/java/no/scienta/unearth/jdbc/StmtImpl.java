@@ -62,15 +62,15 @@ class StmtImpl implements Stmt {
     }
 
     @Override
-    public Stmt set(Instant instant) {
+    public Stmt set(Integer value) {
         try {
-            if (instant == null) {
-                statement.setNull(++i, Types.TIMESTAMP);
+            if (value == null) {
+                statement.setNull(++i, Types.INTEGER);
             } else {
-                statement.setTimestamp(++i, Timestamp.from(instant));
+                statement.setInt(++i, value);
             }
         } catch (Exception e) {
-            throw new IllegalStateException("Could not set instant #" + i + ": " + instant, e);
+            throw new IllegalStateException("Could not set int #" + i + ": " + i, e);
         }
         return this;
     }
@@ -90,15 +90,15 @@ class StmtImpl implements Stmt {
     }
 
     @Override
-    public Stmt set(Integer value) {
+    public Stmt set(Instant instant) {
         try {
-            if (value == null) {
-                statement.setNull(++i, Types.INTEGER);
+            if (instant == null) {
+                statement.setNull(++i, Types.TIMESTAMP);
             } else {
-                statement.setInt(++i, value);
+                statement.setTimestamp(++i, Timestamp.from(instant));
             }
         } catch (Exception e) {
-            throw new IllegalStateException("Could not set int #" + i + ": " + i, e);
+            throw new IllegalStateException("Could not set instant #" + i + ": " + instant, e);
         }
         return this;
     }

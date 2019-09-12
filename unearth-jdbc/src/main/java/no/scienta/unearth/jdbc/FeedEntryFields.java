@@ -37,7 +37,7 @@ public enum FeedEntryFields {
 
     FAULT_SEQ;
 
-    private static Supplier<String> FIELDS = MostlyOnce.get(() ->
+    private static final Supplier<String> FIELDS = MostlyOnce.get(() ->
         Arrays.stream(values()).map(Enum::name).map(String::toLowerCase).collect(Collectors.joining(", ")));
 
     static String list() {

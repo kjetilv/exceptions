@@ -57,38 +57,15 @@ public abstract class AbstractHashable implements Hashable {
 
     private final Supplier<String> toString = MostlyOnce.get(() ->
         getClass().getSimpleName() + "[" + toStringIdentifier() + toStringContents() + "]");
+    private static final String HASH = "MD5";
 
-    /**
-     * Takes a {@link Hashable hashable} and returns a supplier which computs its UUID
-     *
-     * @param hashable Hashable
-     * @return UUID supplier
-     */
-    private static Supplier<UUID> uuid(Hashable hashable) {
-        return MostlyOnce.get(() -> {
-            MessageDigest md5 = md5();
-            hashable.hashTo(md5::update);
-            return UUID.nameUUIDFromBytes(md5.digest());
-        });
-    }
-
-    private static MessageDigest md5() {
-        try {
-            return MessageDigest.getInstance(HASH);
-        } catch (Exception e) {
-            throw new IllegalStateException("Expected " + HASH + " implementation", e);
-        }
+    @Override
+    public final UUID getHash() {
+        return hash.get();
     }
 
     protected final void hash(Consumer<byte[]> hash, String... strings) {
         hashStrings(hash, Arrays.asList(strings));
-    }
-
-    private void hashStrings(Consumer<byte[]> hash, Collection<String> strings) {
-        strings.stream()
-            .filter(Objects::nonNull)
-            .forEach(s ->
-                hash.accept(s.getBytes(StandardCharsets.UTF_8)));
     }
 
     protected final void hash(Consumer<byte[]> h, Id... ids) {
@@ -157,16 +134,38 @@ public abstract class AbstractHashable implements Hashable {
         return null;
     }
 
+    /**
+     * Takes a {@link Hashable hashable} and returns a supplier which computs its UUID
+     *
+     * @param hashable Hashable
+     * @return UUID supplier
+     */
+    private static Supplier<UUID> uuid(Hashable hashable) {
+        return MostlyOnce.get(() -> {
+            MessageDigest md5 = md5();
+            hashable.hashTo(md5::update);
+            return UUID.nameUUIDFromBytes(md5.digest());
+        });
+    }
+
+    private static MessageDigest md5() {
+        try {
+            return MessageDigest.getInstance(HASH);
+        } catch (Exception e) {
+            throw new IllegalStateException("Expected " + HASH + " implementation", e);
+        }
+    }
+
+    private void hashStrings(Consumer<byte[]> hash, Collection<String> strings) {
+        strings.stream()
+            .filter(Objects::nonNull)
+            .forEach(s ->
+                hash.accept(s.getBytes(StandardCharsets.UTF_8)));
+    }
+
     private String toStringContents() {
         String body = toStringBody();
         return body == null || body.isBlank() ? "" : " " + body.trim();
-    }
-
-    private static final String HASH = "MD5";
-
-    @Override
-    public final UUID getHash() {
-        return hash.get();
     }
 
     @Override

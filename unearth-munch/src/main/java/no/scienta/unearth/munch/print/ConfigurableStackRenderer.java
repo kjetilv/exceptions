@@ -40,6 +40,7 @@ public class ConfigurableStackRenderer implements StackRenderer {
     private final FrameLister squasher;
 
     private final boolean omitStack;
+    private static final String INDENT = "  ";
 
     public ConfigurableStackRenderer() {
         this(null, null, null, null, null, false);
@@ -161,8 +162,6 @@ public class ConfigurableStackRenderer implements StackRenderer {
     private String indented(boolean indent, String printed) {
         return (indent ? INDENT : "") + printed;
     }
-
-    private static final String INDENT = "  ";
 
     private static GroupedFrameTransform ungrouped(Function<CauseFrame, CauseFrame> fun) {
         return (group, causeFrame) -> fun.apply(causeFrame);

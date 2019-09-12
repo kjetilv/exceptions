@@ -41,14 +41,14 @@ import java.net.URI;
 
 public final class Proto {
 
+    private Proto() {
+    }
+
     public static <T> T type(Class<T> api, URI uri, ObjectMapper objectMapper) {
         return api.cast(Proxy.newProxyInstance(
             Thread.currentThread().getContextClassLoader(),
             new Class<?>[]{api},
             new Invoker(uri, objectMapper)
         ));
-    }
-
-    private Proto() {
     }
 }

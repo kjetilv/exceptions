@@ -56,6 +56,12 @@ final class Meta {
     private final boolean optional;
 
     private final boolean noResponse;
+    private static final byte[] EMPTY = new byte[0];
+    private static final String POST = "POST";
+    private static final String GET = "GET";
+    private static final String JSON = "application/json;charset=UTF-8";
+    private static final String TEXT = "text/plain;charset=UTF-8";
+    private static final String PAR = "{}";
 
     Meta(Method method, Function<Object, byte[]> writer, BiFunction<Class<?>, InputStream, Object> reader) {
         POST post = method.getAnnotation(POST.class);
@@ -168,18 +174,6 @@ final class Meta {
     private byte[] bytes(Object string) {
         return string.toString().getBytes(StandardCharsets.UTF_8);
     }
-
-    private static final byte[] EMPTY = new byte[0];
-
-    private static final String POST = "POST";
-
-    private static final String GET = "GET";
-
-    private static final String JSON = "application/json;charset=UTF-8";
-
-    private static final String TEXT = "text/plain;charset=UTF-8";
-
-    private static final String PAR = "{}";
 
     @Override
     public String toString() {

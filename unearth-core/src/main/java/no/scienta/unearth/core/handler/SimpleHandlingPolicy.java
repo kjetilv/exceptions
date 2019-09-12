@@ -56,6 +56,11 @@ class SimpleHandlingPolicy implements HandlingPolicy {
     }
 
     @Override
+    public Action getAction() {
+        return action;
+    }
+
+    @Override
     public FaultStrandId getFaultStrandId() {
         return feedEntry.getFaultEvent().getFaultStrandId();
     }
@@ -76,11 +81,6 @@ class SimpleHandlingPolicy implements HandlingPolicy {
     }
 
     @Override
-    public Action getAction() {
-        return action;
-    }
-
-    @Override
     public Fault getFault() {
         return fault;
     }
@@ -91,13 +91,13 @@ class SimpleHandlingPolicy implements HandlingPolicy {
     }
 
     @Override
-    public long getFaultSequence() {
-        return feedEntry.getFaultSequenceNo();
+    public long getFaultStrandSequence() {
+        return feedEntry.getFaultStrandSequenceNo();
     }
 
     @Override
-    public long getFaultStrandSequence() {
-        return feedEntry.getFaultStrandSequenceNo();
+    public long getFaultSequence() {
+        return feedEntry.getFaultSequenceNo();
     }
 
     SimpleHandlingPolicy withSummary(String summary) {

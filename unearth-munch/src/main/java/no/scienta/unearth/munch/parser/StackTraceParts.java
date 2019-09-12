@@ -33,12 +33,6 @@ class StackTraceParts {
         this.parts = parts;
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() +
-            "[" + parser + " => " + (parts == null ? null : Arrays.asList(parts)) + "]";
-    }
-
     Stream<CauseFrame> reconstruct() {
         if (parser == StackTraceEntry.MORE) {
             return Stream.empty();
@@ -59,5 +53,11 @@ class StackTraceParts {
         } catch (Exception e) {
             throw new IllegalStateException(this + " failed to reconstruct", e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() +
+            "[" + parser + " => " + (parts == null ? null : Arrays.asList(parts)) + "]";
     }
 }

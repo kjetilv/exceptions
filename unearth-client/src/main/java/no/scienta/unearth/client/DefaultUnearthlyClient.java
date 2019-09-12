@@ -34,15 +34,13 @@ import java.util.stream.Collectors;
 public class DefaultUnearthlyClient implements UnearthlyClient {
 
     private final UnearthlyAPI unearthlyService;
+    static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+        .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+        .registerModule(new Jdk8Module())
+        .registerModule(new JavaTimeModule());
 
     DefaultUnearthlyClient(URI uri) {
         this.unearthlyService = Proto.type(UnearthlyAPI.class, uri, OBJECT_MAPPER);
-    }
-
-    @Override
-    public Optional<Throwable> throwable(FaultIdDto faultId) {
-        Optional<FaultDto> fault = unearthlyService.fault(faultId, true, false);
-        return fault.map(DefaultUnearthlyClient::toChameleon);
     }
 
     @Override
@@ -53,6 +51,12 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     @Override
     public Submission submit(Throwable throwable) {
         return unearthlyService.throwable(toString(throwable));
+    }
+
+    @Override
+    public Optional<Throwable> throwable(FaultIdDto faultId) {
+        Optional<FaultDto> fault = unearthlyService.fault(faultId, true, false);
+        return fault.map(DefaultUnearthlyClient::toChameleon);
     }
 
     @Override
@@ -135,11 +139,6 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
     }
-
-    static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-        .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-        .registerModule(new Jdk8Module())
-        .registerModule(new JavaTimeModule());
 
     private static Throwable toChameleon(FaultDto faultDto) {
         List<CauseDto> list =

@@ -28,12 +28,7 @@ import java.util.function.Consumer;
 
 public class LogEntry extends AbstractHashableIdentifiable<FaultLogId> {
 
-    public static LogEntry create(String logMessage, Object... args) {
-        return new LogEntry(logMessage, args);
-    }
-
     private final String logMessage;
-
     private final String[] args;
 
     private LogEntry(
@@ -50,6 +45,10 @@ public class LogEntry extends AbstractHashableIdentifiable<FaultLogId> {
         }
     }
 
+    public static LogEntry create(String logMessage, Object... args) {
+        return new LogEntry(logMessage, args);
+    }
+
     public String getLogMessage() {
         return logMessage;
     }
@@ -59,13 +58,13 @@ public class LogEntry extends AbstractHashableIdentifiable<FaultLogId> {
     }
 
     @Override
-    protected FaultLogId id(UUID hash) {
-        return new FaultLogId(hash);
-    }
-
-    @Override
     public void hashTo(Consumer<byte[]> h) {
         hash(h, logMessage);
         hash(h, args);
+    }
+
+    @Override
+    protected FaultLogId id(UUID hash) {
+        return new FaultLogId(hash);
     }
 }

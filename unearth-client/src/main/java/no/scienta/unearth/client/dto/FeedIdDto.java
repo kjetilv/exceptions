@@ -22,6 +22,8 @@ import java.util.UUID;
 @SuppressWarnings("unused")
 class FeedIdDto extends IdDto {
 
+    public String feed;
+
     FeedIdDto(String type) {
         super(type);
     }
@@ -29,6 +31,4 @@ class FeedIdDto extends IdDto {
     FeedIdDto(String type, UUID uuid) {
         super(type, uuid);
     }
-
-    public String feed;
 }

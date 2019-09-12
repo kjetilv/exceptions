@@ -96,11 +96,10 @@ public class FeedEntry extends AbstractHashableIdentifiable<FaultEventId> {
         );
     }
 
-    private static Long valid(long seqNo) {
-        if (seqNo < 0) {
-            throw new IllegalArgumentException("Invalid seqNo: " + seqNo);
-        }
-        return seqNo;
+    @Override
+    public void hashTo(Consumer<byte[]> h) {
+        hash(h, faultSequenceNo, faultStrandSequenceNo, globalSequenceNo);
+        hash(h, faultEvent);
     }
 
     @Override
@@ -114,9 +113,10 @@ public class FeedEntry extends AbstractHashableIdentifiable<FaultEventId> {
             " g#" + globalSequenceNo + " ft#" + faultStrandSequenceNo + " f#" + faultSequenceNo;
     }
 
-    @Override
-    public void hashTo(Consumer<byte[]> h) {
-        hash(h, faultSequenceNo, faultStrandSequenceNo, globalSequenceNo);
-        hash(h, faultEvent);
+    private static Long valid(long seqNo) {
+        if (seqNo < 0) {
+            throw new IllegalArgumentException("Invalid seqNo: " + seqNo);
+        }
+        return seqNo;
     }
 }

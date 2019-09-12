@@ -41,16 +41,6 @@ final class DefaultSession implements Session {
     }
 
     @Override
-    public <T> Existence<T> exists(String sql, Set set, Sel<T> sel) {
-        return new DefaultExistence<>(this, sql, set, sel);
-    }
-
-    @Override
-    public <T> MultiExistence<T> exists(String sql, Collection<T> items, Set set, Sel<T> selector) {
-        return new DefaultMultiExistence<>(this, items, sql, set, selector);
-    }
-
-    @Override
     public <T> List<T> select(String sql, Set set, Sel<T> sel) {
         return withStatement(sql, (ps, stmt) -> {
             if (set != null) {
@@ -62,19 +52,13 @@ final class DefaultSession implements Session {
     }
 
     @Override
-    public <T> T withStatement(String sql, Action<T> action) {
-        try (PreparedStatement ps = connection.prepareCall(sql)) {
-            return action.on(ps, new StmtImpl(ps));
-        } catch (Exception e) {
-            throw new IllegalStateException("Call failed: " + sql, e);
-        }
-
+    public <T> Existence<T> exists(String sql, Set set, Sel<T> sel) {
+        return new DefaultExistence<>(this, sql, set, sel);
     }
 
     @Override
-    public <T> void updateBatch(String sql, Collection<T> items, BatchSet<T> set) {
-        withStatement(sql, (ps, stmt) ->
-            statementWithItems(ps, stmt, set, items).executeBatch());
+    public <T> MultiExistence<T> exists(String sql, Collection<T> items, Set set, Sel<T> selector) {
+        return new DefaultMultiExistence<>(this, items, sql, set, selector);
     }
 
     @Override
@@ -87,6 +71,12 @@ final class DefaultSession implements Session {
     }
 
     @Override
+    public <T> void updateBatch(String sql, Collection<T> items, BatchSet<T> set) {
+        withStatement(sql, (ps, stmt) ->
+            statementWithItems(ps, stmt, set, items).executeBatch());
+    }
+
+    @Override
     public void close() {
         try {
             connection.close();
@@ -95,7 +85,17 @@ final class DefaultSession implements Session {
         }
     }
 
-    private <T> PreparedStatement statementWithItems(
+    @Override
+    public <T> T withStatement(String sql, Action<T> action) {
+        try (PreparedStatement ps = connection.prepareCall(sql)) {
+            return action.on(ps, new StmtImpl(ps));
+        } catch (Exception e) {
+            throw new IllegalStateException("Call failed: " + sql, e);
+        }
+
+    }
+
+    private static <T> PreparedStatement statementWithItems(
         PreparedStatement ps,
         Stmt stmt,
         BatchSet<T> set,
@@ -112,7 +112,7 @@ final class DefaultSession implements Session {
         return ps;
     }
 
-    private void addBatch(PreparedStatement ps) {
+    private static void addBatch(PreparedStatement ps) {
         try {
             ps.addBatch();
         } catch (SQLException e) {

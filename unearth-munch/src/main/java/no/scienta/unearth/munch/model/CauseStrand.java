@@ -35,6 +35,14 @@ import java.util.stream.Collectors;
  */
 public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
 
+    private final String className;
+    private final List<CauseFrame> causeFrames;
+
+    private CauseStrand(String className, List<CauseFrame> stackFrames) {
+        this.className = className;
+        this.causeFrames = Util.orEmpty(stackFrames);
+    }
+
     public static CauseStrand create(Throwable throwable) {
         return new CauseStrand(className(throwable), causeFrames(throwable.getStackTrace()));
     }
@@ -43,17 +51,18 @@ public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
         return new CauseStrand(className, stackFrames);
     }
 
-    private final String className;
-
-    private final List<CauseFrame> causeFrames;
-
-    private CauseStrand(String className, List<CauseFrame> stackFrames) {
-        this.className = className;
-        this.causeFrames = Util.orEmpty(stackFrames);
-    }
-
     public List<CauseFrame> getCauseFrames() {
         return causeFrames;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    @Override
+    public void hashTo(Consumer<byte[]> h) {
+        hash(h, this.className);
+        hash(h, this.causeFrames);
     }
 
     @Override
@@ -61,8 +70,10 @@ public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
         return new CauseStrandId(hash);
     }
 
-    public String getClassName() {
-        return className;
+    @Override
+    protected String toStringBody() {
+        int dotIndex = className.lastIndexOf(".");
+        return (dotIndex >= 0 ? className.substring(dotIndex + 1) : className) + " <" + causeFrames.size() + ">";
     }
 
     private static List<CauseFrame> causeFrames(StackTraceElement[] stackTrace) {
@@ -82,17 +93,5 @@ public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
         return throwable instanceof ChameleonException
             ? ((ChameleonException) throwable).getProxiedClassName()
             : throwable.getClass().getName();
-    }
-
-    @Override
-    protected String toStringBody() {
-        int dotIndex = className.lastIndexOf(".");
-        return (dotIndex >= 0 ? className.substring(dotIndex + 1) : className) + " <" + causeFrames.size() + ">";
-    }
-
-    @Override
-    public void hashTo(Consumer<byte[]> h) {
-        hash(h, this.className);
-        hash(h, this.causeFrames);
     }
 }

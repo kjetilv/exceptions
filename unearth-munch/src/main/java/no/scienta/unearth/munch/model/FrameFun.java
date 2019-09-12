@@ -46,6 +46,13 @@ public final class FrameFun {
 
     public static ConfigurableStackRenderer.FrameTransform SHORTEN_CLASSNAMES = FrameFun::shortenClassName;
 
+    private FrameFun() {
+    }
+
+    public static CauseFrame shortenClassName(Collection<String> group, CauseFrame causeFrame) {
+        return group == null ? causeFrame : shortenClassName(causeFrame);
+    }
+
     private static Stream<String> justTheCount(Collection<String> group, List<CauseFrame> causeFrames) {
         return Stream.of(" * (" + causeFrames.size() + ")");
     }
@@ -54,10 +61,6 @@ public final class FrameFun {
         return Stream.of(
             causeFrames.iterator().next().defaultPrint(new StringBuilder()).toString(),
             " * (" + (causeFrames.size() - 1) + " more)");
-    }
-
-    public static CauseFrame shortenClassName(Collection<String> group, CauseFrame causeFrame) {
-        return group == null ? causeFrame : shortenClassName(causeFrame);
     }
 
     private static CauseFrame shortenClassName(CauseFrame causeFrame) {
@@ -71,8 +74,5 @@ public final class FrameFun {
                 .map(part -> part.substring(0, 1)),
             Stream.of(className.substring(dot + 1))
         ).collect(Collectors.joining("."));
-    }
-
-    private FrameFun() {
     }
 }

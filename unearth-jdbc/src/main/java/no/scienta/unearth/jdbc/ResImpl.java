@@ -66,13 +66,11 @@ class ResImpl implements Session.Res {
     }
 
     @Override
-    public boolean next() {
+    public String getString() {
         try {
-            return resultSet.next();
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to start iteration: " + resultSet, e);
-        } finally {
-            i = 0;
+            return resultSet.getString(++i);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to get string #" + i + ": " + resultSet, e);
         }
     }
 
@@ -104,15 +102,6 @@ class ResImpl implements Session.Res {
     }
 
     @Override
-    public String getString() {
-        try {
-            return resultSet.getString(++i);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to get string #" + i + ": " + resultSet, e);
-        }
-    }
-
-    @Override
     public UUID getUUID() {
         try {
             return resultSet.getObject(++i, UUID.class);
@@ -127,6 +116,17 @@ class ResImpl implements Session.Res {
             return resultSet.getTimestamp(++i).toInstant();
         } catch (Exception e) {
             throw new IllegalStateException("Failed to get timestamp #" + i + ": " + resultSet, e);
+        }
+    }
+
+    @Override
+    public boolean next() {
+        try {
+            return resultSet.next();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to start iteration: " + resultSet, e);
+        } finally {
+            i = 0;
         }
     }
 }
