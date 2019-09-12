@@ -24,7 +24,7 @@ import java.util.function.Supplier;
 
 class DefaultExistence<T> implements Session.Existence<T> {
 
-    private DefaultSession session;
+    private final DefaultSession session;
 
     private final String sql;
 
@@ -74,12 +74,12 @@ class DefaultExistence<T> implements Session.Existence<T> {
         return session.select(sql, set, sel).stream().findFirst();
     }
 
-    private Runnable noInsert() {
+    private static Runnable noInsert() {
         return () -> {
         };
     }
 
-    private Consumer<T> noUpdate() {
+    private static <T> Consumer<T> noUpdate() {
         return t -> {
         };
     }

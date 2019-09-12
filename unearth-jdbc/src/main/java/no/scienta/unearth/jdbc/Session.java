@@ -68,7 +68,12 @@ public interface Session extends AutoCloseable {
     }
 
     @FunctionalInterface
-    interface Sel<T> {
+    interface Sel<T> extends Function<Res, T> {
+
+        @Override
+        default T apply(Res res) {
+            return select(res);
+        }
 
         T select(Res res);
     }
