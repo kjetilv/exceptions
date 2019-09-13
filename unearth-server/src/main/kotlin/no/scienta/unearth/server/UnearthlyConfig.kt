@@ -45,7 +45,7 @@ data class UnearthlyDbConfig(
 
         val schema: String = "unearth",
 
-        val jdbc: String = "jdbc:postgresql://127.0.0.1:54332/unearth"
+        val jdbc: String = "jdbc:postgresql://127.0.0.1:5432/unearth"
 )
 
 data class UnearthlyCassandraConfig(

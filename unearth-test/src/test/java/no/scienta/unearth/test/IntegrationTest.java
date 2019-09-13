@@ -17,45 +17,23 @@
 
 package no.scienta.unearth.test;
 
-import no.scienta.unearth.analysis.CassandraInit;
 import no.scienta.unearth.client.Page;
 import no.scienta.unearth.client.UnearthlyClient;
 import no.scienta.unearth.client.dto.*;
-import no.scienta.unearth.server.Unearth;
-import no.scienta.unearth.server.UnearthlyCassandraConfig;
-import no.scienta.unearth.server.UnearthlyConfig;
-import no.scienta.unearth.server.UnearthlyDbConfig;
 import no.scienta.unearth.util.Throwables;
 import org.junit.*;
-import org.testcontainers.containers.GenericContainer;
 
 import java.io.IOException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@SuppressWarnings({
-    "OptionalGetWithoutIsPresent",
-    "StaticVariableMayNotBeInitialized",
-    "FieldCanBeLocal",
-    "StaticVariableOfConcreteClass",
-    "StaticVariableUsedBeforeInitialization"})
+@SuppressWarnings("StaticVariableMayNotBeInitialized")
 public class IntegrationTest {
 
-    private static Unearth.State state;
+    private static DockerStartup dockerStartup;
 
     private static UnearthlyClient client;
-
-    private static GenericContainer cassandra;
-
-    private static GenericContainer postgres;
-
-    private static CassandraInit init;
-
-    private static final ScheduledExecutorService EXEC = Executors.newScheduledThreadPool(2);
 
     @Ignore
     @Test
@@ -152,102 +130,18 @@ public class IntegrationTest {
 
     @BeforeClass
     public static void up() {
-        Future<? extends GenericContainer<?>> cassandraFuture = EXEC.submit(IntegrationTest::startCassandra);
-        Future<? extends GenericContainer<?>> postgresFuture = EXEC.submit(IntegrationTest::startPostgres);
-        EXEC.shutdown();
-
-        try {
-            cassandra = cassandraFuture.get();
-            postgres = postgresFuture.get();
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed", e);
-        }
-
-        UnearthlyConfig config = testConfig(cassandra, postgres);
-
-        init = initCassandra(config.getCassandra());
-
-        state = new Unearth(config).invoke();
-
-        client = UnearthlyClient.connect(state.url());
+        dockerStartup = new DockerStartup();
+        client = dockerStartup.getClient();
     }
 
     @AfterClass
     public static void down() {
-        if (state != null) {
-            state.close();
-        }
-        if (init != null) {
-            init.close();
-        }
-        if (cassandra != null) {
-            cassandra.stop();
-            cassandra.close();
-        }
+        dockerStartup.stop();
     }
 
     @After
     public void reset() {
-        if (state != null) {
-            state.reset();
-        }
+        dockerStartup.reset();
     }
 
-    private static GenericContainer<?> startCassandra() {
-        GenericContainer<?> cassandra =
-            new GenericContainer<>("cassandra:3.11.4").withExposedPorts(9042);
-        cassandra.start();
-        return cassandra;
-    }
-
-    private static GenericContainer<?> startPostgres() {
-        GenericContainer<?> postgres = new GenericContainer<>("postgres:12").withExposedPorts(5432);
-        postgres.start();
-        return postgres;
-    }
-
-    private static CassandraInit initCassandra(UnearthlyCassandraConfig cassandra) {
-        return new CassandraInit(
-            cassandra.getHost(),
-            cassandra.getPort(),
-            cassandra.getDc(),
-            cassandra.getKeyspace()
-        ).init();
-    }
-
-    private static UnearthlyConfig testConfig(
-        GenericContainer<?> cassandraContainer,
-        GenericContainer<?> postgresContainer
-    ) {
-        return new UnearthlyConfig(
-            "/api/test",
-            "localhost",
-            0,
-            true,
-            true,
-            cassandraConfig(cassandraContainer),
-            postgresConfig(postgresContainer));
-    }
-
-    private static UnearthlyCassandraConfig cassandraConfig(GenericContainer<?> cassandraContainer) {
-        return new UnearthlyCassandraConfig(
-            cassandraContainer.getContainerIpAddress(),
-            cassandraContainer.getFirstMappedPort(),
-            "datacenter1",
-            "testing");
-    }
-
-    private static UnearthlyDbConfig postgresConfig(GenericContainer<?> postgresContainer) {
-        String postgresIP = postgresContainer.getContainerIpAddress();
-        Integer postgresPort = postgresContainer.getFirstMappedPort();
-        String postgresSchema = "postgres";
-        String postgresJdbc = "jdbc:postgresql://" + postgresIP + ":" + postgresPort + "/" + postgresSchema;
-        return new UnearthlyDbConfig(
-            postgresIP,
-            "postgres",
-            "",
-            postgresPort,
-            postgresSchema,
-            postgresJdbc);
-    }
 }
