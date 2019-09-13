@@ -34,11 +34,9 @@ import org.junit.Test;
 
 import javax.sql.DataSource;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class JdbcStorageTest {
 
@@ -63,38 +61,75 @@ public class JdbcStorageTest {
 
     @Test
     public void smoke() {
-        assertTrue(feed.limit().isEmpty());
+        assertThat(feed.limit()).isEmpty();
     }
 
     @Test
     public void emptyLimits() {
-        assertTrue(feed.limit().isEmpty());
-        assertTrue(feed.limit(new FaultId(UUID.randomUUID())).isEmpty());
-        assertTrue(feed.limit(new FaultStrandId(UUID.randomUUID())).isEmpty());
+        assertThat(feed.limit()).isEmpty();
+        assertThat(feed.limit(new FaultId(UUID.randomUUID()))).isEmpty();
+        assertThat(feed.limit(new FaultStrandId(UUID.randomUUID()))).isEmpty();
+    }
+
+    @Test
+    public void storeTwiceAndRetrieve() {
+        FeedEntry event1 = store("testdata/exception3.txt");
+        assertThat(event1.getGlobalSequenceNo()).isEqualTo(1L);
+        assertThat(event1.getFaultSequenceNo()).isEqualTo(1L);
+        assertThat(event1.getFaultSequenceNo()).isEqualTo(1L);
+
+        FeedEntry event2 = store("testdata/exception3.txt");
+        assertThat(event2.getGlobalSequenceNo()).isEqualTo(2L);
+        assertThat(event2.getFaultSequenceNo()).isEqualTo(2L);
+        assertThat(event2.getFaultStrandSequenceNo()).isEqualTo(2L);
+
+        List<FeedEntry> feed = this.feed.feed(0, 10);
+        assertThat(feed.size()).isEqualTo(2);
+    }
+
+    @Test
+    public void storeVariantAndRetrieve() {
+        FeedEntry event1 = store("testdata/exception3.txt");
+        assertThat(event1.getGlobalSequenceNo()).isEqualTo(1L);
+        assertThat(event1.getFaultSequenceNo()).isEqualTo(1L);
+        assertThat(event1.getFaultSequenceNo()).isEqualTo(1L);
+
+        FeedEntry event2 = store("testdata/exception3a.txt");
+        assertThat(event2.getGlobalSequenceNo()).isEqualTo(2L);
+        assertThat(event2.getFaultSequenceNo()).isEqualTo(1L);
+        assertThat(event2.getFaultStrandSequenceNo()).isEqualTo(2L);
+
+        List<FeedEntry> feed = this.feed.feed(0, 10);
+        assertThat(feed.size()).isEqualTo(2);
     }
 
     @Test
     public void storeAndRetrieve() {
-        String data = IO.readPath("testdata/exception3.txt");
-        assertNotNull(data);
-        Throwable parse = ThrowableParser.parse(data);
-        FeedEntry event = storage.store(
-            null,
-            Fault.create(parse),
-            null);
-        Optional<FeedEntry> faultEvent = storage.getFeedEntry(event.getId());
+        FeedEntry event = store("testdata/exception3.txt");
 
-        assertThat(faultEvent.isPresent(), is(true));
-        assertThat(faultEvent.get().getId(), is(event.getId()));
+        assertThat(storage.getFeedEntry(event.getId())).hasValueSatisfying(feedEntry ->
+            assertThat(feedEntry.getId()).isEqualTo(event.getId()));
 
-        assertThat(storage.getFault(event.getFaultEvent().getFaultId()).isPresent(), is(true));
-        assertThat(storage.getFaultStrand(event.getFaultEvent().getFaultStrandId()).isPresent(), is(true));
+        assertThat(storage.getFault(event.getFaultEvent().getFaultId())).isPresent();
+        assertThat(storage.getFaultStrand(event.getFaultEvent().getFaultStrandId())).isPresent();
 
-        assertThat(feed.limit().isEmpty(), is(false));
-        assertThat(feed.limit().getAsLong(), is(1L));
+        assertThat(feed.limit()).hasValue(1L);
 
         List<FeedEntry> feed = this.feed.feed(0, 10);
-        assertThat(feed.size(), is(1));
+        assertThat(feed.size()).isEqualTo(1);
+    }
+
+    private FeedEntry store(String name) {
+        String data = IO.readPath(name);
+        Throwable parse = ThrowableParser.parse(data);
+        return event(parse);
+    }
+
+    private FeedEntry event(Throwable parse) {
+        return storage.store(
+                null,
+                Fault.create(parse),
+                null);
     }
 
     @After

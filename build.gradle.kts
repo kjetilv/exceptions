@@ -34,6 +34,8 @@ val swaggerUiVer = "3.23.0"
 val kotlinVer = "1.3.40"
 val testcontainersVer = "1.12.0"
 val hsqldbVer = "2.5.0"
+val assertjVer = "3.13.2"
+
 
 plugins {
     kotlin("jvm") version "1.3.40"
@@ -110,6 +112,7 @@ allprojects {
             testCompile("org.http4k:http4k-client-apache:$http4kVer")
             testCompile("junit:junit:$junitVer")
 
+            testCompile("org.assertj:assertj-core:3.13.2:$assertjVer")
             testCompile("org.testcontainers:cassandra:$testcontainersVer")
 
             testRuntime("org.hsqldb:hsqldb:$hsqldbVer")

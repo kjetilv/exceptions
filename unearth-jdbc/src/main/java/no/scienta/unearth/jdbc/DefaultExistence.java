@@ -63,11 +63,18 @@ class DefaultExistence<T> implements Session.Existence<T> {
     @Override
     public Session.Outcome go() {
         Optional<T> existing = existing();
-        existing.ifPresentOrElse(
-            update == null ? noUpdate() : update,
-            insert == null ? noInsert() : insert
-        );
-        return existing.isPresent() ? Session.Outcome.UPDATED : Session.Outcome.INSERTED;
+        if (existing.isPresent()) {
+            if (update == null) {
+                return Session.Outcome.NOOP;
+            }
+            existing.ifPresent(update);
+            return Session.Outcome.UPDATED;
+        }
+        if (insert == null) {
+            return Session.Outcome.NOOP;
+        }
+        insert.run();
+        return Session.Outcome.INSERTED;
     }
 
     private Optional<T> existing() {

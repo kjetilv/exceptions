@@ -32,14 +32,11 @@ import no.scienta.unearth.turbo.UnearthlyTurboFilter
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
-import java.time.Clock
 import java.util.*
 import java.util.stream.Stream
 import javax.sql.DataSource
 
 class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> Unearth.State {
-
-    private val clock: Clock = Clock.systemDefaultZone()
 
     interface State {
 

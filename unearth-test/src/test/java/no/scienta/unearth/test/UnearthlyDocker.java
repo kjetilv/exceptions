@@ -17,12 +17,12 @@
 
 package no.scienta.unearth.test;
 
-public class UnearthlyDocker {
+public final class UnearthlyDocker {
+
+    private UnearthlyDocker() {
+    }
 
     public static void main(String[] args) {
-        Runtime.getRuntime().addShutdownHook(new Thread(
-            new DockerStartup()::stop,
-            "Stop the world"
-        ));
+        Runtime.getRuntime().addShutdownHook(new Thread(new DockerStartup()::stop));
     }
 }

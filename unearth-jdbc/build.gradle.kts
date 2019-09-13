@@ -23,6 +23,7 @@ dependencies {
     compile("org.flywaydb:flyway-core")
 
     testImplementation("com.zaxxer:HikariCP")
+    testImplementation("org.assertj:assertj-core")
     testRuntime("org.hsqldb:hsqldb")
 }
 

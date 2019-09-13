@@ -15,12 +15,11 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-@file:Suppress("UNNECESSARY_NOT_NULL_ASSERTION") // Can't be!
+@file:Suppress("UNNECESSARY_NOT_NULL_ASSERTION")
 
 package no.scienta.unearth.main
 
-import org.postgresql.Driver
-
 fun main() {
+
     no.scienta.unearth.server.Unearth()()!!
 }

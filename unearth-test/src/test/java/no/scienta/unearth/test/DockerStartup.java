@@ -30,6 +30,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 
+@SuppressWarnings({"FieldCanBeLocal", "WeakerAccess", "SameParameterValue"})
 public final class DockerStartup implements Closeable {
 
     private final Unearth.State state;
@@ -41,6 +42,12 @@ public final class DockerStartup implements Closeable {
     private final GenericContainer postgres;
 
     private final CassandraInit init;
+
+    private static final String CASSANDRA_IMAGE = "cassandra:3.11.4";
+
+    private static final String POSTGRES_IMAGE = "postgres:12";
+
+    private static final String DATACENTER = "datacenter1";
 
     DockerStartup() {
         ScheduledExecutorService exec = Executors.newScheduledThreadPool(2);
@@ -55,12 +62,17 @@ public final class DockerStartup implements Closeable {
             throw new IllegalStateException("Failed", e);
         }
 
-        UnearthlyConfig config = testConfig(cassandra, postgres);
+        UnearthlyConfig config = new UnearthlyConfig(
+            "/api/test",
+            "localhost",
+            0,
+            true,
+            true,
+            cassandraConfig(cassandra, "testing"),
+            postgresConfig(postgres, "postgres"));
 
         init = initCassandra(config.getCassandra());
-
         state = new Unearth(config).invoke();
-
         client = UnearthlyClient.connect(state.url());
     }
 
@@ -94,13 +106,13 @@ public final class DockerStartup implements Closeable {
 
     private static GenericContainer<?> startCassandra() {
         GenericContainer<?> cassandra =
-            new GenericContainer<>("cassandra:3.11.4").withExposedPorts(9042);
+            new GenericContainer<>(CASSANDRA_IMAGE).withExposedPorts(9042);
         cassandra.start();
         return cassandra;
     }
 
     private static GenericContainer<?> startPostgres() {
-        GenericContainer<?> postgres = new GenericContainer<>("postgres:12").withExposedPorts(5432);
+        GenericContainer<?> postgres = new GenericContainer<>(POSTGRES_IMAGE).withExposedPorts(5432);
         postgres.start();
         return postgres;
     }
@@ -114,39 +126,30 @@ public final class DockerStartup implements Closeable {
         ).init();
     }
 
-    private static UnearthlyConfig testConfig(
+    private static UnearthlyCassandraConfig cassandraConfig(
         GenericContainer<?> cassandraContainer,
-        GenericContainer<?> postgresContainer
+        String keyspace
     ) {
-        return new UnearthlyConfig(
-            "/api/test",
-            "localhost",
-            0,
-            true,
-            true,
-            cassandraConfig(cassandraContainer),
-            postgresConfig(postgresContainer));
-    }
-
-    private static UnearthlyCassandraConfig cassandraConfig(GenericContainer<?> cassandraContainer) {
         return new UnearthlyCassandraConfig(
             cassandraContainer.getContainerIpAddress(),
             cassandraContainer.getFirstMappedPort(),
-            "datacenter1",
-            "testing");
+            DATACENTER,
+            keyspace);
     }
 
-    private static UnearthlyDbConfig postgresConfig(GenericContainer<?> postgresContainer) {
+    private static UnearthlyDbConfig postgresConfig(
+        GenericContainer<?> postgresContainer,
+        String schema
+    ) {
         String postgresIP = postgresContainer.getContainerIpAddress();
         Integer postgresPort = postgresContainer.getFirstMappedPort();
-        String postgresSchema = "postgres";
-        String postgresJdbc = "jdbc:postgresql://" + postgresIP + ":" + postgresPort + "/" + postgresSchema;
+        String postgresJdbc = "jdbc:postgresql://" + postgresIP + ":" + postgresPort + "/" + schema;
         return new UnearthlyDbConfig(
             postgresIP,
             "postgres",
             "",
             postgresPort,
-            postgresSchema,
+            schema,
             postgresJdbc);
     }
 }
