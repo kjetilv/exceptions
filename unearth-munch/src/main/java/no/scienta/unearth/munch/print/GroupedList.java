@@ -38,7 +38,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-public class GroupedList<G, T> {
+public final class GroupedList<G, T> {
 
     private final Deque<Group<G, T>> groups = new LinkedList<>();
 

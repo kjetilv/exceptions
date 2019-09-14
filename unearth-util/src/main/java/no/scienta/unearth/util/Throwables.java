@@ -41,7 +41,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class Throwables {
+public final class Throwables {
+
+    private Throwables() {
+    }
 
     public static ByteBuffer byteBuffer(Throwable throwable) {
         return ByteBuffer.wrap(bytes(throwable));

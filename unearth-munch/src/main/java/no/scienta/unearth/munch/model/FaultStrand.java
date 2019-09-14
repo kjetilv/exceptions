@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 /**
  * A fault strand consists of a list of {@link CauseStrand cause strand}.
  */
-public class FaultStrand extends AbstractHashableIdentifiable<FaultStrandId> {
+public final class FaultStrand extends AbstractHashableIdentifiable<FaultStrandId> {
 
     private final List<CauseStrand> causeStrands;
 
@@ -66,9 +66,8 @@ public class FaultStrand extends AbstractHashableIdentifiable<FaultStrandId> {
 
     @Override
     protected String toStringBody() {
-        return "(" +
-            causeStrands.stream().map(Objects::toString).collect(Collectors.joining(" <= ")) +
-            ")";
+        return "[" + causeStrands.size() + "] " +
+            causeStrands.stream().map(Objects::toString).collect(Collectors.joining(" <= "));
     }
 
     @Override

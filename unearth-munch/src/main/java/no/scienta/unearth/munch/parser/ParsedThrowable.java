@@ -22,7 +22,7 @@ import no.scienta.unearth.munch.print.CauseFrame;
 
 import java.util.Arrays;
 
-class ParsedThrowable {
+final class ParsedThrowable {
 
     private final ExceptionHeading exceptionHeading;
 

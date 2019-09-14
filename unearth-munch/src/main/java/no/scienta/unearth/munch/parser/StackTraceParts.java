@@ -22,7 +22,7 @@ import no.scienta.unearth.munch.print.CauseFrame;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-class StackTraceParts {
+final class StackTraceParts {
 
     private final StackTraceEntry parser;
 

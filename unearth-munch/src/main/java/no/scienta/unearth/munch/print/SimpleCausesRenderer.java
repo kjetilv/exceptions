@@ -22,7 +22,7 @@ import no.scienta.unearth.util.Streams;
 
 import java.util.Collection;
 
-public class SimpleCausesRenderer implements CausesRenderer {
+public final class SimpleCausesRenderer implements CausesRenderer {
 
     private final StackRenderer renderer;
 

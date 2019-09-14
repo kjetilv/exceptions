@@ -72,10 +72,5 @@ public abstract class AbstractHashableIdentifiable<I extends Id>
         return id.get();
     }
 
-    @Override
-    protected final Object toStringIdentifier() {
-        return getId();
-    }
-
     protected abstract I id(UUID hash);
 }

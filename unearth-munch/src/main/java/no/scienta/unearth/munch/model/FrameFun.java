@@ -26,25 +26,26 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@SuppressWarnings({"WeakerAccess", "unused"})
 public final class FrameFun {
 
-    public static ConfigurableStackRenderer.FrameTransform UNSET_MODULE_INFO = CauseFrame::unsetModuleInfo;
+    public static final ConfigurableStackRenderer.FrameTransform UNSET_MODULE_INFO = CauseFrame::unsetModuleInfo;
 
-    public static ConfigurableStackRenderer.FrameTransform UNSET_CLASSLOADER = CauseFrame::unsetClassLoader;
+    public static final ConfigurableStackRenderer.FrameTransform UNSET_CLASSLOADER = CauseFrame::unsetClassLoader;
 
-    public static ConfigurableStackRenderer.FrameTransform LIKE_JAVA_8 =
+    public static final ConfigurableStackRenderer.FrameTransform LIKE_JAVA_8 =
         UNSET_MODULE_INFO.andThen(UNSET_CLASSLOADER)::apply;
 
-    public static ConfigurableStackRenderer.FrameLister JUST_COUNT =
+    public static final ConfigurableStackRenderer.FrameLister JUST_COUNT =
         FrameFun::justTheCount;
 
-    public static ConfigurableStackRenderer.FrameLister JUST_COUNT_AND_TOP =
+    public static final ConfigurableStackRenderer.FrameLister JUST_COUNT_AND_TOP =
         FrameFun::justTheCountAndTop;
 
-    public static ConfigurableStackRenderer.GroupedFrameTransform SHORTEN_CLASSNAME =
+    public static final ConfigurableStackRenderer.GroupedFrameTransform SHORTEN_CLASSNAME =
         FrameFun::shortenClassName;
 
-    public static ConfigurableStackRenderer.FrameTransform SHORTEN_CLASSNAMES = FrameFun::shortenClassName;
+    public static final ConfigurableStackRenderer.FrameTransform SHORTEN_CLASSNAMES = FrameFun::shortenClassName;
 
     private FrameFun() {
     }

@@ -27,7 +27,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ConfigurableStackRenderer implements StackRenderer {
+public final class ConfigurableStackRenderer implements StackRenderer {
 
     private final List<GroupedFrameTransform> reshapers;
 

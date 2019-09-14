@@ -36,7 +36,7 @@ package no.scienta.unearth.munch;
 
 import java.util.Objects;
 
-public class ChameleonException extends Exception {
+public final class ChameleonException extends Exception {
 
     private final String proxiedClassName;
 

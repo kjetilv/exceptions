@@ -1,5 +1,4 @@
-java.lang.IllegalStateException: Internal server error: (POST http://localhost:53000/api/test/something-else) 500
-java.lang.IllegalStateException: Statement failed: insert into cause_frame (  id, class_loader, module, module_ver, class_name, method, file, line, native) values (  ?, ?, ?, ?, ?, ?, ?, ?, ?)
+java.lang.IllegalStateException: Statement failed: bad bad sql!
 	at no.scienta.unearth.jdbc.Session.insertBatch(Session.java:120)
 	at no.scienta.unearth.jdbc.JdbcStorage.insertCauseFrames(JdbcStorage.java:356)
 	at no.scienta.unearth.jdbc.JdbcStorage.lambda$store$0(JdbcStorage.java:58)

@@ -32,9 +32,10 @@ import java.util.stream.Collectors;
 /**
  * A cause has a {@link CauseStrand cause strand} and a given {@link #message message}.
  */
-public class Cause extends AbstractHashableIdentifiable<CauseId> {
+public final class Cause extends AbstractHashableIdentifiable<CauseId> {
 
     private final String message;
+
     private final CauseStrand causeStrand;
 
     private Cause(String message, CauseStrand causeStrand) {

@@ -426,11 +426,11 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         }
         Map<UUID, CauseFrame> identifiedFrames = Util.byId(causeFrames, CauseFrame::getHash);
         return session.exists(
-            "select id from cause_frame where id in" +
-                " (" + causeFrames.stream().map(__ -> "?").collect(Collectors.joining(", ")) + ")",
+            "select id from cause_frame where id in " +
+                '(' + Streams.args(causeFrames) + ')',
             causeFrames,
             stmt ->
-                Streams.quickReduce(causeFrames.stream(), (stmt1, causeFrame) -> stmt.set(causeFrame)),
+                Streams.quickReduce(causeFrames.stream(), stmt, Stmt::set),
             res ->
                 identifiedFrames.get(res.getUUID())
         ).onInsert(newFrames ->

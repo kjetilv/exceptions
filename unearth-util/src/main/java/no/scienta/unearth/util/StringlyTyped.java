@@ -48,9 +48,17 @@ public abstract class StringlyTyped {
         return value;
     }
 
+    private static String norm(String s) {
+        return blank(s) ? "" : s;
+    }
+
+    private static boolean blank(String s) {
+        return s == null || s.length() == 0 || s.isBlank();
+    }
+
     @Override
-    public String toString() {
-        return value;
+    public int hashCode() {
+        return value.hashCode();
     }
 
     @Override
@@ -60,15 +68,7 @@ public abstract class StringlyTyped {
     }
 
     @Override
-    public int hashCode() {
-        return value.hashCode();
-    }
-
-    private static String norm(String s) {
-        return blank(s) ? "" : s;
-    }
-
-    private static boolean blank(String s) {
-        return s == null || s.length() == 0 || s.isBlank();
+    public String toString() {
+        return value;
     }
 }

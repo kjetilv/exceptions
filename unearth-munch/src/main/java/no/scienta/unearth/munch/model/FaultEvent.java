@@ -30,7 +30,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 @SuppressWarnings("unused")
-public class FaultEvent extends AbstractHashableIdentifiable<FeedEntryId> {
+public final class FaultEvent extends AbstractHashableIdentifiable<FeedEntryId> {
 
     private final Integer throwableHashCode;
 

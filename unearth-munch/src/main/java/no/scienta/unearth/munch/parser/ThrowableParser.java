@@ -43,13 +43,16 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class ThrowableParser {
+public final class ThrowableParser {
 
     private static final String CAUSED_BY = "Caused by: ";
 
     private static final String EXCEPTION = Exception.class.getSimpleName();
 
     private static final String ERROR = Error.class.getSimpleName();
+
+    private ThrowableParser() {
+    }
 
     public static Throwable parse(ByteBuffer buffer) {
         return parse(new String(buffer.array(), StandardCharsets.UTF_8));

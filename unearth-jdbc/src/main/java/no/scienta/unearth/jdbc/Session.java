@@ -58,6 +58,7 @@ public interface Session extends AutoCloseable {
     <T> T withStatement(String sql, Action<T> action);
 
     enum Outcome {
+
         INSERTED, UPDATED, INSERTED_AND_UPDATED, NOOP
     }
 

@@ -39,15 +39,23 @@ import no.scienta.unearth.util.StringlyTyped;
 
 import java.util.function.Consumer;
 
-public class CauseFrame extends AbstractHashable {
+@SuppressWarnings("unused")
+public final class CauseFrame extends AbstractHashable {
 
     private final ClassLoader classLoader;
+
     private final Module module;
+
     private final ModuleVer moduleVer;
+
     private final ClassName className;
+
     private final Method method;
+
     private final File file;
+
     private final Integer line;
+
     private final Boolean naytiv;
 
     public CauseFrame(

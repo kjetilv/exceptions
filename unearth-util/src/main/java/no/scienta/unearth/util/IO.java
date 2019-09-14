@@ -25,6 +25,9 @@ import java.nio.charset.StandardCharsets;
 
 public final class IO {
 
+    private IO() {
+    }
+
     public static String readPath(String name) {
         return readPath(null, name);
     }
@@ -52,8 +55,5 @@ public final class IO {
         } catch (IOException e) {
             throw new IllegalStateException("Failed to read " + name, e);
         }
-    }
-
-    private IO() {
     }
 }

@@ -26,9 +26,10 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-public class LogEntry extends AbstractHashableIdentifiable<FaultLogId> {
+public final class LogEntry extends AbstractHashableIdentifiable<FaultLogId> {
 
     private final String logMessage;
+
     private final String[] args;
 
     private LogEntry(

@@ -42,8 +42,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-@SuppressWarnings("WeakerAccess")
 public final class Streams {
+
+    private Streams() {
+    }
 
     public static <T> Stream<T> reverse(Stream<T> s) {
         return reverse(s.collect(Collectors.toList()));
@@ -79,7 +81,11 @@ public final class Streams {
             false);
     }
 
-    private static class ReverseSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
+    public static <T> String args(List<T> ts) {
+        return ts.stream().map(t -> "?").collect(Collectors.joining(", "));
+    }
+
+    private static final class ReverseSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
 
         private final List<T> s;
 
@@ -102,13 +108,13 @@ public final class Streams {
         }
     }
 
-    private static class NextSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
+    private static final class NextSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
 
         private final Function<T, T> next;
 
         private T current;
 
-        public NextSpliterator(T head, Function<T, T> next) {
+        private NextSpliterator(T head, Function<T, T> next) {
             super(Long.MAX_VALUE, Spliterator.IMMUTABLE | Spliterator.ORDERED);
             this.next = next;
             current = head;

@@ -42,6 +42,9 @@ import java.util.stream.Collectors;
 
 public final class Util {
 
+    private Util() {
+    }
+
     public static <T> Collection<T> orEmpty(Collection<T> t) {
         return t == null || t.isEmpty() ? Collections.emptyList() : List.copyOf(t);
     }
@@ -77,6 +80,12 @@ public final class Util {
             );
     }
 
+    static <T> BinaryOperator<T> noCombine() {
+        return (t1, t2) -> {
+            throw new IllegalStateException("No combine: " + t1 + " <> " + t2);
+        };
+    }
+
     private static <K, V> boolean singleEntry(Map.Entry<K, Set<V>> e) {
         if (e.getValue().isEmpty()) {
             return false;
@@ -85,14 +94,5 @@ public final class Util {
             return true;
         }
         throw new IllegalStateException("Multiple elements for " + e.getKey() + ": " + e.getValue());
-    }
-
-    static <T> BinaryOperator<T> noCombine() {
-        return (t1, t2) -> {
-            throw new IllegalStateException("No combine: " + t1 + " <> " + t2);
-        };
-    }
-
-    private Util() {
     }
 }

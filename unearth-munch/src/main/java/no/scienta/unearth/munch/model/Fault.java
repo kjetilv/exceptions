@@ -32,9 +32,11 @@ import java.util.stream.Collectors;
 /**
  * A fault has a {@link FaultStrand fault strand} and a list of {@link Cause causes}.
  */
-public class Fault extends AbstractHashableIdentifiable<FaultId> {
+@SuppressWarnings("unused")
+public final class Fault extends AbstractHashableIdentifiable<FaultId> {
 
     private final FaultStrand faultStrand;
+
     private final List<Cause> causes;
 
     private Fault(FaultStrand faultStrand, Collection<Cause> causes) {
@@ -42,7 +44,7 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
         this.causes = Util.orEmptyList(causes);
         if (this.faultStrand.getCauseCount() != this.causes.size()) {
             throw new IllegalStateException(
-                "Expected same arity: " + this.faultStrand.getCauseStrands().size() + "/" + this.causes.size());
+                "Expected same arity: " + this.faultStrand.getCauseStrands().size() + '/' + this.causes.size());
         }
     }
 
@@ -69,8 +71,7 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
     }
 
     public Throwable toChameleon() {
-        return Streams.quickReduce(Streams.reverse(causes), (throwable, cause) ->
-            cause.toChameleon(throwable));
+        return Streams.quickReduce(Streams.reverse(causes), (throwable, cause) -> cause.toChameleon(throwable));
     }
 
     @Override
@@ -86,6 +87,12 @@ public class Fault extends AbstractHashableIdentifiable<FaultId> {
 
     @Override
     protected String toStringBody() {
-        return "faultStrand:" + faultStrand + ": " + causes.size();
+        String ell = "...";
+        int len = 30;
+        return faultStrand + ", " + causes.stream()
+            .map(Cause::getMessage)
+            .map(message ->
+                message.length() > len ? message.substring(0, len - ell.length()) + ell : message)
+            .collect(Collectors.joining(" <= "));
     }
 }

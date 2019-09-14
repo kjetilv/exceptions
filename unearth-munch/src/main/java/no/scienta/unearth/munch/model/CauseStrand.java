@@ -24,7 +24,6 @@ import no.scienta.unearth.munch.print.CauseFrame;
 import no.scienta.unearth.util.Util;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -33,9 +32,10 @@ import java.util.stream.Collectors;
 /**
  * A cause strand consists of a stacktrace and an exception class name.
  */
-public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
+public final class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
 
     private final String className;
+
     private final List<CauseFrame> causeFrames;
 
     private CauseStrand(String className, List<CauseFrame> stackFrames) {
@@ -73,11 +73,11 @@ public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
     @Override
     protected String toStringBody() {
         int dotIndex = className.lastIndexOf(".");
-        return (dotIndex >= 0 ? className.substring(dotIndex + 1) : className) + " <" + causeFrames.size() + ">";
+        return (dotIndex >= 0 ? className.substring(dotIndex + 1) : className) + '/' + causeFrames.size();
     }
 
     private static List<CauseFrame> causeFrames(StackTraceElement[] stackTrace) {
-        return Collections.unmodifiableList(Arrays.stream(stackTrace).map(ste -> new CauseFrame(
+        return Arrays.stream(stackTrace).map(ste -> new CauseFrame(
             CauseFrame.ClassLoader(ste.getClassLoaderName()),
             CauseFrame.Module(ste.getModuleName()),
             CauseFrame.ModuleVer(ste.getModuleVersion()),
@@ -86,7 +86,7 @@ public class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
             CauseFrame.File(ste.getFileName()),
             ste.getLineNumber(),
             ste.isNativeMethod()
-        )).collect(Collectors.toList()));
+        )).collect(Collectors.toUnmodifiableList());
     }
 
     private static String className(Throwable throwable) {

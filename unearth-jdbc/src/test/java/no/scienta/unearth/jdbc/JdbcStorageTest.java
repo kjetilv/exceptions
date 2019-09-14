@@ -73,39 +73,49 @@ public class JdbcStorageTest {
 
     @Test
     public void storeTwiceAndRetrieve() {
-        FeedEntry event1 = store("testdata/exception3.txt");
+        Fault fault = fault("testdata/exception3.txt");
+        FeedEntry event1 = storage.store(null, fault, null);
         assertThat(event1.getGlobalSequenceNo()).isEqualTo(1L);
         assertThat(event1.getFaultSequenceNo()).isEqualTo(1L);
         assertThat(event1.getFaultSequenceNo()).isEqualTo(1L);
 
-        FeedEntry event2 = store("testdata/exception3.txt");
+        FeedEntry event2 = storage.store(null, fault, null);
         assertThat(event2.getGlobalSequenceNo()).isEqualTo(2L);
         assertThat(event2.getFaultSequenceNo()).isEqualTo(2L);
         assertThat(event2.getFaultStrandSequenceNo()).isEqualTo(2L);
 
         List<FeedEntry> feed = this.feed.feed(0, 10);
         assertThat(feed.size()).isEqualTo(2);
+
+        assertThat(storage.getFault(fault.getId())).hasValue(fault);
     }
 
     @Test
     public void storeVariantAndRetrieve() {
-        FeedEntry event1 = store("testdata/exception3.txt");
+        Fault fault1 = fault("testdata/exception3.txt");
+        Fault fault2 = fault("testdata/exception3a.txt");
+
+        FeedEntry event1 = storage.store(null, fault1, null);
         assertThat(event1.getGlobalSequenceNo()).isEqualTo(1L);
         assertThat(event1.getFaultSequenceNo()).isEqualTo(1L);
         assertThat(event1.getFaultSequenceNo()).isEqualTo(1L);
 
-        FeedEntry event2 = store("testdata/exception3a.txt");
+        FeedEntry event2 = storage.store(null, fault2, null);
         assertThat(event2.getGlobalSequenceNo()).isEqualTo(2L);
         assertThat(event2.getFaultSequenceNo()).isEqualTo(1L);
         assertThat(event2.getFaultStrandSequenceNo()).isEqualTo(2L);
 
         List<FeedEntry> feed = this.feed.feed(0, 10);
         assertThat(feed.size()).isEqualTo(2);
+
+        assertThat(storage.getFault(fault1.getId())).hasValue(fault1);
+        assertThat(storage.getFault(fault2.getId())).hasValue(fault2);
     }
 
     @Test
     public void storeAndRetrieve() {
-        FeedEntry event = store("testdata/exception3.txt");
+        Fault fault = fault("testdata/exception3.txt");
+        FeedEntry event = storage.store(null, fault, null);
 
         assertThat(storage.getFeedEntry(event.getId())).hasValueSatisfying(feedEntry ->
             assertThat(feedEntry.getId()).isEqualTo(event.getId()));
@@ -117,19 +127,8 @@ public class JdbcStorageTest {
 
         List<FeedEntry> feed = this.feed.feed(0, 10);
         assertThat(feed.size()).isEqualTo(1);
-    }
 
-    private FeedEntry store(String name) {
-        String data = IO.readPath(name);
-        Throwable parse = ThrowableParser.parse(data);
-        return event(parse);
-    }
-
-    private FeedEntry event(Throwable parse) {
-        return storage.store(
-                null,
-                Fault.create(parse),
-                null);
+        assertThat(storage.getFault(fault.getId())).hasValue(fault);
     }
 
     @After
@@ -137,7 +136,13 @@ public class JdbcStorageTest {
         storage.close();
     }
 
-    private FaultStorage storage(DataSource dataSource) {
+    private static Fault fault(String reference) {
+        String data = IO.readPath(reference);
+        Throwable parse = ThrowableParser.parse(data);
+        return Fault.create(parse);
+    }
+
+    private static FaultStorage storage(DataSource dataSource) {
         return new JdbcStorage(dataSource, "unearth");
     }
 }

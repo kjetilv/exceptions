@@ -41,7 +41,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 @SuppressWarnings("unused")
-public class FeedEntry extends AbstractHashableIdentifiable<FeedEntryId> {
+public final class FeedEntry extends AbstractHashableIdentifiable<FeedEntryId> {
 
     private final FaultEvent faultEvent;
 

@@ -55,8 +55,9 @@ public abstract class AbstractHashable implements Hashable {
      */
     private final Supplier<UUID> hash = MostlyOnce.get(uuid(this));
 
-    private final Supplier<String> toString = MostlyOnce.get(() ->
-        getClass().getSimpleName() + "[" + toStringIdentifier() + toStringContents() + "]");
+    private final Supplier<String> toString =
+        MostlyOnce.get(() ->
+            getClass().getSimpleName() + '[' + toStringIdentifier() + toStringContents() + ']');
     private static final String HASH = "MD5";
 
     @Override
@@ -64,11 +65,11 @@ public abstract class AbstractHashable implements Hashable {
         return hash.get();
     }
 
-    protected final void hash(Consumer<byte[]> hash, String... strings) {
+    protected static void hash(Consumer<byte[]> hash, String... strings) {
         hashStrings(hash, Arrays.asList(strings));
     }
 
-    protected final void hash(Consumer<byte[]> h, Id... ids) {
+    protected static void hash(Consumer<byte[]> h, Id... ids) {
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * 2 * ids.length);
         for (Id id : ids) {
             UUID uuid = id.getHash();
@@ -78,11 +79,11 @@ public abstract class AbstractHashable implements Hashable {
         h.accept(buffer.array());
     }
 
-    protected final void hash(Consumer<byte[]> h, Hashable... hashables) {
+    protected static void hash(Consumer<byte[]> h, Hashable... hashables) {
         hash(h, Arrays.asList(hashables));
     }
 
-    protected final void hash(Consumer<byte[]> hash, Long... values) {
+    protected static void hash(Consumer<byte[]> hash, Long... values) {
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * values.length);
         for (Long value : values) {
             if (value != null) {
@@ -92,7 +93,7 @@ public abstract class AbstractHashable implements Hashable {
         hash.accept(buffer.array());
     }
 
-    protected final void hashLongs(Consumer<byte[]> hash, long... values) {
+    protected static void hashLongs(Consumer<byte[]> hash, long... values) {
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * values.length);
         for (long value : values) {
             buffer.putLong(value);
@@ -100,7 +101,7 @@ public abstract class AbstractHashable implements Hashable {
         hash.accept(buffer.array());
     }
 
-    protected final void hash(Consumer<byte[]> hash, Integer... values) {
+    protected static void hash(Consumer<byte[]> hash, Integer... values) {
         ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES * values.length);
         for (Integer value : values) {
             if (value != null) {
@@ -110,7 +111,7 @@ public abstract class AbstractHashable implements Hashable {
         hash.accept(buffer.array());
     }
 
-    protected final void hashInts(Consumer<byte[]> hash, int... values) {
+    protected static void hashInts(Consumer<byte[]> hash, int... values) {
         ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES * values.length);
         for (int value : values) {
             buffer.putInt(value);
@@ -118,7 +119,7 @@ public abstract class AbstractHashable implements Hashable {
         hash.accept(buffer.array());
     }
 
-    protected final void hash(Consumer<byte[]> h, Collection<? extends Hashable> hasheds) {
+    protected static void hash(Consumer<byte[]> h, Collection<? extends Hashable> hasheds) {
         for (Hashable hashable : hasheds) {
             if (hashable != null) {
                 hashable.hashTo(h);
@@ -126,11 +127,12 @@ public abstract class AbstractHashable implements Hashable {
         }
     }
 
-    protected Object toStringIdentifier() {
-        return getHash();
+    private Object toStringIdentifier() {
+        String hash = getHash().toString();
+        return hash.substring(0, hash.indexOf("-"));
     }
 
-    protected String toStringBody() {
+    protected Object toStringBody() {
         return null;
     }
 
@@ -156,7 +158,7 @@ public abstract class AbstractHashable implements Hashable {
         }
     }
 
-    private void hashStrings(Consumer<byte[]> hash, Collection<String> strings) {
+    private static void hashStrings(Consumer<byte[]> hash, Collection<String> strings) {
         strings.stream()
             .filter(Objects::nonNull)
             .forEach(s ->
@@ -164,8 +166,15 @@ public abstract class AbstractHashable implements Hashable {
     }
 
     private String toStringContents() {
-        String body = toStringBody();
-        return body == null || body.isBlank() ? "" : " " + body.trim();
+        Object body = toStringBody();
+        if (body == null) {
+            return "";
+        }
+        String string = body.toString().trim();
+        if (string.isBlank()) {
+            return "";
+        }
+        return ' ' + string;
     }
 
     @Override
