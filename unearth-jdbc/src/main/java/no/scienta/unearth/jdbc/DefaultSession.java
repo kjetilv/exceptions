@@ -60,17 +60,16 @@ final class DefaultSession implements Session {
     }
 
     @Override
-    public void update(String sql, Set set) {
-        withStatement(sql, (ps, stmt) -> {
+    public int update(String sql, Set set) {
+        return withStatement(sql, (ps, stmt) -> {
             set.set(stmt);
-            ps.executeUpdate();
-            return null;
+            return ps.executeUpdate();
         });
     }
 
     @Override
-    public <T> void updateBatch(String sql, Collection<T> items, BatchSet<T> set) {
-        withStatement(sql, (ps, stmt) ->
+    public <T> int[] updateBatch(String sql, Collection<T> items, BatchSet<T> set) {
+        return withStatement(sql, (ps, stmt) ->
             statementWithItems(ps, stmt, set, items).executeBatch());
     }
 

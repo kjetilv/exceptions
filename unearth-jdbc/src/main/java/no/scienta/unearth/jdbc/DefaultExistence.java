@@ -18,7 +18,6 @@
 package no.scienta.unearth.jdbc;
 
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -32,9 +31,9 @@ class DefaultExistence<T> implements Session.Existence<T> {
 
     private final Session.Sel<T> sel;
 
-    private Consumer<T> update;
+    private Function<T, Integer> update;
 
-    private Runnable insert;
+    private Supplier<Integer> insert;
 
     DefaultExistence(DefaultSession session, String sql, Session.Set set, Session.Sel<T> sel) {
         this.session = session;
@@ -44,13 +43,13 @@ class DefaultExistence<T> implements Session.Existence<T> {
     }
 
     @Override
-    public Session.Existence<T> onUpdate(Consumer<T> update) {
+    public Session.Existence<T> onUpdate(Function<T, Integer> update) {
         this.update = update;
         return this;
     }
 
     @Override
-    public Session.Existence<T> onInsert(Runnable insert) {
+    public Session.Existence<T> onInsert(Supplier<Integer> insert) {
         this.insert = insert;
         return this;
     }
@@ -67,27 +66,19 @@ class DefaultExistence<T> implements Session.Existence<T> {
             if (update == null) {
                 return Session.Outcome.NOOP;
             }
-            existing.ifPresent(update);
-            return Session.Outcome.UPDATED;
+            return existing.map(update)
+                .filter(i -> i > 0)
+                .map(i -> Session.Outcome.UPDATED)
+                .orElse(Session.Outcome.NOOP);
         }
         if (insert == null) {
             return Session.Outcome.NOOP;
         }
-        insert.run();
-        return Session.Outcome.INSERTED;
+        Integer inserted = insert.get();
+        return inserted != null && inserted > 0 ? Session.Outcome.INSERTED : Session.Outcome.NOOP;
     }
 
     private Optional<T> existing() {
         return session.select(sql, set, sel).stream().findFirst();
-    }
-
-    private static Runnable noInsert() {
-        return () -> {
-        };
-    }
-
-    private static <T> Consumer<T> noUpdate() {
-        return t -> {
-        };
     }
 }

@@ -81,7 +81,7 @@ public final class Streams {
             false);
     }
 
-    public static <T> String args(List<T> ts) {
+    public static <T> String args(Collection<T> ts) {
         return ts.stream().map(t -> "?").collect(Collectors.joining(", "));
     }
 

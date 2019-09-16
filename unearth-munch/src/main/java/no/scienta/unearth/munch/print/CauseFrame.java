@@ -207,8 +207,15 @@ public final class CauseFrame extends AbstractHashable {
 
     @Override
     public void hashTo(Consumer<byte[]> h) {
-        hash(h, classLoader.getValue(), module.getValue(), moduleVer.getValue(), className.getValue(), file.getValue());
+        hash(h,
+            classLoader.getValue(),
+            module.getValue(),
+            moduleVer.getValue(),
+            className.getValue(),
+            file.getValue(),
+            method.getValue());
         hashInts(h, line);
+        hashBools(h, naytiv);
     }
 
     @Override

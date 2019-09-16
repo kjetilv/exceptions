@@ -23,9 +23,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public interface Session extends AutoCloseable {
@@ -48,9 +48,13 @@ public interface Session extends AutoCloseable {
 
     <T> MultiExistence<T> exists(String sql, Collection<T> items, Set set, Sel<T> selector);
 
-    void update(String sql, Set set);
+    int update(String sql, Set set);
 
-    <T> void updateBatch(String sql, Collection<T> items, BatchSet<T> set);
+    <T> int[] updateBatch(String sql, Collection<T> items, BatchSet<T> set);
+
+    default <T> int updateBatchTotal(String sql, Collection<T> items, BatchSet<T> set) {
+        return IntStream.of(updateBatch(sql, items, set)).sum();
+    }
 
     @Override
     void close();
@@ -93,9 +97,9 @@ public interface Session extends AutoCloseable {
 
     interface Existence<T> {
 
-        Existence<T> onUpdate(Consumer<T> update);
+        Existence<T> onUpdate(Function<T, Integer> update);
 
-        Existence<T> onInsert(Runnable insert);
+        Existence<T> onInsert(Supplier<Integer> insert);
 
         default <R> Optional<R> thenLoad(Function<T, Optional<R>> load) {
             return Optional.ofNullable(thenLoad(load, () -> null));
@@ -108,9 +112,9 @@ public interface Session extends AutoCloseable {
 
     interface MultiExistence<T> {
 
-        MultiExistence<T> onUpdate(Consumer<Collection<T>> inserter);
+        MultiExistence<T> onUpdate(Function<Collection<T>, Integer> inserter);
 
-        MultiExistence<T> onInsert(Consumer<Collection<T>> inserter);
+        MultiExistence<T> onInsert(Function<Collection<T>, Integer> inserter);
 
         Outcome go();
     }

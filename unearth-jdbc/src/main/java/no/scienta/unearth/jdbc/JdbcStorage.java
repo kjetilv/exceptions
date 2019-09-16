@@ -319,35 +319,36 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         Outcome faultStrandOutcome = storeFaultStrand(fault.getFaultStrand(), session);
         if (inserted(faultStrandOutcome)) {
             log.debug("Inserted fault strand: {}", fault.getFaultStrand());
-        } else {
-            log.debug("Already known fault strand: {}", fault.getFaultStrand());
-        }
-        if (inserted(storeFault(fault, session))) {
-            log.debug("Inserted fault: {}", fault);
-        } else {
-            log.debug("Already known fault: {}", fault);
-        }
-        if (inserted(faultStrandOutcome)) {
-            Map<CauseStrand, Outcome> causeStrandOutcomeMap = storeCauseStrands(fault, session);
-            causeStrandOutcomeMap.forEach((causeStrand, strandOutcome) -> {
+            Map<CauseStrand, Outcome> causeStrandOutcomes = storeCauseStrands(fault, session);
+            causeStrandOutcomes.forEach((causeStrand, strandOutcome) -> {
                 log.debug("Inserted cause strand: {}", causeStrand);
                 if (inserted(storeCauseFrames(session, causeStrand))) {
                     log.debug("Inserted cause frames for {}", causeStrand);
-                    linkCauseStrandToCauseFrames(session, causeStrand);
                 } else {
                     log.debug("No new cause frames inserted for {}", causeStrand);
                 }
+                linkCauseStrandToCauseFrames(session, causeStrand);
             });
-            Map<Cause, Outcome> causeOutcomeMap = storeCauses(fault, session);
-            causeOutcomeMap.forEach((cause, causeOutCome) -> {
-                if (inserted(causeOutCome)) {
-                    log.debug("Inserted cause: {}", cause);
-                } else {
-                    log.debug("Already known cause: {}", cause);
-                }
-            });
-            linkFaultToCause(session, fault);
-            linkFaultStrandToCauseStrands(session, fault.getFaultStrand());
+        } else {
+            log.debug("Already known fault strand: {}", fault.getFaultStrand());
+        }
+        Outcome faultOutcome = storeFault(fault, session);
+        if (inserted(faultOutcome)) {
+            log.debug("Inserted fault: {}", fault);
+            if (inserted(faultOutcome)) {
+                Map<Cause, Outcome> causeOutcomes = storeCauses(fault, session);
+                causeOutcomes.forEach((cause, causeOutCome) -> {
+                    if (inserted(causeOutCome)) {
+                        log.debug("Inserted cause: {}", cause);
+                    } else {
+                        log.debug("Already known cause: {}", cause);
+                    }
+                });
+                linkFaultToCauses(session, fault);
+                linkFaultStrandToCauseStrands(session, fault.getFaultStrand());
+            }
+        } else {
+            log.debug("Already known fault: {}", fault);
         }
     }
 
@@ -424,18 +425,22 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         if (causeFrames.isEmpty()) {
             return NOOP;
         }
-        Map<UUID, CauseFrame> identifiedFrames = Util.byId(causeFrames, CauseFrame::getHash);
+        Map<UUID, CauseFrame> identifiedFrames = byId(causeFrames);
         return session.exists(
             "select id from cause_frame where id in " +
-                '(' + Streams.args(causeFrames) + ')',
+                '(' + Streams.args(identifiedFrames.keySet()) + ')',
             causeFrames,
             stmt ->
-                Streams.quickReduce(causeFrames.stream(), stmt, Stmt::set),
+                Streams.quickReduce(identifiedFrames.keySet().stream(), stmt, Stmt::set),
             res ->
                 identifiedFrames.get(res.getUUID())
         ).onInsert(newFrames ->
             insertFrames(session, newFrames)
         ).go();
+    }
+
+    private static <T extends Hashed> Map<UUID, T> byId(List<T> hs) {
+        return Util.byId(hs, Hashed::getHash);
     }
 
     private static Outcome storeCause(Session session, Cause cause) {

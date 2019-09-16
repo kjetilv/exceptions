@@ -17,13 +17,13 @@
 
 package no.scienta.unearth.jdbc;
 
-class Indexed<T> {
+class Idxd<T> {
 
     private final int index;
 
     private final T t;
 
-    Indexed(int index, T t) {
+    Idxd(int index, T t) {
         this.index = index;
         this.t = t;
     }

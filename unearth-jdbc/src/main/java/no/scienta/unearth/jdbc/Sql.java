@@ -169,8 +169,8 @@ final class Sql {
         return session.selectOne(sql, stmt -> stmt.set(id), Session.Res::getLong);
     }
 
-    static void insertFrames(Session session, Collection<CauseFrame> newFrames) {
-        session.updateBatch(
+    static int insertFrames(Session session, Collection<CauseFrame> newFrames) {
+        return session.updateBatchTotal(
             "insert into cause_frame (" +
                 "  id, class_loader, module, module_ver, class_name, method, file, line, native" +
                 ") values (" +
@@ -189,7 +189,7 @@ final class Sql {
         );
     }
 
-    static void linkFaultToCause(Session session, Fault fault) {
+    static void linkFaultToCauses(Session session, Fault fault) {
         session.updateBatch(
             "insert into fault_2_cause (" +
                 "  fault, seq, cause" +
@@ -248,9 +248,9 @@ final class Sql {
             "select " +
                 " cf.class_loader, cf.module, cf.module_ver," +
                 " cf.class_name, cf.method, cf.file, cf.line, cf.native" +
-                " from cause_strand cs, cause_strand_2_cause_frame cs2cf, cause_frame cf" +
+                " from cause_strand_2_cause_frame cs2cf, cause_frame cf" +
                 " where" +
-                "  cs2cf.cause_frame = cf.id and cs2cf.cause_strand = ?" +
+                "  cf.id = cs2cf.cause_frame and cs2cf.cause_strand = ?" +
                 " order by" +
                 "  cs2cf.seq asc",
             stmt ->
@@ -267,10 +267,10 @@ final class Sql {
                     res.getBoolean()));
     }
 
-    private static <T> List<Indexed<T>> indexed(List<T> ts) {
+    private static <T> List<Idxd<T>> indexed(List<T> ts) {
         return IntStream.range(0, ts.size())
             .mapToObj(i ->
-                new Indexed<>(i, ts.get(i)))
+                new Idxd<>(i, ts.get(i)))
             .collect(Collectors.toList());
     }
 }

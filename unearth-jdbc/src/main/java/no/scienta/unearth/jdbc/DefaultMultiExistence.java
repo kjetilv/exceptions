@@ -22,7 +22,8 @@ import no.scienta.unearth.jdbc.Session.Sel;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static no.scienta.unearth.jdbc.Session.Outcome.*;
@@ -34,9 +35,9 @@ class DefaultMultiExistence<T> implements Session.MultiExistence<T> {
 
     private final Collection<T> existing;
 
-    private Consumer<Collection<T>> inserter;
+    private Function<Collection<T>, Integer> inserter;
 
-    private Consumer<Collection<T>> updater;
+    private Function<Collection<T>, Integer> updater;
 
     DefaultMultiExistence(
         DefaultSession session,
@@ -50,45 +51,47 @@ class DefaultMultiExistence<T> implements Session.MultiExistence<T> {
     }
 
     @Override
-    public Session.MultiExistence<T> onUpdate(Consumer<Collection<T>> updater) {
+    public Session.MultiExistence<T> onUpdate(Function<Collection<T>, Integer> updater) {
         this.updater = updater;
         return this;
     }
 
     @Override
-    public Session.MultiExistence<T> onInsert(Consumer<Collection<T>> inserter) {
+    public Session.MultiExistence<T> onInsert(Function<Collection<T>, Integer> inserter) {
         this.inserter = inserter;
         return this;
     }
 
     @Override
     public Outcome go() {
-        boolean updated = updated();
-        boolean inserted = inserted();
-        return inserted && updated ? INSERTED_AND_UPDATED :
-            inserted ? INSERTED :
-                updated ? UPDATED :
+        int updated = updated();
+        int inserted = inserted();
+        return inserted > 0 && updated > 0 ? INSERTED_AND_UPDATED :
+            inserted > 0 ? INSERTED :
+                updated > 0 ? UPDATED :
                     NOOP;
     }
 
-    private boolean inserted() {
+    private int inserted() {
         if (inserter == null) {
-            return false;
+            return -1;
         }
-        Collection<T> unknown = items.stream().filter(existing::add).collect(Collectors.toSet());
+        Collection<T> unknown = items.stream().filter(exists().negate()).collect(Collectors.toSet());
         if (unknown.isEmpty()) {
-            return false;
+            return -1;
         }
-        inserter.accept(unknown);
-        return true;
+        return inserter.apply(unknown);
     }
 
-    private boolean updated() {
+    private Predicate<T> exists() {
+        return existing::contains;
+    }
+
+    private int updated() {
         if (existing.isEmpty() || updater == null) {
-            return false;
+            return -1;
         }
-        updater.accept(existing);
-        return true;
+        return updater.apply(existing);
     }
 
 }

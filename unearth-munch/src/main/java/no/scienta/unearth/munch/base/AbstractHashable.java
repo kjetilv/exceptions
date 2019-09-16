@@ -58,7 +58,14 @@ public abstract class AbstractHashable implements Hashable {
     private final Supplier<String> toString =
         MostlyOnce.get(() ->
             getClass().getSimpleName() + '[' + toStringIdentifier() + toStringContents() + ']');
+
     private static final String HASH = "MD5";
+
+    private static final byte[] NO_TRUTH = "none".getBytes();
+
+    private static final byte[] TRUTHYNESS = "true".getBytes();
+
+    private static final byte[] FALSYNESS = "false".getBytes();
 
     @Override
     public final UUID getHash() {
@@ -127,13 +134,19 @@ public abstract class AbstractHashable implements Hashable {
         }
     }
 
-    private Object toStringIdentifier() {
-        String hash = getHash().toString();
-        return hash.substring(0, hash.indexOf("-"));
+    protected static void hashBools(Consumer<byte[]> h, Boolean... truths) {
+        for (Boolean truth : truths) {
+            h.accept(truth == null ? NO_TRUTH : truth ? TRUTHYNESS : FALSYNESS);
+        }
     }
 
     protected Object toStringBody() {
         return null;
+    }
+
+    private Object toStringIdentifier() {
+        String hash = getHash().toString();
+        return hash.substring(0, hash.indexOf("-"));
     }
 
     /**
