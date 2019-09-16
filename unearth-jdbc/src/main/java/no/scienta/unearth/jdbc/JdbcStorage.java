@@ -329,6 +329,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
                 }
                 linkCauseStrandToCauseFrames(session, causeStrand);
             });
+            linkFaultStrandToCauseStrands(session, fault.getFaultStrand());
         } else {
             log.debug("Already known fault strand: {}", fault.getFaultStrand());
         }
@@ -345,7 +346,6 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
                     }
                 });
                 linkFaultToCauses(session, fault);
-                linkFaultStrandToCauseStrands(session, fault.getFaultStrand());
             }
         } else {
             log.debug("Already known fault: {}", fault);
