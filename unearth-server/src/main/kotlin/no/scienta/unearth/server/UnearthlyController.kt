@@ -48,7 +48,7 @@ class UnearthlyController(
         }
     }
 
-    val handler: FaultHandler = DefaultFaultHandler(storage, stats, clock)
+    val handler: FaultHandler = DefaultFaultHandler(storage, sensor, stats, clock)
 
     override fun close() {
         listOf(storage, feed, stats).forEach(AutoCloseable::close)

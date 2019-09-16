@@ -33,8 +33,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.sql.DataSource;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,6 +51,8 @@ public class JdbcStorageTest {
 
     private FaultStats stats;
 
+    private AtomicLong atomicClock;
+
     @Before
     public void setup() {
         HikariConfig configuration = new HikariConfig();
@@ -53,9 +60,12 @@ public class JdbcStorageTest {
         configuration.setUsername("SA");
         configuration.setPassword("");
         DataSource dataSource = new HikariDataSource(configuration);
-        storage = storage(dataSource);
-        feed = (FaultFeed) storage;
-        stats = (FaultStats) storage;
+
+        Clock clock = newAtomicClock();
+        JdbcStorage jdbcStorage = storage(dataSource, clock);
+        storage = jdbcStorage;
+        feed = jdbcStorage;
+        stats = jdbcStorage;
         storage.initStorage().run();
     }
 
@@ -78,11 +88,13 @@ public class JdbcStorageTest {
         assertThat(event1.getGlobalSequenceNo()).isEqualTo(1L);
         assertThat(event1.getFaultSequenceNo()).isEqualTo(1L);
         assertThat(event1.getFaultSequenceNo()).isEqualTo(1L);
+        assertStored(fault);
 
         FeedEntry event2 = storage.store(null, fault, null);
         assertThat(event2.getGlobalSequenceNo()).isEqualTo(2L);
         assertThat(event2.getFaultSequenceNo()).isEqualTo(2L);
         assertThat(event2.getFaultStrandSequenceNo()).isEqualTo(2L);
+        assertStored(fault);
 
         List<FeedEntry> feed = this.feed.feed(0, 10);
         assertThat(feed.size()).isEqualTo(2);
@@ -99,11 +111,13 @@ public class JdbcStorageTest {
         assertThat(event1.getGlobalSequenceNo()).isEqualTo(1L);
         assertThat(event1.getFaultSequenceNo()).isEqualTo(1L);
         assertThat(event1.getFaultSequenceNo()).isEqualTo(1L);
+        assertStored(fault1);
 
         FeedEntry event2 = storage.store(null, fault2, null);
         assertThat(event2.getGlobalSequenceNo()).isEqualTo(2L);
         assertThat(event2.getFaultSequenceNo()).isEqualTo(1L);
         assertThat(event2.getFaultStrandSequenceNo()).isEqualTo(2L);
+        assertStored(fault2);
 
         List<FeedEntry> feed = this.feed.feed(0, 10);
         assertThat(feed.size()).isEqualTo(2);
@@ -125,15 +139,66 @@ public class JdbcStorageTest {
 
         assertThat(feed.limit()).hasValue(1L);
 
-        List<FeedEntry> feed = this.feed.feed(0, 10);
-        assertThat(feed.size()).isEqualTo(1);
+        List<FeedEntry> feedEntries = this.feed.feed(0, 10);
+        assertThat(feedEntries.size()).isEqualTo(1);
 
-        assertThat(storage.getFault(fault.getId())).hasValue(fault);
+        assertStored(fault);
+
+        assertThat(this.feed.limit()).hasValue(1L);
+        assertThat(this.feed.limit(fault.getId())).hasValue(1L);
+        assertThat(this.feed.limit(fault.getFaultStrand().getId())).hasValue(1L);
+    }
+
+    @Test
+    public void storeAndRetrieveFeed() {
+        Fault fault1 = fault("testdata/exception3.txt");
+        Fault fault2 = fault("testdata/exception3a.txt");
+
+        for (int i = 0; i < 100; i++) {
+            atomicClock.getAndAdd(Duration.ofDays(1).toMillis());
+            storage.store(null, fault1, null);
+        }
+        for (int i = 0; i < 100; i++) {
+            atomicClock.getAndAdd(Duration.ofDays(1).toMillis());
+            storage.store(null, fault2, null);
+        }
+
+        assertThat(this.feed.feed(fault1.getId(), 10, 10)).hasSize(10);
+        assertThat(this.feed.feed(fault1.getFaultStrand().getId(), 10, 10)).hasSize(10);
     }
 
     @After
     public void teardown() {
         storage.close();
+    }
+
+    private Clock newAtomicClock() {
+        atomicClock = new AtomicLong();
+        return new Clock() {
+            @Override
+            public ZoneId getZone() {
+                return ZoneId.systemDefault();
+            }
+
+            @Override
+            public Clock withZone(ZoneId zone) {
+                throw new UnsupportedOperationException(String.valueOf(zone));
+            }
+
+            @Override
+            public Instant instant() {
+                return Instant.ofEpochMilli(atomicClock.getAndIncrement());
+            }
+        };
+    }
+
+    private void assertStored(Fault fault) {
+        assertThat(storage.getFault(fault.getId())).hasValue(fault);
+        assertThat(storage.getFaultStrand(fault.getFaultStrand().getId())).hasValue(fault.getFaultStrand());
+        fault.getFaultStrand().getCauseStrands().forEach(causeStrand ->
+            assertThat(storage.getCauseStrand(causeStrand.getId())).hasValue(causeStrand));
+        fault.getCauses().forEach(cause ->
+            assertThat(storage.getCause(cause.getId())).hasValue(cause));
     }
 
     private static Fault fault(String reference) {
@@ -142,7 +207,7 @@ public class JdbcStorageTest {
         return Fault.create(parse);
     }
 
-    private static FaultStorage storage(DataSource dataSource) {
-        return new JdbcStorage(dataSource, "unearth");
+    private static JdbcStorage storage(DataSource dataSource, Clock clock) {
+        return new JdbcStorage(dataSource, "unearth", clock);
     }
 }

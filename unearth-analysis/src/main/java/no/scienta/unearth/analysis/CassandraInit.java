@@ -37,14 +37,10 @@ public class CassandraInit extends AbstractCassandraConnected {
             session.execute(
                 "CREATE TABLE IF NOT EXISTS fault " +
                     "(id UUID PRIMARY KEY," +
-                    " faultStrand UUID" +
-                    ")"
-            );
+                    " faultStrand UUID)");
             session.execute(
                 "CREATE TABLE IF NOT EXISTS faultStrand " +
-                    "(id UUID PRIMARY KEY" +
-                    ")"
-            );
+                    "(id UUID PRIMARY KEY)");
             session.execute(
                 "CREATE TABLE IF NOT EXISTS faultEvent " +
                     "(id uuid PRIMARY KEY," +
@@ -52,9 +48,7 @@ public class CassandraInit extends AbstractCassandraConnected {
                     " faultStrand UUID," +
                     " globalSequenceNo BIGINT," +
                     " faultStrandSequenceNo BIGINT," +
-                    " faultSequenceNo BIGINT" +
-                    ")"
-            );
+                    " faultSequenceNo BIGINT)");
         });
         return this;
     }

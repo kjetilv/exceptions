@@ -36,7 +36,6 @@ package no.scienta.unearth.analysis;
 
 import no.scienta.unearth.core.FaultSensor;
 import no.scienta.unearth.munch.base.Hashed;
-import no.scienta.unearth.munch.model.FaultEvent;
 import no.scienta.unearth.munch.model.FeedEntry;
 
 import java.util.UUID;
@@ -48,20 +47,20 @@ public class CassandraSensor extends AbstractCassandraConnected implements Fault
     }
 
     @Override
-    public void register(FaultEvent faultEvent, FeedEntry feedEntry) {
+    public void register(FeedEntry feedEntry) {
         inSession(session -> {
             exec(session,
                 "INSERT INTO fault " +
                     "(id," +
                     " faultStrand" +
                     ") VALUES (?, ?)",
-                uuid(faultEvent.getFaultId()),
-                uuid(faultEvent.getFaultStrandId()));
+                uuid(feedEntry.getFaultEvent().getFaultId()),
+                uuid(feedEntry.getFaultEvent().getFaultStrandId()));
             exec(session,
                 "INSERT INTO faultStrand (" +
                     "id" +
                     ") VALUES (?)",
-                uuid(faultEvent.getFaultStrandId()));
+                uuid(feedEntry.getFaultEvent().getFaultStrandId()));
             exec(session,
                 "INSERT INTO faultEvent " +
                     "(id," +
@@ -81,7 +80,7 @@ public class CassandraSensor extends AbstractCassandraConnected implements Fault
         });
     }
 
-    private UUID uuid(Hashed identifiable) {
+    private static UUID uuid(Hashed identifiable) {
         return identifiable.getHash();
     }
 }

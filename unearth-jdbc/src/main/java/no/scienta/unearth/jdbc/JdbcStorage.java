@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -49,9 +50,12 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
 
     private final String schema;
 
-    public JdbcStorage(DataSource dataSource, String schema) {
+    private final Clock clock;
+
+    public JdbcStorage(DataSource dataSource, String schema, Clock clock) {
         this.dataSource = dataSource;
         this.schema = schema;
+        this.clock = clock;
     }
 
     @Override
@@ -134,7 +138,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         return loadFaultEvents(
             "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
                 "   from feed_entry" +
-                "   where fault = ? and global_seq >= ? limit ?",
+                "   where fault_strand = ? and global_seq >= ? limit ?",
             stmt -> stmt
                 .set(id)
                 .set(offset)
@@ -146,7 +150,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         return loadFaultEvents(
             "select " + FeedEntryFields.list() + "" +
                 "  from feed_entry" +
-                "  where fault_strand = ? and global_seq >= ? limit ?",
+                "  where fault = ? and global_seq >= ? limit ?",
             stmt -> stmt
                 .set(id)
                 .set(offset)
@@ -188,17 +192,17 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
 
     @Override
     public List<FeedEntry> getFeed(FaultStrandId id, Instant sinceTime, Duration period) {
-        return doGetFaultEvents(id, sinceTime, period);
+        return getFaultEntries(id, sinceTime, period);
     }
 
     @Override
     public List<FeedEntry> getFeed(Instant sinceTime, Duration period) {
-        return doGetFaultEvents(null, sinceTime, period);
+        return getFaultEntries(null, sinceTime, period);
     }
 
     @Override
     public List<FeedEntry> getFeed(FaultId id, Instant sinceTime, Duration period) {
-        return doGetFaultEvents(id, sinceTime, period);
+        return getFaultEntries(id, sinceTime, period);
     }
 
     private <T> T inSession(Function<Session, T> fun) {
@@ -273,7 +277,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         );
     }
 
-    private List<FeedEntry> doGetFaultEvents(Id id, Instant sinceTime, Duration period) {
+    private List<FeedEntry> getFaultEntries(Id id, Instant sinceTime, Duration period) {
         return inSession(session -> session.select(
             "select (" + FeedEntryFields.list() + ") from feed_entrys" +
                 (id == null ? "" : " where " + (id instanceof FaultId ? "fault" : "fault_strand") + " = ?") +
@@ -306,12 +310,12 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         ).orElse(0L);
     }
 
-    private static FaultEvent newEvent(LogEntry logEntry, Fault fault, Throwable throwable) {
+    private FaultEvent newEvent(LogEntry logEntry, Fault fault, Throwable throwable) {
         return new FaultEvent(
             throwable == null ? null : System.identityHashCode(throwable),
             fault,
             logEntry,
-            Instant.now());
+            Instant.now(clock));
     }
 
     private static void store(Fault fault, Session session) {
