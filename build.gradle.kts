@@ -36,7 +36,6 @@ val testcontainersVer = "1.12.0"
 val hsqldbVer = "2.5.0"
 val assertjVer = "3.13.2"
 
-
 plugins {
     kotlin("jvm") version "1.3.40"
     id("com.github.johnrengelman.shadow") version "5.1.0"

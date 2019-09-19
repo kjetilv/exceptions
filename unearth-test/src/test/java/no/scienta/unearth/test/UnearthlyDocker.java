@@ -19,9 +19,6 @@ package no.scienta.unearth.test;
 
 public final class UnearthlyDocker {
 
-    private UnearthlyDocker() {
-    }
-
     public static void main(String[] args) {
         Runtime.getRuntime().addShutdownHook(new Thread(new DockerStartup()::stop));
     }

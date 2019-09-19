@@ -20,16 +20,18 @@ package no.scienta.unearth.analysis;
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
-import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.cql.SimpleStatementBuilder;
 import com.datastax.oss.driver.api.core.metadata.EndPoint;
 import com.datastax.oss.driver.api.core.metadata.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -43,18 +45,18 @@ public class AbstractCassandraConnected {
 
     private static final String VERSION_QUERY = "select " + RELEASE_VERSION + " from system.local";
 
+    private static final String PROFILE = "default";
+
     AbstractCassandraConnected(String host, int port, String dc, String keyspace) {
         this.cqlSession = builder(host, port, dc, keyspace).build();
 
-        inSession(session -> {
-            Row row = session.execute(VERSION_QUERY).one();
-            if (row == null) {
-                throw new IllegalStateException("Failed to obtain version information");
-            }
-            log.info("Connected to Cassandra @ {}: {}",
-                endPoints(session).map(EndPoint::asMetricPrefix).collect(Collectors.joining(", ")),
-                row.getString(RELEASE_VERSION));
-        });
+        Row row = cqlSession.execute(VERSION_QUERY).one();
+        if (row == null) {
+            throw new IllegalStateException("Failed to obtain version information");
+        }
+        log.info("Connected to Cassandra @ {}: {}",
+            endPoints(cqlSession).map(EndPoint::asMetricPrefix).collect(Collectors.joining(", ")),
+            row.getString(RELEASE_VERSION));
     }
 
     public void close() {
@@ -62,16 +64,10 @@ public class AbstractCassandraConnected {
     }
 
     static void exec(CqlSession session, String stmt, Object... args) {
-        PreparedStatement prepared = session.prepare(stmt);
-        session.execute(prepared.bind(args));
-    }
-
-    <T> T inSession(Function<CqlSession, T> action) {
-        try {
-            return action.apply(cqlSession);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to perform action", e);
-        }
+        session.execute(new SimpleStatementBuilder(stmt)
+            .setExecutionProfileName(PROFILE)
+            .addPositionalValues(args)
+            .build());
     }
 
     void inSession(Consumer<CqlSession> action) {
@@ -88,6 +84,12 @@ public class AbstractCassandraConnected {
 
     private static CqlSessionBuilder builder(String host, int port, String dc, String keyspace) {
         CqlSessionBuilder cqlSessionBuilder = CqlSession.builder()
+            .withConfigLoader(
+                DriverConfigLoader.programmaticBuilder()
+                    .startProfile(PROFILE)
+                    .withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(30))
+                    .endProfile()
+                    .build())
             .addContactPoint(InetSocketAddress.createUnresolved(host, port))
             .withLocalDatacenter(dc);
         if (keyspace == null) {

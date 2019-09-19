@@ -29,6 +29,7 @@ import java.io.Closeable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @SuppressWarnings({"FieldCanBeLocal", "WeakerAccess", "SameParameterValue"})
 public final class DockerStartup implements Closeable {
@@ -50,17 +51,17 @@ public final class DockerStartup implements Closeable {
     private static final String DATACENTER = "datacenter1";
 
     DockerStartup() {
-        ScheduledExecutorService exec = Executors.newScheduledThreadPool(2);
+        AtomicInteger threadCounter = new AtomicInteger();
+        ScheduledExecutorService exec = Executors.newScheduledThreadPool(
+            2,
+            r ->
+                new Thread(r, "t" + threadCounter.incrementAndGet()));
+
         Future<? extends GenericContainer<?>> cassandraFuture = exec.submit(DockerStartup::startCassandra);
         Future<? extends GenericContainer<?>> postgresFuture = exec.submit(DockerStartup::startPostgres);
-        exec.shutdown();
 
-        try {
-            cassandra = cassandraFuture.get();
-            postgres = postgresFuture.get();
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed", e);
-        }
+        cassandra = waitFor(cassandraFuture, "Failed: Cassandra");
+        postgres = waitFor(postgresFuture, "Failed: Postgres");
 
         UnearthlyConfig config = new UnearthlyConfig(
             "/api/test",
@@ -104,9 +105,16 @@ public final class DockerStartup implements Closeable {
         stop();
     }
 
+    private static GenericContainer<?> waitFor(Future<? extends GenericContainer<?>> future, String msg) {
+        try {
+            return future.get();
+        } catch (Exception e) {
+            throw new IllegalStateException(msg, e);
+        }
+    }
+
     private static GenericContainer<?> startCassandra() {
-        GenericContainer<?> cassandra =
-            new GenericContainer<>(CASSANDRA_IMAGE).withExposedPorts(9042);
+        GenericContainer<?> cassandra = new GenericContainer<>(CASSANDRA_IMAGE).withExposedPorts(9042);
         cassandra.start();
         return cassandra;
     }
@@ -117,32 +125,26 @@ public final class DockerStartup implements Closeable {
         return postgres;
     }
 
-    private static CassandraInit initCassandra(UnearthlyCassandraConfig cassandra) {
+    private static CassandraInit initCassandra(UnearthlyCassandraConfig cassandraConfig) {
         return new CassandraInit(
-            cassandra.getHost(),
-            cassandra.getPort(),
-            cassandra.getDc(),
-            cassandra.getKeyspace()
+            cassandraConfig.getHost(),
+            cassandraConfig.getPort(),
+            cassandraConfig.getDc(),
+            cassandraConfig.getKeyspace()
         ).init();
     }
 
-    private static UnearthlyCassandraConfig cassandraConfig(
-        GenericContainer<?> cassandraContainer,
-        String keyspace
-    ) {
+    private static UnearthlyCassandraConfig cassandraConfig(GenericContainer<?> container, String keyspace) {
         return new UnearthlyCassandraConfig(
-            cassandraContainer.getContainerIpAddress(),
-            cassandraContainer.getFirstMappedPort(),
+            container.getContainerIpAddress(),
+            container.getFirstMappedPort(),
             DATACENTER,
             keyspace);
     }
 
-    private static UnearthlyDbConfig postgresConfig(
-        GenericContainer<?> postgresContainer,
-        String schema
-    ) {
-        String postgresIP = postgresContainer.getContainerIpAddress();
-        Integer postgresPort = postgresContainer.getFirstMappedPort();
+    private static UnearthlyDbConfig postgresConfig(GenericContainer<?> container, String schema) {
+        String postgresIP = container.getContainerIpAddress();
+        Integer postgresPort = container.getFirstMappedPort();
         String postgresJdbc = "jdbc:postgresql://" + postgresIP + ":" + postgresPort + "/" + schema;
         return new UnearthlyDbConfig(
             postgresIP,

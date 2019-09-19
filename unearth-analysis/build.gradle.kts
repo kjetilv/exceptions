@@ -19,7 +19,7 @@ dependencies {
     implementation(project(":unearth-core"))
     implementation(project(":unearth-munch"))
 
-    compile("com.datastax.oss:java-driver-core")
-    compile("com.datastax.oss:java-driver-query-builder")
+    implementation("com.datastax.oss:java-driver-core")
+    implementation("com.datastax.oss:java-driver-query-builder")
 }
 

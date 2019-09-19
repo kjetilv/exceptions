@@ -32,6 +32,7 @@ import no.scienta.unearth.turbo.UnearthlyTurboFilter
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
+import java.time.Clock
 import java.util.*
 import java.util.stream.Stream
 import javax.sql.DataSource
@@ -75,7 +76,7 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
 
         val db: DataSource = HikariDataSource(HikariConfig(dbProperties))
 
-        val storage = JdbcStorage(db, configuration.db.schema)
+        val storage = JdbcStorage(db, configuration.db.schema, Clock.systemDefaultZone())
 
         val controller = UnearthlyController(
                 storage,

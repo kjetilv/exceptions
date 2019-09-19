@@ -19,6 +19,8 @@ package no.scienta.unearth.core;
 
 import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.id.FaultStrandId;
+import no.scienta.unearth.munch.model.Fault;
+import no.scienta.unearth.munch.model.FaultStrand;
 import no.scienta.unearth.munch.model.FeedEntry;
 
 import java.time.Duration;
@@ -26,6 +28,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+@SuppressWarnings("unused")
 public interface FaultStats extends AutoCloseable {
 
     @Override
@@ -60,12 +63,24 @@ public interface FaultStats extends AutoCloseable {
 
     long getFeedEntryCount(FaultId id, Instant sinceTime, Duration interval);
 
+    default List<FeedEntry> getFeed(FaultStrand faultStrand) {
+        return getFeed(faultStrand.getId());
+    }
+
     default List<FeedEntry> getFeed(FaultStrandId id) {
         return getFeed(id, null);
     }
 
+    default List<FeedEntry> getFeed(FaultStrand faultStrand, Instant sinceTime) {
+        return getFeed(faultStrand.getId(), sinceTime);
+    }
+
     default List<FeedEntry> getFeed(FaultStrandId id, Instant sinceTime) {
         return getFeed(id, sinceTime, null);
+    }
+
+    default List<FeedEntry> getFeed(FaultStrand faultStrand, Instant sinceTime, Duration period) {
+        return getFeed(faultStrand.getId(), sinceTime, period);
     }
 
     List<FeedEntry> getFeed(FaultStrandId id, Instant sinceTime, Duration period);
@@ -80,12 +95,24 @@ public interface FaultStats extends AutoCloseable {
 
     List<FeedEntry> getFeed(Instant sinceTime, Duration period);
 
+    default List<FeedEntry> getFeed(Fault fault) {
+        return getFeed(fault.getId());
+    }
+
     default List<FeedEntry> getFeed(FaultId id) {
         return getFeed(id, null);
     }
 
+    default List<FeedEntry> getFeed(Fault fault, Instant sinceTime) {
+        return getFeed(fault.getId(), sinceTime);
+    }
+
     default List<FeedEntry> getFeed(FaultId id, Instant sinceTime) {
         return getFeed(id, sinceTime, null);
+    }
+
+    default List<FeedEntry> getFeed(Fault fault, Instant sinceTime, Duration period) {
+        return getFeed(fault.getId(), sinceTime, period);
     }
 
     List<FeedEntry> getFeed(FaultId id, Instant sinceTime, Duration period);

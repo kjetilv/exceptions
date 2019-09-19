@@ -63,18 +63,6 @@ final class Setter {
                     S<CauseFrame.Method,
                         S<CauseFrame.File,
                             S<Integer, D<Boolean>>>>>>>> causeFrame(
-        Stmt stmt
-    ) {
-        return causeFrame(stmt, null);
-    }
-
-    static S<CauseFrame.ClassLoader,
-        S<CauseFrame.Module,
-            S<CauseFrame.ModuleVer,
-                S<CauseFrame.ClassName,
-                    S<CauseFrame.Method,
-                        S<CauseFrame.File,
-                            S<Integer, D<Boolean>>>>>>>> causeFrame(
         Stmt stmt, CauseFrame causeFrame
     ) {
         return new CauseFrameSetter(stmt, causeFrame);

@@ -92,7 +92,7 @@
       <option name="ignorableAnnotations">
         <value />
       </option>
-      <option name="ignoreClassesWithOnlyMain" value="false" />
+      <option name="ignoreClassesWithOnlyMain" value="true" />
     </inspection_tool>
   </profile>
 </component>

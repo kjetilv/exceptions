@@ -254,7 +254,7 @@ class UnearthlyServer(
                 get(sequence) {
                     controller.feed(
                             offsetQuery[req] ?: 0L,
-                            countQuery[req] ?: 0L,
+                            countQuery[req] ?: 10L,
                             fullStack[req] ?: false,
                             printStack[req] ?: false)
                 }

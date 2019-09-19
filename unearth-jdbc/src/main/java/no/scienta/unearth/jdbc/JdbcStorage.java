@@ -268,9 +268,9 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
 
     private static List<FeedEntry> loadFeedEntries(FaultId id, Session session) {
         return session.select(
-            "select (" +
+            "select " +
                 FeedEntryFields.list() +
-                ") from feed_entry where fault = ? and time >= ? order by fault_seq desc limit 1",
+                " from feed_entry where fault = ? and time >= ? order by fault_seq desc limit 1",
             stmt ->
                 stmt.set(id),
             Sql::readFeedEntry
@@ -279,7 +279,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
 
     private List<FeedEntry> getFaultEntries(Id id, Instant sinceTime, Duration period) {
         return inSession(session -> session.select(
-            "select (" + FeedEntryFields.list() + ") from feed_entrys" +
+            "select " + FeedEntryFields.list() + " from feed_entry" +
                 (id == null ? "" : " where " + (id instanceof FaultId ? "fault" : "fault_strand") + " = ?") +
                 (sinceTime == null ? ""
                     : " and time >= ?" + (

@@ -27,28 +27,29 @@ public class CassandraInit extends AbstractCassandraConnected {
     }
 
     public CassandraInit init() {
-        inSession(session -> {
-            session.execute(
+        inSession(cqlSession -> {
+            cqlSession.execute(
                 "CREATE KEYSPACE" +
                     " IF NOT EXISTS " + keyspace +
                     " WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor' : 1}");
-            session.execute(
-                "USE " + keyspace);
-            session.execute(
+            cqlSession.execute("USE " + keyspace);
+
+            cqlSession.execute(
                 "CREATE TABLE IF NOT EXISTS fault " +
                     "(id UUID PRIMARY KEY," +
                     " faultStrand UUID)");
-            session.execute(
+            cqlSession.execute(
                 "CREATE TABLE IF NOT EXISTS faultStrand " +
                     "(id UUID PRIMARY KEY)");
-            session.execute(
+            cqlSession.execute(
                 "CREATE TABLE IF NOT EXISTS faultEvent " +
                     "(id uuid PRIMARY KEY," +
                     " fault UUID," +
                     " faultStrand UUID," +
                     " globalSequenceNo BIGINT," +
                     " faultStrandSequenceNo BIGINT," +
-                    " faultSequenceNo BIGINT)");
+                    " faultSequenceNo BIGINT" +
+                    ")");
         });
         return this;
     }

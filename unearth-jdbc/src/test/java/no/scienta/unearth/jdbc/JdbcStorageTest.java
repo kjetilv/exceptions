@@ -165,6 +165,14 @@ public class JdbcStorageTest {
 
         assertThat(this.feed.feed(fault1.getId(), 10, 10)).hasSize(10);
         assertThat(this.feed.feed(fault1.getFaultStrand().getId(), 10, 10)).hasSize(10);
+
+        assertThat(this.stats.getFeed(fault1)).hasSize(100);
+        assertThat(this.stats.getFeed(fault2)).hasSize(100);
+
+        assertThat(fault1.getFaultStrand()).isEqualTo(fault2.getFaultStrand());
+        assertThat(this.stats.getFeed(fault1.getFaultStrand())).hasSize(200);
+
+        assertThat(this.stats.getFeed()).hasSize(200);
     }
 
     @After
@@ -175,6 +183,7 @@ public class JdbcStorageTest {
     private Clock newAtomicClock() {
         atomicClock = new AtomicLong();
         return new Clock() {
+
             @Override
             public ZoneId getZone() {
                 return ZoneId.systemDefault();
