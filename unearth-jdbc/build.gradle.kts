@@ -19,11 +19,13 @@ dependencies {
     implementation(project(":unearth-util"))
     implementation(project(":unearth-munch"))
     implementation(project(":unearth-core"))
+    implementation(project(":unearth-core"))
 
-    compile("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.slf4j:slf4j-api")
 
     testImplementation("com.zaxxer:HikariCP")
     testImplementation("org.assertj:assertj-core")
-    testRuntime("org.hsqldb:hsqldb")
+    testRuntimeOnly("org.hsqldb:hsqldb")
 }
 

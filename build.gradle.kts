@@ -17,36 +17,35 @@
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-val jacksonVer = "2.9.9"
-val http4kVer = "3.169.0"
-val micrometerVer = "1.2.0"
+val jacksonVer = "2.11.0"
+val http4kVer = "3.254.0"
+val micrometerVer = "1.5.3"
 val konfigVer = "1.6.10.0"
 val swaggerVer = "2.0.8"
-val logbackVer = "1.3.0-alpha4"
+val logbackVer = "1.2.3"
 val cassandraDriverVer = "4.1.0"
 val metricsVer = "4.1.0"
 val flywayVer = "6.0.0-beta2"
-val slf4jVer = "1.8.0-beta4"
+val slf4jVer = "1.7.30"
 val hikariVer = "2.7.8"
 val postgresJdbcVer = "42.2.6.jre7"
 val junitVer = "4.12"
 val swaggerUiVer = "3.23.0"
-val kotlinVer = "1.3.40"
+val kotlinVer = "1.3.72"
 val testcontainersVer = "1.12.0"
 val hsqldbVer = "2.5.0"
 val assertjVer = "3.13.2"
+val shadowVer = "6.0.0"
 
 plugins {
-    kotlin("jvm") version "1.3.40"
-    id("com.github.johnrengelman.shadow") version "5.1.0"
-    maven
+    kotlin("jvm") version "1.3.72"
+    id("com.github.johnrengelman.shadow") version "6.0.0"
     `maven-publish`
 }
 
 allprojects {
 
     apply(plugin = "java")
-    apply(plugin = "maven")
     apply(plugin = "maven-publish")
 
     tasks.withType<KotlinCompile> {
@@ -54,8 +53,8 @@ allprojects {
     }
 
     configure<JavaPluginConvention> {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_14
+        targetCompatibility = JavaVersion.VERSION_14
     }
 
     group = "no.scienta.unearth"
@@ -68,53 +67,56 @@ allprojects {
     }
 
     dependencies {
-        testCompile("junit:junit")
+        testImplementation("junit:junit")
     }
+
+    fun http4k(dep: String) = "org.http4k:http4k-$dep:$http4kVer"
+    fun jackson(type: String, value: String) = "com.fasterxml.jackson.$type:jackson-$type-$value:$jacksonVer"
+    fun cassandra(dep: String) = "com.datastax.oss:java-driver-$dep:$cassandraDriverVer"
 
     dependencies {
         constraints {
-            compile("org.http4k:http4k-core:$http4kVer")
-            compile("org.http4k:http4k-contract:$http4kVer")
+            implementation(http4k("core"))
+            implementation(http4k("contract"))
+            implementation(http4k("format-jackson"))
+            implementation(http4k("server-netty"))
 
-            compile("org.http4k:http4k-format-jackson:$http4kVer")
-            compile("org.http4k:http4k-server-netty:$http4kVer")
+            implementation("com.natpryce:konfig:$konfigVer")
 
-            compile("com.natpryce:konfig:$konfigVer")
+            implementation(jackson("datatype", "jdk8"))
+            implementation(jackson("datatype", "jsr310"))
+            implementation(jackson("module", "kotlin"))
 
-            compile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jacksonVer")
-            compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVer")
-            compile("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVer")
-            compile("com.fasterxml.jackson.core:jackson-databind:$jacksonVer")
+            implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVer")
+            implementation("io.swagger.core.v3:swagger-core:$swaggerVer")
 
-            compile("io.swagger.core.v3:swagger-core:$swaggerVer")
+            implementation(cassandra("core"))
+            implementation(cassandra("query-builder"))
+            implementation(cassandra("mapper-runtime"))
 
-            compile("com.datastax.oss:java-driver-core:$cassandraDriverVer")
-            compile("com.datastax.oss:java-driver-query-builder:$cassandraDriverVer")
-            compile("com.datastax.oss:java-driver-mapper-runtime:$cassandraDriverVer")
+            implementation("io.micrometer:micrometer-registry-jmx:$micrometerVer")
+            implementation("io.micrometer:micrometer-core:$micrometerVer")
 
-            compile("io.micrometer:micrometer-registry-jmx:$micrometerVer")
-            compile("io.micrometer:micrometer-core:$micrometerVer")
+            implementation("org.slf4j:slf4j-api:$slf4jVer")
 
-            compile("org.slf4j:slf4j-api:$slf4jVer")
+            implementation("com.zaxxer:HikariCP:$hikariVer")
+            runtimeOnly("org.postgresql:postgresql:$postgresJdbcVer")
 
-            compile("com.zaxxer:HikariCP:$hikariVer")
-            runtime("org.postgresql:postgresql:$postgresJdbcVer")
+            implementation("org.flywaydb:flyway-core:$flywayVer")
+            implementation("ch.qos.logback:logback-classic:$logbackVer")
 
-            compile("org.flywaydb:flyway-core:$flywayVer")
-            compile("ch.qos.logback:logback-classic:$logbackVer")
+            runtimeOnly("io.dropwizard.metrics:metrics-jmx:$metricsVer")
+            runtimeOnly("io.dropwizard.metrics:metrics-core:$metricsVer")
+            runtimeOnly("ch.qos.logback:logback-classic:$logbackVer")
+            runtimeOnly("org.webjars:swagger-ui:$swaggerUiVer")
 
-            runtime("io.dropwizard.metrics:metrics-jmx:$metricsVer")
-            runtime("io.dropwizard.metrics:metrics-core:$metricsVer")
-            runtime("ch.qos.logback:logback-classic:$logbackVer")
-            runtime("org.webjars:swagger-ui:$swaggerUiVer")
+            testImplementation("org.http4k:http4k-client-apache:$http4kVer")
+            testImplementation("junit:junit:$junitVer")
 
-            testCompile("org.http4k:http4k-client-apache:$http4kVer")
-            testCompile("junit:junit:$junitVer")
+            testImplementation("org.assertj:assertj-core:3.13.2:$assertjVer")
+            testImplementation("org.testcontainers:cassandra:$testcontainersVer")
 
-            testCompile("org.assertj:assertj-core:3.13.2:$assertjVer")
-            testCompile("org.testcontainers:cassandra:$testcontainersVer")
-
-            testRuntime("org.hsqldb:hsqldb:$hsqldbVer")
+            testRuntimeOnly("org.hsqldb:hsqldb:$hsqldbVer")
         }
     }
 }

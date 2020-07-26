@@ -17,14 +17,14 @@
 
 package no.scienta.unearth.munch.model;
 
-import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
-import no.scienta.unearth.munch.id.FaultLogId;
-
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
+
+import no.scienta.unearth.munch.id.AbstractHashableIdentifiable;
+import no.scienta.unearth.munch.id.FaultLogId;
 
 public final class LogEntry extends AbstractHashableIdentifiable<FaultLogId> {
 

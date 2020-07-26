@@ -17,15 +17,15 @@
 
 package no.scienta.unearth.munch.model;
 
-import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
-import no.scienta.unearth.munch.id.FaultStrandId;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import no.scienta.unearth.munch.id.AbstractHashableIdentifiable;
+import no.scienta.unearth.munch.id.FaultStrandId;
 
 /**
  * A fault strand consists of a list of {@link CauseStrand cause strand}.

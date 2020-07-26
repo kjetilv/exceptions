@@ -17,17 +17,17 @@
 
 package no.scienta.unearth.munch.model;
 
-import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
-import no.scienta.unearth.munch.id.FaultId;
-import no.scienta.unearth.munch.id.FaultStrandId;
-import no.scienta.unearth.munch.id.FeedEntryId;
-
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
+
+import no.scienta.unearth.munch.id.AbstractHashableIdentifiable;
+import no.scienta.unearth.munch.id.FaultId;
+import no.scienta.unearth.munch.id.FaultStrandId;
+import no.scienta.unearth.munch.id.FeedEntryId;
 
 @SuppressWarnings("unused")
 public final class FaultEvent extends AbstractHashableIdentifiable<FeedEntryId> {

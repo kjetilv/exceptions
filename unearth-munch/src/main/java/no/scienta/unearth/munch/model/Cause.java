@@ -17,17 +17,17 @@
 
 package no.scienta.unearth.munch.model;
 
-import no.scienta.unearth.munch.ChameleonException;
-import no.scienta.unearth.munch.base.AbstractHashableIdentifiable;
-import no.scienta.unearth.munch.id.CauseId;
-import no.scienta.unearth.munch.print.CauseFrame;
-import no.scienta.unearth.util.Streams;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import no.scienta.unearth.munch.ChameleonException;
+import no.scienta.unearth.munch.id.AbstractHashableIdentifiable;
+import no.scienta.unearth.munch.id.CauseId;
+import no.scienta.unearth.munch.print.CauseFrame;
+import no.scienta.unearth.util.Streams;
 
 /**
  * A cause has a {@link CauseStrand cause strand} and a given {@link #message message}.

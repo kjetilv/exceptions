@@ -24,6 +24,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import no.scienta.unearth.analysis.CassandraInit
 import no.scienta.unearth.analysis.CassandraSensor
+import no.scienta.unearth.core.FaultSensor
 import no.scienta.unearth.core.HandlingPolicy
 import no.scienta.unearth.jdbc.JdbcStorage
 import no.scienta.unearth.munch.model.FrameFun
@@ -37,7 +38,7 @@ import java.util.*
 import java.util.stream.Stream
 import javax.sql.DataSource
 
-class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> Unearth.State {
+class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
 
     interface State {
 
@@ -50,23 +51,22 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
         fun close()
     }
 
-    override fun invoke(): State {
+    fun run(): State {
         logger.info("Building ${UnearthlyServer::class.simpleName}...")
 
         val configuration = customConfiguration ?: unearthlyConfig(loadConfiguration())
 
-        val cassandraConfig = configuration.cassandra
+        CassandraInit(
+                configuration.cassandra.host,
+                configuration.cassandra.port,
+                configuration.cassandra.dc,
+                configuration.cassandra.keyspace).init()
 
-        CassandraInit(cassandraConfig.host,
-                cassandraConfig.port,
-                cassandraConfig.dc,
-                cassandraConfig.keyspace).init()
-
-        val sensor = CassandraSensor(
-                cassandraConfig.host,
-                cassandraConfig.port,
-                cassandraConfig.dc,
-                cassandraConfig.keyspace)
+        val sensor: FaultSensor = CassandraSensor(
+                configuration.cassandra.host,
+                configuration.cassandra.port,
+                configuration.cassandra.dc,
+                configuration.cassandra.keyspace)
 
         val dbProperties: Properties = Properties().apply {
             setProperty("jdbcUrl", configuration.db.jdbc)
@@ -97,10 +97,11 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) : () -> 
         registerShutdown(server)
 
         server.start {
-            logger.info("Ready at http://${configuration.host}:${server.port()}")
+            logger.info("$it ready at http://${configuration.host}:${server.port()}")
         }
 
         return object : State {
+
             override fun close() {
                 server.stop {
                     logger.debug("Stopped by demand: $it")

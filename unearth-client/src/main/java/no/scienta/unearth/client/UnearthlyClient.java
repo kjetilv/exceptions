@@ -17,10 +17,23 @@
 
 package no.scienta.unearth.client;
 
-import no.scienta.unearth.client.dto.*;
-
 import java.net.URI;
 import java.util.Optional;
+
+import no.scienta.unearth.client.dto.CauseDto;
+import no.scienta.unearth.client.dto.CauseIdDto;
+import no.scienta.unearth.client.dto.CauseStrandDto;
+import no.scienta.unearth.client.dto.CauseStrandIdDto;
+import no.scienta.unearth.client.dto.EventSequenceDto;
+import no.scienta.unearth.client.dto.FaultDto;
+import no.scienta.unearth.client.dto.FaultEventSequenceDto;
+import no.scienta.unearth.client.dto.FaultIdDto;
+import no.scienta.unearth.client.dto.FaultStrandDto;
+import no.scienta.unearth.client.dto.FaultStrandEventSequenceDto;
+import no.scienta.unearth.client.dto.FaultStrandIdDto;
+import no.scienta.unearth.client.dto.FeedEntryDto;
+import no.scienta.unearth.client.dto.FeedEntryIdDto;
+import no.scienta.unearth.client.dto.Submission;
 
 @SuppressWarnings("unused")
 public interface UnearthlyClient {
@@ -71,15 +84,17 @@ public interface UnearthlyClient {
         return globalFeed(Page.FIRST, StackType.NONE);
     }
 
+    EventSequenceDto globalFeed(Page page, StackType stackType);
+
     default EventSequenceDto globalFeed(Page page) {
         return globalFeed(page, StackType.NONE);
     }
 
-    EventSequenceDto globalFeed(Page page, StackType stackType);
-
     default FaultEventSequenceDto faultFeed(FaultIdDto faultId) {
         return faultFeed(faultId, Page.FIRST, StackType.NONE);
     }
+
+    FaultEventSequenceDto faultFeed(FaultIdDto faultId, Page page, StackType stackType);
 
     default FaultEventSequenceDto faultFeed(FaultIdDto faultId, Page page) {
         return faultFeed(faultId, page, StackType.NONE);
@@ -89,11 +104,11 @@ public interface UnearthlyClient {
         return faultFeed(faultId, Page.FIRST, stackType);
     }
 
-    FaultEventSequenceDto faultFeed(FaultIdDto faultId, Page page, StackType stackType);
-
     default FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultStrandId) {
         return faultStrandFeed(faultStrandId, Page.FIRST, StackType.NONE);
     }
+
+    FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultStrandId, Page page, StackType stackType);
 
     default FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultStrandId, StackType stackType) {
         return faultStrandFeed(faultStrandId, Page.FIRST, stackType);
@@ -103,14 +118,9 @@ public interface UnearthlyClient {
         return faultStrandFeed(faultStrandId, page, StackType.NONE);
     }
 
-    FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultStrandId, Page page, StackType stackType);
-
     enum StackType {
-
         FULL,
-
         PRINT,
-
         NONE
     }
 }

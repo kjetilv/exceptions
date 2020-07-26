@@ -25,8 +25,8 @@ dependencies {
 
     testImplementation("org.testcontainers:cassandra")
 
-    testRuntime("org.postgresql:postgresql")
-    testRuntime("org.webjars:swagger-ui")
-    testRuntime("io.dropwizard.metrics:metrics-jmx")
-    testRuntime("ch.qos.logback:logback-classic")
+    testRuntimeOnly("org.postgresql:postgresql")
+    testRuntimeOnly("org.webjars:swagger-ui")
+    testRuntimeOnly("io.dropwizard.metrics:metrics-jmx")
+    testRuntimeOnly("ch.qos.logback:logback-classic")
 }

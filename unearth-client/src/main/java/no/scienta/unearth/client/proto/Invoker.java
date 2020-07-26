@@ -17,8 +17,6 @@
 
 package no.scienta.unearth.client.proto;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -38,6 +36,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 class Invoker implements InvocationHandler {
 
     private final URI uri;
@@ -49,8 +49,6 @@ class Invoker implements InvocationHandler {
     private final Function<Object, byte[]> writeBytes = this::writeBytes;
 
     private final BiFunction<Class<?>, InputStream, Object> readBytes = this::readBytes;
-    private static final String CONTENT_TYPE = "Content-Type";
-    private static final Duration TIMEOUT = Duration.ofMinutes(1);
 
     Invoker(URI uri, ObjectMapper objectMapper) {
         this.uri = Objects.requireNonNull(uri, "uri").toASCIIString().endsWith("/") ? uri
@@ -103,30 +101,6 @@ class Invoker implements InvocationHandler {
         }
     }
 
-    private byte[] writeBytes(Object value) {
-        try {
-            return objectMapper.writeValueAsBytes(value);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to write body: " + value, e);
-        }
-    }
-
-    private Object readBytes(Class<?> type, InputStream inputStream) {
-        try {
-            return objectMapper.readerFor(type).readValue(inputStream);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to read response: " + type + " <= " + inputStream, e);
-        }
-    }
-
-    private URI uri(Meta meta, Object[] args) {
-        return URI.create(this.uri.toASCIIString() + meta.path(args));
-    }
-
-    private static HttpClient newClient() {
-        return HttpClient.newBuilder().connectTimeout(TIMEOUT).build();
-    }
-
     private static void failOnError(HttpResponse<InputStream> response) {
         if (response.statusCode() >= 500) {
             throw new IllegalStateException("Internal server error: " + response + possibly(error(response)));
@@ -136,20 +110,6 @@ class Invoker implements InvocationHandler {
         }
         if (response.statusCode() >= 300) {
             throw new IllegalArgumentException("Unsupported redirect: " + response + possibly(error(response)));
-        }
-    }
-
-    private static String possibly(String error) {
-        return error == null || error.isBlank() ? "" : "\n" + error.trim();
-    }
-
-    private static String error(HttpResponse<InputStream> response) {
-        try
-            (BufferedReader reader = new BufferedReader(new InputStreamReader(response.body(), StandardCharsets.UTF_8))
-            ) {
-            return reader.lines().collect(Collectors.joining("\n"));
-        } catch (Exception e) {
-            return "<Failed to read error response: " + e + ">";
         }
     }
 
@@ -168,4 +128,47 @@ class Invoker implements InvocationHandler {
         }
         return requestBuilder;
     }
+
+    private URI uri(Meta meta, Object[] args) {
+        return URI.create(this.uri.toASCIIString() + meta.path(args));
+    }
+
+    private static HttpClient newClient() {
+        return HttpClient.newBuilder().connectTimeout(TIMEOUT).build();
+    }
+
+    private static String possibly(String error) {
+        return error == null || error.isBlank() ? "" : "\n" + error.trim();
+    }
+
+    private static String error(HttpResponse<InputStream> response) {
+        try
+            (
+                BufferedReader reader = new BufferedReader(new InputStreamReader(response.body(), StandardCharsets.UTF_8))
+            ) {
+            return reader.lines().collect(Collectors.joining("\n"));
+        } catch (Exception e) {
+            return "<Failed to read error response: " + e + ">";
+        }
+    }
+
+    private byte[] writeBytes(Object value) {
+        try {
+            return objectMapper.writeValueAsBytes(value);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to write body: " + value, e);
+        }
+    }
+
+    private Object readBytes(Class<?> type, InputStream inputStream) {
+        try {
+            return objectMapper.readerFor(type).readValue(inputStream);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to read response: " + type + " <= " + inputStream, e);
+        }
+    }
+
+    private static final String CONTENT_TYPE = "Content-Type";
+
+    private static final Duration TIMEOUT = Duration.ofMinutes(1);
 }

@@ -36,8 +36,7 @@ import org.http4k.core.*
 import org.http4k.core.ContentType.Companion.APPLICATION_JSON
 import org.http4k.core.ContentType.Companion.TEXT_HTML
 import org.http4k.core.ContentType.Companion.TEXT_PLAIN
-import org.http4k.core.Method.GET
-import org.http4k.core.Method.POST
+import org.http4k.core.Method.*
 import org.http4k.core.Status.Companion.INTERNAL_SERVER_ERROR
 import org.http4k.core.Status.Companion.NO_CONTENT
 import org.http4k.core.Status.Companion.OK
@@ -103,10 +102,15 @@ class UnearthlyServer(
     private fun pingRoute() =
             "ping" meta {
                 summary = "Ping"
-                consumes += TEXT_PLAIN
-                produces += TEXT_PLAIN
             } bindContract GET to {
-                Response(OK).body("pong\n")
+                Response(OK).body("pong")
+            }
+
+    private fun pingHeadRoute() =
+            "ping" meta {
+                summary = "Ping"
+            } bindContract HEAD to {
+                Response(OK)
             }
 
     private fun submitExceptionRoute() =
@@ -373,6 +377,7 @@ class UnearthlyServer(
 
                         retrieveExceptionRoute(),
 
+                        pingHeadRoute(),
                         pingRoute())
             }
 

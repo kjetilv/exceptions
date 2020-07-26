@@ -17,42 +17,53 @@
 
 package no.scienta.unearth.jdbc;
 
+import java.time.Instant;
+
 import no.scienta.unearth.munch.base.Hashable;
 import no.scienta.unearth.munch.base.Hashed;
 import no.scienta.unearth.munch.id.FaultId;
 import no.scienta.unearth.munch.id.FaultStrandId;
-import no.scienta.unearth.munch.model.*;
+import no.scienta.unearth.munch.model.Cause;
+import no.scienta.unearth.munch.model.CauseStrand;
+import no.scienta.unearth.munch.model.Fault;
+import no.scienta.unearth.munch.model.FaultStrand;
+import no.scienta.unearth.munch.model.FeedEntry;
 import no.scienta.unearth.munch.print.CauseFrame;
-
-import java.time.Instant;
 
 final class Setter {
 
     static <T extends Hashed> Stmt byId(Stmt stmt, T hashable) {
+
         return new IdSetter<>(stmt, hashable).noop();
     }
 
     static <T extends Hashable> S<Integer, D<Hashable>> list(Stmt stmt, T t) {
+
         return new ListSetter<>(stmt, t);
     }
 
     static S<CauseStrand, D<String>> cause(Stmt stmt) {
+
         return cause(stmt, null);
     }
 
     static S<CauseStrand, D<String>> cause(Stmt stmt, Cause cause) {
+
         return new CauseSetter(stmt, cause);
     }
 
     static D<FaultStrand> fault(Stmt stmt) {
+
         return fault(stmt, null);
     }
 
     static D<FaultStrand> fault(Stmt stmt, Fault fault) {
+
         return new FaultSetter(stmt, fault);
     }
 
     static Stmt faultStrand(Stmt stmt, FaultStrand faultStrand) {
+
         return new FaultStrandSetter(stmt, faultStrand).noop();
     }
 
@@ -65,20 +76,24 @@ final class Setter {
                             S<Integer, D<Boolean>>>>>>>> causeFrame(
         Stmt stmt, CauseFrame causeFrame
     ) {
+
         return new CauseFrameSetter(stmt, causeFrame);
     }
 
     static D<String> causeStrand(Stmt stmt) {
+
         return causeStrand(stmt, null);
     }
 
     static D<String> causeStrand(Stmt stmt, CauseStrand causeStrand) {
+
         return new CauseStrandSetter(stmt, causeStrand);
     }
 
     static S<FaultId, S<FaultStrandId, S<Instant, S<Long, S<Long, D<Long>>>>>> feedEntry(
         Stmt stmt, FeedEntry feedEntry
     ) {
+
         return new FeedEntrySetter(stmt, feedEntry);
     }
 
@@ -86,11 +101,13 @@ final class Setter {
         implements D<String> {
 
         CauseStrandSetter(Stmt stmt, CauseStrand causeStrand) {
+
             super(stmt, causeStrand);
         }
 
         @Override
         public Stmt set(String className) {
+
             return s(className);
         }
     }
@@ -105,6 +122,7 @@ final class Setter {
                                 S<Integer, D<Boolean>>>>>>>> {
 
         CauseFrameSetter(Stmt stmt, CauseFrame causeFrame) {
+
             super(stmt, causeFrame);
         }
 
@@ -118,6 +136,7 @@ final class Setter {
                                 D<Boolean>>>>>>> set(
             CauseFrame.ClassLoader classLoader
         ) {
+
             return set(
                 () -> s(classLoader),
                 () -> modoole -> set(
@@ -140,11 +159,13 @@ final class Setter {
         implements S<CauseStrand, D<String>> {
 
         CauseSetter(Stmt stmt, Cause cause) {
+
             super(stmt, cause);
         }
 
         @Override
         public D<String> set(CauseStrand causeStrand) {
+
             s(causeStrand);
             return this::s;
         }
@@ -154,11 +175,13 @@ final class Setter {
         implements D<FaultStrand> {
 
         FaultSetter(Stmt stmt, Fault fault) {
+
             super(stmt, fault);
         }
 
         @Override
         public Stmt set(FaultStrand faultStrand) {
+
             return s(faultStrand);
         }
     }
@@ -166,6 +189,7 @@ final class Setter {
     private static class FaultStrandSetter extends TypeSafeJdbc<FaultStrand> {
 
         FaultStrandSetter(Stmt stmt, FaultStrand fault) {
+
             super(stmt, fault);
         }
     }
@@ -173,11 +197,13 @@ final class Setter {
     private static class ListSetter<T extends Hashable> extends TypeSafeJdbc<T> implements S<Integer, D<Hashable>> {
 
         ListSetter(Stmt stmt, T hashable) {
+
             super(stmt, hashable);
         }
 
         @Override
         public D<Hashable> set(Integer from) {
+
             s(from);
             return this::s;
         }
@@ -187,11 +213,13 @@ final class Setter {
         implements S<FaultId, S<FaultStrandId, S<Instant, S<Long, S<Long, D<Long>>>>>> {
 
         private FeedEntrySetter(Stmt stmt, FeedEntry feedEntry) {
+
             super(stmt, feedEntry);
         }
 
         @Override
         public S<FaultStrandId, S<Instant, S<Long, S<Long, D<Long>>>>> set(FaultId faultId) {
+
             s(faultId);
             return faultStrand -> {
                 s(faultStrand);
@@ -212,6 +240,7 @@ final class Setter {
     private static class IdSetter<T extends Hashed> extends TypeSafeJdbc<T> {
 
         IdSetter(Stmt stmt, T hashed) {
+
             super(stmt, hashed);
         }
     }

@@ -28,26 +28,26 @@ dependencies {
     implementation(project(":unearth-turbo"))
     implementation(project(":unearth-static"))
 
-    compile("org.http4k:http4k-core")
-    compile("org.http4k:http4k-contract")
-    testCompile("org.http4k:http4k-client-apache")
+    implementation("org.http4k:http4k-core")
+    implementation("org.http4k:http4k-contract")
 
-    compile("org.http4k:http4k-format-jackson")
-    compile("org.http4k:http4k-server-netty")
+    implementation("org.http4k:http4k-format-jackson")
+    implementation("org.http4k:http4k-server-netty")
 
-    compile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
-    compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 
-    compile("com.zaxxer:HikariCP")
+    implementation("com.zaxxer:HikariCP")
 
-    compile("ch.qos.logback:logback-classic")
+    implementation("ch.qos.logback:logback-classic")
 
-    compile("io.swagger.core.v3:swagger-core")
-    compile("io.micrometer:micrometer-registry-jmx")
+    implementation("io.swagger.core.v3:swagger-core")
+    implementation("io.micrometer:micrometer-registry-jmx")
 
-    compile("com.natpryce:konfig:1.6.10.0")
+    implementation("com.natpryce:konfig")
 
-    testCompile("junit:junit:4.12")
+    testImplementation("org.http4k:http4k-client-apache")
+    testImplementation("junit:junit:4.12")
 
     implementation(kotlin("stdlib"))
 }

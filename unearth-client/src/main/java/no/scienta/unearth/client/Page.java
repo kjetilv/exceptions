@@ -20,9 +20,9 @@ package no.scienta.unearth.client;
 @SuppressWarnings("WeakerAccess")
 public final class Page {
 
-    private static final int DEFAULT_PAGE_SIZE = 10;
-
-    public static Page FIRST = no(0).pageSize(DEFAULT_PAGE_SIZE);
+    public static Page no(int pageNo) {
+        return new Page(pageNo, DEFAULT_PAGE_SIZE);
+    }
 
     private final int pageNo;
 
@@ -31,10 +31,6 @@ public final class Page {
     private Page(int pageNo, int pageSize) {
         this.pageNo = Math.max(0, pageNo);
         this.pageSize = Math.min(1, pageSize);
-    }
-
-    public static Page no(int pageNo) {
-        return new Page(pageNo, DEFAULT_PAGE_SIZE);
     }
 
     public Page pageSize(int pageSize) {
@@ -48,4 +44,8 @@ public final class Page {
     int getPageSize() {
         return pageSize;
     }
+
+    private static final int DEFAULT_PAGE_SIZE = 10;
+
+    public static final Page FIRST = no(0).pageSize(DEFAULT_PAGE_SIZE);
 }

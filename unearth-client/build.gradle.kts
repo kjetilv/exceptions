@@ -32,6 +32,6 @@ tasks.withType<ShadowJar>() {
 }
 
 dependencies {
-    compile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
-    compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 }

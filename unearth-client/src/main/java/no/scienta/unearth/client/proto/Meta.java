@@ -17,8 +17,6 @@
 
 package no.scienta.unearth.client.proto;
 
-import no.scienta.unearth.client.dto.IdDto;
-
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -32,6 +30,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import no.scienta.unearth.client.dto.IdDto;
 
 final class Meta {
 
@@ -56,12 +56,6 @@ final class Meta {
     private final boolean optional;
 
     private final boolean noResponse;
-    private static final byte[] EMPTY = new byte[0];
-    private static final String POST = "POST";
-    private static final String GET = "GET";
-    private static final String JSON = "application/json;charset=UTF-8";
-    private static final String TEXT = "text/plain;charset=UTF-8";
-    private static final String PAR = "{}";
 
     Meta(Method method, Function<Object, byte[]> writer, BiFunction<Class<?>, InputStream, Object> reader) {
         POST post = method.getAnnotation(POST.class);
@@ -70,7 +64,7 @@ final class Meta {
         this.post = post != null;
         this.path = (post != null ? post.value()
             : get != null ? get.value()
-            : "").trim();
+                : "").trim();
         if (this.path.startsWith("/")) {
             throw new IllegalArgumentException("Got pre-slashed path in " + method + ": " + path);
         }
@@ -83,7 +77,7 @@ final class Meta {
 
         Class<?> returnType = method.getReturnType();
         this.optional = Optional.class.isAssignableFrom(returnType);
-        this.noResponse = returnType == void.class || Void.class.isAssignableFrom(returnType);
+        this.noResponse = returnType == void.class;
         this.returnType = getActualReturnType(method, returnType);
 
         this.pathParam = this.post ? -1 : 0;
@@ -106,6 +100,21 @@ final class Meta {
         this.reader = reader;
     }
 
+    private static Class<?> getActualReturnType(Method method, Class<?> nominalReturnType) {
+        if (Optional.class.isAssignableFrom(nominalReturnType)) {
+            Type genType = method.getGenericReturnType();
+            if (genType instanceof ParameterizedType) {
+                Type[] args = ((ParameterizedType) genType).getActualTypeArguments();
+                if (args[0] instanceof Class<?>) {
+                    return (Class<?>) args[0];
+                }
+                throw new IllegalStateException("Could not resolve generic type of " + genType + ": " + method);
+            }
+            throw new IllegalStateException("Could not resolve generic type of " + genType + ": " + method);
+        }
+        return nominalReturnType;
+    }
+
     boolean post() {
         return post;
     }
@@ -117,7 +126,11 @@ final class Meta {
     byte[] body(Object[] args) {
         return bodyParam < 0 || args[bodyParam] == null ? EMPTY
             : stringBody ? bytes(args[bodyParam].toString())
-            : writer.apply(args[bodyParam]);
+                : writer.apply(args[bodyParam]);
+    }
+
+    private static byte[] bytes(Object string) {
+        return string.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     String path(Object[] args) {
@@ -133,6 +146,17 @@ final class Meta {
             : fullPath + '?' + queryPath;
     }
 
+    private String queryPath(Object[] args) {
+        Map<String, String> params = queries.entrySet().stream()
+            .filter(e -> args[e.getKey()] != null)
+            .collect(Collectors.toMap(
+                Map.Entry::getValue,
+                e -> String.valueOf(args[e.getKey()])));
+        return params.entrySet().stream().map(e ->
+            e.getKey() + '=' + e.getValue())
+            .collect(Collectors.joining("&"));
+    }
+
     Object response(InputStream inputStream) {
         return reader.apply(returnType, inputStream);
     }
@@ -145,35 +169,17 @@ final class Meta {
         return optional;
     }
 
-    private Class<?> getActualReturnType(Method method, Class<?> nominalReturnType) {
-        if (Optional.class.isAssignableFrom(nominalReturnType)) {
-            Type genType = method.getGenericReturnType();
-            if (genType instanceof ParameterizedType) {
-                Type[] args = ((ParameterizedType) genType).getActualTypeArguments();
-                if (args[0] instanceof Class<?>) {
-                    return (Class<?>) args[0];
-                }
-                throw new IllegalStateException("Could not resolve generic type of " + genType + ": " + method);
-            }
-            throw new IllegalStateException("Could not resolve generic type of " + genType + ": " + method);
-        }
-        return nominalReturnType;
-    }
+    private static final byte[] EMPTY = new byte[0];
 
-    private String queryPath(Object[] args) {
-        Map<String, String> params = queries.entrySet().stream()
-            .filter(e -> args[e.getKey()] != null)
-            .collect(Collectors.toMap(
-                Map.Entry::getValue,
-                e -> String.valueOf(args[e.getKey()])));
-        return params.entrySet().stream().map(e ->
-            e.getKey() + '=' + e.getValue())
-            .collect(Collectors.joining("&"));
-    }
+    private static final String POST = "POST";
 
-    private byte[] bytes(Object string) {
-        return string.toString().getBytes(StandardCharsets.UTF_8);
-    }
+    private static final String GET = "GET";
+
+    private static final String JSON = "application/json;charset=UTF-8";
+
+    private static final String TEXT = "text/plain;charset=UTF-8";
+
+    private static final String PAR = "{}";
 
     @Override
     public String toString() {

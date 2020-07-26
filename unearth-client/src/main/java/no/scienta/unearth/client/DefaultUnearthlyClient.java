@@ -17,23 +17,42 @@
 
 package no.scienta.unearth.client;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import no.scienta.unearth.client.dto.*;
-import no.scienta.unearth.client.proto.Proto;
-
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import no.scienta.unearth.client.dto.CauseDto;
+import no.scienta.unearth.client.dto.CauseIdDto;
+import no.scienta.unearth.client.dto.CauseStrandDto;
+import no.scienta.unearth.client.dto.CauseStrandIdDto;
+import no.scienta.unearth.client.dto.EventSequenceDto;
+import no.scienta.unearth.client.dto.FaultDto;
+import no.scienta.unearth.client.dto.FaultEventSequenceDto;
+import no.scienta.unearth.client.dto.FaultIdDto;
+import no.scienta.unearth.client.dto.FaultStrandDto;
+import no.scienta.unearth.client.dto.FaultStrandEventSequenceDto;
+import no.scienta.unearth.client.dto.FaultStrandIdDto;
+import no.scienta.unearth.client.dto.FeedEntryDto;
+import no.scienta.unearth.client.dto.FeedEntryIdDto;
+import no.scienta.unearth.client.dto.StackTraceElementDto;
+import no.scienta.unearth.client.dto.Submission;
+import no.scienta.unearth.client.proto.Proto;
 
 public class DefaultUnearthlyClient implements UnearthlyClient {
 
     private final UnearthlyAPI unearthlyService;
+
     static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
         .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
         .registerModule(new Jdk8Module())

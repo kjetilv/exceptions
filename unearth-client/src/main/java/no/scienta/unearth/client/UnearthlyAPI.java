@@ -17,12 +17,25 @@
 
 package no.scienta.unearth.client;
 
-import no.scienta.unearth.client.dto.*;
+import java.util.Optional;
+
+import no.scienta.unearth.client.dto.CauseDto;
+import no.scienta.unearth.client.dto.CauseIdDto;
+import no.scienta.unearth.client.dto.CauseStrandDto;
+import no.scienta.unearth.client.dto.CauseStrandIdDto;
+import no.scienta.unearth.client.dto.EventSequenceDto;
+import no.scienta.unearth.client.dto.FaultDto;
+import no.scienta.unearth.client.dto.FaultEventSequenceDto;
+import no.scienta.unearth.client.dto.FaultIdDto;
+import no.scienta.unearth.client.dto.FaultStrandDto;
+import no.scienta.unearth.client.dto.FaultStrandEventSequenceDto;
+import no.scienta.unearth.client.dto.FaultStrandIdDto;
+import no.scienta.unearth.client.dto.FeedEntryDto;
+import no.scienta.unearth.client.dto.FeedEntryIdDto;
+import no.scienta.unearth.client.dto.Submission;
 import no.scienta.unearth.client.proto.GET;
 import no.scienta.unearth.client.proto.POST;
 import no.scienta.unearth.client.proto.Q;
-
-import java.util.Optional;
 
 public interface UnearthlyAPI {
 
@@ -54,22 +67,28 @@ public interface UnearthlyAPI {
     Long faultFeedLimit(FaultIdDto faultId);
 
     @GET("feed")
-    EventSequenceDto globalFeed(@Q Integer offset,
-                                @Q Integer count,
-                                @Q Boolean fullStack,
-                                @Q Boolean printStack);
+    EventSequenceDto globalFeed(
+        @Q Integer offset,
+        @Q Integer count,
+        @Q Boolean fullStack,
+        @Q Boolean printStack
+    );
 
     @GET("feed/fault/{}")
-    FaultEventSequenceDto faultFeed(FaultIdDto faultId,
-                                    @Q Integer offset,
-                                    @Q Integer count,
-                                    @Q Boolean fullStack,
-                                    @Q Boolean printStack);
+    FaultEventSequenceDto faultFeed(
+        FaultIdDto faultId,
+        @Q Integer offset,
+        @Q Integer count,
+        @Q Boolean fullStack,
+        @Q Boolean printStack
+    );
 
     @GET("feed/fault-strand/{}")
-    FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultId,
-                                                @Q Integer offset,
-                                                @Q Integer count,
-                                                @Q Boolean fullStack,
-                                                @Q Boolean printStack);
+    FaultStrandEventSequenceDto faultStrandFeed(
+        FaultStrandIdDto faultId,
+        @Q Integer offset,
+        @Q Integer count,
+        @Q Boolean fullStack,
+        @Q Boolean printStack
+    );
 }

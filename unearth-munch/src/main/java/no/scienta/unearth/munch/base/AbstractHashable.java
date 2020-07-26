@@ -14,28 +14,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-/*
- *     This file is part of Unearth.
- *
- *     Unearth is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- *
- *     Unearth is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 package no.scienta.unearth.munch.base;
-
-import no.scienta.unearth.munch.id.Id;
-import no.scienta.unearth.util.MostlyOnce;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -46,6 +25,8 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import no.scienta.unearth.util.MostlyOnce;
 
 @SuppressWarnings("unused")
 public abstract class AbstractHashable implements Hashable {
@@ -76,9 +57,9 @@ public abstract class AbstractHashable implements Hashable {
         hashStrings(hash, Arrays.asList(strings));
     }
 
-    protected static void hash(Consumer<byte[]> h, Id... ids) {
+    protected static void hash(Consumer<byte[]> h, Hashed... ids) {
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * 2 * ids.length);
-        for (Id id : ids) {
+        for (Hashed id : ids) {
             UUID uuid = id.getHash();
             buffer.putLong(uuid.getMostSignificantBits());
             buffer.putLong(uuid.getLeastSignificantBits());

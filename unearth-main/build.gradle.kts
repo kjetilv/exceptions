@@ -41,9 +41,9 @@ dependencies {
     implementation(project(":unearth-analysis"))
     implementation(project(":unearth-server"))
 
-    implementation("org.postgresql:postgresql")
     implementation(kotlin("stdlib"))
 
-    runtime("org.webjars:swagger-ui")
-    runtime("ch.qos.logback:logback-classic")
+    runtimeOnly("org.postgresql:postgresql")
+    runtimeOnly("org.webjars:swagger-ui")
+    runtimeOnly("ch.qos.logback:logback-classic")
 }

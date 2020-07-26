@@ -19,7 +19,9 @@
 
 package no.scienta.unearth.main
 
+import no.scienta.unearth.server.Unearth
+
 fun main() {
 
-    no.scienta.unearth.server.Unearth()()!!
+    Unearth().run();
 }
