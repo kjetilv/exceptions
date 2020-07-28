@@ -15,15 +15,32 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.core;
 
+import java.util.List;
+import java.util.OptionalLong;
+
+import unearth.munch.id.FaultId;
+import unearth.munch.id.FaultStrandId;
+import unearth.munch.model.FeedEntry;
+
+public interface FaultFeed extends AutoCloseable {
+
+    @Override
+    default void close() {
+    }
+
+    OptionalLong limit();
+
+    OptionalLong limit(FaultStrandId id);
+
+    OptionalLong limit(FaultId id);
+
+    List<FeedEntry> feed(long offset, long count);
+
+    List<FeedEntry> feed(FaultStrandId id, long offset, long count);
+
+    List<FeedEntry> feed(FaultId id, long offset, long count);
+
+    void reset();
+}

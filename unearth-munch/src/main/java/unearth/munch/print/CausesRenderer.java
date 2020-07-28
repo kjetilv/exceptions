@@ -15,15 +15,23 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.munch.print;
 
+import java.util.Collection;
+
+import unearth.munch.model.Cause;
+import unearth.munch.model.Fault;
+
+@SuppressWarnings("unused")
+public interface CausesRenderer {
+
+    default CausesRendering render(Throwable throwable) {
+        return render(Fault.create(throwable));
+    }
+
+    default CausesRendering render(Fault fault) {
+        return render(fault.getCauses());
+    }
+
+    CausesRendering render(Collection<Cause> causeChain);
+}

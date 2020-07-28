@@ -15,15 +15,44 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.client.dto;
 
+@SuppressWarnings("unused")
+public class Submission {
+
+    public FaultStrandIdDto faultStrandId;
+
+    public FaultIdDto faultId;
+
+    public FeedEntryIdDto feedEntryId;
+
+    public Long globalSequenceNo;
+
+    public Long faultStrandSequenceNo;
+
+    public Long faultSequenceNo;
+
+    public Action action;
+
+    public PrintoutDto[] printout;
+
+    public enum Action {
+
+        LOG,
+
+        LOG_SHORT,
+
+        LOG_MESSAGES,
+
+        LOG_ID
+    }
+
+    public static class PrintoutDto {
+
+        public String exception;
+
+        public String message;
+
+        public String[] stack;
+    }
+}

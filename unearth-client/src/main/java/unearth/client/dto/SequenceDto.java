@@ -15,15 +15,20 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.client.dto;
 
+import java.util.List;
+
+@SuppressWarnings("unused")
+abstract class SequenceDto {
+
+    public List<FeedEntryDto> events;
+
+    public SequenceType sequenceType;
+
+    public Long offset;
+
+    public Long count;
+
+    public Long last;
+}

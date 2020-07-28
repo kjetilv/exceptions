@@ -14,16 +14,25 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
+package unearth.munch;
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+import java.util.Objects;
 
+public final class ChameleonException extends Exception {
+
+    private final String proxiedClassName;
+
+    public ChameleonException(String proxiedClassName, String message, Throwable cause) {
+        super(message, cause, false, true);
+        this.proxiedClassName = Objects.requireNonNull(proxiedClassName, "proxiedClassName");
+    }
+
+    public String getProxiedClassName() {
+        return proxiedClassName;
+    }
+
+    @Override
+    public String toString() {
+        return proxiedClassName + ": " + getMessage();
+    }
+}

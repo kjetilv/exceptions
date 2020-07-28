@@ -15,15 +15,28 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.client.dto;
 
+import java.util.function.Function;
+import java.util.function.ToLongFunction;
+
+@SuppressWarnings("unused")
+public enum SequenceType implements ToLongFunction<FeedEntryDto> {
+
+    GLOBAL(dto -> dto.sequenceNo),
+
+    FAULT_STRAND(dto -> dto.faultStrandSequenceNo),
+
+    FAULT(dto -> dto.faultSequenceNo);
+
+    private final Function<FeedEntryDto, Long> seqNo;
+
+    SequenceType(Function<FeedEntryDto, Long> seqNo) {
+        this.seqNo = seqNo;
+    }
+
+    @Override
+    public long applyAsLong(FeedEntryDto dto) {
+        return seqNo.apply(dto);
+    }
+}

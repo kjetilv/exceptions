@@ -15,15 +15,29 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.munch.parser;
 
+final class ExceptionHeading {
+
+    private final String name;
+
+    private final String message;
+
+    ExceptionHeading(String name, String message) {
+        this.name = name;
+        this.message = message;
+    }
+
+    String getName() {
+        return name;
+    }
+
+    String getMessage() {
+        return message;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + name + ": " + message + "]";
+    }
+}

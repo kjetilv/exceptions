@@ -14,16 +14,39 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
+package unearth.munch.parser;
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+interface StackTraceElementPicker {
 
+    default String module(String... parts) {
+        return null;
+    }
+
+    default String moduleVersion(String... parts) {
+        return null;
+    }
+
+    default String className(String... parts) {
+        return null;
+    }
+
+    default String method(String... parts) {
+        return null;
+    }
+
+    default String file(String... parts) {
+        return null;
+    }
+
+    default String otherSource(String... parts) {
+        return null;
+    }
+
+    default Integer lineNo(String... parts) {
+        return null;
+    }
+
+    default Integer more(String... parts) {
+        return null;
+    }
+}

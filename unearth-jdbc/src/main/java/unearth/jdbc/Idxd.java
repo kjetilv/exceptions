@@ -15,15 +15,24 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.jdbc;
 
+class Idxd<T> {
+
+    private final int index;
+
+    private final T t;
+
+    Idxd(int index, T t) {
+        this.index = index;
+        this.t = t;
+    }
+
+    int getIndex() {
+        return index;
+    }
+
+    T getT() {
+        return t;
+    }
+}

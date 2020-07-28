@@ -14,16 +14,43 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
+package unearth.server.dto
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+data class Submission(
 
+        val faultStrandId: FaultStrandIdDto,
+
+        val faultId: FaultIdDto,
+
+        val faultEventId: FeedEntryIdDto,
+
+        val globalSequenceNo: Long,
+
+        val faultStrandSequenceNo: Long,
+
+        val faultSequenceNo: Long,
+
+        val action: Action?,
+
+        val printout: List<PrintoutDto> = emptyList()
+)
+
+data class PrintoutDto(
+        val exception: String,
+
+        val message: String = "null",
+
+        val stack: Collection<String>? = emptyList()
+)
+
+@Suppress("EnumEntryName", "unused")
+enum class Action {
+
+    LOG,
+
+    LOG_SHORT,
+
+    LOG_MESSAGES,
+
+    LOG_ID
+}

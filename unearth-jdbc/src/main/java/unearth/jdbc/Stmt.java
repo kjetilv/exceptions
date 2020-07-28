@@ -15,15 +15,36 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.jdbc;
 
+import java.time.Instant;
+import java.util.UUID;
+
+import unearth.munch.base.Hashed;
+import unearth.munch.id.Id;
+
+@SuppressWarnings("UnusedReturnValue")
+interface Stmt extends AutoCloseable {
+
+    default Stmt set(Hashed hashed) {
+        return set(hashed.getHash());
+    }
+
+    default Stmt set(Id id) {
+        return set(id.getHash());
+    }
+
+    Stmt set(String string);
+
+    Stmt set(Boolean bool);
+
+    Stmt set(Integer i);
+
+    Stmt set(Long l);
+
+    Stmt set(Instant instant);
+
+    Stmt set(UUID uuid);
+
+    void reset();
+}

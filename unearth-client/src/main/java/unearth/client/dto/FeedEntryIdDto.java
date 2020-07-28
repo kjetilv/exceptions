@@ -15,15 +15,18 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.client.dto;
 
+import java.util.UUID;
+
+@SuppressWarnings("unused")
+public class FeedEntryIdDto extends IdDto {
+
+    public FeedEntryIdDto() {
+        this(null);
+    }
+
+    public FeedEntryIdDto(UUID uuid) {
+        super("feed-entry", uuid);
+    }
+}

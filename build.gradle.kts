@@ -23,7 +23,7 @@ val micrometerVer = "1.5.3"
 val konfigVer = "1.6.10.0"
 val swaggerVer = "2.0.8"
 val logbackVer = "1.2.3"
-val cassandraDriverVer = "4.1.0"
+val cassandraDriverVer = "4.7.0"
 val metricsVer = "4.1.0"
 val flywayVer = "6.0.0-beta2"
 val slf4jVer = "1.7.30"
@@ -52,9 +52,14 @@ allprojects {
         kotlinOptions.jvmTarget = "11"
     }
 
-    configure<JavaPluginConvention> {
-        sourceCompatibility = JavaVersion.VERSION_14
-        targetCompatibility = JavaVersion.VERSION_14
+    plugins.withType<JavaPlugin>().configureEach {
+        configure<JavaPluginConvention> {
+            sourceCompatibility = JavaVersion.VERSION_15
+            targetCompatibility = JavaVersion.VERSION_15
+        }
+        configure<JavaPluginExtension> {
+            modularity.inferModulePath.set(true)
+        }
     }
 
     group = "no.scienta.unearth"

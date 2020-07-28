@@ -15,15 +15,40 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.core;
 
+import unearth.munch.id.FaultId;
+import unearth.munch.id.FaultStrandId;
+import unearth.munch.id.FeedEntryId;
+import unearth.munch.model.Fault;
+import unearth.munch.model.FeedEntry;
+
+public interface HandlingPolicy {
+
+    String getSummary();
+
+    Action getAction();
+
+    FaultStrandId getFaultStrandId();
+
+    FaultId getFaultId();
+
+    FeedEntryId getFeedEntryId();
+
+    FeedEntry getFeedEntry();
+
+    Fault getFault();
+
+    long getGlobalSequence();
+
+    long getFaultStrandSequence();
+
+    long getFaultSequence();
+
+    enum Action {
+        LOG,
+        LOG_SHORT,
+        LOG_MESSAGES,
+        LOG_ID
+    }
+}

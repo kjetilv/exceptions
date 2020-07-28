@@ -15,15 +15,18 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.server.dto
 
+import java.time.ZonedDateTime
+
+data class FaultEventDto(
+
+        val id: FeedEntryIdDto,
+
+        val fault: FaultDto?,
+
+        val faultId: FaultIdDto,
+
+        val faultStrandId: FaultStrandIdDto,
+
+        val time: ZonedDateTime)

@@ -15,15 +15,12 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.server.dto
 
+data class CauseDto(
+
+        val id: CauseIdDto,
+
+        val message: String?,
+
+        val causeStrand: CauseStrandDto)

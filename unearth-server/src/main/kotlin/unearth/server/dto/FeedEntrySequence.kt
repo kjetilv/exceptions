@@ -15,15 +15,24 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.server.dto
 
+import java.util.*
+
+data class FeedEntrySequence(
+
+        val id: FaultIdDto,
+
+        val events: List<FeedEntryDto> = Collections.emptyList(),
+
+        val sequenceType: SequenceType = SequenceType.FAULT
+) {
+
+    val offset = seqs().min().orElse(0L)
+
+    val count = events.size
+
+    val last = seqs().max().orElse(-1L)
+
+    private fun seqs() = events.stream().mapToLong(sequenceType)
+}

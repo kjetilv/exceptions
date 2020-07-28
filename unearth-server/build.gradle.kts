@@ -25,8 +25,7 @@ dependencies {
     implementation(project(":unearth-analysis"))
     implementation(project(":unearth-munch"))
     implementation(project(":unearth-jdbc"))
-    implementation(project(":unearth-turbo"))
-    implementation(project(":unearth-static"))
+    implementation(project(":unearth-statik"))
 
     implementation("org.http4k:http4k-core")
     implementation("org.http4k:http4k-contract")

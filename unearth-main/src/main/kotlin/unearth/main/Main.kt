@@ -15,15 +15,13 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+@file:Suppress("UNNECESSARY_NOT_NULL_ASSERTION")
 
+package unearth.main
+
+import unearth.server.Unearth
+
+fun main() {
+
+    Unearth().run();
+}

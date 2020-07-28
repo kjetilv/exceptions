@@ -15,15 +15,32 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.jdbc;
 
+import java.util.Arrays;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import unearth.util.MostlyOnce;
+
+public enum FeedEntryFields {
+
+    FAULT,
+
+    FAULT_STRAND,
+
+    TIME,
+
+    GLOBAL_SEQ,
+
+    FAULT_STRAND_SEQ,
+
+    FAULT_SEQ;
+
+    private static final Supplier<String> FIELDS = MostlyOnce.get(() ->
+        Arrays.stream(values()).map(Enum::name).map(String::toLowerCase).collect(Collectors.joining(", ")));
+
+    static String list() {
+        return FIELDS.get();
+    }
+}

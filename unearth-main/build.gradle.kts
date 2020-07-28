@@ -34,8 +34,7 @@ tasks.withType<ShadowJar>() {
 dependencies {
     implementation(project(":unearth-core"))
     implementation(project(":unearth-util"))
-    implementation(project(":unearth-static"))
-    implementation(project(":unearth-turbo"))
+    implementation(project(":unearth-statik"))
     implementation(project(":unearth-munch"))
     implementation(project(":unearth-jdbc"))
     implementation(project(":unearth-analysis"))

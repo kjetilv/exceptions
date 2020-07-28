@@ -15,15 +15,24 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.munch.util;
 
+import java.time.Duration;
+
+import org.junit.Test;
+import unearth.util.Util;
+
+import static org.junit.Assert.assertTrue;
+
+public class UtilTest {
+
+    @Test
+    public void longerThan() {
+        assertTrue(Util.isLongerThan(Duration.ofMinutes(2), Duration.ofMillis(200)));
+    }
+
+    @Test
+    public void shorterThan() {
+        assertTrue(Util.isShorterThan(Duration.ofMillis(200), Duration.ofMinutes(2)));
+    }
+}

@@ -14,16 +14,23 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
+package unearth.client.proto;
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+import java.lang.reflect.Proxy;
+import java.net.URI;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public final class Proto {
+
+    private Proto() {
+    }
+
+    public static <T> T type(Class<T> api, URI uri, ObjectMapper objectMapper) {
+        return api.cast(Proxy.newProxyInstance(
+            Thread.currentThread().getContextClassLoader(),
+            new Class<?>[] { api },
+            new Invoker(uri, objectMapper)
+        ));
+    }
+}

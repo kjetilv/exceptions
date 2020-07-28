@@ -15,15 +15,13 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.munch.id;
 
+import java.util.UUID;
+
+public class CauseStrandId extends Id {
+
+    public CauseStrandId(UUID hash) {
+        super(hash);
+    }
+}

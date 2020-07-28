@@ -15,15 +15,22 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.munch;
 
+import java.util.UUID;
+
+import org.junit.Assert;
+import org.junit.Test;
+import unearth.munch.model.CauseStrand;
+
+public class ThrowableStackTest {
+
+    @Test
+    public void can_hash() {
+        CauseStrand digest = CauseStrand.create(new Exception());
+
+        UUID hash = digest.getHash();
+
+        Assert.assertEquals(hash, digest.getHash());
+    }
+}
