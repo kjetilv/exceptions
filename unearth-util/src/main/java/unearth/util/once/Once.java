@@ -14,6 +14,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 /*
  *     This file is part of Unearth.
  *
@@ -30,27 +31,42 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
-package unearth.munch.id;
 
-import java.util.UUID;
+package unearth.util.once;
+
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
-import unearth.munch.base.AbstractHashable;
-import unearth.util.once.Once;
-
-public abstract class AbstractHashableIdentifiable<I extends Id>
-    extends AbstractHashable
-    implements Identifiable<I> {
-
-    /**
-     * A supplier which computes {@link Identifiable this identifiable's} {@link Id id} once-only.
-     */
-    private final Supplier<I> id = Once.mostly(() -> id(getHash()));
+public final class Once {
     
-    @Override
-    public final I getId() {
-        return id.get();
+    /**
+     * Returns a supplier which runs the given supplier once.
+     *
+     * @param supplier Source supplier
+     * @param <T> Type
+     *
+     * @return Single-run supplier
+     */
+    public static <T> Supplier<T> get(Supplier<T> supplier) {
+        return supplier instanceof GetOnce<?> ? supplier : new GetOnce<>(vetted(supplier));
     }
-
-    protected abstract I id(UUID hash);
+    
+    public static <T> Supplier<T> mostly(Supplier<T> supplier) {
+        return supplier instanceof GetMostlyOnce<?> ? supplier : new GetMostlyOnce<>(vetted(supplier));
+    }
+    
+    public static <T> Supplier<Optional<T>> maybe(Supplier<T> supplier) {
+        AbstractGet<T> once = (AbstractGet<T>) (supplier instanceof GetOnce<?>
+            ? supplier
+            : mostly(supplier));
+        return once.maybe();
+    }
+    
+    private Once() {
+    }
+    
+    private static <T> T vetted(T supplier) {
+        return Objects.requireNonNull(supplier, "supplier");
+    }
 }

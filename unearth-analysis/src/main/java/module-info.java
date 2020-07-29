@@ -8,4 +8,5 @@ module unearth.analysis {
     requires com.datastax.oss.driver.core;
     requires com.datastax.oss.driver.querybuilder;
     requires com.datastax.oss.protocol;
+    requires unearth.util;
 }

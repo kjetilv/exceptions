@@ -32,9 +32,11 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
+import unearth.util.once.Once;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 public class OnceTest {
     
@@ -51,6 +53,17 @@ public class OnceTest {
         
         assertSame(singleData, supplier.get());
         assertSame(singleData, supplier.get());
+    }
+    
+    @Test
+    public void testSimpleGetOptional() {
+        int c = next();
+        Supplier<Data> supplier = Once.get(slowGet());
+        assertTrue(Once.maybe(supplier).get().isEmpty());
+        Data v = supplier.get();
+        assertTrue(Once.maybe(supplier).get().isPresent());
+        assertSame(v, Once.maybe(supplier).get().get());
+        assertSame(v, supplier.get());
     }
     
     @Test

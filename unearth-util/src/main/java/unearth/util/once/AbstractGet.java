@@ -14,6 +14,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 /*
  *     This file is part of Unearth.
  *
@@ -30,27 +31,35 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
-package unearth.munch.id;
 
-import java.util.UUID;
+package unearth.util.once;
+
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
-import unearth.munch.base.AbstractHashable;
-import unearth.util.once.Once;
-
-public abstract class AbstractHashableIdentifiable<I extends Id>
-    extends AbstractHashable
-    implements Identifiable<I> {
-
-    /**
-     * A supplier which computes {@link Identifiable this identifiable's} {@link Id id} once-only.
-     */
-    private final Supplier<I> id = Once.mostly(() -> id(getHash()));
+abstract class AbstractGet<T> implements Supplier<T> {
+    
+    private final Supplier<T> supplier;
+    
+    AbstractGet(Supplier<T> supplier) {
+        this.supplier = Objects.requireNonNull(supplier, "supplier");
+    }
     
     @Override
-    public final I getId() {
-        return id.get();
+    public final T get() {
+        return get(supplier, false);
     }
-
-    protected abstract I id(UUID hash);
+    
+    final Supplier<Optional<T>> maybe() {
+        return () ->
+            Optional.ofNullable(get(supplier, true));
+    }
+    
+    protected abstract T get(Supplier<T> supplier, boolean optional);
+    
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + supplier + "]";
+    }
 }

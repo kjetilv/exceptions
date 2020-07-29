@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import unearth.util.MostlyOnce;
+import unearth.util.once.Once;
 
 public enum FeedEntryFields {
 
@@ -37,9 +37,9 @@ public enum FeedEntryFields {
 
     FAULT_SEQ;
 
-    private static final Supplier<String> FIELDS = MostlyOnce.get(() ->
+    private static final Supplier<String> FIELDS = Once.mostly(() ->
         Arrays.stream(values()).map(Enum::name).map(String::toLowerCase).collect(Collectors.joining(", ")));
-
+    
     static String list() {
         return FIELDS.get();
     }

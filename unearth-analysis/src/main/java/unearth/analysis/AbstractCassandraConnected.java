@@ -20,9 +20,11 @@ package unearth.analysis;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.datastax.oss.driver.api.core.AsyncAutoCloseable;
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
@@ -34,10 +36,11 @@ import com.datastax.oss.driver.api.core.metadata.EndPoint;
 import com.datastax.oss.driver.api.core.metadata.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import unearth.util.once.Once;
 
 public class AbstractCassandraConnected {
 
-    private final CqlSession cqlSession;
+    private final Supplier<CqlSession> cqlSession;
 
     private static final Logger log = LoggerFactory.getLogger(AbstractCassandraConnected.class);
 
@@ -48,19 +51,24 @@ public class AbstractCassandraConnected {
     private static final String PROFILE = "default";
 
     AbstractCassandraConnected(String host, int port, String dc, String keyspace) {
-        this.cqlSession = builder(host, port, dc, keyspace).build();
+        CqlSessionBuilder builder = builder(host, port, dc, keyspace);
 
-        Row row = cqlSession.execute(VERSION_QUERY).one();
-        if (row == null) {
-            throw new IllegalStateException("Failed to obtain version information");
-        }
-        log.info("Connected to Cassandra @ {}: {}",
-            endPoints(cqlSession).map(EndPoint::asMetricPrefix).collect(Collectors.joining(", ")),
-            row.getString(RELEASE_VERSION));
+        cqlSession = Once.get(() -> {
+            CqlSession cqlSession = builder.build();
+            Row row = cqlSession.execute(VERSION_QUERY).one();
+            if (row == null) {
+                throw new IllegalStateException("Failed to obtain version information");
+            }
+            log.info(
+                "Connected to Cassandra @ {}: {}",
+                endPoints(cqlSession).map(EndPoint::asMetricPrefix).collect(Collectors.joining(", ")),
+                row.getString(RELEASE_VERSION));
+            return cqlSession;
+        });
     }
 
     public void close() {
-        cqlSession.close();
+        Once.maybe(cqlSession).get().ifPresent(AsyncAutoCloseable::close);
     }
 
     static void exec(CqlSession session, String stmt, Object... args) {
@@ -72,7 +80,7 @@ public class AbstractCassandraConnected {
 
     void inSession(Consumer<CqlSession> action) {
         try {
-            action.accept(cqlSession);
+            action.accept(cqlSession.get());
         } catch (Exception e) {
             throw new IllegalStateException("Failed to perform action", e);
         }
