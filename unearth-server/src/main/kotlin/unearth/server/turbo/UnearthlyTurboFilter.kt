@@ -67,21 +67,21 @@ class UnearthlyTurboFilter(
 ) : TurboFilter() {
 
     override fun decide(
-        marker: Marker,
+        marker: Marker?,
         logger: Logger,
         level: Level,
-        format: String,
-        params: Array<Any>,
+        format: String?,
+        params: Array<Any>?,
         t: Throwable?
     ): FilterReply {
         if (t == null) {
             return FilterReply.NEUTRAL
         }
-        val policy = faultHandler.handle(t, format, *params)
-        logger.log(
+        val policy = faultHandler.handle(t, format, *params ?: emptyArray())
+        (logger as LocationAwareLogger).log(
             marker,
             (logger as LocationAwareLogger).name,
-            level(level),
+            locationAwareLevel(level),
             message(format, policy),
             allParameters(params, policy, rendering(policy)).toTypedArray(),
             null
@@ -105,18 +105,17 @@ class UnearthlyTurboFilter(
 
     companion object {
 
-        private fun allParameters(params: Array<Any>, policy: HandlingPolicy, rendering: CausesRendering?) = listOfNotNull(
+        private fun allParameters(params: Array<Any>?, policy: HandlingPolicy, rendering: CausesRendering?) = listOfNotNull(
             params,
             policy.faultId,
             policy.feedEntryId,
             rendering?.getStrings("  ")?.joinToString("\n")
         )
 
-        private fun message(format: String, policy: HandlingPolicy): String {
-            return format + " {} {}" + if (policy.action == HandlingPolicy.Action.LOG_ID) "" else "\n{}"
-        }
+        private fun message(format: String?, policy: HandlingPolicy): String =
+            "${format?.let { "$format " }?: ""}{} {}${if (policy.`is`(HandlingPolicy.Action.LOG_ID)) "" else "\n{}"}"
 
-        private fun level(level: Level): Int = when (level) {
+        private fun locationAwareLevel(level: Level): Int = when (level) {
             Level.INFO -> LocationAwareLogger.INFO_INT
             Level.WARN -> LocationAwareLogger.WARN_INT
             Level.DEBUG -> LocationAwareLogger.DEBUG_INT

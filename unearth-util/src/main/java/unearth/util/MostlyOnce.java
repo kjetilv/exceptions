@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-public final class MostlyOnce {
+public final class MostlyOnce<T> implements Supplier<T> {
     
     /**
      * Returns a supplier which runs the given supplier once only, mostly.
@@ -33,25 +33,19 @@ public final class MostlyOnce {
      * @return Single-run supplier
      */
     public static <O> Supplier<O> get(Supplier<O> supplier) {
-        return supplier == null || supplier instanceof Supp<?> ? supplier : new Supp<>(supplier);
+        return supplier == null || supplier instanceof MostlyOnce<?> ? supplier : new MostlyOnce<>(supplier);
     }
     
-    private MostlyOnce() {
+    private final Supplier<T> supplier;
+    
+    private final AtomicReference<T> value = new AtomicReference<>();
+    
+    public MostlyOnce(Supplier<T> supplier) {
+        this.supplier = Objects.requireNonNull(supplier, "supplier");
     }
     
-    private static final class Supp<T> implements Supplier<T> {
-        
-        private final Supplier<T> supplier;
-        
-        private final AtomicReference<T> value = new AtomicReference<>();
-        
-        private Supp(Supplier<T> supplier) {
-            this.supplier = Objects.requireNonNull(supplier, "supplier");
-        }
-        
-        @Override
-        public T get() {
-            return value.updateAndGet(v -> v == null ? supplier.get() : v);
-        }
+    @Override
+    public T get() {
+        return value.updateAndGet(v -> v == null ? supplier.get() : v);
     }
 }

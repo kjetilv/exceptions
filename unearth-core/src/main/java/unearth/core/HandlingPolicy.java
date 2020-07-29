@@ -25,6 +25,10 @@ import unearth.munch.model.FeedEntry;
 
 public interface HandlingPolicy {
 
+    default boolean is(Action action) {
+        return getAction() == action;
+    }
+    
     String getSummary();
 
     Action getAction();

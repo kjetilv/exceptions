@@ -17,11 +17,8 @@
 
 package unearth.test;
 
-import java.io.Closeable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.testcontainers.containers.GenericContainer;
 import unearth.analysis.CassandraInit;
@@ -30,131 +27,132 @@ import unearth.server.Unearth;
 import unearth.server.UnearthlyCassandraConfig;
 import unearth.server.UnearthlyConfig;
 import unearth.server.UnearthlyDbConfig;
+import unearth.util.UncheckedCloseable;
 
-@SuppressWarnings({"FieldCanBeLocal", "WeakerAccess", "SameParameterValue"})
-public final class DockerStartup implements Closeable {
-
-    private final Unearth.State state;
-
-    private final UnearthlyClient client;
-
-    private final GenericContainer<?> cassandraContainer;
-
-    private final GenericContainer<?> postgresContainer;
-
-    private final CassandraInit cassandraInit;
-
-    private static final String CASSANDRA_IMAGE = "cassandra:3.11.4";
-
-    private static final String POSTGRES_IMAGE = "postgres:12";
-
-    private static final String DATACENTER = "datacenter1";
-
+@SuppressWarnings({ "FieldCanBeLocal", "WeakerAccess", "SameParameterValue" })
+public final class DockerStartup implements UncheckedCloseable {
+    
+    private final AtomicReference<Unearth.State> state = new AtomicReference<>();
+    
+    private final AtomicReference<UnearthlyClient> client = new AtomicReference<>();
+    
+    private final AtomicReference<GenericContainer<?>> cassandraContainer = new AtomicReference<>();
+    
+    private final AtomicReference<GenericContainer<?>> postgresContainer = new AtomicReference<>();
+    
+    private final AtomicReference<CassandraInit> cassandraInit = new AtomicReference<>();
+    
     DockerStartup() {
-
-        AtomicInteger threadCounter = new AtomicInteger();
-        ScheduledExecutorService exec = Executors.newScheduledThreadPool(
-            2,
-            r ->
-                new Thread(r, "t" + threadCounter.incrementAndGet()));
-
-        Future<? extends GenericContainer<?>> cassandraFuture = exec.submit(DockerStartup::startCassandra);
-        Future<? extends GenericContainer<?>> postgresFuture = exec.submit(DockerStartup::startPostgres);
-
-        cassandraContainer = waitFor(cassandraFuture, "Failed: Cassandra");
-        UnearthlyCassandraConfig cassandraConfig = cassandraConfig(
-            cassandraContainer,
-            "testing");
-        postgresContainer = waitFor(postgresFuture, "Failed: Postgres");
-
-        this.cassandraInit = new CassandraInit(
-            cassandraConfig.getHost(),
-            cassandraConfig.getPort(),
-            cassandraConfig.getDc(),
-            cassandraConfig.getKeyspace()).init();
-
-        this.state = new Unearth(
-            new UnearthlyConfig(
-                "/api/test",
-                "localhost",
-                0,
-                true,
-                true,
-                cassandraConfig,
-                postgresConfig(postgresContainer, "postgres"))
-        ).run();
-
-        this.client = UnearthlyClient.connect(this.state.url());
+        CompletableFuture<UnearthlyCassandraConfig> cassandraFuture = CompletableFuture
+            .supplyAsync(DockerStartup::startCassandra)
+            .whenComplete((genericContainer, e) -> cassandraContainer.set(genericContainer))
+            .thenApply(container -> cassandraConfig(container, "testing"));
+        
+        CompletableFuture<UnearthlyDbConfig> postgresFuture = CompletableFuture
+            .supplyAsync(DockerStartup::startPostgres)
+            .whenComplete((genericContainer, e) -> postgresContainer.set(genericContainer))
+            .thenApply(container -> postgresConfig(container, "postgres"));
+        
+        cassandraFuture
+            .thenApply(cassandraConfig ->
+                new CassandraInit(
+                    cassandraConfig.getHost(),
+                    cassandraConfig.getPort(),
+                    cassandraConfig.getDc(),
+                    cassandraConfig.getKeyspace()))
+            .whenComplete((init, throwable) ->
+                cassandraInit.set(init))
+            .thenApply(CassandraInit::init);
+        
+        CompletableFuture<Unearth> unearth = cassandraFuture
+            .thenCombineAsync(postgresFuture, (cassandraConfig, dbConfig) ->
+                new UnearthlyConfig(
+                    "/api/test",
+                    "localhost",
+                    0,
+                    true,
+                    true,
+                    cassandraConfig,
+                    dbConfig))
+            .thenApply(Unearth::new);
+        
+        CompletableFuture<UnearthlyClient> client = unearth
+            .thenApply(Unearth::run)
+            .whenComplete((state, throwable) ->
+                this.state.set(state))
+            .thenApply(Unearth.State::url)
+            .thenApply(UnearthlyClient::connect)
+            .whenComplete((unearthlyClient, throwable) ->
+                this.client.set(unearthlyClient));
+        
+        client.join();
     }
-
+    
     public UnearthlyClient getClient() {
-
-        return client;
+        return client.get();
     }
-
+    
     public void stop() {
-
+        Unearth.State state = this.state.get();
         if (state != null) {
             state.close();
         }
-        if (cassandraInit != null) {
-            cassandraInit.close();
+        CassandraInit init = this.cassandraInit.get();
+        if (init != null) {
+            init.close();
         }
-        if (cassandraContainer != null) {
-            cassandraContainer.stop();
-            cassandraContainer.close();
+        GenericContainer<?> container = cassandraContainer.get();
+        if (container != null) {
+            container.stop();
+            container.close();
         }
     }
-
+    
     public void reset() {
-
+        Unearth.State state = this.state.get();
         if (state != null) {
             state.reset();
         }
     }
-
+    
     @Override
     public void close() {
-
         stop();
     }
-
-    private static GenericContainer<?> waitFor(Future<? extends GenericContainer<?>> future, String msg) {
-
-        try {
-            return future.get();
-        } catch (Exception e) {
-            throw new IllegalStateException(msg, e);
-        }
-    }
-
+    
+    private static final String CASSANDRA_IMAGE = "cassandra:3.11.4";
+    
+    private static final String POSTGRES_IMAGE = "postgres:12";
+    
+    private static final String DATACENTER = "datacenter1";
+    
     private static GenericContainer<?> startCassandra() {
-
+        
         GenericContainer<?> cassandra = new GenericContainer<>(CASSANDRA_IMAGE).withExposedPorts(9042);
         cassandra.start();
         return cassandra;
     }
-
+    
     private static GenericContainer<?> startPostgres() {
-
+        
         GenericContainer<?> postgres = new GenericContainer<>(POSTGRES_IMAGE)
             .withEnv("POSTGRES_PASSWORD", "password")
             .withExposedPorts(5432);
         postgres.start();
         return postgres;
     }
-
+    
     private static UnearthlyCassandraConfig cassandraConfig(GenericContainer<?> container, String keyspace) {
-
+        
         return new UnearthlyCassandraConfig(
             container.getContainerIpAddress(),
             container.getFirstMappedPort(),
             DATACENTER,
             keyspace);
     }
-
+    
     private static UnearthlyDbConfig postgresConfig(GenericContainer<?> container, String schema) {
-
+        
         String postgresIP = container.getContainerIpAddress();
         Integer postgresPort = container.getFirstMappedPort();
         String postgresJdbc = "jdbc:postgresql://" + postgresIP + ":" + postgresPort + "/" + schema;

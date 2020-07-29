@@ -15,19 +15,10 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.test;
+package unearth.util;
 
-import java.util.function.Supplier;
-
-import unearth.util.UncheckedCloseable;
-
-public final class UnearthlyDocker {
-
-    public static void main(String[] args) {
-        start(DockerStartup::new);
-    }
+public interface UncheckedCloseable extends AutoCloseable {
     
-    private static void start(Supplier<UncheckedCloseable> closableSupplier) {
-        Runtime.getRuntime().addShutdownHook(new Thread(closableSupplier.get()::close));
-    }
+    @Override
+    void close();
 }
