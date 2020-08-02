@@ -21,7 +21,6 @@ import java.util.function.Consumer;
 import unearth.munch.base.AbstractHashable;
 import unearth.util.StringlyTyped;
 
-@SuppressWarnings("unused")
 public final class CauseFrame extends AbstractHashable {
 
     private final ClassLoader classLoader;
@@ -39,7 +38,7 @@ public final class CauseFrame extends AbstractHashable {
     private final Integer line;
 
     private final Boolean naytiv;
-
+    
     public CauseFrame(
         ClassLoader classLoader,
         Module module,

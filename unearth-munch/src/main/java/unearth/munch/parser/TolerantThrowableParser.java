@@ -55,7 +55,6 @@ final class TolerantThrowableParser {
     private static final Pattern AT_PREAMBLE_PATTERN = Pattern.compile("\\s+at\\s");
     
     private static List<Integer> causeIndices(List<String> trimmedLines) {
-        
         return IntStream.range(0, trimmedLines.size())
             .filter(index ->
                 !isStacktraceLine(trimmedLines, index))
@@ -68,12 +67,10 @@ final class TolerantThrowableParser {
     }
     
     private static boolean isStacktraceLine(List<String> trimmedLines, int index) {
-        
         return trimmedLines.get(index).startsWith("at ");
     }
     
     private static Stream<String> types(String... types) {
-        
         return Arrays.stream(types).map(type -> type + ": ");
     }
     
@@ -87,7 +84,6 @@ final class TolerantThrowableParser {
     }
     
     private static List<ParsedThrowable> parsed(List<String> trimmmedLines, List<Integer> causeIndices) {
-        
         return causeIndices.stream().map(causeIndex -> {
                 CauseFrame[] causeFrames =
                     stackTrace(trimmmedLines, causeIndices, causeIndex);
@@ -100,7 +96,6 @@ final class TolerantThrowableParser {
     }
     
     private static ExceptionHeading getExceptionHeading(List<String> lines, int causeIndex) {
-        
         String line = lines.get(causeIndex);
         Optional<String> simple = Stream.of(EXCEPTION, ERROR)
             .filter(type -> line.contains(type + ": "))
@@ -117,7 +112,6 @@ final class TolerantThrowableParser {
     }
     
     private static ExceptionHeading getExceptionHeading(String type, String line) {
-        
         int hit = line.indexOf(type + ": ");
         int i = hit;
         while (true) {
@@ -131,7 +125,6 @@ final class TolerantThrowableParser {
     }
     
     private static ExceptionHeading getCauseExceptionHeading(String line) {
-        
         int startIndex = line.indexOf(CAUSED_BY);
         int nextIndex = line.indexOf(":", startIndex);
         String exceptionName = line.substring(startIndex + CAUSED_BY.length(), nextIndex);
@@ -140,7 +133,6 @@ final class TolerantThrowableParser {
     }
     
     private static CauseFrame[] stackTrace(List<String> trimmedLines, List<Integer> causeIndices, int causeIndex) {
-        
         int endIndex = causeIndex >= causeIndices.size() - 1
             ? trimmedLines.size() - 1
             : causeIndices.get(causeIndex + 1);
@@ -151,7 +143,6 @@ final class TolerantThrowableParser {
     }
     
     private static CauseFrame[] parsed(List<String> trimmedLines, int startIndex, int endIndex) {
-        
         if (startIndex > endIndex) {
             String lines =
                 trimmedLines.size() > startIndex ? trimmedLines.get(startIndex) : trimmedLines.size() + " lines";

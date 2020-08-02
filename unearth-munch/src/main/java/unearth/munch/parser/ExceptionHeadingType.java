@@ -59,7 +59,7 @@ public enum ExceptionHeadingType implements ExceptionHeadingPicker {
     
     @Override
     public String message(String... parts) {
-        return parts[2];
+        return parts.length > 2 ? parts[2] : null;
     }
     
     private static final Pattern COLON = Pattern.compile(": ");

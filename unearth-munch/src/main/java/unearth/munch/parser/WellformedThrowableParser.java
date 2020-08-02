@@ -25,8 +25,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -45,6 +45,12 @@ final class WellformedThrowableParser {
     
     private WellformedThrowableParser() {
     }
+    
+    private static final String SUPPRESSED = "Suppressed: ";
+    
+    private static final String CAUSED_BY = "Caused by: ";
+    
+    private static final Pattern LINE = Pattern.compile("\n");
     
     private static Optional<ExceptionHeading> parseExceptionHeading(String line) {
         return Optional.ofNullable(line).map(String::trim).flatMap(l ->
@@ -90,13 +96,13 @@ final class WellformedThrowableParser {
             startIndex + 1,
             stopIndex,
             indents.get(level),
-            TolerantThrowableParser.CAUSED_BY);
+            CAUSED_BY);
         List<Integer> suppressedIndexes = getIndexes(
             lines,
             startIndex + 1,
             causeIndexes.isEmpty() ? stopIndex : causeIndexes.get(0),
             indents.get(level + 1),
-            ThrowableParser.SUPPRESSED);
+            SUPPRESSED);
         
         Map<Integer, Integer> causeStartStops = indexToIndex(causeIndexes, stopIndex);
         List<ParsedThrowable> causes = causeStartStops.entrySet().stream().flatMap(e ->
@@ -133,7 +139,8 @@ final class WellformedThrowableParser {
     ) {
         if (!suppressedIndexes.isEmpty()) {
             return suppressedIndexes.get(0);
-        };
+        }
+        ;
         if (!causeIndexes.isEmpty()) {
             return causeIndexes.get(0);
         }
@@ -148,9 +155,9 @@ final class WellformedThrowableParser {
     }
     
     private static List<String> lines(String in) {
-        return Arrays.stream(TolerantThrowableParser.LINE.split(in))
-            .filter(Objects::nonNull)
-            .filter(line -> !line.isBlank())
+        return Arrays.stream(LINE.split(in))
+            .filter(obj -> !
+                (obj == null || obj.isBlank()))
             .collect(Collectors.toList());
     }
     
