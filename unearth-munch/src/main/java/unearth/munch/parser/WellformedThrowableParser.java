@@ -108,11 +108,13 @@ final class WellformedThrowableParser {
             parseLevel(lines, e.getKey(), e.getValue(), level + 1, indents)
         ).collect(Collectors.toList());
         
+        int mainStopIndex = mainStopIndex(suppressedIndexes, causeIndexes, stopIndex);
+        
         ParsedThrowable mainThrowable = parseExceptionHeading(lines.get(startIndex))
             .map(heading ->
                 new ParsedThrowable(
                     heading,
-                    stackFrames(lines, startIndex + 1, stopIndex)))
+                    stackFrames(lines, startIndex + 1, mainStopIndex)))
             .map(exception ->
                 exception.withSuppressed(suppressions))
             .orElseThrow(() ->
@@ -122,6 +124,20 @@ final class WellformedThrowableParser {
             Stream.of(mainThrowable),
             causes.stream())
             .collect(Collectors.toList());
+    }
+    
+    private static int mainStopIndex(
+        List<Integer> suppressedIndexes,
+        List<Integer> causeIndexes,
+        int stopIndex
+    ) {
+        if (!suppressedIndexes.isEmpty()) {
+            return suppressedIndexes.get(0);
+        };
+        if (!causeIndexes.isEmpty()) {
+            return causeIndexes.get(0);
+        }
+        return stopIndex;
     }
     
     private static List<CauseFrame> stackFrames(List<String> lines, int startIndex, int stopIndex) {
