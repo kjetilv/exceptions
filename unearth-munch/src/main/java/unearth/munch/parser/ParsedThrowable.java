@@ -18,7 +18,6 @@
 package unearth.munch.parser;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -26,22 +25,42 @@ import unearth.munch.ChameleonException;
 import unearth.munch.print.CauseFrame;
 
 final class ParsedThrowable {
-
+    
     private final ExceptionHeading exceptionHeading;
-
-    private final Collection<CauseFrame> parsedStackTrace;
-
+    
+    private final List<CauseFrame> parsedStackTrace;
+    
+    private final List<List<ParsedThrowable>> suppressions;
+    
     ParsedThrowable(ExceptionHeading exceptionHeading, CauseFrame... parsedStackTrace) {
         this(exceptionHeading, Arrays.asList(parsedStackTrace));
     }
     
-    ParsedThrowable(ExceptionHeading exceptionHeading, Collection<CauseFrame> parsedStackTrace) {
-        this.exceptionHeading = exceptionHeading;
-        this.parsedStackTrace = parsedStackTrace == null || parsedStackTrace.isEmpty()
-            ? Collections.emptyList()
-            : List.copyOf(parsedStackTrace);
+    ParsedThrowable(ExceptionHeading exceptionHeading, List<CauseFrame> parsedStackTrace) {
+        this(
+            exceptionHeading,
+            parsedStackTrace == null || parsedStackTrace.isEmpty()
+                ? Collections.emptyList()
+                : parsedStackTrace,
+            Collections.emptyList());
     }
-
+    
+    ParsedThrowable(
+        ExceptionHeading exceptionHeading,
+        List<CauseFrame> parsedStackTrace,
+        List<List<ParsedThrowable>> suppressions
+    ) {
+        this.exceptionHeading = exceptionHeading;
+        this.parsedStackTrace = parsedStackTrace;
+        this.suppressions = suppressions;
+    }
+    
+    ParsedThrowable withSuppressed(List<List<ParsedThrowable>> suppressions) {
+        return suppressions == null || suppressions.isEmpty()
+            ? this
+            : new ParsedThrowable(exceptionHeading, parsedStackTrace, suppressions);
+    }
+    
     ChameleonException reconstruct(Throwable caused) {
         ChameleonException chameleonException = new ChameleonException(
             exceptionHeading.getName(), exceptionHeading.getMessage(), caused);
@@ -49,5 +68,15 @@ final class ParsedThrowable {
             .map(CauseFrame::toStackTraceElement)
             .toArray(StackTraceElement[]::new));
         return chameleonException;
+    }
+    
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" +
+            exceptionHeading.getMessage() + "/" +
+            exceptionHeading.getName() + ": " +
+            parsedStackTrace.size() +
+            (suppressions.isEmpty() ? "" : " s:" + suppressions.size()) +
+            "]";
     }
 }

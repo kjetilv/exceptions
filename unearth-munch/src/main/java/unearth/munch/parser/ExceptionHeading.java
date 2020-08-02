@@ -40,6 +40,6 @@ public final class ExceptionHeading {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + name + ": " + message + "]";
+        return getClass().getSimpleName() + "[" + message + "/" + name + "]";
     }
 }
