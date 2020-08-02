@@ -38,8 +38,7 @@ public class ThrowableParserTest {
             Throwable chameleon = ThrowableParser.parse(output);
             assertNotNull(chameleon);
             String print = print(chameleon);
-            System.out.println("###" + output);
-            System.out.println("####" + print);
+            System.out.println("\n\n" + print);
         }
     }
     
