@@ -30,7 +30,6 @@ import java.util.stream.Stream;
 
 import unearth.munch.model.Cause;
 import unearth.util.Streams;
-import unearth.util.Util;
 
 public final class ConfigurableStackRenderer implements StackRenderer {
 
@@ -65,7 +64,10 @@ public final class ConfigurableStackRenderer implements StackRenderer {
         this.groupPrinter = groupDisplay == null
             ? (group, size) -> group
             : groupDisplay;
-        this.reshapers = Util.orEmpty(reshapers);
+        this.reshapers =
+            reshapers == null || ((Collection<GroupedFrameTransform>) reshapers).isEmpty()
+                ? Collections.emptyList()
+                : List.copyOf(reshapers);
         this.framePrinter = framePrinter == null
             ? (sb, cf) -> cf.defaultPrint(sb)
             : framePrinter;

@@ -18,6 +18,8 @@
 package unearth.munch.model;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -27,7 +29,6 @@ import unearth.munch.ChameleonException;
 import unearth.munch.id.AbstractHashableIdentifiable;
 import unearth.munch.id.CauseStrandId;
 import unearth.munch.print.CauseFrame;
-import unearth.util.Util;
 
 /**
  * A cause strand consists of a stacktrace and an exception class name.
@@ -40,7 +41,10 @@ public final class CauseStrand extends AbstractHashableIdentifiable<CauseStrandI
 
     private CauseStrand(String className, List<CauseFrame> stackFrames) {
         this.className = className;
-        this.causeFrames = Util.orEmpty(stackFrames);
+        this.causeFrames =
+            stackFrames == null || ((Collection<CauseFrame>) stackFrames).isEmpty()
+                ? Collections.emptyList()
+                : List.copyOf(stackFrames);
     }
 
     public static CauseStrand create(Throwable throwable) {

@@ -24,31 +24,31 @@ import unearth.munch.print.CauseFrame;
 
 final class StackTraceParts {
 
-    private final StackTraceEntry parser;
+    private final StackTraceElementType type;
 
     private final String[] parts;
 
-    StackTraceParts(StackTraceEntry parser, String[] parts) {
-        this.parser = parser;
+    StackTraceParts(StackTraceElementType type, String[] parts) {
+        this.type = type;
         this.parts = parts;
     }
 
     Stream<CauseFrame> reconstruct() {
-        if (parser == StackTraceEntry.MORE) {
+        if (type == StackTraceElementType.MORE) {
             return Stream.empty();
         }
         try {
-            Integer lineNumber = parser.lineNo(parts);
-            String file = parser.file(parts);
+            Integer lineNumber = type.lineNo(parts);
+            String file = type.file(parts);
             return Stream.of(new CauseFrame(
                 null,
-                CauseFrame.Module(parser.module(parts)),
-                CauseFrame.ModuleVer(parser.moduleVersion(parts)),
-                CauseFrame.ClassName(parser.className(parts)),
-                CauseFrame.Method(parser.method(parts)),
-                CauseFrame.File(file == null ? parser.otherSource(parts) : file),
+                CauseFrame.Module(type.module(parts)),
+                CauseFrame.ModuleVer(type.moduleVersion(parts)),
+                CauseFrame.ClassName(type.className(parts)),
+                CauseFrame.Method(type.method(parts)),
+                CauseFrame.File(file == null ? type.otherSource(parts) : file),
                 lineNumber == null ? -1 : lineNumber,
-                parser.isNativeMethod()
+                type.isNativeMethod()
             ));
         } catch (Exception e) {
             throw new IllegalStateException(this + " failed to reconstruct", e);
@@ -58,6 +58,6 @@ final class StackTraceParts {
     @Override
     public String toString() {
         return getClass().getSimpleName() +
-            "[" + parser + " => " + (parts == null ? null : Arrays.asList(parts)) + "]";
+            "[" + type + " => " + (parts == null ? null : Arrays.asList(parts)) + "]";
     }
 }

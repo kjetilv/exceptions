@@ -19,7 +19,7 @@ package unearth.munch.parser;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
-enum StackTraceEntry implements StackTraceElementPicker {
+enum StackTraceElementType implements StackTraceElementPicker {
 
     NATIVE_METHOD_WITH_VERSIONED_MODULE(
         Pattern.compile("^\\s*at\\s([\\w.]*)@([\\w\\d.]*)/([\\w.]*)\\(([\\w\\s]*)\\)$"), true
@@ -36,12 +36,12 @@ enum StackTraceEntry implements StackTraceElementPicker {
 
         @Override
         public String className(String... parts) {
-            return StackTraceEntry.getClassName(parts[2]);
+            return StackTraceElementType.getClassName(parts[2]);
         }
 
         @Override
         public String method(String... parts) {
-            return StackTraceEntry.getMethodName(parts[2]);
+            return StackTraceElementType.getMethodName(parts[2]);
         }
 
         @Override
@@ -60,12 +60,12 @@ enum StackTraceEntry implements StackTraceElementPicker {
 
         @Override
         public String className(String... parts) {
-            return StackTraceEntry.getClassName(parts[1]);
+            return StackTraceElementType.getClassName(parts[1]);
         }
 
         @Override
         public String method(String... parts) {
-            return StackTraceEntry.getMethodName(parts[1]);
+            return StackTraceElementType.getMethodName(parts[1]);
         }
 
         @Override
@@ -79,12 +79,12 @@ enum StackTraceEntry implements StackTraceElementPicker {
     ) {
         @Override
         public String className(String... parts) {
-            return StackTraceEntry.getClassName(parts[0]);
+            return StackTraceElementType.getClassName(parts[0]);
         }
 
         @Override
         public String method(String... parts) {
-            return StackTraceEntry.getMethodName(parts[0]);
+            return StackTraceElementType.getMethodName(parts[0]);
         }
 
         @Override
@@ -108,12 +108,12 @@ enum StackTraceEntry implements StackTraceElementPicker {
 
         @Override
         public String className(String... parts) {
-            return StackTraceEntry.getClassName(parts[2]);
+            return StackTraceElementType.getClassName(parts[2]);
         }
 
         @Override
         public String method(String... parts) {
-            return StackTraceEntry.getMethodName(parts[2]);
+            return StackTraceElementType.getMethodName(parts[2]);
         }
 
         @Override
@@ -137,12 +137,12 @@ enum StackTraceEntry implements StackTraceElementPicker {
 
         @Override
         public String className(String... parts) {
-            return StackTraceEntry.getClassName(parts[1]);
+            return StackTraceElementType.getClassName(parts[1]);
         }
 
         @Override
         public String method(String... parts) {
-            return StackTraceEntry.getMethodName(parts[1]);
+            return StackTraceElementType.getMethodName(parts[1]);
         }
 
         @Override
@@ -161,12 +161,12 @@ enum StackTraceEntry implements StackTraceElementPicker {
     ) {
         @Override
         public String className(String... parts) {
-            return StackTraceEntry.getClassName(parts[0]);
+            return StackTraceElementType.getClassName(parts[0]);
         }
 
         @Override
         public String method(String... parts) {
-            return StackTraceEntry.getMethodName(parts[0]);
+            return StackTraceElementType.getMethodName(parts[0]);
         }
 
         @Override
@@ -195,11 +195,11 @@ enum StackTraceEntry implements StackTraceElementPicker {
 
     private final boolean nativeMethod;
 
-    StackTraceEntry(Pattern pattern) {
+    StackTraceElementType(Pattern pattern) {
         this(pattern, false);
     }
 
-    StackTraceEntry(Pattern pattern, boolean nativeMethod) {
+    StackTraceElementType(Pattern pattern, boolean nativeMethod) {
         this.pattern = pattern;
         this.nativeMethod = nativeMethod;
     }
@@ -208,7 +208,7 @@ enum StackTraceEntry implements StackTraceElementPicker {
         return nativeMethod;
     }
 
-    String[] parts(String line) {
+    String[] toParts(String line) {
         java.util.regex.Matcher matcher = pattern.matcher(line);
         if (matcher.matches()) {
             return IntStream.range(0, matcher.groupCount())
@@ -216,7 +216,7 @@ enum StackTraceEntry implements StackTraceElementPicker {
                 .mapToObj(matcher::group)
                 .toArray(String[]::new);
         }
-        return NONE;
+        return null;
     }
 
     private static String getMethodName(String part) {

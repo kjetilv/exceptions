@@ -161,12 +161,12 @@ public final class CauseFrame extends AbstractHashable {
 
     public StringBuilder defaultPrint(StringBuilder sb) {
         int len = sb.length();
-        if (isSet(classLoader)) {
+        if (classLoader != null) {
             sb.append(classLoader).append("/");
         }
-        if (isSet(module)) {
+        if (module != null) {
             sb.append(module);
-            if (isSet(moduleVer)) {
+            if (moduleVer != null) {
                 sb.append("@").append(moduleVer());
             }
         }
@@ -177,9 +177,9 @@ public final class CauseFrame extends AbstractHashable {
         sb.append(".").append(method).append("(");
         if (naytiv) {
             sb.append("Native Method)");
-        } else if (isSet(file) && line > 0) {
+        } else if (file != null && line > 0) {
             sb.append(file).append(":").append(line).append(")");
-        } else if (isSet(file)) {
+        } else if (file != null) {
             sb.append(file).append(")");
         } else {
             sb.append("Unknown Source)");
@@ -190,9 +190,9 @@ public final class CauseFrame extends AbstractHashable {
     @Override
     public void hashTo(Consumer<byte[]> h) {
         hash(h,
-            classLoader.getValue(),
-            module.getValue(),
-            moduleVer.getValue(),
+            classLoader == null ? "" : classLoader.getValue(),
+            module == null ? "" : module.getValue(),
+            moduleVer == null ? "" : moduleVer.getValue(),
             className.getValue(),
             file.getValue(),
             method.getValue());
@@ -204,11 +204,7 @@ public final class CauseFrame extends AbstractHashable {
     protected String toStringBody() {
         return defaultPrint(new StringBuilder()).toString();
     }
-
-    private static boolean isSet(StringlyTyped s) {
-        return s != null;
-    }
-
+    
     public static final class ClassLoader extends StringlyTyped {
         private ClassLoader(String value) {
             super(value);

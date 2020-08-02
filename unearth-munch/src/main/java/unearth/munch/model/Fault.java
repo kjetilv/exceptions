@@ -18,6 +18,7 @@
 package unearth.munch.model;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -27,12 +28,10 @@ import java.util.stream.Collectors;
 import unearth.munch.id.AbstractHashableIdentifiable;
 import unearth.munch.id.FaultId;
 import unearth.util.Streams;
-import unearth.util.Util;
 
 /**
  * A fault has a {@link FaultStrand fault strand} and a list of {@link Cause causes}.
  */
-@SuppressWarnings("unused")
 public final class Fault extends AbstractHashableIdentifiable<FaultId> {
 
     private final FaultStrand faultStrand;
@@ -41,7 +40,7 @@ public final class Fault extends AbstractHashableIdentifiable<FaultId> {
 
     private Fault(FaultStrand faultStrand, Collection<Cause> causes) {
         this.faultStrand = Objects.requireNonNull(faultStrand);
-        this.causes = Util.orEmptyList(causes);
+        this.causes = causes == null || causes.isEmpty() ? Collections.emptyList() : List.copyOf(causes);
         if (this.faultStrand.getCauseCount() != this.causes.size()) {
             throw new IllegalStateException(
                 "Expected same arity: " + this.faultStrand.getCauseStrands().size() + '/' + this.causes.size());
@@ -65,13 +64,11 @@ public final class Fault extends AbstractHashableIdentifiable<FaultId> {
     public List<Cause> getCauses() {
         return causes;
     }
-
-    public List<CauseStrand> getCauseStrands() {
-        return causes.stream().map(Cause::getCauseStrand).collect(Collectors.toList());
-    }
-
+    
     public Throwable toChameleon() {
-        return Streams.quickReduce(Streams.reverse(causes), (throwable, cause) -> cause.toChameleon(throwable));
+        return Streams.quickReduce(
+            Streams.reverse(causes),
+            (cause, throwable) -> throwable.toChameleon(cause));
     }
 
     @Override

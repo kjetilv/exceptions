@@ -51,10 +51,8 @@ public class AbstractCassandraConnected {
     private static final String PROFILE = "default";
 
     AbstractCassandraConnected(String host, int port, String dc, String keyspace) {
-        CqlSessionBuilder builder = builder(host, port, dc, keyspace);
-
         cqlSession = Once.get(() -> {
-            CqlSession cqlSession = builder.build();
+            CqlSession cqlSession = builder(host, port, dc, keyspace).build();
             Row row = cqlSession.execute(VERSION_QUERY).one();
             if (row == null) {
                 throw new IllegalStateException("Failed to obtain version information");

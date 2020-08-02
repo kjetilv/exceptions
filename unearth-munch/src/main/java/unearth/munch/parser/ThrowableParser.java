@@ -20,8 +20,13 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -30,35 +35,76 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import unearth.munch.print.CauseFrame;
+import unearth.util.Streams;
 
 public final class ThrowableParser {
     
+    static final String CAUSED_BY = "Caused by: ";
+    
+    static final String SUPPRESSED = "Suppressed: ";
+    
+    static final Pattern LINE = Pattern.compile("\n");
+    
+    static final String AT = "\n\tat ";
+    
+    static final Pattern COLON = Pattern.compile(": ");
+    
     public static Throwable parse(ByteBuffer buffer) {
-        
         return parse(new String(buffer.array(), StandardCharsets.UTF_8));
     }
     
     public static Throwable parse(String in) {
-        
         Objects.requireNonNull(in, "in");
+        if (in.contains(SUPPRESSED)) {
+            return wellFormedParse(in);
+        }
         try {
-            List<String> trimmedLines = trimmed(in);
-            List<Integer> causeIndices = causeIndices(trimmedLines);
-            List<ParsedThrowable> parsedThrowables =
-                parsed(trimmedLines, causeIndices);
-            return reconstructed(parsedThrowables);
+            return tolerantParse(in);
         } catch (Exception e) {
             return failedParse(in, e);
         }
     }
     
-    static final Pattern LINE = Pattern.compile("\n");
+    public static Throwable parseLevel(int level, List<String> lines, List<String> indents) {
+        List<ParsedThrowable> throwables = parseLevel(lines, 0, lines.size(), level, indents);
+        return reconstructed(throwables);
+    }
+    
+    public static Optional<CauseFrame> parseCauseFrame(String line) {
+        return Arrays.stream(StackTraceElementType.values()).flatMap(type ->
+            reconstructed(type, line))
+            .findFirst();
+    }
+    
+    public static Optional<ExceptionHeading> parseExceptionHeading(String line) {
+        return Optional.ofNullable(line).map(String::trim).flatMap(l ->
+            Arrays.stream(ExceptionHeadingType.values()).flatMap(type ->
+                reconstructed(type, l).stream())
+                .findFirst());
+    }
+    
+    public static Map<Integer, Integer> indexToIndex(Collection<Integer> ts, int lastIndex) {
+        if (ts == null || ts.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        if (ts.size() == 1) {
+            return Map.of(ts.iterator().next(), lastIndex);
+        }
+        return Stream.concat(
+            Streams.tuplify(ts, 2),
+            Stream.of(List.of(new LinkedList<>(ts).getLast(), lastIndex)))
+            .collect(Collectors.toMap(
+                list -> list.get(0),
+                list -> list.get(1),
+                (i1, i2) -> {
+                    throw new IllegalStateException(i1 + "/" + i2);
+                },
+                LinkedHashMap::new));
+    }
     
     private ThrowableParser() {
     
     }
-    
-    private static final String CAUSED_BY = "Caused by: ";
     
     private static final String EXCEPTION = Exception.class.getSimpleName();
     
@@ -66,7 +112,129 @@ public final class ThrowableParser {
     
     private static final Pattern AT_PREAMBLE_PATTERN = Pattern.compile("\\s+at\\s");
     
-    static final String AT = "\n\tat ";
+    private static List<ParsedThrowable> parseLevel(
+        List<String> lines,
+        int startIndex,
+        int stopIndex,
+        int level,
+        List<String> indents
+    ) {
+        List<ParsedThrowable> causes = parseCauses(lines, startIndex, stopIndex, level, indents);
+        List<List<ParsedThrowable>> suppressions = parseSuppressions(lines, startIndex, stopIndex, level, indents);
+        ParsedThrowable mainThrowable = parseException(startIndex, stopIndex, lines);
+        
+        return Stream.concat(
+            Stream.of(mainThrowable),
+            causes.stream()
+        ).collect(Collectors.toList());
+    }
+    
+    private static List<List<ParsedThrowable>> parseSuppressions(
+        List<String> lines,
+        int startIndex,
+        int stopIndex,
+        int level,
+        List<String> indents
+    ) {
+        List<Integer> suppressedIndexes = getIndexes(
+            lines,
+            startIndex,
+            stopIndex,
+            indents.get(level + 1),
+            SUPPRESSED);
+        Map<Integer, Integer> suppressIndexes = indexToIndex(suppressedIndexes, stopIndex);
+        
+        return suppressIndexes.entrySet().stream().map(e ->
+            parseLevel(lines, e.getKey(), e.getValue(), level + 1, indents)
+        ).collect(Collectors.toList());
+    }
+    
+    private static List<ParsedThrowable> parseCauses(
+        List<String> lines,
+        int startIndex,
+        int stopIndex,
+        int level,
+        List<String> indents
+    ) {
+        List<Integer> causeIndexes = getIndexes(
+            lines,
+            startIndex,
+            stopIndex,
+            indents.get(level),
+            CAUSED_BY);
+        Map<Integer, Integer> causeStartStops =
+            indexToIndex(causeIndexes, stopIndex);
+        
+        return causeStartStops.entrySet().stream().map(e ->
+            parseException(e.getKey(), e.getValue(), lines)
+        ).collect(Collectors.toList());
+    }
+    
+    private static Throwable wellFormedParse(String in) {
+        int level = 0;
+        List<String> lines = lines(in);
+        List<String> indents = getIndents(lines);
+        return parseLevel(level, lines, indents);
+    }
+    
+    private static ParsedThrowable parseException(int startIndex, int stopIndex, List<String> lines) {
+        return parseExceptionHeading(lines.get(startIndex)).map(exceptionHeading ->
+            new ParsedThrowable(
+                exceptionHeading,
+                stackFrames(
+                    lines,
+                    startIndex + 1, stopIndex))
+        ).orElseThrow(() ->
+            new IllegalArgumentException("Not an exception start @" + startIndex + ": " + lines.get(startIndex)));
+    }
+    
+    private static Collection<CauseFrame> stackFrames(List<String> lines, int startIndex, int stopIndex) {
+        return lines.subList(startIndex, stopIndex).stream()
+            .map(ThrowableParser::parseCauseFrame)
+            .flatMap(Optional::stream)
+            .collect(Collectors.toList());
+    }
+    
+    private static List<String> lines(String in) {
+        return Arrays.stream(LINE.split(in))
+            .filter(Objects::nonNull)
+            .filter(line -> !line.isBlank())
+            .collect(Collectors.toList());
+    }
+    
+    private static List<String> getIndents(List<String> lines) {
+        return lines.stream()
+            .map(line ->
+                Character.isWhitespace(line.charAt(0)) ? line.substring(0, line.indexOf(line.trim())) : "")
+            .distinct()
+            .sorted(Comparator.comparing(String::length))
+            .collect(Collectors.toList());
+    }
+    
+    private static List<Integer> getIndexes(List<String> lines, String indent, String type) {
+        return getIndexes(lines, 0, lines.size(), indent, type);
+    }
+    
+    private static List<Integer> getIndexes(
+        List<String> lines,
+        int startIndex,
+        int endIndex,
+        String indent,
+        String type
+    ) {
+        return IntStream.range(startIndex, endIndex)
+            .filter(i -> lines.get(i).startsWith(indent + type))
+            .boxed()
+            .collect(Collectors.toList());
+    }
+    
+    private static Throwable tolerantParse(String in) {
+        List<String> trimmedLines = trimmed(in);
+        List<Integer> causeIndices = causeIndices(trimmedLines);
+        List<ParsedThrowable> parsedThrowables =
+            parsed(trimmedLines, causeIndices);
+        return reconstructed(parsedThrowables);
+    }
     
     private static Throwable reconstructed(List<ParsedThrowable> parsedThrowables) {
         
@@ -189,17 +357,20 @@ public final class ThrowableParser {
             throw new IllegalArgumentException("Line start " + startIndex + " > end " + endIndex + " @ " + lines);
         }
         return trimmedLines.subList(startIndex, endIndex).stream()
-            .flatMap(line ->
-                Stream.of(StackTraceEntry.values()).flatMap(type ->
-                    reconstructed(type, line)))
+            .map(ThrowableParser::parseCauseFrame)
+            .flatMap(Optional::stream)
             .toArray(CauseFrame[]::new);
     }
     
-    private static Stream<CauseFrame> reconstructed(StackTraceEntry pattern, String line) {
-        
-        String[] matches = pattern.parts(line);
-        return matches.length == 0
-            ? Stream.empty()
-            : new StackTraceParts(pattern, matches).reconstruct();
+    private static Stream<CauseFrame> reconstructed(StackTraceElementType type, String line) {
+        return Optional.ofNullable(type.toParts(line)).stream()
+            .map(matches ->
+                new StackTraceParts(type, matches))
+            .flatMap(StackTraceParts::reconstruct);
+    }
+    
+    private static Optional<ExceptionHeading> reconstructed(ExceptionHeadingType type, String line) {
+        return Optional.ofNullable(type.toParts(line)).map(matches ->
+            new ExceptionHeading(type.type(matches), type.message(matches)));
     }
 }

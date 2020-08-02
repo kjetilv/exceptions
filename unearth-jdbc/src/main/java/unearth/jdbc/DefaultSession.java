@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
-@SuppressWarnings("SameParameterValue")
 final class DefaultSession implements Session {
 
     private final Connection connection;

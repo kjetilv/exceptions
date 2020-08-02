@@ -15,7 +15,7 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.util;
+package unearth.util.test;
 
 import java.util.Collection;
 import java.util.HashSet;

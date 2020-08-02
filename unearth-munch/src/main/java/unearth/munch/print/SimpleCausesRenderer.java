@@ -34,7 +34,6 @@ public final class SimpleCausesRenderer implements CausesRenderer {
     public CausesRendering render(Collection<Cause> causeCollection) {
         return Streams.quickReduce(
             Streams.reverse(causeCollection),
-            null,
             (rendering, cause) ->
                 new CausesRendering(
                     cause.getCauseStrand().getClassName(),

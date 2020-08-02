@@ -15,31 +15,42 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.munch.parser;
+package unearth.util;
 
 import java.util.Objects;
 
-public final class ExceptionHeading {
-
-    private final String name;
-
-    private final String message;
-
-    ExceptionHeading(String name, String message) {
-        this.name = Objects.requireNonNull(name, "name");
-        this.message = message == null || message.trim().isBlank() ? null : message;
+public final class Tuple<T> {
+    
+    private final T t1;
+    
+    private final T t2;
+    
+    public Tuple(T t1, T t2) {
+        this.t1 = Objects.requireNonNull(t1, "t1");
+        this.t2 = Objects.requireNonNull(t2, "t2");
     }
-
-    String getName() {
-        return name;
+    
+    public T getT2() {
+        return t2;
     }
-
-    String getMessage() {
-        return message;
+    
+    public T getT1() {
+        return t1;
     }
-
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(t1, t2);
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        return this == o || o instanceof Tuple && Objects.equals(t1, ((Tuple<?>) o).t1) &&
+            Objects.equals(t2, ((Tuple<?>) o).t2);
+    }
+    
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + name + ": " + message + "]";
+        return getClass().getSimpleName() + "[" + t1 + " /" + t2 + "]";
     }
 }

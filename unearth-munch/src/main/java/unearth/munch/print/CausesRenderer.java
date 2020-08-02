@@ -22,13 +22,8 @@ import java.util.Collection;
 import unearth.munch.model.Cause;
 import unearth.munch.model.Fault;
 
-@SuppressWarnings("unused")
 public interface CausesRenderer {
-
-    default CausesRendering render(Throwable throwable) {
-        return render(Fault.create(throwable));
-    }
-
+    
     default CausesRendering render(Fault fault) {
         return render(fault.getCauses());
     }

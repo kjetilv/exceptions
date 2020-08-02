@@ -22,11 +22,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import unearth.munch.base.Hashed;
 import unearth.munch.id.CauseId;
 import unearth.munch.id.CauseStrandId;
 import unearth.munch.id.FaultId;
@@ -42,10 +40,11 @@ import unearth.munch.model.FeedEntry;
 import unearth.munch.print.CauseFrame;
 
 final class Sql {
-
-    private Sql() {
+    
+    static <T> String args(Collection<T> ts) {
+        return ts.stream().map(t -> "?").collect(Collectors.joining(", "));
     }
-
+    
     static List<CauseId> loadCauseIds(Session session, FaultId faultId) {
         return session.select(
             "select cause from fault_2_cause where fault = ?",
@@ -54,7 +53,7 @@ final class Sql {
             res ->
                 new CauseId(res.getUUID()));
     }
-
+    
     static Optional<Cause> loadCause(Session session, CauseId causeId, CauseStrand causeStrand) {
         return session.selectOne(
             "select message from cause where id = ?",
@@ -63,7 +62,7 @@ final class Sql {
             res ->
                 Cause.create(res.getString(), causeStrand));
     }
-
+    
     static Optional<CauseStrand> loadCauseStrand(Session session, CauseStrandId causeStrandId) {
         return session.selectOne(
             "select (class_name) from cause_strand where id = ?",
@@ -73,7 +72,7 @@ final class Sql {
         ).map(className ->
             CauseStrand.create(className, loadCauseFrames(session, causeStrandId)));
     }
-
+    
     static Optional<CauseStrandId> loadCauseStrandId(Session session, CauseId causeId) {
         return session.selectOne(
             "select cause_strand from cause where id = ?",
@@ -83,7 +82,7 @@ final class Sql {
                 new CauseStrandId(res.getUUID())
         );
     }
-
+    
     static List<CauseStrandId> loadCauseStrandIds(Session session, FaultStrandId faultStrandId) {
         return session.select(
             "select cause_strand from fault_strand_2_cause_strand " +
@@ -94,7 +93,7 @@ final class Sql {
             res ->
                 new CauseStrandId(res.getUUID()));
     }
-
+    
     static void saveFeedEntry(Session session, FeedEntry entry) {
         session.update(
             "insert into feed_entry " +
@@ -109,7 +108,7 @@ final class Sql {
                 .set(entry.getFaultSequenceNo())
                 .set(entry.getFaultStrandSequenceNo()));
     }
-
+    
     static Session.Outcome storeCauseStrand(Session session, CauseStrand causeStrand) {
         return session.exists(
             "select id from cause_strand where id = ?", stmt -> stmt.set(causeStrand), getId()
@@ -120,11 +119,11 @@ final class Sql {
                     .set(causeStrand.getClassName()))
         ).go();
     }
-
+    
     static Session.Sel<UUID> getId() {
         return Session.Res::getUUID;
     }
-
+    
     static List<FeedEntry> loadFeedEntries(Session session, FaultStrandId id, Instant sinceTime) {
         return session.select(
             "select (" + FeedEntryFields.list() + ") from feed_entry" +
@@ -135,7 +134,7 @@ final class Sql {
             Sql::readFeedEntry
         );
     }
-
+    
     static FeedEntry readFeedEntry(Session.Res res) {
         return new FeedEntry(
             new FaultEvent(
@@ -146,14 +145,14 @@ final class Sql {
             res.getLong(),
             res.getLong());
     }
-
+    
     static Optional<Long> loadLimit(Session session) {
         return session.selectOne(
             "select seq from global_sequence where id = 0",
             Session.Res::getLong
         );
     }
-
+    
     static Optional<FeedEntry> loadFeedEntry(Session session, FeedEntryId faultEventId) {
         return session.select(
             "select " + FeedEntryFields.list() + " from feed_entry where id = ?",
@@ -162,7 +161,7 @@ final class Sql {
             Sql::readFeedEntry
         ).stream().findFirst();
     }
-
+    
     static List<FeedEntry> loadFeedEntries(Session session, FaultId id, Instant sinceTime, Long ceiling) {
         return session.select(
             "select (" + FeedEntryFields.list() + ") from feed_entry" +
@@ -174,11 +173,11 @@ final class Sql {
             Sql::readFeedEntry
         );
     }
-
+    
     static Optional<Long> loadLimit(Session session, Id id, String sql) {
         return session.selectOne(sql, stmt -> stmt.set(id), Session.Res::getLong);
     }
-
+    
     static int insertFrames(Session session, Collection<CauseFrame> newFrames) {
         return session.updateBatchTotal(
             "insert into cause_frame (" +
@@ -198,7 +197,7 @@ final class Sql {
                 .set(cf.naytiv())
         );
     }
-
+    
     static void linkFaultToCauses(Session session, Fault fault) {
         session.updateBatch(
             "insert into fault_2_cause (" +
@@ -213,7 +212,7 @@ final class Sql {
                     .set(item.getT())
         );
     }
-
+    
     static void linkFaultStrandToCauseStrands(Session session, FaultStrand faultStrand) {
         session.updateBatch(
             "insert into fault_strand_2_cause_strand (" +
@@ -228,7 +227,7 @@ final class Sql {
                     .set(item.getT())
         );
     }
-
+    
     static void linkCauseStrandToCauseFrames(Session session, CauseStrand causeStrand) {
         session.updateBatch(
             "insert into cause_strand_2_cause_frame (cause_strand, seq, cause_frame) values (?, ?, ?)",
@@ -238,21 +237,10 @@ final class Sql {
                     .set(item.getIndex())
                     .set(item.getT()));
     }
-
-    static Session.Existence<FaultStrandId> ifExistsId(
-        Session session,
-        String sql,
-        Hashed id,
-        Function<UUID, FaultStrandId> gen
-    ) {
-        return session.exists(
-            sql,
-            stmt ->
-                stmt.set(id),
-            res ->
-                gen.apply(res.getUUID()));
+    
+    private Sql() {
     }
-
+    
     private static List<CauseFrame> loadCauseFrames(Session session, CauseStrandId causeStrandId) {
         return session.select(
             "select " +
@@ -276,7 +264,7 @@ final class Sql {
                     res.getInt(),
                     res.getBoolean()));
     }
-
+    
     private static <T> List<Idxd<T>> indexed(List<T> ts) {
         return IntStream.range(0, ts.size())
             .mapToObj(i ->

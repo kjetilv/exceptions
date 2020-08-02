@@ -18,12 +18,13 @@
 package unearth.munch.print;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import unearth.util.Streams;
-import unearth.util.Util;
 
 public final class CausesRendering implements Iterable<CausesRendering> {
     
@@ -38,7 +39,7 @@ public final class CausesRendering implements Iterable<CausesRendering> {
     CausesRendering(String className, String message, Collection<String> stack, CausesRendering cause) {
         this.className = className;
         this.message = message == null || message.isBlank() ? "null" : message.trim();
-        this.stack = Util.orEmpty(stack);
+        this.stack = stack == null || stack.isEmpty() ? Collections.emptyList() : List.copyOf(stack);
         this.cause = cause;
     }
     

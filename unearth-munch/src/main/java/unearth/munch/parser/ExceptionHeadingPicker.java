@@ -15,24 +15,15 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.munch.util;
+package unearth.munch.parser;
 
-import java.time.Duration;
-
-import org.junit.Test;
-import unearth.util.Util;
-
-import static org.junit.Assert.assertTrue;
-
-public class UtilTest {
-
-    @Test
-    public void longerThan() {
-        assertTrue(Util.isLongerThan(Duration.ofMinutes(2), Duration.ofMillis(200)));
+public interface ExceptionHeadingPicker {
+    
+    default String type(String... parts) {
+        return null;
     }
-
-    @Test
-    public void shorterThan() {
-        assertTrue(Util.isShorterThan(Duration.ofMillis(200), Duration.ofMinutes(2)));
+    
+    default String message(String... parts) {
+        return null;
     }
 }
