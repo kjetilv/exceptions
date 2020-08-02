@@ -17,6 +17,7 @@
 
 package unearth.munch.parser;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +26,16 @@ import unearth.munch.ChameleonException;
 import unearth.munch.print.CauseFrame;
 
 final class ParsedThrowable {
+    
+    static Throwable reconstructed(List<ParsedThrowable> parsedThrowables) {
+        List<ParsedThrowable> list = new ArrayList<>(parsedThrowables);
+        Collections.reverse(list);
+        Throwable cause = null;
+        for (ParsedThrowable parsedThrowable: list) {
+            cause = parsedThrowable.reconstruct(cause);
+        }
+        return cause;
+    }
     
     private final ExceptionHeading exceptionHeading;
     
@@ -63,10 +74,13 @@ final class ParsedThrowable {
     
     ChameleonException reconstruct(Throwable caused) {
         ChameleonException chameleonException = new ChameleonException(
-            exceptionHeading.getName(), exceptionHeading.getMessage(), caused);
+            exceptionHeading.getName(), exceptionHeading.getMessage(), !suppressions.isEmpty(), caused);
         chameleonException.setStackTrace(parsedStackTrace.stream()
             .map(CauseFrame::toStackTraceElement)
             .toArray(StackTraceElement[]::new));
+        suppressions.stream()
+            .map(ParsedThrowable::reconstructed)
+            .forEach(chameleonException::addSuppressed);
         return chameleonException;
     }
     
