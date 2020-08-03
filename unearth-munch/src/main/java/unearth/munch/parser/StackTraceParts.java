@@ -42,11 +42,11 @@ final class StackTraceParts {
             String file = type.file(parts);
             return Stream.of(new CauseFrame(
                 null,
-                CauseFrame.Module(type.module(parts)),
-                CauseFrame.ModuleVer(type.moduleVersion(parts)),
-                CauseFrame.ClassName(type.className(parts)),
-                CauseFrame.Method(type.method(parts)),
-                CauseFrame.File(file == null ? type.otherSource(parts) : file),
+                CauseFrame.module(type.module(parts)),
+                CauseFrame.moduleVer(type.moduleVersion(parts)),
+                CauseFrame.className(type.className(parts)),
+                CauseFrame.method(type.method(parts)),
+                CauseFrame.file(file == null ? type.otherSource(parts) : file),
                 lineNumber == null ? -1 : lineNumber,
                 type.isNativeMethod()
             ));

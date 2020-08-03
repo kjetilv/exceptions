@@ -18,7 +18,6 @@
 package unearth.util;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,8 +39,8 @@ public class StreamsTest {
     
     @Test
     public void tuplify() {
-        Collection<Integer> ints = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7);
-        List<Collection<Integer>> triples =
+        List<Integer> ints = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7);
+        List<List<Integer>> triples =
             Streams.tuplify(ints, 3).collect(Collectors.toList());
         assertEquals(6, triples.size());
         assertEquals(Arrays.asList(0, 1, 2), triples.get(0));

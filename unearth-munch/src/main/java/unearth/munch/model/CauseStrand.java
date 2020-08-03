@@ -82,12 +82,12 @@ public final class CauseStrand extends AbstractHashableIdentifiable<CauseStrandI
 
     private static List<CauseFrame> causeFrames(StackTraceElement[] stackTrace) {
         return Arrays.stream(stackTrace).map(ste -> new CauseFrame(
-            CauseFrame.ClassLoader(ste.getClassLoaderName()),
-            CauseFrame.Module(ste.getModuleName()),
-            CauseFrame.ModuleVer(ste.getModuleVersion()),
-            CauseFrame.ClassName(ste.getClassName()),
-            CauseFrame.Method(ste.getMethodName()),
-            CauseFrame.File(ste.getFileName()),
+            CauseFrame.classLoader(ste.getClassLoaderName()),
+            CauseFrame.module(ste.getModuleName()),
+            CauseFrame.moduleVer(ste.getModuleVersion()),
+            CauseFrame.className(ste.getClassName()),
+            CauseFrame.method(ste.getMethodName()),
+            CauseFrame.file(ste.getFileName()),
             ste.getLineNumber(),
             ste.isNativeMethod()
         )).collect(Collectors.toUnmodifiableList());

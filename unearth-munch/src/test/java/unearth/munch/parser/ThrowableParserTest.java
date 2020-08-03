@@ -48,7 +48,6 @@ public class ThrowableParserTest {
         Throwable chameleon = ThrowableParser.parse(SUPP);
         assertNotNull(chameleon);
         String print = print(chameleon);
-        System.out.println("\n\n" + print);
         assertEquals(SUPP, print);
     }
     

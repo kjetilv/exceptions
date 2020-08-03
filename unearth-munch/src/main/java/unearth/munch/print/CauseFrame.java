@@ -16,34 +16,37 @@
  */
 package unearth.munch.print;
 
+import java.util.Arrays;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import unearth.munch.base.AbstractHashable;
 import unearth.util.StringlyTyped;
 
 public final class CauseFrame extends AbstractHashable {
     
-    public static ClassLoader ClassLoader(String s) {
+    public static ClassLoader classLoader(String s) {
         return new ClassLoader(s);
     }
     
-    public static Module Module(String s) {
+    public static Module module(String s) {
         return new Module(s);
     }
     
-    public static ModuleVer ModuleVer(String s) {
+    public static ModuleVer moduleVer(String s) {
         return new ModuleVer(s);
     }
     
-    public static ClassName ClassName(String s) {
+    public static ClassName className(String s) {
         return new ClassName(s);
     }
     
-    public static Method Method(String s) {
+    public static Method method(String s) {
         return new Method(s);
     }
     
-    public static File File(String s) {
+    public static File file(String s) {
         return new File(s);
     }
     
@@ -75,11 +78,29 @@ public final class CauseFrame extends AbstractHashable {
         Integer line,
         boolean naytiv
     ) {
-        this(classLoader, module, moduleVer, className, method, file, line, naytiv, -1);
+        this(
+            classLoader,
+            module,
+            moduleVer,
+            className,
+            method,
+            file,
+            line,
+            naytiv,
+            -1);
     }
     
     public CauseFrame(int more) {
-        this(null, null, null, null, null, null, null, false, more);
+        this(
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            false,
+            more);
     }
     
     private CauseFrame(
@@ -105,9 +126,17 @@ public final class CauseFrame extends AbstractHashable {
     }
     
     public CauseFrame unsetModuleInfo() {
-        return module != null && moduleVer != null
-            ? new CauseFrame(classLoader, null, null, className, method, file, line, naytiv)
-            : this;
+        return module == null || moduleVer == null
+            ? this
+            : new CauseFrame(
+                classLoader,
+                null,
+                null,
+                className,
+                method,
+                file,
+                line,
+                naytiv);
     }
     
     public ClassLoader classLoader() {
@@ -115,59 +144,39 @@ public final class CauseFrame extends AbstractHashable {
     }
     
     public CauseFrame unsetClassLoader() {
-        return classLoader(null);
-    }
-    
-    public CauseFrame classLoader(ClassLoader classLoader) {
-        return new CauseFrame(classLoader, module, moduleVer, className, method, file, line, naytiv);
+        return new CauseFrame(
+            null,
+            module,
+            moduleVer,
+            className,
+            method,
+            file,
+            line,
+            naytiv);
     }
     
     public ClassName className() {
         return className;
     }
     
-    public CauseFrame className(ClassName className) {
-        return new CauseFrame(classLoader, module, moduleVer, className, method, file, line, naytiv);
-    }
-    
     public Module module() {
         return module;
-    }
-    
-    public CauseFrame module(Module module) {
-        return new CauseFrame(classLoader, module, moduleVer, className, method, file, line, naytiv);
     }
     
     public ModuleVer moduleVer() {
         return moduleVer;
     }
     
-    public CauseFrame moduleVer(ModuleVer moduleVer) {
-        return new CauseFrame(classLoader, module, moduleVer, className, method, file, line, naytiv);
-    }
-    
     public Method method() {
         return method;
-    }
-    
-    public CauseFrame method(Method method) {
-        return new CauseFrame(classLoader, module, moduleVer, className, method, file, line, naytiv);
     }
     
     public File file() {
         return file;
     }
     
-    public CauseFrame file(File file) {
-        return new CauseFrame(classLoader, module, moduleVer, className, method, file, line, naytiv);
-    }
-    
     public int line() {
         return line;
-    }
-    
-    public CauseFrame line(Integer line) {
-        return new CauseFrame(classLoader, module, moduleVer, className, method, file, line, naytiv);
     }
     
     public boolean naytiv() {
@@ -249,9 +258,30 @@ public final class CauseFrame extends AbstractHashable {
         }
     }
     
+    public CauseFrame shortenClassName() {
+        return new CauseFrame(
+            classLoader,
+            module,
+            moduleVer,
+            className(shortened(className().stringValue())),
+            method,
+            file,
+            line,
+            naytiv);
+    }
+    
     @Override
     protected String toStringBody() {
         return defaultPrint(new StringBuilder()).toString();
+    }
+    
+    private static String shortened(String className) {
+        int dot = className.lastIndexOf(".");
+        return Stream.concat(
+            Arrays.stream(className.substring(0, dot).split("\\."))
+                .map(part -> part.substring(0, 1)),
+            Stream.of(className.substring(dot + 1))
+        ).collect(Collectors.joining("."));
     }
     
     public static final class ClassLoader extends StringlyTyped {

@@ -255,12 +255,12 @@ final class Sql {
                 stmt.set(causeStrandId),
             res ->
                 new CauseFrame(
-                    CauseFrame.ClassLoader(res.getString()),
-                    CauseFrame.Module(res.getString()),
-                    CauseFrame.ModuleVer(res.getString()),
-                    CauseFrame.ClassName(res.getString()),
-                    CauseFrame.Method(res.getString()),
-                    CauseFrame.File(res.getString()),
+                    CauseFrame.classLoader(res.getString()),
+                    CauseFrame.module(res.getString()),
+                    CauseFrame.moduleVer(res.getString()),
+                    CauseFrame.className(res.getString()),
+                    CauseFrame.method(res.getString()),
+                    CauseFrame.file(res.getString()),
                     res.getInt(),
                     res.getBoolean()));
     }

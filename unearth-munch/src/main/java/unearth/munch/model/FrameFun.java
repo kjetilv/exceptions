@@ -17,10 +17,8 @@
 
 package unearth.munch.model;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import unearth.munch.print.CauseFrame;
@@ -45,13 +43,13 @@ public final class FrameFun {
     public static final ConfigurableStackRenderer.GroupedFrameTransform SHORTEN_CLASSNAME =
         FrameFun::shortenClassName;
 
-    public static final ConfigurableStackRenderer.FrameTransform SHORTEN_CLASSNAMES = FrameFun::shortenClassName;
+    public static final ConfigurableStackRenderer.FrameTransform SHORTEN_CLASSNAMES = CauseFrame::shortenClassName;
 
     private FrameFun() {
     }
 
     public static CauseFrame shortenClassName(Collection<String> group, CauseFrame causeFrame) {
-        return group == null ? causeFrame : shortenClassName(causeFrame);
+        return group == null ? causeFrame : causeFrame.shortenClassName();
     }
 
     private static Stream<String> justTheCount(Collection<String> group, List<CauseFrame> causeFrames) {
@@ -62,18 +60,5 @@ public final class FrameFun {
         return Stream.of(
             causeFrames.iterator().next().defaultPrint(new StringBuilder()).toString(),
             " * (" + (causeFrames.size() - 1) + " more)");
-    }
-
-    private static CauseFrame shortenClassName(CauseFrame causeFrame) {
-        return causeFrame.className(CauseFrame.ClassName(shortened(causeFrame.className().stringValue())));
-    }
-
-    private static String shortened(String className) {
-        int dot = className.lastIndexOf(".");
-        return Stream.concat(
-            Arrays.stream(className.substring(0, dot).split("\\."))
-                .map(part -> part.substring(0, 1)),
-            Stream.of(className.substring(dot + 1))
-        ).collect(Collectors.joining("."));
     }
 }
