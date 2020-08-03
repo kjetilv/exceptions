@@ -18,14 +18,13 @@
 package unearth.munch.parser;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -69,8 +68,8 @@ final class WellformedThrowableParser {
         if (ts == null || ts.isEmpty()) {
             return Collections.emptyMap();
         }
-        if (ts.size() == 1) {
-            return Map.of(ts.iterator().next(), lastIndex);
+        if (ts.length == 1) {
+            return Map.of(ts[0], lastIndex);
         }
         return Stream.concat(
             Streams.tuplify(ts, 2),
@@ -92,48 +91,44 @@ final class WellformedThrowableParser {
         List<String> indents,
         boolean descend
     ) {
-        List<Integer> causeIndexes = descend
+        int[] causeIndexes = descend
             ? getIndexes(
             lines,
             startIndex + 1,
             stopIndex,
             indents.get(level),
             CAUSED_BY)
-            : Collections.emptyList();
+            : new int[0];
         Map<Integer, Integer> causeStartStops = indexToIndex(causeIndexes, stopIndex);
-    
-        int suppressStopIndex = causeIndexes.isEmpty() ? stopIndex : causeIndexes.get(0);
-        List<Integer> suppressedIndexes = getIndexes(
+        
+        int suppressStopIndex = causeIndexes.length == 0 ? stopIndex : causeIndexes[0];
+        int[] suppressedIndexes = getIndexes(
             lines,
             startIndex + 1,
             suppressStopIndex,
             indents.get(level + 1),
             SUPPRESSED);
         Map<Integer, Integer> suppressStartStops = indexToIndex(suppressedIndexes, suppressStopIndex);
-        int mainStopIndex = mainStopIndex(suppressedIndexes, causeIndexes, stopIndex);
+        int mainStopIndex = firstIndex(suppressedIndexes, causeIndexes).orElse(stopIndex);
     
-        ParsedThrowable mainThrowable = parseMain(lines, startIndex, mainStopIndex);
-    
-        List<List<ParsedThrowable>> suppressions =
-            parseSuppressions(lines, level, indents, suppressStartStops);
-    
-        List<ParsedThrowable> causes =
-            parseCauses(lines, level, indents, causeStartStops);
-    
-        return Stream.concat(
-            Stream.of(mainThrowable.withSuppressed(suppressions)),
-            causes.stream())
-            .collect(Collectors.toList());
-    }
-    
-    private static ParsedThrowable parseMain(List<String> lines, int startIndex, int mainStopIndex) {
-        return parseExceptionHeading(lines.get(startIndex))
+        ParsedThrowable mainThrowable = parseExceptionHeading(lines.get(startIndex))
             .map(heading ->
                 new ParsedThrowable(
                     heading,
                     stackFrames(lines, startIndex + 1, mainStopIndex)))
             .orElseThrow(() ->
                 new IllegalArgumentException("Not an exception start @" + startIndex + ": " + lines.get(startIndex)));
+        
+        List<List<ParsedThrowable>> suppressions =
+            parseSuppressions(lines, level, indents, suppressStartStops);
+        
+        List<ParsedThrowable> causes =
+            parseCauses(lines, level, indents, causeStartStops);
+        
+        return Stream.concat(
+            Stream.of(mainThrowable.withSuppressed(suppressions)),
+            causes.stream())
+            .collect(Collectors.toList());
     }
     
     private static List<ParsedThrowable> parseCauses(
@@ -142,9 +137,10 @@ final class WellformedThrowableParser {
         List<String> indents,
         Map<Integer, Integer> causeStartStops
     ) {
-        return causeStartStops.entrySet().stream().flatMap(e ->
-            parseLevel(lines, e.getKey(), e.getValue(), level, indents, false).stream()
-        ).collect(Collectors.toList());
+        return causeStartStops.entrySet().stream()
+            .flatMap(e ->
+                parseLevel(lines, e.getKey(), e.getValue(), level, indents, false).stream())
+            .collect(Collectors.toList());
     }
     
     private static List<List<ParsedThrowable>> parseSuppressions(
@@ -153,9 +149,10 @@ final class WellformedThrowableParser {
         List<String> indents,
         Map<Integer, Integer> suppressStartStops
     ) {
-        return suppressStartStops.entrySet().stream().map(e ->
-            parseLevel(lines, e.getKey(), e.getValue(), level + 1, indents, true)
-        ).collect(Collectors.toList());
+        return suppressStartStops.entrySet().stream()
+            .map(e ->
+                parseLevel(lines, e.getKey(), e.getValue(), level + 1, indents, true))
+            .collect(Collectors.toList());
     }
     
     private static int mainStopIndex(
@@ -196,7 +193,7 @@ final class WellformedThrowableParser {
             .collect(Collectors.toList());
     }
     
-    private static List<Integer> getIndexes(
+    private static int[] getIndexes(
         List<String> lines,
         int startIndex,
         int endIndex,
@@ -205,8 +202,7 @@ final class WellformedThrowableParser {
     ) {
         return IntStream.range(startIndex, endIndex)
             .filter(i -> lines.get(i).startsWith(indent + type))
-            .boxed()
-            .collect(Collectors.toList());
+            .toArray();
     }
     
     private static Optional<CauseFrame> parseCauseFrame(String line) {
