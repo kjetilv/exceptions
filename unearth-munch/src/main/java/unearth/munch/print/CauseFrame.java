@@ -22,22 +22,48 @@ import unearth.munch.base.AbstractHashable;
 import unearth.util.StringlyTyped;
 
 public final class CauseFrame extends AbstractHashable {
-
+    
+    public static ClassLoader ClassLoader(String s) {
+        return new ClassLoader(s);
+    }
+    
+    public static Module Module(String s) {
+        return new Module(s);
+    }
+    
+    public static ModuleVer ModuleVer(String s) {
+        return new ModuleVer(s);
+    }
+    
+    public static ClassName ClassName(String s) {
+        return new ClassName(s);
+    }
+    
+    public static Method Method(String s) {
+        return new Method(s);
+    }
+    
+    public static File File(String s) {
+        return new File(s);
+    }
+    
     private final ClassLoader classLoader;
-
+    
     private final Module module;
-
+    
     private final ModuleVer moduleVer;
-
+    
     private final ClassName className;
-
+    
     private final Method method;
-
+    
     private final File file;
-
+    
     private final Integer line;
-
+    
     private final Boolean naytiv;
+    
+    private final int more;
     
     public CauseFrame(
         ClassLoader classLoader,
@@ -49,6 +75,24 @@ public final class CauseFrame extends AbstractHashable {
         Integer line,
         boolean naytiv
     ) {
+        this(classLoader, module, moduleVer, className, method, file, line, naytiv, -1);
+    }
+    
+    public CauseFrame(int more) {
+        this(null, null, null, null, null, null, null, false, more);
+    }
+    
+    private CauseFrame(
+        ClassLoader classLoader,
+        Module module,
+        ModuleVer moduleVer,
+        ClassName className,
+        Method method,
+        File file,
+        Integer line,
+        boolean naytiv,
+        int more
+    ) {
         this.classLoader = classLoader;
         this.module = module;
         this.moduleVer = moduleVer;
@@ -57,108 +101,109 @@ public final class CauseFrame extends AbstractHashable {
         this.file = file;
         this.line = line == null || line < 1 ? -1 : line;
         this.naytiv = naytiv;
+        this.more = more;
     }
-
-    public static ClassLoader ClassLoader(String s) {
-        return new ClassLoader(s);
-    }
-
-    public static Module Module(String s) {
-        return new Module(s);
-    }
-
-    public static ModuleVer ModuleVer(String s) {
-        return new ModuleVer(s);
-    }
-
-    public static ClassName ClassName(String s) {
-        return new ClassName(s);
-    }
-
-    public static Method Method(String s) {
-        return new Method(s);
-    }
-
-    public static File File(String s) {
-        return new File(s);
-    }
-
+    
     public CauseFrame unsetModuleInfo() {
         return module != null && moduleVer != null
             ? new CauseFrame(classLoader, null, null, className, method, file, line, naytiv)
             : this;
     }
-
+    
     public ClassLoader classLoader() {
         return classLoader;
     }
-
+    
     public CauseFrame unsetClassLoader() {
         return classLoader(null);
     }
-
+    
     public CauseFrame classLoader(ClassLoader classLoader) {
         return new CauseFrame(classLoader, module, moduleVer, className, method, file, line, naytiv);
     }
-
+    
     public ClassName className() {
         return className;
     }
-
+    
     public CauseFrame className(ClassName className) {
         return new CauseFrame(classLoader, module, moduleVer, className, method, file, line, naytiv);
     }
-
+    
     public Module module() {
         return module;
     }
-
+    
     public CauseFrame module(Module module) {
         return new CauseFrame(classLoader, module, moduleVer, className, method, file, line, naytiv);
     }
-
+    
     public ModuleVer moduleVer() {
         return moduleVer;
     }
-
+    
     public CauseFrame moduleVer(ModuleVer moduleVer) {
         return new CauseFrame(classLoader, module, moduleVer, className, method, file, line, naytiv);
     }
-
+    
     public Method method() {
         return method;
     }
-
+    
     public CauseFrame method(Method method) {
         return new CauseFrame(classLoader, module, moduleVer, className, method, file, line, naytiv);
     }
-
+    
     public File file() {
         return file;
     }
-
+    
     public CauseFrame file(File file) {
         return new CauseFrame(classLoader, module, moduleVer, className, method, file, line, naytiv);
     }
-
+    
     public int line() {
         return line;
     }
-
+    
     public CauseFrame line(Integer line) {
         return new CauseFrame(classLoader, module, moduleVer, className, method, file, line, naytiv);
     }
-
+    
     public boolean naytiv() {
         return naytiv;
     }
-
-    public StackTraceElement toStackTraceElement() {
-        return new StackTraceElement
-            (className.getValue(), method.getValue(), file.getValue(), line);
+    
+    public int getMore() {
+        return more;
     }
-
+    
+    public boolean isPrintable() {
+        return more < 0;
+    }
+    
+    public boolean isRef() {
+        return more > 0;
+    }
+    
+    public StackTraceElement toStackTraceElement() {
+        if (isRef()) {
+            throw new IllegalStateException(this + " is a reference");
+        }
+        return new StackTraceElement(
+            StringlyTyped.toString(classLoader),
+            StringlyTyped.toString(module),
+            StringlyTyped.toString(moduleVer),
+            StringlyTyped.toString(className),
+            StringlyTyped.toString(method),
+            StringlyTyped.toString(file),
+            line);
+    }
+    
     public StringBuilder defaultPrint(StringBuilder sb) {
+        if (isRef()) {
+            return sb.append("... ").append(more).append(" more");
+        }
         int len = sb.length();
         if (classLoader != null) {
             sb.append(classLoader).append("/");
@@ -185,56 +230,67 @@ public final class CauseFrame extends AbstractHashable {
         }
         return sb;
     }
-
+    
     @Override
     public void hashTo(Consumer<byte[]> h) {
-        hash(h,
-            classLoader == null ? "" : classLoader.getValue(),
-            module == null ? "" : module.getValue(),
-            moduleVer == null ? "" : moduleVer.getValue(),
-            className.getValue(),
-            file.getValue(),
-            method.getValue());
-        hashInts(h, line);
-        hashBools(h, naytiv);
+        if (isRef()) {
+            hash(h, more);
+        } else {
+            hash(
+                h,
+                classLoader == null ? "" : classLoader.stringValue(),
+                module == null ? "" : module.stringValue(),
+                moduleVer == null ? "" : moduleVer.stringValue(),
+                className.stringValue(),
+                file.stringValue(),
+                method.stringValue());
+            hashInts(h, line);
+            hashBools(h, naytiv);
+        }
     }
-
+    
     @Override
     protected String toStringBody() {
         return defaultPrint(new StringBuilder()).toString();
     }
     
     public static final class ClassLoader extends StringlyTyped {
+        
         private ClassLoader(String value) {
             super(value);
         }
     }
-
+    
     public static final class Module extends StringlyTyped {
+        
         private Module(String value) {
             super(value);
         }
     }
-
+    
     public static final class ModuleVer extends StringlyTyped {
+        
         private ModuleVer(String value) {
             super(value);
         }
     }
-
+    
     public static final class ClassName extends StringlyTyped {
+        
         private ClassName(String value) {
             super(value);
         }
     }
-
+    
     public static final class Method extends StringlyTyped {
+        
         private Method(String value) {
             super(value);
         }
     }
-
+    
     public static final class File extends StringlyTyped {
+        
         private File(String value) {
             super(value);
         }

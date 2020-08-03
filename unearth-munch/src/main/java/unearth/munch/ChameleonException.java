@@ -17,14 +17,11 @@
 package unearth.munch;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public final class ChameleonException extends Exception {
 
     private final String proxiedClassName;
-    
-    public ChameleonException(String proxiedClassName, String message, Throwable cause) {
-        this(proxiedClassName, message, false, cause);
-    }
     
     public ChameleonException(String proxiedClassName, String message, boolean suppressed, Throwable cause) {
         super(message, cause, suppressed, true);
@@ -37,6 +34,6 @@ public final class ChameleonException extends Exception {
 
     @Override
     public String toString() {
-        return proxiedClassName + ": " + getMessage();
+        return proxiedClassName + Optional.ofNullable(getMessage()).map(msg -> ": " + msg).orElse("");
     }
 }

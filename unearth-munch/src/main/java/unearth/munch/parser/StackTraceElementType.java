@@ -20,194 +20,204 @@ import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 enum StackTraceElementType implements StackTraceElementPicker {
-
-    NATIVE_METHOD_WITH_VERSIONED_MODULE(
-        Pattern.compile("^\\s*at\\s([\\w.]*)@([\\w\\d.]*)/([\\w.]*)\\(([\\w\\s]*)\\)$"), true
-    ) {
+    
+    WITH_VERSIONED_MODULE(Pattern.compile("^\\s*at\\s([\\w.]*)@([\\w\\d.]*)/([$\\w.]*)\\(([$\\w.]*):(\\d*)\\)$")) {
         @Override
         public String module(String... parts) {
             return parts[0];
         }
-
+        
         @Override
         public String moduleVersion(String... parts) {
             return parts[1];
         }
-
+        
         @Override
         public String className(String... parts) {
             return StackTraceElementType.getClassName(parts[2]);
         }
-
+        
         @Override
         public String method(String... parts) {
             return StackTraceElementType.getMethodName(parts[2]);
         }
-
-        @Override
-        public String otherSource(String... parts) {
-            return parts[3];
-        }
-    },
-
-    NATIVE_METHOD_WITH_MODULE(
-        Pattern.compile("^\\s*at\\s([\\w.]*)/([\\w.]*)\\(([\\w\\s]*)\\)$"), true
-    ) {
-        @Override
-        public String module(String... parts) {
-            return parts[0];
-        }
-
-        @Override
-        public String className(String... parts) {
-            return StackTraceElementType.getClassName(parts[1]);
-        }
-
-        @Override
-        public String method(String... parts) {
-            return StackTraceElementType.getMethodName(parts[1]);
-        }
-
-        @Override
-        public String otherSource(String... parts) {
-            return parts[2];
-        }
-    },
-
-    BASIC_NATIVE_METHOD(
-        Pattern.compile("^\\s*at\\s([$\\w.]*)\\(([\\w\\s]*)\\)$"), true
-    ) {
-        @Override
-        public String className(String... parts) {
-            return StackTraceElementType.getClassName(parts[0]);
-        }
-
-        @Override
-        public String method(String... parts) {
-            return StackTraceElementType.getMethodName(parts[0]);
-        }
-
-        @Override
-        public String otherSource(String... parts) {
-            return parts[1];
-        }
-    },
-
-    WITH_VERSIONED_MODULE(
-        Pattern.compile("^\\s*at\\s([\\w.]*)@([\\w\\d.]*)/([$\\w.]*)\\(([$\\w.]*):(\\d*)\\)$")
-    ) {
-        @Override
-        public String module(String... parts) {
-            return parts[0];
-        }
-
-        @Override
-        public String moduleVersion(String... parts) {
-            return parts[1];
-        }
-
-        @Override
-        public String className(String... parts) {
-            return StackTraceElementType.getClassName(parts[2]);
-        }
-
-        @Override
-        public String method(String... parts) {
-            return StackTraceElementType.getMethodName(parts[2]);
-        }
-
+        
         @Override
         public String file(String... parts) {
             return parts[3];
         }
-
+        
         @Override
         public Integer lineNo(String... parts) {
             return Integer.parseInt(parts[4]);
         }
     },
-
-    WITH_MODULE(
-        Pattern.compile("^\\s*at\\s([\\w.]*)/([$\\w.]*)\\(([$\\w.]*):(\\d*)\\)$")
-    ) {
+    
+    WITH_MODULE(Pattern.compile("^\\s*at\\s([\\w.]*)/([$\\w.]*)\\(([$\\w.]*):(\\d*)\\)$")) {
         @Override
         public String module(String... parts) {
             return parts[0];
         }
-
+        
         @Override
         public String className(String... parts) {
             return StackTraceElementType.getClassName(parts[1]);
         }
-
+        
         @Override
         public String method(String... parts) {
             return StackTraceElementType.getMethodName(parts[1]);
         }
-
+        
         @Override
         public String file(String... parts) {
             return parts[2];
         }
-
+        
         @Override
         public Integer lineNo(String... parts) {
             return Integer.parseInt(parts[3]);
         }
     },
-
-    BASIC(
-        Pattern.compile("^\\s*at\\s([$\\w.]*)\\(([$\\w.]*):(\\d*)\\)$")
-    ) {
+    
+    BASIC(Pattern.compile("^\\s*at\\s([$\\w.]*)\\(([$\\w.]*):(\\d*)\\)$")) {
         @Override
         public String className(String... parts) {
             return StackTraceElementType.getClassName(parts[0]);
         }
-
+        
         @Override
         public String method(String... parts) {
             return StackTraceElementType.getMethodName(parts[0]);
         }
-
+        
         @Override
         public String file(String... parts) {
             return parts[1];
         }
-
+        
         @Override
         public Integer lineNo(String... parts) {
             return Integer.parseInt(parts[2]);
         }
     },
-
-    MORE(
-        Pattern.compile("^\\s*...\\s*(\\d*)\\s*more$")
+    
+    BASIC_NO_LINENO(Pattern.compile("^\\s*at\\s([$\\w.]*)\\(([$\\w.]*)\\)$")) {
+        @Override
+        public String className(String... parts) {
+            return StackTraceElementType.getClassName(parts[0]);
+        }
+        
+        @Override
+        public String method(String... parts) {
+            return StackTraceElementType.getMethodName(parts[0]);
+        }
+        
+        @Override
+        public String file(String... parts) {
+            return parts[1];
+        }
+    },
+    
+    NATIVE_METHOD_WITH_MODULE_VER(
+        Pattern.compile("^\\s*at\\s([\\w.]*)@([\\w\\d.]*)/([\\w.]*)\\(([\\w\\s]*)\\)$"),
+        true
     ) {
+        @Override
+        public String module(String... parts) {
+            return parts[0];
+        }
+        
+        @Override
+        public String moduleVersion(String... parts) {
+            return parts[1];
+        }
+        
+        @Override
+        public String className(String... parts) {
+            return StackTraceElementType.getClassName(parts[2]);
+        }
+        
+        @Override
+        public String method(String... parts) {
+            return StackTraceElementType.getMethodName(parts[2]);
+        }
+        
+        @Override
+        public String otherSource(String... parts) {
+            return parts[3];
+        }
+    },
+    
+    NATIVE_METHOD_WITH_MODULE(
+        Pattern.compile("^\\s*at\\s([\\w.]*)/([\\w.]*)\\(([\\w\\s]*)\\)$"),
+        true
+    ) {
+        @Override
+        public String module(String... parts) {
+            return parts[0];
+        }
+        
+        @Override
+        public String className(String... parts) {
+            return StackTraceElementType.getClassName(parts[1]);
+        }
+        
+        @Override
+        public String method(String... parts) {
+            return StackTraceElementType.getMethodName(parts[1]);
+        }
+        
+        @Override
+        public String otherSource(String... parts) {
+            return parts[2];
+        }
+    },
+    
+    BASIC_NATIVE_METHOD(
+        Pattern.compile("^\\s*at\\s([$\\w.]*)\\(([\\w\\s]*)\\)$"),
+        true
+    ) {
+        @Override
+        public String className(String... parts) {
+            return StackTraceElementType.getClassName(parts[0]);
+        }
+        
+        @Override
+        public String method(String... parts) {
+            return StackTraceElementType.getMethodName(parts[0]);
+        }
+        
+        @Override
+        public String otherSource(String... parts) {
+            return parts[1];
+        }
+    },
+    
+    MORE(Pattern.compile("^\\s*...\\s*(\\d*)\\s*more$")) {
         @Override
         public Integer more(String... parts) {
             return Integer.parseInt(parts[0]);
         }
     };
-
-    private static final String[] NONE = new String[0];
-
+    
     private final Pattern pattern;
-
+    
     private final boolean nativeMethod;
-
+    
     StackTraceElementType(Pattern pattern) {
         this(pattern, false);
     }
-
+    
     StackTraceElementType(Pattern pattern, boolean nativeMethod) {
         this.pattern = pattern;
         this.nativeMethod = nativeMethod;
     }
-
+    
     public boolean isNativeMethod() {
         return nativeMethod;
     }
-
+    
     String[] toParts(String line) {
         java.util.regex.Matcher matcher = pattern.matcher(line);
         if (matcher.matches()) {
@@ -218,12 +228,14 @@ enum StackTraceElementType implements StackTraceElementPicker {
         }
         return null;
     }
-
+    
+    private static final String[] NONE = new String[0];
+    
     private static String getMethodName(String part) {
         int lastDot = part.lastIndexOf(".");
         return lastDot < 0 ? null : part.substring(lastDot + 1);
     }
-
+    
     private static String getClassName(String part) {
         int lastDot = part.lastIndexOf(".");
         return lastDot < 0 ? null : part.substring(0, lastDot);

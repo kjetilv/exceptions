@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class ThrowableParserTest {
@@ -48,6 +49,7 @@ public class ThrowableParserTest {
         assertNotNull(chameleon);
         String print = print(chameleon);
         System.out.println("\n\n" + print);
+        assertEquals(SUPP, print);
     }
     
     @Test

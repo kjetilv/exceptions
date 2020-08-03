@@ -247,12 +247,12 @@ class UnearthlyController(
     ): List<StackTraceElementDto> =
             stackTrace.map { element ->
                 StackTraceElementDto(
-                        classLoaderName = element.classLoader().value,
-                        moduleName = element.module().value,
-                        moduleVersion = element.moduleVer().value,
-                        declaringClass = element.className().value,
-                        methodName = element.method().value,
-                        fileName = element.file().value,
+                        classLoaderName = element.classLoader().stringValue(),
+                        moduleName = element.module().stringValue(),
+                        moduleVersion = element.moduleVer().stringValue(),
+                        declaringClass = element.className().stringValue(),
+                        methodName = element.method().stringValue(),
+                        fileName = element.file().stringValue(),
                         lineNumber = element.line())
             }.toList()
 }

@@ -18,6 +18,7 @@
 package unearth.client;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public class ChameleonException extends Exception {
 
@@ -27,13 +28,9 @@ public class ChameleonException extends Exception {
         super(message, cause, true, true);
         this.proxiedClassName = Objects.requireNonNull(proxiedClassName, "proxiedClassName");
     }
-
-    public String getProxiedClassName() {
-        return proxiedClassName;
-    }
-
+    
     @Override
     public String toString() {
-        return proxiedClassName + ": " + getMessage();
+        return proxiedClassName + Optional.ofNullable(getMessage()).map(msg -> ": " + msg).orElse("");
     }
 }

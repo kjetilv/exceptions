@@ -19,38 +19,42 @@ package unearth.util;
 import java.util.Objects;
 
 public abstract class StringlyTyped {
-
+    
+    public static String toString(StringlyTyped stringlyTyped) {
+        return stringlyTyped == null ? null : stringlyTyped.stringValue();
+    }
+    
     private final String value;
-
+    
     protected StringlyTyped(String value) {
         this.value = norm(value);
     }
-
-    public String getValue() {
+    
+    public String stringValue() {
         return value;
     }
-
+    
     private static String norm(String s) {
         return blank(s) ? "" : s;
     }
-
+    
     private static boolean blank(String s) {
         return s == null || s.length() == 0 || s.isBlank();
     }
-
+    
     @Override
     public int hashCode() {
         return value.hashCode();
     }
-
+    
     @Override
     public boolean equals(Object o) {
         return this == o ||
             o != null && getClass() == o.getClass() && Objects.equals(value, ((StringlyTyped) o).value);
     }
-
+    
     @Override
     public String toString() {
-        return value;
+        return stringValue();
     }
 }

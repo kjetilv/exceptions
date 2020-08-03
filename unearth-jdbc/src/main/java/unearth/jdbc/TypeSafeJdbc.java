@@ -59,7 +59,7 @@ class TypeSafeJdbc<T extends Hashed> {
     }
 
     protected Stmt s(StringlyTyped typed) {
-        return s(typed.getValue());
+        return s(typed.stringValue());
     }
 
     protected Stmt s(Integer val) {

@@ -65,7 +65,7 @@ public final class FrameFun {
     }
 
     private static CauseFrame shortenClassName(CauseFrame causeFrame) {
-        return causeFrame.className(CauseFrame.ClassName(shortened(causeFrame.className().getValue())));
+        return causeFrame.className(CauseFrame.ClassName(shortened(causeFrame.className().stringValue())));
     }
 
     private static String shortened(String className) {

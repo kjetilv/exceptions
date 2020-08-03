@@ -35,7 +35,7 @@ final class StackTraceParts {
 
     Stream<CauseFrame> reconstruct() {
         if (type == StackTraceElementType.MORE) {
-            return Stream.empty();
+            return Stream.of(new CauseFrame(type.more(parts)));
         }
         try {
             Integer lineNumber = type.lineNo(parts);

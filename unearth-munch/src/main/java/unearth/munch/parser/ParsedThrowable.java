@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import unearth.munch.ChameleonException;
 import unearth.munch.print.CauseFrame;
@@ -29,6 +31,9 @@ final class ParsedThrowable {
     
     static Throwable reconstructed(List<ParsedThrowable> parsedThrowables) {
         List<ParsedThrowable> list = new ArrayList<>(parsedThrowables);
+        for (int i = 1; i < list.size(); i++) {
+            list.set(i, list.get(i).enclosedBy(list.get(i - 1)));
+        }
         Collections.reverse(list);
         Throwable cause = null;
         for (ParsedThrowable parsedThrowable: list) {
@@ -37,45 +42,72 @@ final class ParsedThrowable {
         return cause;
     }
     
-    private final ExceptionHeading exceptionHeading;
+    private final ExceptionHeading heading;
     
-    private final List<CauseFrame> parsedStackTrace;
+    private final List<CauseFrame> stackTrace;
     
     private final List<List<ParsedThrowable>> suppressions;
     
-    ParsedThrowable(ExceptionHeading exceptionHeading, CauseFrame... parsedStackTrace) {
-        this(exceptionHeading, Arrays.asList(parsedStackTrace));
+    private final int more;
+    
+    ParsedThrowable(ExceptionHeading heading, CauseFrame... stackTrace) {
+        this(heading, Arrays.asList(stackTrace));
     }
     
-    ParsedThrowable(ExceptionHeading exceptionHeading, List<CauseFrame> parsedStackTrace) {
+    ParsedThrowable(ExceptionHeading heading, List<CauseFrame> stackTrace) {
         this(
-            exceptionHeading,
-            parsedStackTrace == null || parsedStackTrace.isEmpty()
+            heading,
+            stackTrace == null || stackTrace.isEmpty()
                 ? Collections.emptyList()
-                : parsedStackTrace,
-            Collections.emptyList());
+                : stackTrace.stream()
+                    .takeWhile(CauseFrame::isPrintable)
+                    .collect(Collectors.toList()),
+            Collections.emptyList(),
+            stackTrace == null || stackTrace.isEmpty()
+                ? -1
+                : stackTrace.stream()
+                    .dropWhile(CauseFrame::isPrintable)
+                    .filter(CauseFrame::isRef)
+                    .map(CauseFrame::getMore)
+                    .findFirst()
+                    .orElse(-1));
     }
     
     ParsedThrowable(
-        ExceptionHeading exceptionHeading,
-        List<CauseFrame> parsedStackTrace,
-        List<List<ParsedThrowable>> suppressions
+        ExceptionHeading heading,
+        List<CauseFrame> stackTrace,
+        List<List<ParsedThrowable>> suppressions,
+        int more
     ) {
-        this.exceptionHeading = exceptionHeading;
-        this.parsedStackTrace = parsedStackTrace;
+        this.heading = heading;
+        this.stackTrace = stackTrace;
         this.suppressions = suppressions;
+        this.more = more;
     }
     
     ParsedThrowable withSuppressed(List<List<ParsedThrowable>> suppressions) {
         return suppressions == null || suppressions.isEmpty()
             ? this
-            : new ParsedThrowable(exceptionHeading, parsedStackTrace, suppressions);
+            : new ParsedThrowable(heading, stackTrace, suppressions, more);
+    }
+    
+    ParsedThrowable enclosedBy(ParsedThrowable encloser) {
+        return more <= 0
+            ? this
+            : new ParsedThrowable(
+                heading, Stream.concat(
+                stackTrace.stream(),
+                encloser.stackTrace.stream().skip(encloser.stackTrace.size() - more))
+                .collect(Collectors.toList()),
+                suppressions,
+                more);
     }
     
     ChameleonException reconstruct(Throwable caused) {
         ChameleonException chameleonException = new ChameleonException(
-            exceptionHeading.getName(), exceptionHeading.getMessage(), !suppressions.isEmpty(), caused);
-        chameleonException.setStackTrace(parsedStackTrace.stream()
+            heading.getName(), heading.getMessage(), !suppressions.isEmpty(), caused);
+        chameleonException.setStackTrace(stackTrace.stream()
+            .takeWhile(CauseFrame::isPrintable)
             .map(CauseFrame::toStackTraceElement)
             .toArray(StackTraceElement[]::new));
         suppressions.stream()
@@ -87,9 +119,9 @@ final class ParsedThrowable {
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[" +
-            exceptionHeading.getMessage() + "/" +
-            exceptionHeading.getName() + ": " +
-            parsedStackTrace.size() +
+            heading.getMessage() + "/" +
+            heading.getName() + ": " +
+            stackTrace.size() +
             (suppressions.isEmpty() ? "" : " s:" + suppressions.size()) +
             "]";
     }
