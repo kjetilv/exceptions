@@ -35,11 +35,10 @@ public class ThrowableParserTest {
             andFailSuppressed();
         } catch (MyRuntimeException e) {
             String output = print(e);
-            System.out.println(output);
             Throwable chameleon = ThrowableParser.parse(output);
             assertNotNull(chameleon);
             String print = print(chameleon);
-            System.out.println("\n\n" + print);
+            assertEquals(output,print);
         }
     }
     
@@ -49,6 +48,14 @@ public class ThrowableParserTest {
         assertNotNull(chameleon);
         String print = print(chameleon);
         assertEquals(SUPP, print);
+    }
+    
+    @Test
+    public void parseSuppressed0() {
+        Throwable chameleon = ThrowableParser.parse(SUPP_0);
+        assertNotNull(chameleon);
+        String print = print(chameleon);
+        assertEquals(SUPP_0, print);
     }
     
     @Test
@@ -82,6 +89,58 @@ public class ThrowableParserTest {
             System.out.println(print);
         }
     }
+    
+    private static final String SUPP_0 =
+        """
+        Exception in thread "main" java.lang.IllegalStateException: Failed to perform action
+        	at unearth.analysis.AbstractCassandraConnected.inSession(AbstractCassandraConnected.java:83)
+        	at unearth.analysis.CassandraInit.init(CassandraInit.java:30)
+        	at unearth.server.Unearth.run(Unearth.kt:63)
+        	at unearth.main.MainKt.main(Main.kt:26)
+        	at unearth.main.MainKt.main(Main.kt)
+        Caused by: java.lang.IllegalStateException: GetOnce[unearth.analysis.AbstractCassandraConnected$$Lambda$59/0x0000000800beddc8@117e0fe5]: failed
+        	at unearth.util.once.GetOnce.failed(GetOnce.java:77)
+        	at unearth.util.once.GetOnce.initial(GetOnce.java:56)
+        	at unearth.util.once.GetOnce.doGet(GetOnce.java:46)
+        	at unearth.util.once.AbstractGet.get(AbstractGet.java:34)
+        	at unearth.analysis.AbstractCassandraConnected.inSession(AbstractCassandraConnected.java:81)
+        	... 4 more
+        Caused by: com.datastax.oss.driver.api.core.AllNodesFailedException: Could not reach any contact point, make sure you've provided valid addresses (showing first 1 nodes, use getAllErrors() for more): Node(endPoint=localhost/<unresolved>:32770, hostId=null, hashCode=5200208d): [com.datastax.oss.driver.api.core.connection.ConnectionInitException: [s0|control|id: 0xf4853d9d, L:/127.0.0.1:49755 - R:localhost/127.0.0.1:32770] Protocol initialization request, step 1 (OPTIONS): unexpected failure (com.datastax.oss.driver.api.core.connection.ClosedConnectionException: Lost connection to remote peer)]
+        	at com.datastax.oss.driver.api.core.AllNodesFailedException.copy(AllNodesFailedException.java:141)
+        	at com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures.getUninterruptibly(CompletableFutures.java:149)
+        	at com.datastax.oss.driver.api.core.session.SessionBuilder.build(SessionBuilder.java:633)
+        	at unearth.analysis.AbstractCassandraConnected.lambda$new$0(AbstractCassandraConnected.java:55)
+        	at unearth.util.once.GetOnce.initial(GetOnce.java:54)
+        	... 7 more
+        	Suppressed: com.datastax.oss.driver.api.core.connection.ConnectionInitException: [s0|control|id: 0xf4853d9d, L:/127.0.0.1:49755 - R:localhost/127.0.0.1:32770] Protocol initialization request, step 1 (OPTIONS): unexpected failure (com.datastax.oss.driver.api.core.connection.ClosedConnectionException: Lost connection to remote peer)
+        		at com.datastax.oss.driver.internal.core.channel.ProtocolInitHandler$InitRequest.fail(ProtocolInitHandler.java:342)
+        		at com.datastax.oss.driver.internal.core.channel.ChannelHandlerRequest.onFailure(ChannelHandlerRequest.java:104)
+        		at com.datastax.oss.driver.internal.core.channel.InFlightHandler.fail(InFlightHandler.java:373)
+        		at com.datastax.oss.driver.internal.core.channel.InFlightHandler.abortAllInFlight(InFlightHandler.java:362)
+        		at com.datastax.oss.driver.internal.core.channel.InFlightHandler.abortAllInFlight(InFlightHandler.java:351)
+        		at com.datastax.oss.driver.internal.core.channel.InFlightHandler.channelInactive(InFlightHandler.java:329)
+        		at io.netty.channel.AbstractChannelHandlerContext.invokeChannelInactive(AbstractChannelHandlerContext.java:262)
+        		at io.netty.channel.AbstractChannelHandlerContext.invokeChannelInactive(AbstractChannelHandlerContext.java:248)
+        		at io.netty.channel.AbstractChannelHandlerContext.fireChannelInactive(AbstractChannelHandlerContext.java:241)
+        		at io.netty.handler.codec.ByteToMessageDecoder.channelInputClosed(ByteToMessageDecoder.java:389)
+        		at io.netty.handler.codec.ByteToMessageDecoder.channelInactive(ByteToMessageDecoder.java:354)
+        		at io.netty.channel.AbstractChannelHandlerContext.invokeChannelInactive(AbstractChannelHandlerContext.java:262)
+        		at io.netty.channel.AbstractChannelHandlerContext.invokeChannelInactive(AbstractChannelHandlerContext.java:248)
+        		at io.netty.channel.AbstractChannelHandlerContext.fireChannelInactive(AbstractChannelHandlerContext.java:241)
+        		at io.netty.channel.DefaultChannelPipeline$HeadContext.channelInactive(DefaultChannelPipeline.java:1405)
+        		at io.netty.channel.AbstractChannelHandlerContext.invokeChannelInactive(AbstractChannelHandlerContext.java:262)
+        		at io.netty.channel.AbstractChannelHandlerContext.invokeChannelInactive(AbstractChannelHandlerContext.java:248)
+        		at io.netty.channel.DefaultChannelPipeline.fireChannelInactive(DefaultChannelPipeline.java:901)
+        		at io.netty.channel.AbstractChannel$AbstractUnsafe$8.run(AbstractChannel.java:818)
+        		at io.netty.util.concurrent.AbstractEventExecutor.safeExecute(AbstractEventExecutor.java:164)
+        		at io.netty.util.concurrent.SingleThreadEventExecutor.runAllTasks(SingleThreadEventExecutor.java:472)
+        		at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:497)
+        		at io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:989)
+        		at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+        		at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+        		at java.base/java.lang.Thread.run(Thread.java:832)
+        	Caused by: com.datastax.oss.driver.api.core.connection.ClosedConnectionException: Lost connection to remote peer
+        """;
     
     private static final String SUPP =
         """
@@ -170,6 +229,7 @@ public class ThrowableParserTest {
         		at com.datastax.oss.driver.internal.core.channel.ChannelHandlerRequest.send(ChannelHandlerRequest.java:75)
         		... 20 more
         """;
+    
     private static final Pattern WS = Pattern.compile("\\s+");
     
     private static final String S = " ";
@@ -218,7 +278,7 @@ public class ThrowableParserTest {
         throw exception;
     }
     
-    private static class MyRuntimeException extends RuntimeException {
+    private static final class MyRuntimeException extends RuntimeException {
         
         private MyRuntimeException() {
             super("Argh!", null, true, true);

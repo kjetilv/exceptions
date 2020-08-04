@@ -30,7 +30,7 @@ public final class Proto {
         return api.cast(Proxy.newProxyInstance(
             Thread.currentThread().getContextClassLoader(),
             new Class<?>[] { api },
-            new Invoker(uri, objectMapper)
+            new DefaultInvoker(api, uri, objectMapper)
         ));
     }
 }

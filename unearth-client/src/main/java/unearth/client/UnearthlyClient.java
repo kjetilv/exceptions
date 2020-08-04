@@ -35,7 +35,6 @@ import unearth.client.dto.FeedEntryDto;
 import unearth.client.dto.FeedEntryIdDto;
 import unearth.client.dto.Submission;
 
-@SuppressWarnings("unused")
 public interface UnearthlyClient {
 
     static UnearthlyClient connect(URI uri) {

@@ -30,16 +30,7 @@ import unearth.munch.print.CauseFrame;
 final class ParsedThrowable {
     
     static Throwable reconstructed(List<ParsedThrowable> parsedThrowables) {
-        List<ParsedThrowable> list = new ArrayList<>(parsedThrowables);
-        for (int i = 1; i < list.size(); i++) {
-            list.set(i, list.get(i).enclosedBy(list.get(i - 1)));
-        }
-        Collections.reverse(list);
-        Throwable cause = null;
-        for (ParsedThrowable parsedThrowable: list) {
-            cause = parsedThrowable.reconstruct(cause);
-        }
-        return cause;
+        return reconstructed(null, parsedThrowables);
     }
     
     private final ExceptionHeading heading;
@@ -92,15 +83,21 @@ final class ParsedThrowable {
     }
     
     ParsedThrowable enclosedBy(ParsedThrowable encloser) {
-        return more <= 0
-            ? this
-            : new ParsedThrowable(
-                heading, Stream.concat(
-                stackTrace.stream(),
-                encloser.stackTrace.stream().skip(encloser.stackTrace.size() - more))
-                .collect(Collectors.toList()),
-                suppressions,
-                more);
+        if (more <= 0 || encloser == null) {
+            return this;
+        }
+        int enclosingFrames = encloser.stackTrace.size() - more;
+        if (enclosingFrames < 0) {
+            throw new IllegalArgumentException(
+                this + " is not enclosed by " + encloser + ", " + enclosingFrames + " frames");
+        }
+        return new ParsedThrowable(
+            heading, Stream.concat(
+            stackTrace.stream(),
+            encloser.stackTrace.stream().skip(enclosingFrames))
+            .collect(Collectors.toList()),
+            suppressions,
+            more);
     }
     
     ChameleonException reconstruct(Throwable caused) {
@@ -111,9 +108,32 @@ final class ParsedThrowable {
             .map(CauseFrame::toStackTraceElement)
             .toArray(StackTraceElement[]::new));
         suppressions.stream()
-            .map(ParsedThrowable::reconstructed)
+            .map(this::reconstructEnclosed)
             .forEach(chameleonException::addSuppressed);
         return chameleonException;
+    }
+    
+    private Throwable reconstructEnclosed(List<ParsedThrowable> parsedThrowables) {
+        return reconstructed(this, parsedThrowables);
+    }
+    
+    private static Throwable reconstructed(
+        ParsedThrowable enclosing,
+        List<ParsedThrowable> parsedThrowables
+    ) {
+        List<ParsedThrowable> list = new ArrayList<>(parsedThrowables);
+        for (int i = 0; i < list.size(); i++) {
+            ParsedThrowable encloser = i == 0
+                ? enclosing
+                : list.get(i - 1);
+            list.set(i, list.get(i).enclosedBy(encloser));
+        }
+        Collections.reverse(list);
+        Throwable cause = null;
+        for (ParsedThrowable parsedThrowable: list) {
+            cause = parsedThrowable.reconstruct(cause);
+        }
+        return cause;
     }
     
     @Override
