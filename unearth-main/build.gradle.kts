@@ -40,6 +40,11 @@ dependencies {
     implementation(project(":unearth-analysis"))
     implementation(project(":unearth-server"))
 
+    implementation("org.http4k:http4k-core")
+    implementation("org.http4k:http4k-contract")
+    implementation("org.http4k:http4k-format-jackson")
+    implementation("org.http4k:http4k-server-netty")
+
     implementation(kotlin("stdlib"))
 
     runtimeOnly("org.postgresql:postgresql")

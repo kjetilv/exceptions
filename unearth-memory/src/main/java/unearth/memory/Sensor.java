@@ -15,16 +15,21 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-memory",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.memory;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import unearth.core.FaultSensor;
+
+public final class Sensor {
+    
+    private static final Logger log = LoggerFactory.getLogger(Sensor.class);
+    
+    public static FaultSensor memory() {
+        return feedEntry ->
+            log.info("{}", feedEntry);
+    }
+    
+    private Sensor() {
+    }
+}

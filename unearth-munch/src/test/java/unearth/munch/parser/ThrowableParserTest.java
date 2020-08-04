@@ -38,7 +38,7 @@ public class ThrowableParserTest {
             Throwable chameleon = ThrowableParser.parse(output);
             assertNotNull(chameleon);
             String print = print(chameleon);
-            assertEquals(output,print);
+            assertEquals(output, print);
         }
     }
     
@@ -60,7 +60,6 @@ public class ThrowableParserTest {
     
     @Test
     public void parseConflated() {
-        
         try {
             andFail();
         } catch (Exception e) {
@@ -76,7 +75,6 @@ public class ThrowableParserTest {
     
     @Test
     public void parseSimple() {
-        
         try {
             andFail();
         } catch (Exception e) {
@@ -235,13 +233,11 @@ public class ThrowableParserTest {
     private static final String S = " ";
     
     private static String conflate(String ePrint) {
-        
         return WS.matcher(String.join(S, ePrint.split("\n")))
             .replaceAll(S);
     }
     
     private static String print(Throwable e) {
-        
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (PrintWriter pw = new PrintWriter(out)) {
             e.printStackTrace(pw);

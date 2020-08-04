@@ -15,16 +15,16 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-memory",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+dependencies {
+    implementation(project(":unearth-util"))
+    implementation(project(":unearth-core"))
+    implementation(project(":unearth-munch"))
+
+    implementation("org.slf4j:slf4j-api")
+    implementation("com.zaxxer:HikariCP")
+
+    runtimeOnly("org.hsqldb:hsqldb")
+
+    testImplementation("org.assertj:assertj-core")
+}
 

@@ -29,8 +29,11 @@ import unearth.analysis.CassandraSensor
 import unearth.core.FaultSensor
 import unearth.core.HandlingPolicy
 import unearth.jdbc.JdbcStorage
+import unearth.memory.Db
+import unearth.memory.Sensor
 import unearth.munch.model.FrameFun
 import unearth.munch.print.*
+import unearth.server.http4k.UnearthlyServer
 import unearth.server.turbo.UnearthlyTurboFilter
 import java.net.URI
 import java.time.Clock
@@ -56,35 +59,19 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
 
         val configuration = customConfiguration ?: unearthlyConfig(loadConfiguration())
 
-        CassandraInit(
-                configuration.cassandra.host,
-                configuration.cassandra.port,
-                configuration.cassandra.dc,
-                configuration.cassandra.keyspace).init()
-
-        val sensor: FaultSensor = CassandraSensor(
-                configuration.cassandra.host,
-                configuration.cassandra.port,
-                configuration.cassandra.dc,
-                configuration.cassandra.keyspace)
-
-        val dbProperties: Properties = Properties().apply {
-            setProperty("jdbcUrl", configuration.db.jdbc)
-            setProperty("username", configuration.db.username)
-            setProperty("password", configuration.db.password)
-        }
-
-        val db: DataSource = HikariDataSource(HikariConfig(dbProperties))
+        val db: DataSource = db(configuration)
+        val sensor: FaultSensor = sensor(configuration)
 
         val storage = JdbcStorage(db, configuration.db.schema, Clock.systemDefaultZone())
 
         val controller = UnearthlyController(
-                storage,
-                storage,
-                storage,
-                sensor,
-                UnearthlyRenderer(),
-                configuration)
+            storage,
+            storage,
+            storage,
+            sensor,
+            UnearthlyRenderer(),
+            configuration
+        )
 
         val server = UnearthlyServer(controller, configuration)
 
@@ -113,46 +100,80 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
             }
 
             override fun url(): URI = URI.create(
-                    "http://" + configuration.host + ":" + server.port() +
-                            configuration.prefix +
-                            (if (configuration.prefix.endsWith("/")) "" else "/"))
+                "http://" + configuration.host + ":" + server.port() +
+                        configuration.prefix +
+                        (if (configuration.prefix.endsWith("/")) "" else "/")
+            )
 
             override fun port(): Int = server.port()
         }
     }
 
+    private fun sensor(configuration: UnearthlyConfig): FaultSensor {
+        if (configuration.unearthlyMemory) {
+            return Sensor.memory()
+        }
+
+        CassandraInit(
+            configuration.cassandra.host,
+            configuration.cassandra.port,
+            configuration.cassandra.dc,
+            configuration.cassandra.keyspace
+        ).init()
+
+        return CassandraSensor(
+            configuration.cassandra.host,
+            configuration.cassandra.port,
+            configuration.cassandra.dc,
+            configuration.cassandra.keyspace
+        )
+    }
+
+    private fun db(configuration: UnearthlyConfig): DataSource =
+        if (configuration.unearthlyMemory) {
+            Db.memory()
+        } else {
+            HikariDataSource(HikariConfig(Properties().apply {
+                setProperty("jdbcUrl", configuration.db.jdbc)
+                setProperty("username", configuration.db.username)
+                setProperty("password", configuration.db.password)
+            }))
+        }
+
     private fun reconfigureLogging(controller: UnearthlyController) {
         val squasher: (t: MutableCollection<String>, u: MutableList<CauseFrame>) -> Stream<String> =
-                { _, causeFrames ->
-                    Stream.of(" * [${causeFrames.size} hidden]")
-                }
+            { _, causeFrames ->
+                Stream.of(" * [${causeFrames.size} hidden]")
+            }
         val defaultStackRenderer: StackRenderer =
-                ConfigurableStackRenderer()
-                        .group(SimplePackageGrouper(listOf("org.http4k", "io.netty")))
-                        .squash(squasher)
-                        .reshape(FrameFun.LIKE_JAVA_8)
-                        .reshape(FrameFun.SHORTEN_CLASSNAMES)
+            ConfigurableStackRenderer()
+                .group(SimplePackageGrouper(listOf("org.http4k", "io.netty")))
+                .squash(squasher)
+                .reshape(FrameFun.LIKE_JAVA_8)
+                .reshape(FrameFun.SHORTEN_CLASSNAMES)
         val shortStackRenderer =
-                ConfigurableStackRenderer()
-                        .group(SimplePackageGrouper(listOf("org.http4k", "io.netty")))
-                        .squash(FrameFun.JUST_COUNT_AND_TOP)
-                        .reshape(FrameFun.LIKE_JAVA_8)
-                        .reshape(FrameFun.SHORTEN_CLASSNAMES)
+            ConfigurableStackRenderer()
+                .group(SimplePackageGrouper(listOf("org.http4k", "io.netty")))
+                .squash(FrameFun.JUST_COUNT_AND_TOP)
+                .reshape(FrameFun.LIKE_JAVA_8)
+                .reshape(FrameFun.SHORTEN_CLASSNAMES)
         val noStackRenderer =
-                ConfigurableStackRenderer().noStack()
+            ConfigurableStackRenderer().noStack()
 
         (LoggerFactory.getILoggerFactory() as LoggerContext)
-                .turboFilterList
-                .add(
-                    UnearthlyTurboFilter(
-                        controller.handler,
-                        SimpleCausesRenderer(defaultStackRenderer)
-                    ).withRendererFor(
-                        HandlingPolicy.Action.LOG_MESSAGES,
-                        SimpleCausesRenderer(noStackRenderer)
+            .turboFilterList
+            .add(
+                UnearthlyTurboFilter(
+                    controller.handler,
+                    SimpleCausesRenderer(defaultStackRenderer)
                 ).withRendererFor(
-                        HandlingPolicy.Action.LOG_SHORT,
-                        SimpleCausesRenderer(shortStackRenderer)))
+                    HandlingPolicy.Action.LOG_MESSAGES,
+                    SimpleCausesRenderer(noStackRenderer)
+                ).withRendererFor(
+                    HandlingPolicy.Action.LOG_SHORT,
+                    SimpleCausesRenderer(shortStackRenderer)
+                )
+            )
     }
 
     private fun registerShutdown(server: UnearthlyServer) {
@@ -167,27 +188,28 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
 
         private val logger: Logger = LoggerFactory.getLogger(Unearth::class.java)
 
-        private fun unearthlyConfig(config: Configuration): UnearthlyConfig {
-            return UnearthlyConfig(
-                    prefix = config[Key("server.api", stringType)],
-                    host = config[Key("server.host", stringType)],
-                    port = config[Key("server.port", intType)],
-                    selfDiagnose = config[Key("unearth.self-diagnose", booleanType)],
-                    unearthlyLogging = config[Key("unearth.logging", booleanType)],
-                    cassandra = UnearthlyCassandraConfig(
-                            host = config[Key("unearth.cassandra-host", stringType)],
-                            port = config[Key("unearth.cassandra-port", intType)],
-                            dc = config[Key("unearth.cassandra-dc", stringType)],
-                            keyspace = config[Key("unearth.cassandra-keyspace", stringType)]),
-                    db = UnearthlyDbConfig(
-                            host = config[Key("unearth.db-host", stringType)],
-                            port = config[Key("unearth.db-port", intType)],
-                            username = config[Key("unearth.db-username", stringType)],
-                            password = config[Key("unearth.db-password", stringType)],
-                            schema = config[Key("unearth.db-schema", stringType)]
-                    )
+        private fun unearthlyConfig(config: Configuration): UnearthlyConfig =
+            UnearthlyConfig(
+                prefix = config[Key("server.api", stringType)],
+                host = config[Key("server.host", stringType)],
+                port = config[Key("server.port", intType)],
+                selfDiagnose = config[Key("unearth.self-diagnose", booleanType)],
+                unearthlyLogging = config[Key("unearth.logging", booleanType)],
+                unearthlyMemory = config[Key("unearth.memory", booleanType)],
+                cassandra = UnearthlyCassandraConfig(
+                    host = config[Key("unearth.cassandra-host", stringType)],
+                    port = config[Key("unearth.cassandra-port", intType)],
+                    dc = config[Key("unearth.cassandra-dc", stringType)],
+                    keyspace = config[Key("unearth.cassandra-keyspace", stringType)]
+                ),
+                db = UnearthlyDbConfig(
+                    host = config[Key("unearth.db-host", stringType)],
+                    port = config[Key("unearth.db-port", intType)],
+                    username = config[Key("unearth.db-username", stringType)],
+                    password = config[Key("unearth.db-password", stringType)],
+                    schema = config[Key("unearth.db-schema", stringType)]
+                )
             )
-        }
 
         private fun loadConfiguration(): Configuration {
             return systemProperties() overriding

@@ -115,13 +115,13 @@ allprojects {
             runtimeOnly("ch.qos.logback:logback-classic:$logbackVer")
             runtimeOnly("org.webjars:swagger-ui:$swaggerUiVer")
 
+            runtimeOnly("org.hsqldb:hsqldb:$hsqldbVer")
+
             testImplementation("org.http4k:http4k-client-apache:$http4kVer")
             testImplementation("junit:junit:$junitVer")
 
             testImplementation("org.assertj:assertj-core:3.13.2:$assertjVer")
             testImplementation("org.testcontainers:cassandra:$testcontainersVer")
-
-            testRuntimeOnly("org.hsqldb:hsqldb:$hsqldbVer")
         }
     }
 }

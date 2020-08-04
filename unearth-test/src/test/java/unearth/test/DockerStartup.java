@@ -72,6 +72,7 @@ public final class DockerStartup implements UncheckedCloseable {
                     0,
                     true,
                     true,
+                    true,
                     cassandraConfig,
                     dbConfig))
             .thenApply(Unearth::new);

@@ -31,13 +31,13 @@ import java.time.ZoneId
 import java.util.*
 
 class UnearthlyController(
-        private val storage: FaultStorage,
-        private val feed: FaultFeed,
-        private val stats: FaultStats,
-        private val sensor: FaultSensor,
-        private val renderer: UnearthlyRenderer,
-        private val configuration: UnearthlyConfig,
-        clock: Clock = Clock.systemDefaultZone()
+    private val storage: FaultStorage,
+    private val feed: FaultFeed,
+    private val stats: FaultStats,
+    private val sensor: FaultSensor,
+    private val renderer: UnearthlyRenderer,
+    private val configuration: UnearthlyConfig,
+    clock: Clock = Clock.systemDefaultZone()
 ) : AutoCloseable {
 
     init {

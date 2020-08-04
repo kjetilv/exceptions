@@ -109,8 +109,8 @@ final class WellformedThrowableParser {
             indents.get(level + 1),
             SUPPRESSED);
         Map<Integer, Integer> suppressStartStops = indexToIndex(suppressedIndexes, suppressStopIndex);
+        
         int mainStopIndex = firstIndex(suppressedIndexes, causeIndexes).orElse(stopIndex);
-    
         ParsedThrowable mainThrowable = parseExceptionHeading(lines.get(startIndex))
             .map(heading ->
                 new ParsedThrowable(
@@ -151,7 +151,13 @@ final class WellformedThrowableParser {
     ) {
         return suppressStartStops.entrySet().stream()
             .map(e ->
-                parseLevel(lines, e.getKey(), e.getValue(), level + 1, indents, true))
+                parseLevel(
+                    lines,
+                    e.getKey(),
+                    e.getValue(),
+                    level + 1,
+                    indents,
+                    true))
             .collect(Collectors.toList());
     }
     

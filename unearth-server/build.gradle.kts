@@ -24,12 +24,12 @@ dependencies {
     implementation(project(":unearth-core"))
     implementation(project(":unearth-analysis"))
     implementation(project(":unearth-munch"))
+    implementation(project(":unearth-memory"))
     implementation(project(":unearth-jdbc"))
     implementation(project(":unearth-statik"))
 
     implementation("org.http4k:http4k-core")
     implementation("org.http4k:http4k-contract")
-
     implementation("org.http4k:http4k-format-jackson")
     implementation("org.http4k:http4k-server-netty")
 

@@ -23,6 +23,7 @@ dependencies {
     implementation("org.flywaydb:flyway-core")
     implementation("org.slf4j:slf4j-api")
 
+    testImplementation(project(":unearth-memory"))
     testImplementation("com.zaxxer:HikariCP")
     testImplementation("org.assertj:assertj-core")
     testRuntimeOnly("org.hsqldb:hsqldb")

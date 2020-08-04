@@ -15,16 +15,24 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-core",
-        "unearth-memory",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-main")
+package unearth.memory;
 
+import java.util.UUID;
+import javax.sql.DataSource;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
+public final class Db {
+    
+    public static DataSource memory() {
+        HikariConfig configuration = new HikariConfig();
+        configuration.setJdbcUrl("jdbc:hsqldb:mem:unearth-" + UUID.randomUUID() + ";sql.syntax_pgs=true");
+        configuration.setUsername("SA");
+        configuration.setPassword("");
+        return new HikariDataSource(configuration);
+    }
+    
+    private Db() {
+    }
+}

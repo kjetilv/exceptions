@@ -28,7 +28,6 @@ import unearth.munch.model.Fault;
 import unearth.munch.model.FaultStrand;
 import unearth.munch.model.FeedEntry;
 
-@SuppressWarnings("unused")
 public interface FaultStats extends AutoCloseable {
 
     @Override

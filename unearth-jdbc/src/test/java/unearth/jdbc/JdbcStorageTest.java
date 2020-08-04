@@ -26,14 +26,13 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.sql.DataSource;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import unearth.core.FaultFeed;
 import unearth.core.FaultStats;
 import unearth.core.FaultStorage;
+import unearth.memory.Db;
 import unearth.munch.id.FaultId;
 import unearth.munch.id.FaultStrandId;
 import unearth.munch.model.Fault;
@@ -55,12 +54,8 @@ public class JdbcStorageTest {
 
     @Before
     public void setup() {
-        HikariConfig configuration = new HikariConfig();
-        configuration.setJdbcUrl("jdbc:hsqldb:mem:unearth-" + UUID.randomUUID() + ";sql.syntax_pgs=true");
-        configuration.setUsername("SA");
-        configuration.setPassword("");
-        DataSource dataSource = new HikariDataSource(configuration);
-
+        DataSource dataSource = Db.memory();
+    
         Clock clock = newAtomicClock();
         JdbcStorage jdbcStorage = storage(dataSource, clock);
         storage = jdbcStorage;
@@ -68,7 +63,7 @@ public class JdbcStorageTest {
         stats = jdbcStorage;
         storage.initStorage().run();
     }
-
+    
     @Test
     public void smoke() {
         assertThat(feed.limit()).isEmpty();

@@ -15,9 +15,26 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*
+ *     This file is part of Unearth.
+ *
+ *     Unearth is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     Unearth is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 @file:Suppress("UNNECESSARY_SAFE_CALL", "USELESS_ELVIS")
 
-package unearth.server
+package unearth.server.http4k
 
 import org.http4k.asString
 import org.http4k.contract.contract
@@ -46,8 +63,12 @@ import org.slf4j.LoggerFactory
 import unearth.munch.id.*
 import unearth.munch.model.Fault
 import unearth.munch.parser.ThrowableParser
-import unearth.server.JSON.auto
+import unearth.server.Swaggex
+import unearth.server.UnearthlyConfig
+import unearth.server.UnearthlyController
+import unearth.server.UnearthlyError
 import unearth.server.dto.*
+import unearth.server.http4k.JSON.auto
 import unearth.statik.Statik
 import unearth.util.Throwables
 import java.io.File
@@ -59,8 +80,8 @@ import java.util.jar.JarFile
 import java.util.regex.Pattern
 
 class UnearthlyServer(
-        private val controller: UnearthlyController,
-        private val configuration: UnearthlyConfig = UnearthlyConfig()
+    private val controller: UnearthlyController,
+    private val configuration: UnearthlyConfig = UnearthlyConfig()
 ) {
 
     private val server = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
@@ -354,7 +375,8 @@ class UnearthlyServer(
             configuration.prefix bind contract {
                 renderer = OpenApi3(
                         apiInfo = ApiInfo("Unearth", "v1", "Taking exceptions seriously"),
-                        json = JSON)
+                        json = JSON
+                )
                 descriptionPath = "/swagger.json"
                 routes += listOf(
                         submitExceptionRoute(),
@@ -424,7 +446,8 @@ class UnearthlyServer(
                         .header("X-Fault-Event-Id", policy?.feedEntryId?.toHashString() ?: "-")),
                 UnearthlyError(
                         message = error.toString(),
-                        submission = policy?.let { controller.submission(it) }))
+                        submission = policy?.let { controller.submission(it) })
+        )
     }
 
     private fun internalErrorResponse(e: Throwable): Response {
@@ -458,7 +481,9 @@ class UnearthlyServer(
     private fun swaggerUiRoute(prefix: String): RoutingHttpHandler = "/doc/{path}" bind GET to {
         try {
             statik.read(it.path("path")).map { file ->
-                Response(OK).body(file)
+                Response(OK)
+                    .header("Content-Length", file.length.toString())
+                    .body(file)
             }.orElseGet {
                 swaggerRedirect(prefix)
             }
