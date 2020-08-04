@@ -25,7 +25,7 @@ object Swaggex {
 
     private val random = Random()
 
-    internal fun submission() = Submission(
+    fun submission() = Submission(
             FaultStrandIdDto(UUID.randomUUID()),
             FaultIdDto(UUID.randomUUID()),
             FeedEntryIdDto(UUID.randomUUID()),
@@ -34,24 +34,24 @@ object Swaggex {
             2000L + random.nextLong() % 1000,
             if (random.nextBoolean()) Action.LOG else Action.LOG_SHORT)
 
-    internal fun eventSequence(): EventSequenceDto =
+    fun eventSequence(): EventSequenceDto =
             EventSequenceDto(listOf(feedEntryDto()))
 
-    internal fun faultEventSequence(): FeedEntrySequence =
+    fun faultEventSequence(): FeedEntrySequence =
             FeedEntrySequence(FaultIdDto(uuid()), listOf(feedEntryDto()))
 
-    internal fun faultStrandEventSequence(): FaultStrandEventSequenceDto =
+    fun faultStrandEventSequence(): FaultStrandEventSequenceDto =
             FaultStrandEventSequenceDto(FaultStrandIdDto(uuid()), listOf(feedEntryDto()))
 
-    internal fun faultStrandDto() = FaultStrandDto(FaultStrandIdDto(uuid()), listOf(causeStrandDto()))
+    fun faultStrandDto() = FaultStrandDto(FaultStrandIdDto(uuid()), listOf(causeStrandDto()))
 
-    internal fun faultDto() = FaultDto(FaultIdDto(uuid()), FaultStrandIdDto(uuid()), listOf(causeDto()))
+    fun faultDto() = FaultDto(FaultIdDto(uuid()), FaultStrandIdDto(uuid()), listOf(causeDto()))
 
-    internal fun exception() = RuntimeException("Example throwable")
+    fun exception() = RuntimeException("Example throwable")
 
-    internal fun causeDto() = CauseDto(CauseIdDto(uuid()), "Bad stuff", causeStrandDto())
+    fun causeDto() = CauseDto(CauseIdDto(uuid()), "Bad stuff", causeStrandDto())
 
-    internal fun feedEntryDto(): FeedEntryDto {
+    fun feedEntryDto(): FeedEntryDto {
         faultDto().let {
             return FeedEntryDto(
                     FaultEventDto(
@@ -66,7 +66,7 @@ object Swaggex {
         }
     }
 
-    internal fun causeStrandDto() =
+    fun causeStrandDto() =
             CauseStrandDto(CauseStrandIdDto(uuid()), "BadStuffException", emptyList(), emptyList())
 
     private fun uuid(): UUID = UUID.randomUUID()

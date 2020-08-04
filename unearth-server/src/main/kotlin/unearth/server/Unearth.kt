@@ -33,7 +33,6 @@ import unearth.memory.Db
 import unearth.memory.Sensor
 import unearth.munch.model.FrameFun
 import unearth.munch.print.*
-import unearth.server.http4k.UnearthlyServer
 import unearth.server.turbo.UnearthlyTurboFilter
 import java.net.URI
 import java.time.Clock
@@ -54,8 +53,8 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
         fun close()
     }
 
-    fun run(): State {
-        logger.info("Building ${UnearthlyServer::class.simpleName}...")
+    fun run(toServer: (UnearthlyController, UnearthlyConfig) -> UnearthlyServer): State {
+        logger.info("Building ${Unearth::class.simpleName}...")
 
         val configuration = customConfiguration ?: unearthlyConfig(loadConfiguration())
 
@@ -73,7 +72,7 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
             configuration
         )
 
-        val server = UnearthlyServer(controller, configuration)
+        val server: UnearthlyServer = toServer(controller, configuration)
 
         if (configuration.unearthlyLogging) {
             reconfigureLogging(controller)

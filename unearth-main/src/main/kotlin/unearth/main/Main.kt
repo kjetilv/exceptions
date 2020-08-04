@@ -19,9 +19,12 @@
 
 package unearth.main
 
+import unearth.main.http4k.Http4kServer
 import unearth.server.Unearth
 
 fun main() {
 
-    Unearth().run();
+    Unearth().run {
+        controller, config -> Http4kServer(controller, config)
+    }
 }

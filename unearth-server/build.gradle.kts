@@ -33,12 +33,10 @@ dependencies {
     implementation("org.http4k:http4k-format-jackson")
     implementation("org.http4k:http4k-server-netty")
 
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("ch.qos.logback:logback-classic")
 
     implementation("com.zaxxer:HikariCP")
 
-    implementation("ch.qos.logback:logback-classic")
 
     implementation("io.swagger.core.v3:swagger-core")
     implementation("io.micrometer:micrometer-registry-jmx")

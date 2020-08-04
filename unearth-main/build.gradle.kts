@@ -45,6 +45,10 @@ dependencies {
     implementation("org.http4k:http4k-format-jackson")
     implementation("org.http4k:http4k-server-netty")
 
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("ch.qos.logback:logback-classic")
+
     implementation(kotlin("stdlib"))
 
     runtimeOnly("org.postgresql:postgresql")

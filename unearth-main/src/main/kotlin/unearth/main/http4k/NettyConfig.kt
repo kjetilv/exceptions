@@ -14,7 +14,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
-package unearth.server.http4k
+package unearth.main.http4k
 
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel.*

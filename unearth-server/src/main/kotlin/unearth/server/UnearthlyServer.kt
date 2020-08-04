@@ -15,19 +15,11 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-dependencies {
-    testImplementation(project(":unearth-main"))
-    testImplementation(project(":unearth-server"))
-    testImplementation(project(":unearth-analysis"))
-    testImplementation(project(":unearth-util"))
-    testImplementation(project(":unearth-munch"))
-    testImplementation(project(":unearth-core"))
-    testImplementation(project(":unearth-client"))
+package unearth.server
 
-    testImplementation("org.testcontainers:cassandra")
-
-    testRuntimeOnly("org.postgresql:postgresql")
-    testRuntimeOnly("org.webjars:swagger-ui")
-    testRuntimeOnly("io.dropwizard.metrics:metrics-jmx")
-    testRuntimeOnly("ch.qos.logback:logback-classic")
+interface UnearthlyServer {
+    fun start(after: (UnearthlyServer) -> Unit = {}): UnearthlyServer
+    fun reset()
+    fun stop(after: (UnearthlyServer) -> Unit = {}): UnearthlyServer
+    fun port(): Int
 }

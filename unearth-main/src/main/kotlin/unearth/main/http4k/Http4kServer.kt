@@ -32,9 +32,26 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*
+ *     This file is part of Unearth.
+ *
+ *     Unearth is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     Unearth is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 @file:Suppress("UNNECESSARY_SAFE_CALL", "USELESS_ELVIS")
 
-package unearth.server.http4k
+package unearth.main.http4k
 
 import org.http4k.asString
 import org.http4k.contract.contract
@@ -60,15 +77,12 @@ import org.http4k.routing.routes
 import org.http4k.server.Http4kServer
 import org.http4k.server.asServer
 import org.slf4j.LoggerFactory
+import unearth.main.http4k.JSON.auto
 import unearth.munch.id.*
 import unearth.munch.model.Fault
 import unearth.munch.parser.ThrowableParser
-import unearth.server.Swaggex
-import unearth.server.UnearthlyConfig
-import unearth.server.UnearthlyController
-import unearth.server.UnearthlyError
+import unearth.server.*
 import unearth.server.dto.*
-import unearth.server.http4k.JSON.auto
 import unearth.statik.Statik
 import unearth.util.Throwables
 import java.io.File
@@ -79,10 +93,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.jar.JarFile
 import java.util.regex.Pattern
 
-class UnearthlyServer(
+class Http4kServer(
     private val controller: UnearthlyController,
     private val configuration: UnearthlyConfig = UnearthlyConfig()
-) {
+) : UnearthlyServer {
 
     private val server = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
             .then(ServerFilters.GZipContentTypes(setOf(APPLICATION_JSON, TEXT_PLAIN, TEXT_HTML)))
@@ -98,27 +112,27 @@ class UnearthlyServer(
 
     private val stopped = AtomicBoolean()
 
-    fun start(after: (Http4kServer) -> Unit = {}): UnearthlyServer = apply {
+    override fun start(after: (UnearthlyServer) -> Unit): unearth.main.http4k.Http4kServer = apply {
         if (started.compareAndSet(false, true)) {
             server.start()
-            after(server)
+            after(this)
         }
     }
 
-    fun reset() {
+    override fun reset() {
         controller.reset()
     }
 
-    fun stop(after: (Http4kServer) -> Unit = {}): UnearthlyServer = apply {
+    override fun stop(after: (UnearthlyServer) -> Unit): unearth.main.http4k.Http4kServer = apply {
         if (stopped.compareAndSet(false, true)) {
             controller.use {
                 server.stop()
-                after(server)
+                after(this)
             }
         }
     }
 
-    fun port(): Int = server.port()
+    override fun port(): Int = server.port()
 
     private fun pingRoute() =
             "ping" meta {
@@ -508,7 +522,7 @@ class UnearthlyServer(
 
     companion object {
 
-        private val logger = LoggerFactory.getLogger(UnearthlyServer::class.java)
+        private val logger = LoggerFactory.getLogger(Http4kServer::class.java)
 
         private const val swaggerUiPrefix = "META-INF/resources/webjars/swagger-ui"
 

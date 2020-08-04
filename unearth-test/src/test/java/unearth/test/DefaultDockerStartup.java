@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.testcontainers.containers.GenericContainer;
 import unearth.analysis.CassandraInit;
 import unearth.client.UnearthlyClient;
+import unearth.main.http4k.Http4kServer;
 import unearth.server.Unearth;
 import unearth.server.UnearthlyCassandraConfig;
 import unearth.server.UnearthlyConfig;
@@ -63,7 +64,7 @@ public final class DefaultDockerStartup implements DockerStartup {
                 cassandraInit.set(init))
             .thenApply(CassandraInit::init);
         
-        CompletableFuture<Unearth> unearth = cassandraFuture
+        CompletableFuture<Unearth> unearthFuture = cassandraFuture
             .thenCombineAsync(postgresFuture, (cassandraConfig, dbConfig) ->
                 new UnearthlyConfig(
                     "/api/test",
@@ -76,8 +77,9 @@ public final class DefaultDockerStartup implements DockerStartup {
                     dbConfig))
             .thenApply(Unearth::new);
         
-        CompletableFuture<UnearthlyClient> client = unearth
-            .thenApply(Unearth::run)
+        CompletableFuture<UnearthlyClient> client = unearthFuture
+            .thenApply(unearth ->
+                unearth.run(Http4kServer::new))
             .whenComplete((state, throwable) ->
                 this.state.set(state))
             .thenApply(Unearth.State::url)
