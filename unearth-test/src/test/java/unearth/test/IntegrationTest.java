@@ -145,18 +145,17 @@ public class IntegrationTest {
 
     @BeforeClass
     public static void up() {
-        dockerStartup = new DockerStartup();
+        dockerStartup = new DefaultDockerStartup();
         client = dockerStartup.getClient();
     }
 
     @AfterClass
     public static void down() {
-        dockerStartup.stop();
+        dockerStartup.close();
     }
 
     @After
     public void reset() {
         dockerStartup.reset();
     }
-
 }

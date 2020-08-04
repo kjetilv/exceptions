@@ -24,7 +24,7 @@ import unearth.util.UncheckedCloseable;
 public final class UnearthlyDocker {
 
     public static void main(String[] args) {
-        start(DockerStartup::new);
+        start(DefaultDockerStartup::new);
     }
     
     private static void start(Supplier<UncheckedCloseable> closableSupplier) {
