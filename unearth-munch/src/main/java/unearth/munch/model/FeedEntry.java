@@ -35,9 +35,9 @@ public final class FeedEntry extends AbstractHashableIdentifiable<FeedEntryId> {
 
     public FeedEntry(
         FaultEvent faultEvent,
-        Long globalSequenceNo,
-        Long faultStrandSequenceNo,
-        Long faultSequenceNo
+        long globalSequenceNo,
+        long faultStrandSequenceNo,
+        long faultSequenceNo
     ) {
         this.faultEvent = faultEvent;
         this.globalSequenceNo = globalSequenceNo;

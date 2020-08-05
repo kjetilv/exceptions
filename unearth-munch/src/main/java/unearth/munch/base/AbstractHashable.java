@@ -26,18 +26,18 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import unearth.util.once.Once;
+import unearth.util.once.Get;
 
 @SuppressWarnings("unused")
 public abstract class AbstractHashable implements Hashable {
 
     /**
-     * A supplier which computes {@link Hashable this hashable's} uuid with a {@link Once#mostly(Supplier)}.
+     * A supplier which computes {@link Hashable this hashable's} uuid with a {@link Get#mostlyOnce(Supplier)}.
      */
-    private final Supplier<UUID> hash = Once.mostly(uuid(this));
+    private final Supplier<UUID> hash = Get.mostlyOnce(uuid(this));
     
     private final Supplier<String> toString =
-        Once.mostly(() ->
+        Get.mostlyOnce(() ->
             getClass().getSimpleName() + '[' + toStringIdentifier() + toStringContents() + ']');
     
     private static final String HASH = "MD5";
@@ -137,7 +137,7 @@ public abstract class AbstractHashable implements Hashable {
      * @return UUID supplier
      */
     private static Supplier<UUID> uuid(Hashable hashable) {
-        return Once.mostly(() -> {
+        return Get.mostlyOnce(() -> {
             MessageDigest md5 = md5();
             hashable.hashTo(md5::update);
             return UUID.nameUUIDFromBytes(md5.digest());

@@ -17,7 +17,7 @@
 
 package unearth.server
 
-import unearth.server.dto.*
+import unearth.api.dto.*
 import java.time.ZonedDateTime
 import java.util.*
 
@@ -26,22 +26,23 @@ object Swaggex {
     private val random = Random()
 
     fun submission() = Submission(
-            FaultStrandIdDto(UUID.randomUUID()),
-            FaultIdDto(UUID.randomUUID()),
-            FeedEntryIdDto(UUID.randomUUID()),
-            random.nextLong() % 1000,
-            1000L + random.nextLong() % 1000,
-            2000L + random.nextLong() % 1000,
-            if (random.nextBoolean()) Action.LOG else Action.LOG_SHORT)
+        FaultStrandIdDto(UUID.randomUUID()),
+        FaultIdDto(UUID.randomUUID()),
+        FeedEntryIdDto(UUID.randomUUID()),
+        random.nextLong() % 1000,
+        1000L + random.nextLong() % 1000,
+        2000L + random.nextLong() % 1000,
+        if (random.nextBoolean()) Action.LOG else Action.LOG_SHORT
+    )
 
     fun eventSequence(): EventSequenceDto =
-            EventSequenceDto(listOf(feedEntryDto()))
+        EventSequenceDto(listOf(feedEntryDto()))
 
-    fun faultEventSequence(): FeedEntrySequence =
-            FeedEntrySequence(FaultIdDto(uuid()), listOf(feedEntryDto()))
+    fun faultEventSequence(): FeedEntrySequenceDto =
+        FeedEntrySequenceDto(FaultIdDto(uuid()), listOf(feedEntryDto()))
 
     fun faultStrandEventSequence(): FaultStrandEventSequenceDto =
-            FaultStrandEventSequenceDto(FaultStrandIdDto(uuid()), listOf(feedEntryDto()))
+        FaultStrandEventSequenceDto(FaultStrandIdDto(uuid()), listOf(feedEntryDto()))
 
     fun faultStrandDto() = FaultStrandDto(FaultStrandIdDto(uuid()), listOf(causeStrandDto()))
 
@@ -54,20 +55,22 @@ object Swaggex {
     fun feedEntryDto(): FeedEntryDto {
         faultDto().let {
             return FeedEntryDto(
-                    FaultEventDto(
-                            FeedEntryIdDto(uuid()),
-                            it,
-                            it.id,
-                            it.faultStrandId,
-                            ZonedDateTime.now()),
-                    random.nextInt().toLong(),
-                    random.nextInt().toLong(),
-                    random.nextInt().toLong())
+                FaultEventDto(
+                    FeedEntryIdDto(uuid()),
+                    it,
+                    it.id,
+                    it.faultStrandId,
+                    ZonedDateTime.now()
+                ),
+                random.nextInt().toLong(),
+                random.nextInt().toLong(),
+                random.nextInt().toLong()
+            )
         }
     }
 
     fun causeStrandDto() =
-            CauseStrandDto(CauseStrandIdDto(uuid()), "BadStuffException", emptyList(), emptyList())
+        CauseStrandDto(CauseStrandIdDto(uuid()), "BadStuffException", emptyList(), emptyList())
 
     private fun uuid(): UUID = UUID.randomUUID()
 

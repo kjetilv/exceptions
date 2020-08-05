@@ -22,32 +22,32 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import unearth.client.dto.CauseDto;
-import unearth.client.dto.CauseIdDto;
-import unearth.client.dto.CauseStrandDto;
-import unearth.client.dto.CauseStrandIdDto;
-import unearth.client.dto.EventSequenceDto;
-import unearth.client.dto.FaultDto;
-import unearth.client.dto.FaultEventSequenceDto;
-import unearth.client.dto.FaultIdDto;
-import unearth.client.dto.FaultStrandDto;
-import unearth.client.dto.FaultStrandEventSequenceDto;
-import unearth.client.dto.FaultStrandIdDto;
-import unearth.client.dto.FeedEntryDto;
-import unearth.client.dto.FeedEntryIdDto;
-import unearth.client.dto.StackTraceElementDto;
-import unearth.client.dto.Submission;
-import unearth.client.proto.Proto;
+import unearth.api.UnearthlyAPI;
+import unearth.api.dto.CauseDto;
+import unearth.api.dto.CauseIdDto;
+import unearth.api.dto.CauseStrandDto;
+import unearth.api.dto.CauseStrandIdDto;
+import unearth.api.dto.EventSequenceDto;
+import unearth.api.dto.FaultDto;
+import unearth.api.dto.FaultEventSequenceDto;
+import unearth.api.dto.FaultIdDto;
+import unearth.api.dto.FaultStrandDto;
+import unearth.api.dto.FaultStrandEventSequenceDto;
+import unearth.api.dto.FaultStrandIdDto;
+import unearth.api.dto.FeedEntryDto;
+import unearth.api.dto.FeedEntryIdDto;
+import unearth.api.dto.StackTraceElementDto;
+import unearth.api.dto.Submission;
+import unearth.norest.Proto;
 
 public class DefaultUnearthlyClient implements UnearthlyClient {
 
@@ -160,8 +160,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     }
 
     private static Throwable toChameleon(FaultDto faultDto) {
-        List<CauseDto> list =
-            Arrays.stream(faultDto.causes).collect(Collectors.toCollection(ArrayList::new));
+        List<CauseDto> list = new ArrayList<>(faultDto.getCauses());
         Collections.reverse(list);
         return list.stream().reduce(
             null,
@@ -188,24 +187,24 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
 
     private static Throwable toChameleon(Throwable throwable, CauseDto cause) {
         Throwable exception =
-            new ChameleonException(cause.causeStrand.className, cause.message, throwable);
-        Optional.of(cause.causeStrand)
-            .map(dto -> dto.fullStack)
+            new ChameleonException(cause.getCauseStrand().getClassName(), cause.getMessage(), throwable);
+        Optional.of(cause.getCauseStrand())
+            .map(CauseStrandDto::getFullStack)
             .map(DefaultUnearthlyClient::stackTrace)
             .ifPresent(exception::setStackTrace);
         return exception;
     }
 
-    private static StackTraceElement[] stackTrace(StackTraceElementDto[] fullStack) {
-        return Arrays.stream(fullStack)
+    private static StackTraceElement[] stackTrace(Collection<StackTraceElementDto> fullStack) {
+        return fullStack.stream()
             .map(frame ->
                 new StackTraceElement(
-                    frame.declaringClass,
-                    frame.methodName,
-                    frame.fileName,
-                    frame.lineNumber == null
+                    frame.getDeclaringClass(),
+                    frame.getMethodName(),
+                    frame.getFileName(),
+                    frame.getLineNumber()== null
                         ? -1
-                        : frame.lineNumber
+                        : frame.getLineNumber()
                 )).toArray(StackTraceElement[]::new);
     }
 }

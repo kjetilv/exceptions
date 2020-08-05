@@ -17,39 +17,61 @@
 
 package unearth.util.once;
 
-import java.util.Objects;
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-public final class Once {
+final class Once<T> extends AbstractSupplier<T> {
     
-    /**
-     * Returns a supplier which runs the given supplier once.
-     *
-     * @param supplier Source supplier
-     * @param <T> Type
-     *
-     * @return Single-run supplier
-     */
-    public static <T> Supplier<T> get(Supplier<T> supplier) {
-        return supplier instanceof GetOnce<?> ? supplier : new GetOnce<>(vetted(supplier));
+    private final AtomicBoolean started = new AtomicBoolean();
+    
+    private final CompletableFuture<Boolean> ok = new CompletableFuture<>();
+    
+    private final AtomicReference<T> value = new AtomicReference<>();
+    
+    private final AtomicReference<RuntimeException> error = new AtomicReference<>();
+    
+    Once(Supplier<T> supplier) {
+        super(supplier);
     }
     
-    public static <T> Supplier<T> mostly(Supplier<T> supplier) {
-        return supplier instanceof GetMostlyOnce<?> ? supplier : new GetMostlyOnce<>(vetted(supplier));
+    @Override
+    protected T doGet(Supplier<T> supplier, boolean required) {
+        if (required) {
+            if (isFirstAccess()) {
+                return resolve(supplier);
+            }
+        } else {
+            if (!ok.isDone()) {
+                return null;
+            }
+        }
+        return futureValue();
     }
     
-    public static <T> Supplier<Optional<T>> maybe(Supplier<T> supplier) {
-        return ((AbstractGet<T>) (supplier instanceof GetOnce<?>
-            ? supplier
-            : mostly(supplier)))
-            .maybe();
+    private T resolve(Supplier<T> supplier) {
+        T val;
+        try {
+            val = supplier.get();
+        } catch (RuntimeException e) {
+            error.set(e);
+            ok.complete(false);
+            throw new IllegalStateException(this + ": failed", e);
+        }
+        value.set(val);
+        ok.complete(true);
+        return val;
     }
     
-    private Once() {
+    private T futureValue() {
+        if (ok.join()) {
+            return value.get();
+        }
+        throw new IllegalStateException(this + ": failed", error.get());
     }
     
-    private static <T> T vetted(T supplier) {
-        return Objects.requireNonNull(supplier, "supplier");
+    private boolean isFirstAccess() {
+        return started.compareAndSet(false, true);
     }
 }

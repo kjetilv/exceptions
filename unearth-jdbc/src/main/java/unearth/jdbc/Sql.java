@@ -126,7 +126,7 @@ final class Sql {
     
     static List<FeedEntry> loadFeedEntries(Session session, FaultStrandId id, Instant sinceTime) {
         return session.select(
-            "select (" + FeedEntryFields.list() + ") from feed_entry" +
+            "select (fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq) from feed_entry" +
                 " where fault_strand = ? and time >= ? order by fault_seq desc limit 1",
             stmt -> stmt
                 .set(id)
@@ -155,7 +155,7 @@ final class Sql {
     
     static Optional<FeedEntry> loadFeedEntry(Session session, FeedEntryId faultEventId) {
         return session.select(
-            "select " + FeedEntryFields.list() + " from feed_entry where id = ?",
+            "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq from feed_entry where id = ?",
             stmt ->
                 Setter.byId(stmt, faultEventId),
             Sql::readFeedEntry
@@ -164,7 +164,7 @@ final class Sql {
     
     static List<FeedEntry> loadFeedEntries(Session session, FaultId id, Instant sinceTime, Long ceiling) {
         return session.select(
-            "select (" + FeedEntryFields.list() + ") from feed_entry" +
+            "select (fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq) from feed_entry" +
                 " where fault = ? and time >= ? and fault_seq <= ? order by fault_seq desc limit 1",
             stmt -> stmt
                 .set(id)

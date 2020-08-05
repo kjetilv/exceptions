@@ -21,6 +21,7 @@ val jacksonVer = "2.11.0"
 val http4kVer = "3.254.0"
 val micrometerVer = "1.5.3"
 val konfigVer = "1.6.10.0"
+val nettyVer = "4.1.51.Final"
 val swaggerVer = "2.0.8"
 val logbackVer = "1.2.3"
 val cassandraDriverVer = "4.7.0"
@@ -86,6 +87,7 @@ allprojects {
             implementation(http4k("format-jackson"))
             implementation(http4k("server-netty"))
 
+            implementation("io.netty:netty-all:$nettyVer")
             implementation("com.natpryce:konfig:$konfigVer")
 
             implementation(jackson("datatype", "jdk8"))

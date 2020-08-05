@@ -36,7 +36,7 @@ import com.datastax.oss.driver.api.core.metadata.EndPoint;
 import com.datastax.oss.driver.api.core.metadata.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import unearth.util.once.Once;
+import unearth.util.once.Get;
 
 public class AbstractCassandraConnected {
 
@@ -51,7 +51,7 @@ public class AbstractCassandraConnected {
     private static final String PROFILE = "default";
 
     AbstractCassandraConnected(String host, int port, String dc, String keyspace) {
-        cqlSession = Once.get(() -> {
+        cqlSession = Get.once(() -> {
             CqlSession cqlSession = builder(host, port, dc, keyspace).build();
             Row row = cqlSession.execute(VERSION_QUERY).one();
             if (row == null) {
@@ -66,7 +66,7 @@ public class AbstractCassandraConnected {
     }
 
     public void close() {
-        Once.maybe(cqlSession).get().ifPresent(AsyncAutoCloseable::close);
+        Get.maybeOnce(cqlSession).get().ifPresent(AsyncAutoCloseable::close);
     }
 
     static void exec(CqlSession session, String stmt, Object... args) {

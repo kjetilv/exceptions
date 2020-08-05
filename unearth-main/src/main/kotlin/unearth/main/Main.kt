@@ -15,16 +15,15 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-@file:Suppress("UNNECESSARY_NOT_NULL_ASSERTION")
-
 package unearth.main
 
 import unearth.main.http4k.Http4kServer
 import unearth.server.Unearth
+import unearth.server.UnearthlyRenderer
 
 fun main() {
 
-    Unearth().run {
-        controller, config -> Http4kServer(controller, config)
+    Unearth().run { controller, config ->
+        Http4kServer(controller, config, UnearthlyRenderer(config.prefix))
     }
 }

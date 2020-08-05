@@ -31,28 +31,46 @@ import unearth.munch.model.FaultStrand;
 import unearth.munch.model.FeedEntry;
 import unearth.munch.model.LogEntry;
 
-public interface FaultStorage extends AutoCloseable {
-
+public interface FaultStorage extends AutoCloseable, Resettable {
+    
     default Runnable initStorage() {
         return () -> {
         };
     }
-
+    
     @Override
     default void close() {
     }
-
+    
     FeedEntry store(LogEntry logEntry, Fault fault, Throwable throwable);
-
+    
+    default Fault getRequiredFault(FaultId faultId) {
+        return getFault(faultId).orElseThrow(() ->
+            new IllegalArgumentException("Unknown: " + faultId));
+    }
+    
     Optional<Fault> getFault(FaultId faultId);
-
+    
+    default FaultStrand getRequiredFaultStrand(FaultStrandId faultStrandId) {
+        return getFaultStrand(faultStrandId).orElseThrow(() ->
+            new IllegalArgumentException("Unknown: " + faultStrandId));
+    }
+    
     Optional<FaultStrand> getFaultStrand(FaultStrandId faultStrandId);
-
+    
     Optional<FeedEntry> getFeedEntry(FeedEntryId faultEventId);
-
+    
+    default CauseStrand getRequiredCauseStrand(CauseStrandId causeStrandId) {
+        return getCauseStrand(causeStrandId).orElseThrow(() ->
+            new IllegalArgumentException("Unknown: " + causeStrandId));
+    }
+    
     Optional<CauseStrand> getCauseStrand(CauseStrandId causeStrandId);
-
+    
+    default Cause getRequiredCause(CauseId causeId) {
+        return getCause(causeId).orElseThrow(() ->
+            new IllegalArgumentException("Unknown: " + causeId));
+    }
+    
     Optional<Cause> getCause(CauseId causeId);
-
-    void reset();
 }

@@ -37,6 +37,7 @@ import unearth.server.turbo.UnearthlyTurboFilter
 import java.net.URI
 import java.time.Clock
 import java.util.*
+import java.util.function.BiFunction
 import java.util.stream.Stream
 import javax.sql.DataSource
 
@@ -53,6 +54,11 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
         fun close()
     }
 
+    fun jun(toServer: BiFunction<UnearthlyController, UnearthlyConfig, UnearthlyServer>) =
+        run {
+            controller, config -> toServer.apply(controller, config)
+        }
+
     fun run(toServer: (UnearthlyController, UnearthlyConfig) -> UnearthlyServer): State {
         logger.info("Building ${Unearth::class.simpleName}...")
 
@@ -68,9 +74,7 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
             storage,
             storage,
             sensor,
-            UnearthlyRenderer(),
-            configuration
-        )
+            UnearthlyRenderer(configuration.prefix))
 
         val server: UnearthlyServer = toServer(controller, configuration)
 

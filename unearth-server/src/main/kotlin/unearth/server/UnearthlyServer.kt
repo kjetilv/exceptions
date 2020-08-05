@@ -17,9 +17,17 @@
 
 package unearth.server
 
-interface UnearthlyServer {
+import unearth.core.Resettable
+
+interface UnearthlyServer: Resettable, AutoCloseable {
+
     fun start(after: (UnearthlyServer) -> Unit = {}): UnearthlyServer
-    fun reset()
+
     fun stop(after: (UnearthlyServer) -> Unit = {}): UnearthlyServer
+
+    override fun close() {
+        stop()
+    }
+
     fun port(): Int
 }

@@ -1,4 +1,6 @@
 module unearth.client {
+
+    requires unearth.norest;
     
     requires java.net.http;
     

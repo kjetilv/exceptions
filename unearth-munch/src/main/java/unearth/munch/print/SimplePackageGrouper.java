@@ -45,7 +45,7 @@ public final class SimplePackageGrouper implements ConfigurableStackRenderer.Pac
         Stream<Collection<String>> collectionStream = groups.stream()
             .filter(group ->
                 group.stream().anyMatch(name ->
-                    causeFrame.className().stringValue().startsWith(name)));
+                    causeFrame.className().string().startsWith(name)));
         return collectionStream
             .max(Comparator.comparing(maxMatch(causeFrame)));
     }
@@ -53,7 +53,7 @@ public final class SimplePackageGrouper implements ConfigurableStackRenderer.Pac
     private static Function<Collection<String>, Integer> maxMatch(CauseFrame causeFrame) {
         return group -> group.stream()
             .filter(name ->
-                causeFrame.className().stringValue().startsWith(name))
+                causeFrame.className().string().startsWith(name))
             .mapToInt(String::length)
             .max()
             .orElse(0);

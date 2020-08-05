@@ -97,27 +97,32 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     
     @Override
     public Optional<Fault> getFault(FaultId faultId) {
-        return inSession(session -> loadFault(session, faultId));
+        return inSession(session ->
+            loadFault(session, faultId));
     }
     
     @Override
     public Optional<FaultStrand> getFaultStrand(FaultStrandId faultStrandId) {
-        return inSession(session -> loadFaultStrand(session, faultStrandId));
+        return inSession(session ->
+            loadFaultStrand(session, faultStrandId));
     }
     
     @Override
     public Optional<FeedEntry> getFeedEntry(FeedEntryId faultEventId) {
-        return inSession(session -> loadFeedEntry(session, faultEventId));
+        return inSession(session ->
+            loadFeedEntry(session, faultEventId));
     }
     
     @Override
     public Optional<CauseStrand> getCauseStrand(CauseStrandId causeId) {
-        return inSession(session -> loadCauseStrand(session, causeId));
+        return inSession(session ->
+            loadCauseStrand(session, causeId));
     }
     
     @Override
     public Optional<Cause> getCause(CauseId causeId) {
-        return inSession(session -> loadCause(session, causeId));
+        return inSession(session ->
+            loadCause(session, causeId));
     }
     
     @Override
@@ -167,7 +172,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     @Override
     public List<FeedEntry> feed(FaultId id, long offset, long count) {
         return loadFaultEvents(
-            "select " + FeedEntryFields.list() + "" +
+            "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
                 "  from feed_entry" +
                 "  where fault = ? and global_seq >= ? limit ?",
             stmt -> stmt
@@ -237,7 +242,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     
     private List<FeedEntry> getFaultEntries(Id id, Instant sinceTime, Duration period) {
         return inSession(session -> session.select(
-            "select " + FeedEntryFields.list() + " from feed_entry" +
+            "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq from feed_entry" +
                 (id == null ? "" : " where " + (id instanceof FaultId ? "fault" : "fault_strand") + " = ?") +
                 (sinceTime == null ? ""
                     : " and time >= ?" + (
@@ -339,9 +344,9 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     
     private static List<FeedEntry> loadFeedEntries(FaultId id, Session session) {
         return session.select(
-            "select " +
-                FeedEntryFields.list() +
-                " from feed_entry where fault = ? and time >= ? order by fault_seq desc limit 1",
+            "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
+                " from feed_entry" +
+                " where fault = ? and time >= ? order by fault_seq desc limit 1",
             stmt ->
                 stmt.set(id),
             Sql::readFeedEntry);
@@ -425,9 +430,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
             "insert into fault_sequence (seq, id) values (?, ?)");
     }
     
-    private static long updateSequence(
-        Session session, Id hashable, String select, String update, String insert
-    ) {
+    private static long updateSequence(Session session, Id hashable, String select, String update, String insert) {
         return loadLimit(session, hashable, select)
             .map(seq ->
                 sequenced(session, hashable, update, seq + 1L))

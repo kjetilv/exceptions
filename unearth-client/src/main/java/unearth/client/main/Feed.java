@@ -36,16 +36,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import unearth.api.dto.CauseIdDto;
+import unearth.api.dto.CauseStrandIdDto;
+import unearth.api.dto.FaultIdDto;
+import unearth.api.dto.FaultStrandIdDto;
+import unearth.api.dto.FeedEntryIdDto;
+import unearth.api.dto.Submission;
 import unearth.client.UnearthlyClient;
-import unearth.client.dto.CauseIdDto;
-import unearth.client.dto.CauseStrandIdDto;
-import unearth.client.dto.FaultIdDto;
-import unearth.client.dto.FaultStrandIdDto;
-import unearth.client.dto.FeedEntryIdDto;
-import unearth.client.dto.IdDto;
-import unearth.client.dto.Submission;
 
-public class Feed {
+public final class Feed {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
         .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
@@ -55,7 +54,7 @@ public class Feed {
 
     public static void main(String[] args) {
         URI uri = URI.create(args[0]);
-        Collection<IdDto> uuids =
+        Collection<?> uuids =
             Arrays.stream(args).skip(1).map(Feed::fromString).collect(Collectors.toList());
         UnearthlyClient client = UnearthlyClient.connect(uri);
 
@@ -68,9 +67,9 @@ public class Feed {
 
         String input = stdin();
         Submission submit = client.submit(input);
-        System.out.println(submit.faultId);
-        System.out.println(submit.faultStrandId);
-        System.out.println(submit.feedEntryId);
+        System.out.println(submit.getFaultId());
+        System.out.println(submit.getFaultStrandId());
+        System.out.println(submit.getFeedEntryId());
     }
 
     private static String serialize(Object value) {
@@ -81,7 +80,7 @@ public class Feed {
         }
     }
 
-    private static Function<IdDto, Optional<?>> fetchFrom(UnearthlyClient client) {
+    private static Function<Object, Optional<?>> fetchFrom(UnearthlyClient client) {
         return id -> {
             if (id instanceof FaultIdDto) {
                 return client.fault((FaultIdDto) id, UnearthlyClient.StackType.FULL);
@@ -102,27 +101,21 @@ public class Feed {
         };
     }
 
-    private static IdDto fromString(String input) {
+    private static Object fromString(String input) {
         int split = input.indexOf(":");
         if (split == -1) {
             throw new IllegalStateException("Invalid reference: " + input);
         }
         UUID uuid = UUID.fromString(input.substring(split + 1));
         String type = input.substring(0, split).toLowerCase(Locale.ROOT);
-        switch (type) {
-            case "fault":
-                return new FaultIdDto(uuid);
-            case "fault-strand":
-                return new FaultStrandIdDto(uuid);
-            case "cause":
-                return new CauseIdDto(uuid);
-            case "cause-strand":
-                return new CauseStrandIdDto(uuid);
-            case "feed-entry":
-                return new FeedEntryIdDto(uuid);
-            default:
-                throw new IllegalStateException("Unused type " + type + ":" + uuid);
-        }
+        return switch (type) {
+            case "fault" -> new FaultIdDto(uuid);
+            case "fault-strand" -> new FaultStrandIdDto(uuid);
+            case "cause" -> new CauseIdDto(uuid);
+            case "cause-strand" -> new CauseStrandIdDto(uuid);
+            case "feed-entry" -> new FeedEntryIdDto(uuid);
+            default -> throw new IllegalStateException("Unused type " + type + ":" + uuid);
+        };
     }
 
     private static String stdin() {

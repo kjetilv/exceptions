@@ -17,6 +17,7 @@
 
 package unearth.test;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -28,6 +29,7 @@ import unearth.server.Unearth;
 import unearth.server.UnearthlyCassandraConfig;
 import unearth.server.UnearthlyConfig;
 import unearth.server.UnearthlyDbConfig;
+import unearth.server.UnearthlyRenderer;
 
 @SuppressWarnings({ "FieldCanBeLocal", "WeakerAccess", "SameParameterValue" })
 public final class DefaultDockerStartup implements DockerStartup {
@@ -70,6 +72,7 @@ public final class DefaultDockerStartup implements DockerStartup {
                     "/api/test",
                     "localhost",
                     0,
+                    Duration.ofSeconds(30),
                     true,
                     true,
                     true,
@@ -79,9 +82,12 @@ public final class DefaultDockerStartup implements DockerStartup {
         
         CompletableFuture<UnearthlyClient> client = unearthFuture
             .thenApply(unearth ->
-                unearth.run(Http4kServer::new))
-            .whenComplete((state, throwable) ->
-                this.state.set(state))
+                unearth.jun((unearthlyController, unearthlyConfig) ->
+                    new Http4kServer(
+                        unearthlyController,
+                        unearthlyConfig,
+                        new UnearthlyRenderer(unearthlyConfig.getPrefix()))))
+            .whenComplete((state, throwable) -> this.state.set(state))
             .thenApply(Unearth.State::url)
             .thenApply(UnearthlyClient::connect)
             .whenComplete((unearthlyClient, throwable) ->

@@ -32,6 +32,9 @@ tasks.withType<ShadowJar>() {
 }
 
 dependencies {
+    implementation(project(":unearth-norest"))
+    implementation(project(":unearth-api"))
+
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 }

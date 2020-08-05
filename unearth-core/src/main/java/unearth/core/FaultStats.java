@@ -28,7 +28,7 @@ import unearth.munch.model.Fault;
 import unearth.munch.model.FaultStrand;
 import unearth.munch.model.FeedEntry;
 
-public interface FaultStats extends AutoCloseable {
+public interface FaultStats extends AutoCloseable, Resettable {
 
     @Override
     default void close() {

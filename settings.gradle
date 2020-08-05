@@ -18,10 +18,12 @@
 rootProject.name = "unearth"
 include("unearth-client",
         "unearth-util",
+        "unearth-api",
         "unearth-core",
         "unearth-memory",
         "unearth-munch",
         "unearth-jdbc",
+        "unearth-norest",
         "unearth-analysis",
         "unearth-statik",
         "unearth-server",

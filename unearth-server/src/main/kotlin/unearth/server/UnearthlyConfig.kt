@@ -51,6 +51,8 @@
 
 package unearth.server
 
+import java.time.Duration
+
 data class UnearthlyConfig(
 
     val prefix: String = "/api/v1",
@@ -58,6 +60,8 @@ data class UnearthlyConfig(
     val host: String = "0.0.0.0",
 
     val port: Int = 8080,
+
+    val connectTimeout: Duration = Duration.ofSeconds(30),
 
     val selfDiagnose: Boolean = false,
 

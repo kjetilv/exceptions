@@ -24,23 +24,33 @@ import unearth.munch.id.FaultId;
 import unearth.munch.id.FaultStrandId;
 import unearth.munch.model.FeedEntry;
 
-public interface FaultFeed extends AutoCloseable {
-
+public interface FaultFeed extends AutoCloseable, Resettable {
+    
     @Override
     default void close() {
     }
-
+    
+    default long requiredLimit() {
+        return limit().orElseThrow(() -> new IllegalStateException("No limit"));
+    }
+    
     OptionalLong limit();
-
+    
+    default long requiredLimit(FaultStrandId id) {
+        return limit(id).orElseThrow(() -> new IllegalArgumentException("No limit: " + id));
+    }
+    
     OptionalLong limit(FaultStrandId id);
-
+    
+    default long requiredLimit(FaultId id) {
+        return limit(id).orElseThrow(() -> new IllegalArgumentException("No limit: " + id));
+    }
+    
     OptionalLong limit(FaultId id);
-
+    
     List<FeedEntry> feed(long offset, long count);
-
+    
     List<FeedEntry> feed(FaultStrandId id, long offset, long count);
-
+    
     List<FeedEntry> feed(FaultId id, long offset, long count);
-
-    void reset();
 }

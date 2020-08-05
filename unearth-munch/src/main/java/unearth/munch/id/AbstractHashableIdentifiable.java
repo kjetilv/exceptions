@@ -36,7 +36,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import unearth.munch.base.AbstractHashable;
-import unearth.util.once.Once;
+import unearth.util.once.Get;
 
 public abstract class AbstractHashableIdentifiable<I extends Id>
     extends AbstractHashable
@@ -45,7 +45,7 @@ public abstract class AbstractHashableIdentifiable<I extends Id>
     /**
      * A supplier which computes {@link Identifiable this identifiable's} {@link Id id} once-only.
      */
-    private final Supplier<I> id = Once.mostly(() -> id(getHash()));
+    private final Supplier<I> id = Get.mostlyOnce(() -> id(getHash()));
     
     @Override
     public final I getId() {

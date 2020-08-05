@@ -23,6 +23,8 @@ dependencies {
     testImplementation(project(":unearth-munch"))
     testImplementation(project(":unearth-core"))
     testImplementation(project(":unearth-client"))
+    testImplementation(project(":unearth-norest"))
+    testImplementation(project(":unearth-api"))
 
     testImplementation("org.testcontainers:cassandra")
 

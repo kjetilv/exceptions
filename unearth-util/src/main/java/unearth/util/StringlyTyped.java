@@ -21,17 +21,17 @@ import java.util.Objects;
 public abstract class StringlyTyped {
     
     public static String toString(StringlyTyped stringlyTyped) {
-        return stringlyTyped == null ? null : stringlyTyped.stringValue();
+        return stringlyTyped == null ? null : stringlyTyped.string();
     }
     
-    private final String value;
+    private final String string;
     
-    protected StringlyTyped(String value) {
-        this.value = norm(value);
+    protected StringlyTyped(String string) {
+        this.string = norm(string);
     }
     
-    public String stringValue() {
-        return value;
+    public String string() {
+        return string;
     }
     
     private static String norm(String s) {
@@ -44,17 +44,17 @@ public abstract class StringlyTyped {
     
     @Override
     public int hashCode() {
-        return value.hashCode();
+        return string.hashCode();
     }
     
     @Override
     public boolean equals(Object o) {
         return this == o ||
-            o != null && getClass() == o.getClass() && Objects.equals(value, ((StringlyTyped) o).value);
+            o != null && getClass() == o.getClass() && Objects.equals(string, ((StringlyTyped) o).string);
     }
     
     @Override
     public String toString() {
-        return stringValue();
+        return string();
     }
 }

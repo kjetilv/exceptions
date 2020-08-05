@@ -17,7 +17,7 @@
 
 package unearth.server
 
-import unearth.server.dto.Submission
+import unearth.api.dto.Submission
 
 data class UnearthlyError(
 

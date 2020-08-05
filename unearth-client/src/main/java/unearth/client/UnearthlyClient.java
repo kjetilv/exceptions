@@ -20,20 +20,20 @@ package unearth.client;
 import java.net.URI;
 import java.util.Optional;
 
-import unearth.client.dto.CauseDto;
-import unearth.client.dto.CauseIdDto;
-import unearth.client.dto.CauseStrandDto;
-import unearth.client.dto.CauseStrandIdDto;
-import unearth.client.dto.EventSequenceDto;
-import unearth.client.dto.FaultDto;
-import unearth.client.dto.FaultEventSequenceDto;
-import unearth.client.dto.FaultIdDto;
-import unearth.client.dto.FaultStrandDto;
-import unearth.client.dto.FaultStrandEventSequenceDto;
-import unearth.client.dto.FaultStrandIdDto;
-import unearth.client.dto.FeedEntryDto;
-import unearth.client.dto.FeedEntryIdDto;
-import unearth.client.dto.Submission;
+import unearth.api.dto.CauseDto;
+import unearth.api.dto.CauseIdDto;
+import unearth.api.dto.CauseStrandDto;
+import unearth.api.dto.CauseStrandIdDto;
+import unearth.api.dto.EventSequenceDto;
+import unearth.api.dto.FaultDto;
+import unearth.api.dto.FaultEventSequenceDto;
+import unearth.api.dto.FaultIdDto;
+import unearth.api.dto.FaultStrandDto;
+import unearth.api.dto.FaultStrandEventSequenceDto;
+import unearth.api.dto.FaultStrandIdDto;
+import unearth.api.dto.FeedEntryDto;
+import unearth.api.dto.FeedEntryIdDto;
+import unearth.api.dto.Submission;
 
 public interface UnearthlyClient {
 

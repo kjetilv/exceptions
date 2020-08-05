@@ -24,6 +24,8 @@ dependencies {
     implementation(project(":unearth-core"))
     implementation(project(":unearth-analysis"))
     implementation(project(":unearth-munch"))
+    implementation(project(":unearth-norest"))
+    implementation(project(":unearth-api"))
     implementation(project(":unearth-memory"))
     implementation(project(":unearth-jdbc"))
     implementation(project(":unearth-statik"))

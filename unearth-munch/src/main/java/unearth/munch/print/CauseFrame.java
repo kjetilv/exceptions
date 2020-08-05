@@ -247,12 +247,12 @@ public final class CauseFrame extends AbstractHashable {
         } else {
             hash(
                 h,
-                classLoader == null ? "" : classLoader.stringValue(),
-                module == null ? "" : module.stringValue(),
-                moduleVer == null ? "" : moduleVer.stringValue(),
-                className.stringValue(),
-                file.stringValue(),
-                method.stringValue());
+                classLoader == null ? "" : classLoader.string(),
+                module == null ? "" : module.string(),
+                moduleVer == null ? "" : moduleVer.string(),
+                className.string(),
+                file.string(),
+                method.string());
             hashInts(h, line);
             hashBools(h, naytiv);
         }
@@ -263,7 +263,7 @@ public final class CauseFrame extends AbstractHashable {
             classLoader,
             module,
             moduleVer,
-            className(shortened(className().stringValue())),
+            className(shortened(className().string())),
             method,
             file,
             line,
