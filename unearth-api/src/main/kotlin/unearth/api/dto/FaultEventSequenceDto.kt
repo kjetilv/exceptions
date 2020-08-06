@@ -1,4 +1,3 @@
-
 /*
  *     This file is part of Unearth.
  *
@@ -26,14 +25,6 @@ data class FaultEventSequenceDto(
 
     val events: List<FeedEntryDto> = Collections.emptyList(),
 
-    val sequenceType: SequenceType = SequenceType.FAULT_STRAND
-) {
+    val sequenceType: SequenceType = SequenceType.FAULT
 
-    val offset = seqs().min().orElse(0L)
-
-    val count = events.size
-
-    val last = seqs().max().orElse(-1L)
-
-    private fun seqs() = events.stream().mapToLong(sequenceType)
-}
+) : AbstractEventSequence(events, sequenceType)

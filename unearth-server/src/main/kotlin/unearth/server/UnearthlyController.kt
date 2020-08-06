@@ -52,54 +52,56 @@ class UnearthlyController(
         handler.handle(t)!!
 
     override fun lookupFaultStrandDto(
-        id: FaultStrandId,
+        id: FaultStrandIdDto,
         fullStack: Boolean,
         printStack: Boolean
     ): FaultStrandDto? =
-        storage.getFaultStrand(id).orElse(null)?.let { faultStrand ->
+        storage.getFaultStrand(FaultStrandId(id.uuid)).orElse(null)?.let { faultStrand ->
             renderer.faultStrandDto(faultStrand, fullStack, printStack)
         }
 
     override fun lookupFaultDto(
-        id: FaultId,
+        id: FaultIdDto,
         fullStack: Boolean,
         printStack: Boolean
     ): FaultDto? =
-        storage.getFault(id).orElse(null)?.let { renderer.faultDto(it, fullStack, printStack) }
+        storage.getFault(FaultId(id.uuid)).orElse(null)?.let { renderer.faultDto(it, fullStack, printStack) }
 
     override fun lookupFeedEntryDto(
-        id: FeedEntryId,
+        id: FeedEntryIdDto,
         fullStack: Boolean,
         printStack: Boolean
     ): FeedEntryDto? =
-        storage.getFeedEntry(id).orElse(null)?.let { feedEntry ->
+        storage.getFeedEntry(FeedEntryId(id.uuid)).orElse(null)?.let { feedEntry ->
             storage.getRequiredFault(feedEntry.faultEvent.faultId).let { fault ->
                 renderer.feedEntryDto(feedEntry, fault, fullStack, printStack)
             }
         }
 
     override fun lookupCauseStrandDto(
-        id: CauseStrandId,
+        id: CauseStrandIdDto,
         fullStack: Boolean,
         printStack: Boolean
     ): CauseStrandDto? =
-        storage.getCauseStrand(id).orElse(null)?.let { renderer.causeStrandDto(it, fullStack, printStack) }
+        storage.getCauseStrand(CauseStrandId(id.uuid)).orElse(null)?.let {
+            renderer.causeStrandDto(it, fullStack, printStack)
+        }
 
     override fun lookupCauseDto(
-        id: CauseId,
+        id: CauseIdDto,
         fullStack: Boolean,
         printStack: Boolean
     ): CauseDto? =
-        storage.getCause(id).orElse(null)?.let { renderer.causeDto(it, fullStack, printStack) }
+        storage.getCause(CauseId(id.uuid)).orElse(null)?.let { renderer.causeDto(it, fullStack, printStack) }
 
-    override fun lookupThrowable(id: FaultId): Throwable? =
-        storage.getFault(id).map(Fault::toChameleon).orElse(null)
+    override fun lookupThrowable(id: FaultIdDto): Throwable? =
+        storage.getFault(FaultId(id.uuid)).map(Fault::toChameleon).orElse(null)
 
-    override fun feedLimit(id: FaultId): Long? =
-        longish(feed.limit(id))
+    override fun feedLimit(id: FaultIdDto): Long? =
+        longish(feed.limit(FaultId(id.uuid)))
 
-    override fun feedLimit(id: FaultStrandId): Long? =
-        longish(feed.limit(id))
+    override fun feedLimit(id: FaultStrandIdDto): Long? =
+        longish(feed.limit(FaultStrandId(id.uuid)))
 
     override fun feedLimit(): Long? =
         longish(feed.limit())
@@ -120,30 +122,30 @@ class UnearthlyController(
     }
 
     override fun feed(
-        id: FaultId,
+        id: FaultIdDto,
         offset: Long,
         count: Long,
         fullStack: Boolean,
         printStack: Boolean
-    ): FeedEntrySequenceDto =
-        FeedEntrySequenceDto(
-            FaultIdDto(id.hash, renderer.link(id)),
-            feed.feed(id, offset, count).map { feedEntry ->
+    ): FaultEventSequenceDto =
+        FaultEventSequenceDto(
+            FaultIdDto(id.uuid, renderer.link(FaultId(id.uuid))),
+            feed.feed(FaultId(id.uuid), offset, count).map { feedEntry ->
                 storage.getRequiredFault(feedEntry.faultEvent.faultId).let { fault ->
                     renderer.feedEntryDto(feedEntry, fault, fullStack, printStack)
                 }
             })
 
     override fun feed(
-        id: FaultStrandId,
+        id: FaultStrandIdDto,
         offset: Long,
         count: Long,
         fullStack: Boolean,
         printStack: Boolean
     ): FaultStrandEventSequenceDto =
         FaultStrandEventSequenceDto(
-            FaultStrandIdDto(id.hash, renderer.link(id)),
-            feed.feed(id, offset, count).map { feedEntry ->
+            FaultStrandIdDto(id.uuid, renderer.link(FaultId(id.uuid))),
+            feed.feed(FaultId(id.uuid), offset, count).map { feedEntry ->
                 storage.getRequiredFault(feedEntry.faultEvent.faultId).let { fault ->
                     renderer.feedEntryDto(feedEntry, fault, fullStack, printStack)
                 }

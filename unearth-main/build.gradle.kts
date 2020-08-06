@@ -25,13 +25,14 @@ plugins {
 tasks.withType<ShadowJar>() {
     manifest {
         attributes(
-                mapOf(Pair("Main-Class", "no.scienta.unearth.main.MainKt"))
+            mapOf(Pair("Main-Class", "no.scienta.unearth.main.MainKt"))
         )
     }
     mergeServiceFiles()
 }
 
 dependencies {
+    implementation(project(":unearth-api"))
     implementation(project(":unearth-core"))
     implementation(project(":unearth-util"))
     implementation(project(":unearth-statik"))

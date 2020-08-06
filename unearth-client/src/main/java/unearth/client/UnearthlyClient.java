@@ -70,8 +70,12 @@ public interface UnearthlyClient {
     }
 
     Optional<CauseStrandDto> causeStrand(CauseStrandIdDto id, StackType stackType);
-
-    Optional<FeedEntryDto> feedEntry(FeedEntryIdDto id);
+    
+    default Optional<FeedEntryDto> feedEntry(FeedEntryIdDto id) {
+        return feedEntry(id, StackType.NONE);
+    }
+    
+    Optional<FeedEntryDto> feedEntry(FeedEntryIdDto id, StackType stackType);
 
     long globalFeedMax();
 

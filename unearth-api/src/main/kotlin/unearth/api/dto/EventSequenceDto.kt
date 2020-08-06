@@ -23,13 +23,5 @@ data class EventSequenceDto(
     val events: List<FeedEntryDto> = Collections.emptyList(),
 
     val sequenceType: SequenceType = SequenceType.GLOBAL
-) {
 
-    val offset = seqs().min().orElse(0L)
-
-    val count = events.size
-
-    val last = seqs().max().orElse(-1L)
-
-    private fun seqs() = events.stream().mapToLong(sequenceType)
-}
+) : AbstractEventSequence(events, sequenceType)

@@ -14,17 +14,12 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 package unearth.api.dto
 
-import java.util.*
-
-data class FeedEntrySequenceDto(
-
-    val id: FaultIdDto,
-
-    val events: List<FeedEntryDto> = Collections.emptyList(),
-
-    val sequenceType: SequenceType = SequenceType.FAULT
+abstract class AbstractEventSequence(
+    private val events: List<FeedEntryDto>,
+    private val sequenceType: SequenceType
 ) {
 
     val offset = seqs().min().orElse(0L)

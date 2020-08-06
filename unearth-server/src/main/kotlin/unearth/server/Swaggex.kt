@@ -38,8 +38,8 @@ object Swaggex {
     fun eventSequence(): EventSequenceDto =
         EventSequenceDto(listOf(feedEntryDto()))
 
-    fun faultEventSequence(): FeedEntrySequenceDto =
-        FeedEntrySequenceDto(FaultIdDto(uuid()), listOf(feedEntryDto()))
+    fun faultEventSequence(): FaultEventSequenceDto =
+        FaultEventSequenceDto(FaultIdDto(uuid()), listOf(feedEntryDto()))
 
     fun faultStrandEventSequence(): FaultStrandEventSequenceDto =
         FaultStrandEventSequenceDto(FaultStrandIdDto(uuid()), listOf(feedEntryDto()))

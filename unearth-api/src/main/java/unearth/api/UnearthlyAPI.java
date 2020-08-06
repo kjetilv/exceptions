@@ -43,19 +43,19 @@ public interface UnearthlyAPI {
     Submission throwable(String throwable);
 
     @GET("fault/{}")
-    Optional<FaultDto> fault(FaultIdDto faultId, @Q Boolean fullStack, @Q Boolean printStack);
+    Optional<FaultDto> fault(FaultIdDto faultId, @Q boolean fullStack, @Q boolean printStack);
 
     @GET("fault-strand/{}")
-    Optional<FaultStrandDto> faultStrand(FaultStrandIdDto faultId, @Q Boolean fullStack, @Q Boolean printStack);
+    Optional<FaultStrandDto> faultStrand(FaultStrandIdDto faultId, @Q boolean fullStack, @Q boolean printStack);
 
     @GET("cause/{}")
-    Optional<CauseDto> cause(CauseIdDto causeIdDto, @Q Boolean fullStack, @Q Boolean printStack);
+    Optional<CauseDto> cause(CauseIdDto causeIdDto, @Q boolean fullStack, @Q boolean printStack);
 
     @GET("cause-strand/{}")
-    Optional<CauseStrandDto> causeStrand(CauseStrandIdDto causeIdDto, @Q Boolean fullStack, @Q Boolean printStack);
+    Optional<CauseStrandDto> causeStrand(CauseStrandIdDto causeStrandIdDto, @Q boolean fullStack, @Q boolean printStack);
 
     @GET("feed-entry/{}")
-    Optional<FeedEntryDto> feedEntry(FeedEntryIdDto faultEventIdDto);
+    Optional<FeedEntryDto> feedEntry(FeedEntryIdDto faultEventIdDto, @Q boolean fullStack, @Q boolean printStack);
 
     @GET("feed/limit")
     Long globalFeedLimit();
@@ -68,27 +68,27 @@ public interface UnearthlyAPI {
 
     @GET("feed")
     EventSequenceDto globalFeed(
-        @Q Integer offset,
-        @Q Integer count,
-        @Q Boolean fullStack,
-        @Q Boolean printStack
+        @Q Long offset,
+        @Q Long count,
+        @Q boolean fullStack,
+        @Q boolean printStack
     );
 
     @GET("feed/fault/{}")
     FaultEventSequenceDto faultFeed(
         FaultIdDto faultId,
-        @Q Integer offset,
-        @Q Integer count,
-        @Q Boolean fullStack,
-        @Q Boolean printStack
+        @Q Long offset,
+        @Q Long count,
+        @Q boolean fullStack,
+        @Q boolean printStack
     );
 
     @GET("feed/fault-strand/{}")
     FaultStrandEventSequenceDto faultStrandFeed(
         FaultStrandIdDto faultId,
-        @Q Integer offset,
-        @Q Integer count,
-        @Q Boolean fullStack,
-        @Q Boolean printStack
+        @Q Long offset,
+        @Q Long count,
+        @Q boolean fullStack,
+        @Q boolean printStack
     );
 }

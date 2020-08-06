@@ -50,34 +50,34 @@ import unearth.api.dto.Submission;
 import unearth.norest.Proto;
 
 public class DefaultUnearthlyClient implements UnearthlyClient {
-
-    private final UnearthlyAPI unearthlyService;
-
+    
     static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
         .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
         .registerModule(new Jdk8Module())
         .registerModule(new JavaTimeModule());
-
+    
+    private final UnearthlyAPI unearthlyService;
+    
     DefaultUnearthlyClient(URI uri) {
         this.unearthlyService = Proto.type(UnearthlyAPI.class, uri, OBJECT_MAPPER);
     }
-
+    
     @Override
     public Submission submit(String throwable) {
         return unearthlyService.throwable(throwable);
     }
-
+    
     @Override
     public Submission submit(Throwable throwable) {
         return unearthlyService.throwable(toString(throwable));
     }
-
+    
     @Override
     public Optional<Throwable> throwable(FaultIdDto faultId) {
         Optional<FaultDto> fault = unearthlyService.fault(faultId, true, false);
         return fault.map(DefaultUnearthlyClient::toChameleon);
     }
-
+    
     @Override
     public Optional<FaultDto> fault(FaultIdDto faultId, StackType stackType) {
         return unearthlyService.fault(
@@ -85,7 +85,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
     }
-
+    
     @Override
     public Optional<FaultStrandDto> faultStrand(FaultStrandIdDto faultStrandId, StackType stackType) {
         return unearthlyService.faultStrand(
@@ -93,7 +93,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
     }
-
+    
     @Override
     public Optional<CauseDto> cause(CauseIdDto causeId, StackType stackType) {
         return unearthlyService.cause(
@@ -101,7 +101,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
     }
-
+    
     @Override
     public Optional<CauseStrandDto> causeStrand(CauseStrandIdDto causeStrandId, StackType stackType) {
         return unearthlyService.causeStrand(
@@ -109,56 +109,59 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
     }
-
+    
     @Override
-    public Optional<FeedEntryDto> feedEntry(FeedEntryIdDto faultEventId) {
-        return unearthlyService.feedEntry(faultEventId);
+    public Optional<FeedEntryDto> feedEntry(FeedEntryIdDto faultEventId, StackType stackType) {
+        return unearthlyService.feedEntry(
+            faultEventId,
+            stackType == StackType.FULL,
+            stackType == StackType.PRINT);
     }
-
+    
     @Override
     public long globalFeedMax() {
         return unearthlyService.globalFeedLimit();
     }
-
+    
     @Override
     public long faultFeedMax(FaultIdDto faultId) {
         return unearthlyService.faultFeedLimit(faultId);
     }
-
+    
     @Override
     public long faultStrandFeedMax(FaultStrandIdDto faultStrandId) {
         return unearthlyService.faultStrandFeedLimit(faultStrandId);
     }
-
+    
     @Override
     public EventSequenceDto globalFeed(Page page, StackType stackType) {
         return unearthlyService.globalFeed(
-            page.getPageNo() * page.getPageSize(),
-            page.getPageNo(),
+            (long)page.getPageNo() * page.getPageSize(),
+            (long)page.getPageNo(),
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
     }
-
+    
     @Override
     public FaultEventSequenceDto faultFeed(FaultIdDto faultId, Page page, StackType stackType) {
         return unearthlyService.faultFeed(
             faultId,
-            page.getPageNo() * page.getPageSize(),
-            page.getPageNo(),
+            (long)page.getPageNo() * page.getPageSize(),
+            (long)page.getPageNo(),
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
     }
-
+    
     @Override
     public FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultStrandId, Page page, StackType stackType) {
         return unearthlyService.faultStrandFeed(
             faultStrandId,
-            page.getPageNo() * page.getPageSize(),
-            page.getPageNo(),
+            (long)page.getPageNo() * page.getPageSize(),
+            (long)page.getPageNo(),
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
     }
-
+    
     private static Throwable toChameleon(FaultDto faultDto) {
         List<CauseDto> list = new ArrayList<>(faultDto.getCauses());
         Collections.reverse(list);
@@ -169,11 +172,11 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
                 throw new IllegalStateException("No combine: " + t1 + " <> " + t2);
             });
     }
-
+    
     private static String toString(Throwable throwable) {
         return new String(bytes(throwable), StandardCharsets.UTF_8);
     }
-
+    
     private static byte[] bytes(Throwable throwable) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             try (PrintWriter pw = new PrintWriter(baos)) {
@@ -184,7 +187,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
             throw new IllegalStateException("Failed to serialize: " + throwable, e);
         }
     }
-
+    
     private static Throwable toChameleon(Throwable throwable, CauseDto cause) {
         Throwable exception =
             new ChameleonException(cause.getCauseStrand().getClassName(), cause.getMessage(), throwable);
@@ -194,7 +197,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
             .ifPresent(exception::setStackTrace);
         return exception;
     }
-
+    
     private static StackTraceElement[] stackTrace(Collection<StackTraceElementDto> fullStack) {
         return fullStack.stream()
             .map(frame ->
@@ -202,7 +205,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
                     frame.getDeclaringClass(),
                     frame.getMethodName(),
                     frame.getFileName(),
-                    frame.getLineNumber()== null
+                    frame.getLineNumber() == null
                         ? -1
                         : frame.getLineNumber()
                 )).toArray(StackTraceElement[]::new);

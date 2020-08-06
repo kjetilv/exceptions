@@ -46,10 +46,6 @@ class UnearthlyRenderer(private val linkPrefix: String) {
             printout = toPrintout(handlingPolicy)
         )
 
-    fun feed(id: Identifiable<*>): String = feed(id.id)
-
-    fun feed(id: Id): String = "$linkPrefix/feed/${id.type}/${id.hash}"
-
     fun link(id: Identifiable<*>): String = link(id.id)
 
     fun link(id: Id): String = "$linkPrefix/${id.type}/${id.hash}"
@@ -128,6 +124,10 @@ class UnearthlyRenderer(private val linkPrefix: String) {
             feedEntry.faultStrandSequenceNo
         )
     }
+
+    private fun feed(id: Identifiable<*>): String = feed(id.id)
+
+    private fun feed(id: Id): String = "$linkPrefix/feed/${id.type}/${id.hash}"
 
     private fun simpleStackTrace(stackTrace: List<CauseFrame>): List<String> =
         stackTrace.map { it.toStackTraceElement().toString() }

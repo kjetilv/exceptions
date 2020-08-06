@@ -43,7 +43,6 @@ import org.http4k.server.asServer
 import org.slf4j.LoggerFactory
 import unearth.api.dto.*
 import unearth.main.http4k.JSON.auto
-import unearth.munch.id.*
 import unearth.munch.model.Fault
 import unearth.munch.parser.ThrowableParser
 import unearth.server.*
@@ -128,7 +127,7 @@ class Http4kServer(
         }
 
     private fun retrieveExceptionRoute() =
-        "throwable" / uuid(::FaultId) meta {
+        "throwable" / uuid(::FaultIdDto) meta {
             summary = "Print an exception"
             produces += TEXT_PLAIN
             returning(OK, exception to Swaggex.exception())
@@ -139,7 +138,7 @@ class Http4kServer(
         }
 
     private fun feedEntryRoute() =
-        "feed-entry" / uuid(::FeedEntryId) meta {
+        "feed-entry" / uuid(::FeedEntryIdDto) meta {
             summary = "Lookup a feed entry"
             queries += listOf(fullStack, printStack)
             produces += APPLICATION_JSON
@@ -157,7 +156,7 @@ class Http4kServer(
         }
 
     private fun faultStrandRoute() =
-        "fault-strand" / uuid(::FaultStrandId) meta {
+        "fault-strand" / uuid(::FaultStrandIdDto) meta {
             summary = "Lookup a fault strand"
             queries += listOf(fullStack, printStack, offsetQuery, countQuery)
             produces += APPLICATION_JSON
@@ -175,7 +174,7 @@ class Http4kServer(
         }
 
     private fun faultRoute() =
-        "fault" / uuid(::FaultId) meta {
+        "fault" / uuid(::FaultIdDto) meta {
             summary = "Lookup a fault"
             queries += listOf(fullStack, printStack)
             produces += APPLICATION_JSON
@@ -193,7 +192,7 @@ class Http4kServer(
         }
 
     private fun causeStrandRoute() =
-        "cause-strand" / uuid(::CauseStrandId) meta {
+        "cause-strand" / uuid(::CauseStrandIdDto) meta {
             summary = "Lookup a cause strand"
             queries += listOf(fullStack, printStack)
             produces += APPLICATION_JSON
@@ -211,7 +210,7 @@ class Http4kServer(
         }
 
     private fun causeRoute() =
-        "cause" / uuid(::CauseId) meta {
+        "cause" / uuid(::CauseIdDto) meta {
             summary = "Lookup a cause"
             queries += listOf(fullStack, printStack)
             produces += APPLICATION_JSON
@@ -238,7 +237,7 @@ class Http4kServer(
         }
 
     private fun faultFeedLimitRoute() =
-        "feed/limit/fault" / uuid(::FaultId) meta {
+        "feed/limit/fault" / uuid(::FaultIdDto) meta {
             summary = "Event limits for a fault"
             produces += APPLICATION_JSON
             returning(OK, limit to Swaggex.limit())
@@ -250,7 +249,7 @@ class Http4kServer(
 
 
     private fun faultStrandFeedLimitRoute() =
-        "feed/limit/fault-strand" / uuid(::FaultStrandId) meta {
+        "feed/limit/fault-strand" / uuid(::FaultStrandIdDto) meta {
             summary = "Event limits for a fault strand"
             produces += APPLICATION_JSON
             returning(OK, limit to Swaggex.limit())
@@ -278,7 +277,7 @@ class Http4kServer(
         }
 
     private fun faultFeedRoute() =
-        "feed/fault" / uuid(::FaultId) meta {
+        "feed/fault" / uuid(::FaultIdDto) meta {
             summary = "Events for a fault"
             produces += APPLICATION_JSON
             queries += listOf(offsetQuery, countQuery, fullStack, printStack, fullEvent)
@@ -298,7 +297,7 @@ class Http4kServer(
         }
 
     private fun faultStrandFeedRoute() =
-        "feed/fault-strand" / uuid(::FaultStrandId) meta {
+        "feed/fault-strand" / uuid(::FaultStrandIdDto) meta {
             summary = "Events for a fault strand"
             produces += APPLICATION_JSON
             queries += listOf(offsetQuery, countQuery, fullStack, printStack)
@@ -543,7 +542,7 @@ class Http4kServer(
                 msg.body(Throwables.string(thr))
             })
 
-        private fun <T : Id> uuid(read: (UUID) -> T): PathLens<T> = PathLens(
+        private fun <T> uuid(read: (UUID) -> T): PathLens<T> = PathLens(
             meta = Meta(required = true, location = "path", paramMeta = ParamMeta.StringParam, name = "uuid"),
             get = { uuid ->
                 loggingLens(uuid) {
@@ -574,7 +573,7 @@ class Http4kServer(
 
         private val sequence = Body.auto<EventSequenceDto>().toLens()
 
-        private val faultSequence = Body.auto<FeedEntrySequenceDto>().toLens()
+        private val faultSequence = Body.auto<FaultEventSequenceDto>().toLens()
 
         private val faultStrandSequence = Body.auto<FaultStrandEventSequenceDto>().toLens()
 

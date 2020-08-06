@@ -15,6 +15,10 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+plugins {
+    kotlin("jvm")
+}
+
 dependencies {
     testImplementation(project(":unearth-main"))
     testImplementation(project(":unearth-server"))
@@ -32,4 +36,6 @@ dependencies {
     testRuntimeOnly("org.webjars:swagger-ui")
     testRuntimeOnly("io.dropwizard.metrics:metrics-jmx")
     testRuntimeOnly("ch.qos.logback:logback-classic")
+
+    testRuntimeOnly(kotlin("stdlib"))
 }

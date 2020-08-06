@@ -95,7 +95,7 @@ public final class Feed {
                 return client.causeStrand((CauseStrandIdDto) id, UnearthlyClient.StackType.FULL);
             }
             if (id instanceof FeedEntryIdDto) {
-                return client.feedEntry((FeedEntryIdDto) id);
+                return client.feedEntry((FeedEntryIdDto) id, UnearthlyClient.StackType.FULL);
             }
             throw new IllegalArgumentException("Invalid id: " + id);
         };

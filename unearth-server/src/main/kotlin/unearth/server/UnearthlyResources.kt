@@ -20,35 +20,34 @@ package unearth.server
 import unearth.api.dto.*
 import unearth.core.HandlingPolicy
 import unearth.core.Resettable
-import unearth.munch.id.*
 
 interface UnearthlyResources : AutoCloseable, Resettable {
 
     fun submitRaw(t: Throwable)
             : HandlingPolicy
 
-    fun lookupFaultStrandDto(id: FaultStrandId, fullStack: Boolean = false, printStack: Boolean = false)
+    fun lookupFaultStrandDto(id: FaultStrandIdDto, fullStack: Boolean = false, printStack: Boolean = false)
             : FaultStrandDto?
 
-    fun lookupFaultDto(id: FaultId, fullStack: Boolean = true, printStack: Boolean = false)
+    fun lookupFaultDto(id: FaultIdDto, fullStack: Boolean = true, printStack: Boolean = false)
             : FaultDto?
 
-    fun lookupFeedEntryDto(id: FeedEntryId, fullStack: Boolean = false, printStack: Boolean = false)
+    fun lookupFeedEntryDto(id: FeedEntryIdDto, fullStack: Boolean = false, printStack: Boolean = false)
             : FeedEntryDto?
 
-    fun lookupCauseStrandDto(id: CauseStrandId, fullStack: Boolean = false, printStack: Boolean = false)
+    fun lookupCauseStrandDto(id: CauseStrandIdDto, fullStack: Boolean = false, printStack: Boolean = false)
             : CauseStrandDto?
 
-    fun lookupCauseDto(id: CauseId, fullStack: Boolean = false, printStack: Boolean = false)
+    fun lookupCauseDto(id: CauseIdDto, fullStack: Boolean = false, printStack: Boolean = false)
             : CauseDto?
 
-    fun lookupThrowable(id: FaultId)
+    fun lookupThrowable(id: FaultIdDto)
             : Throwable?
 
-    fun feedLimit(id: FaultId)
+    fun feedLimit(id: FaultIdDto)
             : Long?
 
-    fun feedLimit(id: FaultStrandId)
+    fun feedLimit(id: FaultStrandIdDto)
             : Long?
 
     fun feedLimit()
@@ -57,9 +56,9 @@ interface UnearthlyResources : AutoCloseable, Resettable {
     fun feed(offset: Long, count: Long, fullStack: Boolean = false, printStack: Boolean = false)
             : EventSequenceDto
 
-    fun feed(id: FaultId, offset: Long, count: Long, fullStack: Boolean = false, printStack: Boolean = false)
-            : FeedEntrySequenceDto
+    fun feed(id: FaultIdDto, offset: Long, count: Long, fullStack: Boolean = false, printStack: Boolean = false)
+            : FaultEventSequenceDto
 
-    fun feed(id: FaultStrandId, offset: Long, count: Long, fullStack: Boolean = false, printStack: Boolean = false)
+    fun feed(id: FaultStrandIdDto, offset: Long, count: Long, fullStack: Boolean = false, printStack: Boolean = false)
             : FaultStrandEventSequenceDto
 }
