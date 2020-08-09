@@ -19,11 +19,13 @@ package unearth.util;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -39,13 +41,13 @@ public final class Streams {
         }
         int s = Math.max(0, start);
         int e = Math.min(end, array.length);
-        return StreamSupport.stream(new Spliterators.AbstractSpliterator<T>(
+        return StreamSupport.stream(new Spliterators.AbstractSpliterator<>(
             end - start,
             Spliterator.IMMUTABLE
         ) {
     
             private int index = s;
-            
+    
             @Override
             public boolean tryAdvance(Consumer<? super T> action) {
                 action.accept(array[index]);
@@ -114,6 +116,35 @@ public final class Streams {
         return StreamSupport.stream(
             new NextSpliterator<>(head, next),
             false);
+    }
+    
+    public static <K, V> Map<V, K> flip(Map<K, V> map) {
+        return map.entrySet().stream().collect(Collectors.toMap(
+            Map.Entry::getValue,
+            Map.Entry::getKey
+        ));
+    }
+    
+    public static Stream<String> matches(Matcher matcher) {
+        int groupCount = matcher.groupCount();
+        
+        return groupCount == 0
+            ? Stream.empty()
+            : StreamSupport.stream(
+                new Spliterators.AbstractSpliterator<>(
+                    groupCount,
+                    Spliterator.ORDERED
+                ) {
+    
+                    private int group = 0;
+    
+                    @Override
+                    public boolean tryAdvance(Consumer<? super String> action) {
+                        action.accept(matcher.group(group + 1));
+                        group++;
+                        return group < groupCount;
+                    }
+                }, false);
     }
     
     private Streams() {

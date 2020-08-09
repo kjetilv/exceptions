@@ -38,6 +38,7 @@ import java.net.URI
 import java.time.Clock
 import java.util.*
 import java.util.function.BiFunction
+import java.util.function.Consumer
 import java.util.stream.Stream
 import javax.sql.DataSource
 
@@ -55,8 +56,8 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
     }
 
     fun jun(toServer: BiFunction<UnearthlyController, UnearthlyConfig, UnearthlyServer>) =
-        run {
-            controller, config -> toServer.apply(controller, config)
+        run { controller, config ->
+            toServer.apply(controller, config)
         }
 
     fun run(toServer: (UnearthlyController, UnearthlyConfig) -> UnearthlyServer): State {
@@ -74,7 +75,8 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
             storage,
             storage,
             sensor,
-            UnearthlyRenderer(configuration.prefix))
+            UnearthlyRenderer(configuration.prefix)
+        )
 
         val server: UnearthlyServer = toServer(controller, configuration)
 
@@ -86,16 +88,16 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
 
         registerShutdown(server)
 
-        server.start {
+        server.start(Consumer {
             logger.info("$it ready at http://${configuration.host}:${server.port()}")
-        }
+        })
 
         return object : State {
 
             override fun close() {
-                server.stop {
+                server.stop(Consumer {
                     logger.debug("Stopped by demand: $it")
-                }
+                })
             }
 
             override fun reset() {
@@ -181,9 +183,9 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
 
     private fun registerShutdown(server: UnearthlyServer) {
         Runtime.getRuntime().addShutdownHook(Thread({
-            server.stop {
+            server.stop (Consumer {
                 logger.info("Stopped at shutdown: $it")
-            }
+            })
         }, "Shutdown"))
     }
 

@@ -14,19 +14,19 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
-package unearth.api.dto
 
-import java.util.*
+package unearth.norest.server;
 
-data class CauseIdDto(
+import java.util.stream.Stream;
 
-        val uuid: UUID,
+import unearth.norest.common.Request;
 
-        val link: String? = null,
-
-        val type: String = "cause"
-) {
-    constructor(uuid: UUID) : this(uuid, null)
-    constructor(uuid: String) : this(UUID.fromString(uuid), null)
+public interface ForwardableMethod {
+    
+    Stream<Invoke> matching(Request request);
+    
+    interface Invoke {
+        
+        Object on(Object target);
+    }
 }
-

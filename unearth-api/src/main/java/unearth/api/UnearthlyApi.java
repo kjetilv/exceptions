@@ -37,57 +37,77 @@ import unearth.norest.GET;
 import unearth.norest.POST;
 import unearth.norest.Q;
 
-public interface UnearthlyAPI {
-
+public interface UnearthlyApi {
+    
     @POST("catch")
     Submission throwable(String throwable);
-
+    
     @GET("fault/{}")
-    Optional<FaultDto> fault(FaultIdDto faultId, @Q boolean fullStack, @Q boolean printStack);
-
-    @GET("fault-strand/{}")
-    Optional<FaultStrandDto> faultStrand(FaultStrandIdDto faultId, @Q boolean fullStack, @Q boolean printStack);
-
-    @GET("cause/{}")
-    Optional<CauseDto> cause(CauseIdDto causeIdDto, @Q boolean fullStack, @Q boolean printStack);
-
-    @GET("cause-strand/{}")
-    Optional<CauseStrandDto> causeStrand(CauseStrandIdDto causeStrandIdDto, @Q boolean fullStack, @Q boolean printStack);
-
-    @GET("feed-entry/{}")
-    Optional<FeedEntryDto> feedEntry(FeedEntryIdDto faultEventIdDto, @Q boolean fullStack, @Q boolean printStack);
-
-    @GET("feed/limit")
-    Long globalFeedLimit();
-
-    @GET("feed/limit/fault-strand/{}")
-    Long faultStrandFeedLimit(FaultStrandIdDto faultId);
-
-    @GET("feed/limit/fault/{}")
-    Long faultFeedLimit(FaultIdDto faultId);
-
-    @GET("feed")
-    EventSequenceDto globalFeed(
-        @Q Long offset,
-        @Q Long count,
+    Optional<FaultDto> fault(
+        FaultIdDto faultId,
         @Q boolean fullStack,
         @Q boolean printStack
     );
-
+    
+    @GET("fault-strand/{}")
+    Optional<FaultStrandDto> faultStrand(
+        FaultStrandIdDto faultId,
+        @Q boolean fullStack,
+        @Q boolean printStack
+    );
+    
+    @GET("cause/{}")
+    Optional<CauseDto> cause(
+        CauseIdDto causeIdDto,
+        @Q boolean fullStack,
+        @Q boolean printStack
+    );
+    
+    @GET("cause-strand/{}")
+    Optional<CauseStrandDto> causeStrand(
+        CauseStrandIdDto causeStrandIdDto,
+        @Q boolean fullStack,
+        @Q boolean printStack
+    );
+    
+    @GET("feed-entry/{}")
+    Optional<FeedEntryDto> feedEntry(
+        FeedEntryIdDto faultEventIdDto,
+        @Q boolean fullStack,
+        @Q boolean printStack
+    );
+    
+    @GET("feed/limit")
+    Long globalFeedLimit();
+    
+    @GET("feed/limit/fault-strand/{}")
+    Long faultStrandFeedLimit(FaultStrandIdDto faultId);
+    
+    @GET("feed/limit/fault/{}")
+    Long faultFeedLimit(FaultIdDto faultId);
+    
+    @GET("feed")
+    EventSequenceDto globalFeed(
+        @Q long offset,
+        @Q long count,
+        @Q boolean fullStack,
+        @Q boolean printStack
+    );
+    
     @GET("feed/fault/{}")
     FaultEventSequenceDto faultFeed(
         FaultIdDto faultId,
-        @Q Long offset,
-        @Q Long count,
+        @Q long offset,
+        @Q long count,
         @Q boolean fullStack,
         @Q boolean printStack
     );
-
+    
     @GET("feed/fault-strand/{}")
     FaultStrandEventSequenceDto faultStrandFeed(
         FaultStrandIdDto faultId,
-        @Q Long offset,
-        @Q Long count,
+        @Q long offset,
+        @Q long count,
         @Q boolean fullStack,
         @Q boolean printStack
     );

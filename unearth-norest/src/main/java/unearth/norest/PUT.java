@@ -14,19 +14,17 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
-package unearth.api.dto
 
-import java.util.*
+package unearth.norest;
 
-data class CauseIdDto(
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-        val uuid: UUID,
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface PUT {
 
-        val link: String? = null,
-
-        val type: String = "cause"
-) {
-    constructor(uuid: UUID) : this(uuid, null)
-    constructor(uuid: String) : this(UUID.fromString(uuid), null)
+    String value();
 }
-

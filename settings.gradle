@@ -28,5 +28,6 @@ include("unearth-client",
         "unearth-statik",
         "unearth-server",
         "unearth-test",
+        "unearth-netty",
         "unearth-main")
 

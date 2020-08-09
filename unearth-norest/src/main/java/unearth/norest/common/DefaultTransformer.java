@@ -15,42 +15,35 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.util;
+package unearth.norest.common;
 
-import java.util.Objects;
+import java.util.Optional;
 
-public final class Tuple<T> {
+public class DefaultTransformer<T> implements Transformer<T> {
     
-    private final T t1;
+    private final Class<T> type;
     
-    private final T t2;
-    
-    public Tuple(T t1, T t2) {
-        this.t1 = Objects.requireNonNull(t1, "t1");
-        this.t2 = Objects.requireNonNull(t2, "t2");
-    }
-    
-    public T getT2() {
-        return t2;
-    }
-    
-    public T getT1() {
-        return t1;
+    public DefaultTransformer(Class<T> type) {
+        this.type = type;
     }
     
     @Override
-    public int hashCode() {
-        return Objects.hash(t1, t2);
+    public Class<T> getType() {
+        return type;
     }
     
     @Override
-    public boolean equals(Object o) {
-        return this == o || o instanceof Tuple && Objects.equals(t1, ((Tuple<?>) o).t1) &&
-            Objects.equals(t2, ((Tuple<?>) o).t2);
+    public Optional<T> from(String string) {
+        throw new IllegalStateException(this + " does not read " + string);
+    }
+    
+    @Override
+    public Optional<String> to(T o) {
+        return Optional.of(o).map(String::valueOf);
     }
     
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + t1 + " /" + t2 + "]";
+        return getClass().getSimpleName() + "[type=" + type + "]";
     }
 }

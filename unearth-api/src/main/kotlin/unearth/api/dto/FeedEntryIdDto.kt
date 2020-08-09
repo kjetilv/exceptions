@@ -27,5 +27,6 @@ data class FeedEntryIdDto(
         val type: String = "feed-entry"
 ) {
     constructor(uuid: UUID) : this(uuid, null)
+    constructor(uuid: String) : this(UUID.fromString(uuid), null)
 }
 

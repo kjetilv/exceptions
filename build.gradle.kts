@@ -53,14 +53,15 @@ allprojects {
         kotlinOptions.jvmTarget = "11"
     }
 
-    plugins.withType<JavaPlugin>().configureEach {
-        configure<JavaPluginConvention> {
-            sourceCompatibility = JavaVersion.VERSION_15
-            targetCompatibility = JavaVersion.VERSION_15
-        }
-        configure<JavaPluginExtension> {
-            modularity.inferModulePath.set(true)
-        }
+    tasks.withType<JavaCompile> {
+        options.compilerArgs.add("-parameters")
+    }
+
+    configure<JavaPluginExtension> {
+        sourceCompatibility = JavaVersion.VERSION_15
+        targetCompatibility = JavaVersion.VERSION_15
+        modularity.inferModulePath.set(true)
+        withSourcesJar()
     }
 
     group = "no.scienta.unearth"

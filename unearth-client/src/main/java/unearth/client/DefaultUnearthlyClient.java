@@ -31,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import unearth.api.UnearthlyAPI;
+import unearth.api.UnearthlyApi;
 import unearth.api.dto.CauseDto;
 import unearth.api.dto.CauseIdDto;
 import unearth.api.dto.CauseStrandDto;
@@ -47,7 +47,7 @@ import unearth.api.dto.FeedEntryDto;
 import unearth.api.dto.FeedEntryIdDto;
 import unearth.api.dto.StackTraceElementDto;
 import unearth.api.dto.Submission;
-import unearth.norest.Proto;
+import unearth.norest.client.Proto;
 
 public class DefaultUnearthlyClient implements UnearthlyClient {
     
@@ -56,10 +56,10 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
         .registerModule(new Jdk8Module())
         .registerModule(new JavaTimeModule());
     
-    private final UnearthlyAPI unearthlyService;
+    private final UnearthlyApi unearthlyService;
     
     DefaultUnearthlyClient(URI uri) {
-        this.unearthlyService = Proto.type(UnearthlyAPI.class, uri, OBJECT_MAPPER);
+        this.unearthlyService = Proto.type(UnearthlyApi.class, uri, OBJECT_MAPPER);
     }
     
     @Override

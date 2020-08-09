@@ -1,0 +1,386 @@
+/*
+ *     This file is part of Unearth.
+ *
+ *     Unearth is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     Unearth is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/*
+ *     This file is part of Unearth.
+ *
+ *     Unearth is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     Unearth is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package unearth.norest.common;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.IntPredicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import unearth.norest.GET;
+import unearth.norest.POST;
+import unearth.norest.PUT;
+import unearth.norest.Q;
+import unearth.norest.client.RemotableMethod;
+import unearth.norest.server.ForwardableMethod;
+
+public final class ProcessedMethod implements RemotableMethod, ForwardableMethod {
+    
+    private final Request.Method httpMethod;
+    
+    private final String path;
+    
+    private final String rootPath;
+    
+    private final Map<Integer, String> queryParameters;
+    
+    private final Map<Integer, String> pathParameters;
+    
+    private final int pathParam;
+    
+    private final int bodyParam;
+    
+    private final boolean stringBody;
+    
+    private final Class<?> returnType;
+    
+    private final boolean optionalReturn;
+    
+    private final boolean returnsData;
+    
+    private final Pattern matchPattern;
+    
+    private final Map<? extends Class<?>, Transformer<?>> transformers;
+    
+    private final Method method;
+    
+    private final Class<?>[] parameterTypes;
+    
+    private final Parameter[] parameters;
+    
+    private final Annotation[][] parameterAnnotations;
+    
+    private final String[] parameterNames;
+    
+    public ProcessedMethod(Method method, Map<Class<?>, Transformer<?>> transformers) {
+        this.method = Objects.requireNonNull(method, "method");
+        
+        Annotation annotation = List.of(POST.class, GET.class).stream()
+            .flatMap(anno ->
+                Optional.ofNullable(this.method.getAnnotation(anno)).stream())
+            .findFirst()
+            .orElseThrow(() ->
+                new IllegalArgumentException("Non-annotated method " + method));
+        String annotatedPath = path(annotation);
+        this.path = normalized(annotatedPath);
+        this.rootPath = this.path.indexOf('?') < 0
+            ? this.path
+            : this.path.substring(0, this.path.indexOf('?'));
+        this.httpMethod = httpMethod(annotation);
+        
+        String regex = PATH_ARG.matcher(this.path).replaceAll("\\([^/]*\\)");
+        this.matchPattern = Pattern.compile(regex);
+        
+        Class<?> returnType = this.method.getReturnType();
+        this.parameterTypes = this.method.getParameterTypes();
+        this.parameters = this.method.getParameters();
+        this.parameterAnnotations = this.method.getParameterAnnotations();
+        this.parameterNames =
+            IntStream.range(0, parameters.length).mapToObj(this::paramName).toArray(String[]::new);
+        
+        this.optionalReturn = Optional.class.isAssignableFrom(returnType);
+        this.returnsData = returnType != void.class;
+        this.returnType = getActualReturnType(this.method, this.optionalReturn, returnType);
+        
+        this.pathParam = this.httpMethod == Request.Method.POST ? -1 : 0;
+        this.bodyParam = this.httpMethod == Request.Method.POST ? 0 : -1;
+        this.stringBody = this.httpMethod == Request.Method.POST && parameterTypes[this.bodyParam] == String.class;
+        
+        this.queryParameters = paramsWhere(i ->
+            parameterAnnotations[i].length > 0);
+        this.pathParameters = paramsWhere(i ->
+            parameterAnnotations[i] == null || parameterAnnotations[i].length == 0);
+        this.transformers = transformers == null || transformers.isEmpty()
+            ? Collections.emptyMap()
+            : Collections.unmodifiableMap(transformers);
+    }
+    
+    private static String normalized(String annotatedPath) {
+        return "/" + unpreslashed(unpostslashed(annotatedPath.trim()));
+    }
+    
+    @Override
+    public Stream<Invoke> matching(Request request) {
+        if (request.getMethod() != this.httpMethod) {
+            return Stream.empty();
+        }
+        String requestedPath = normalized(request.getPath());
+        if (requestedPath.equals(rootPath)) {
+            return Stream.of(new DefaultInvoke(request, null));
+        }
+        if (!requestedPath.startsWith(rootPath)) {
+            return Stream.empty();
+        }
+        return Stream.of(matchPattern.matcher(request.getPath()))
+            .filter(Matcher::matches)
+            .map(matcher ->
+                new DefaultInvoke(request, matcher));
+    }
+    
+    @Override
+    public Request.Method getHttpMethod() {
+        return httpMethod;
+    }
+    
+    @Override
+    public String getContentType() {
+        return stringBody ? TEXT : JSON;
+    }
+    
+    @Override
+    public boolean isStringBody() {
+        return stringBody;
+    }
+    
+    @Override
+    public Optional<Object> bodyArgument(Object... args) {
+        return bodyParam < 0
+            ? Optional.empty()
+            : Optional.ofNullable(args[bodyParam]);
+    }
+    
+    @Override
+    public String path(Object... args) {
+        if (args == null || args.length == 0 || pathParam < 0) {
+            return path;
+        }
+        Object arg = args[pathParam];
+        String fullPath = toString(arg)
+            .map(string -> path.replace(PAR, string))
+            .orElseThrow(() ->
+                new IllegalArgumentException("Not a recognized  path parameter: " + arg));
+        String queryPath = queryPath(args);
+        return queryPath == null || queryPath.isBlank()
+            ? fullPath
+            : fullPath + '?' + queryPath;
+    }
+    
+    @Override
+    public boolean isReturnData() {
+        return returnsData;
+    }
+    
+    @Override
+    public boolean isReturnOptional() {
+        return optionalReturn;
+    }
+    
+    @Override
+    public Class<?> getReturnType() {
+        return returnType;
+    }
+    
+    private Map<Integer, String> paramsWhere(IntPredicate intPredicate) {
+        return IntStream.range(0, parameterAnnotations.length)
+            .filter(intPredicate)
+            .boxed()
+            .collect(Collectors.toMap(i -> i, i -> parameterNames[i]
+            ));
+    }
+    
+    private Object invoke(Request request, Matcher matcher, Object impl) {
+        Map<String, String> queryParams = request.getSingleQueryParameters();
+        Map<String, Optional<?>> queryArgs = IntStream.range(0, parameters.length)
+            .boxed()
+            .collect(Collectors.toMap(
+                i -> parameterNames[i],
+                i ->
+                    transformer(parameterTypes[i]).from(queryParams.get(parameterNames[i]))));
+        List<String> pathParams = matcher == null
+            ? Collections.emptyList()
+            : request.getPathParameters(matcher);
+        if (pathParams.size() != pathParameters.size()) {
+            throw new IllegalArgumentException(this + " got bad path: " + request);
+        }
+        Map<String, Optional<?>> pathArgs = pathParameters.entrySet().stream()
+            .collect(Collectors.toMap(
+                e -> parameterNames[e.getKey()],
+                e ->
+                    transformer(parameterTypes[e.getKey()]).from(pathParams.get(e.getKey()))));
+        Object[] args = Arrays.stream(parameterNames)
+            .map(name -> lookup(name, queryArgs, pathArgs))
+            .map(opt -> opt.orElse(null))
+            .toArray(Object[]::new);
+        Object result;
+        try {
+            result = method.invoke(impl, args);
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                "Failed to invoke on " + impl + ": " + method + "" + Arrays.toString(args),
+                e);
+        }
+        if (isReturnData()) {
+            return result;
+        }
+        return null;
+    }
+    
+    private String paramName(Integer i) {
+        return annotatedName(parameterAnnotations[i])
+            .or(() ->
+                parameters[i].isNamePresent()
+                    ? Optional.of(parameters[i].getName())
+                    : Optional.empty())
+            .orElseThrow(() ->
+                new IllegalArgumentException(
+                    "Could not extract argument name #" + i + ": " + parameters[i]));
+    }
+    
+    private String queryPath(Object[] args) {
+        Map<String, String> params = queryParameters.entrySet().stream()
+            .filter(e -> args[e.getKey()] != null)
+            .collect(Collectors.toMap(
+                Map.Entry::getValue,
+                e -> String.valueOf(args[e.getKey()])));
+        return params.entrySet().stream()
+            .map(e ->
+                e.getKey() + '=' + e.getValue())
+            .collect(Collectors.joining("&"));
+    }
+    
+    private Optional<String> toString(Object arg) {
+        return this.transformer(arg).to(arg);
+    }
+    
+    @SuppressWarnings("unchecked")
+    private <T> Transformer<T> transformer(Object arg) {
+        return transformer((Class<T>) arg.getClass());
+    }
+    
+    @SuppressWarnings("unchecked")
+    private <T> Transformer<T> transformer(Class<T> type) {
+        return (Transformer<T>) transformers.getOrDefault(type, new DefaultTransformer<>(type));
+    }
+    
+    private final class DefaultInvoke implements Invoke {
+        
+        private final Request request;
+        
+        private final Matcher matcher;
+        
+        private DefaultInvoke(Request request, Matcher matcher) {
+            this.request = Objects.requireNonNull(request, "request");
+            this.matcher = matcher;
+        }
+        
+        @Override
+        public Object on(Object impl) {
+            return ProcessedMethod.this.invoke(request, matcher, impl);
+        }
+        
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "[" + request + " > " + matcher + "]";
+        }
+    }
+    
+    private static final String JSON = "application/json;charset=UTF-8";
+    
+    private static final String TEXT = "text/plain;charset=UTF-8";
+    
+    private static final String PAR = "{}";
+    
+    private static final Pattern PATH_ARG = Pattern.compile("\\{\s*}");
+    
+    @SafeVarargs
+    private static Optional<?> lookup(String name, Map<String, Optional<?>>... maps) {
+        return Arrays.stream(maps)
+            .map(map -> map.getOrDefault(name, Optional.empty()))
+            .flatMap(Optional::stream)
+            .findFirst();
+    }
+    
+    private static Request.Method httpMethod(Annotation annotation) {
+        return annotation instanceof POST ? Request.Method.POST
+            : annotation instanceof PUT ? Request.Method.PUT
+                : Request.Method.GET;
+    }
+    
+    private static String unpreslashed(String path) {
+        return path.startsWith("/") ? unpreslashed(path.substring(1)) : path;
+    }
+    
+    private static String unpostslashed(String path) {
+        return path.endsWith("/") ? unpostslashed(path.substring(0, path.length() - 1)) : path;
+    }
+    
+    private static String path(Annotation annotation) {
+        return annotation instanceof POST ? ((POST) annotation).value()
+            : annotation instanceof PUT ? ((PUT) annotation).value()
+                : ((GET) annotation).value();
+    }
+    
+    private static Optional<String> annotatedName(Annotation[] parameterAnnotations) {
+        return Optional.of(parameterAnnotations)
+            .filter(a -> a.length > 0)
+            .map(a -> ((Q) a[0]).value())
+            .filter(s -> !s.isBlank());
+    }
+    
+    private static Class<?> getActualReturnType(Method method, boolean optional, Class<?> nominalReturnType) {
+        if (!optional) {
+            return nominalReturnType;
+        }
+        Type genType = method.getGenericReturnType();
+        if (!(genType instanceof ParameterizedType)) {
+            throw new IllegalStateException("Could not resolve generic type of " + genType + ": " + method);
+        }
+        Type[] args = ((ParameterizedType) genType).getActualTypeArguments();
+        if (!(args[0] instanceof Class<?>)) {
+            throw new IllegalStateException("Could not resolve generic type of " + genType + ": " + method);
+        }
+        return (Class<?>) args[0];
+    }
+    
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + httpMethod + " " + path + (
+            queryParameters.isEmpty() ? "" : "?" + String.join("&", queryParameters.values())
+        ) + "]";
+    }
+}

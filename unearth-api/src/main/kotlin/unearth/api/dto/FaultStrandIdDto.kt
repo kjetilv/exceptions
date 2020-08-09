@@ -29,5 +29,6 @@ data class FaultStrandIdDto(
     val type: String = "fault-strand"
 ) {
     constructor(uuid: UUID) : this(uuid, null)
+    constructor(uuid: String) : this(UUID.fromString(uuid), null)
 }
 

@@ -17,15 +17,15 @@
 
 package unearth.server
 
-import unearth.api.UnearthlyAPI
+import unearth.api.UnearthlyApi
 import unearth.api.dto.*
 import unearth.munch.parser.ThrowableParser
 import java.util.*
 
-class DefaultUnearthlyAPI(
+class DefaultUnearthlyApi(
     private val controller: UnearthlyController,
     private val renderer: UnearthlyRenderer
-) : UnearthlyAPI {
+) : UnearthlyApi {
 
     override fun cause(
         causeIdDto: CauseIdDto,
@@ -106,8 +106,7 @@ class DefaultUnearthlyAPI(
         return optT?.let { t -> Optional.ofNullable(t) } ?: Optional.empty()
     }
 
-    private fun longish(limit: OptionalLong?): Long? =
-        limit?.let {
-            if (it.isEmpty) null else it.asLong
-        }
+    override fun toString(): String {
+        return "${javaClass.simpleName}[controller=$controller, renderer=$renderer)"
+    }
 }

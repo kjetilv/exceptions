@@ -30,5 +30,6 @@ data class FaultIdDto(
     val type: String = "fault"
 ) {
     constructor(uuid: UUID) : this(uuid, null)
+    constructor(uuid: String) : this(UUID.fromString(uuid), null)
 }
 

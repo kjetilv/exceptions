@@ -15,24 +15,7 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/*
- *     This file is part of Unearth.
- *
- *     Unearth is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- *
- *     Unearth is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
- */
-
-package unearth.norest;
+package unearth.norest.client;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -45,85 +28,87 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import unearth.norest.common.IOHandler;
+import unearth.norest.common.Request;
 
-class DefaultInvoker extends AbstractMetable<DefaultInvoker> implements InvocationHandler {
+class ClientInvocationHandler implements InvocationHandler {
     
     private final Class<?> type;
     
     private final URI uri;
     
-    DefaultInvoker(Class<?> type, URI uri, ObjectMapper objectMapper) {
-        this(type, uri, objectMapper, null);
-    }
+    private final IOHandler ioHandler;
     
-    private DefaultInvoker(Class<?> type, URI uri, ObjectMapper objectMapper, List<Transformer<?>> transformers) {
-        super(objectMapper, transformers);
-        this.type = type;
+    private final RemotableMethods callableMethods;
+    
+    ClientInvocationHandler(Class<?> type, URI uri, IOHandler ioHandler, RemotableMethods callableMethods) {
+        this.type = Objects.requireNonNull(type, "type");
         this.uri = Objects.requireNonNull(uri, "uri").toASCIIString().endsWith("/")
             ? uri
             : URI.create(uri.toASCIIString() + "/");
+        this.ioHandler = ioHandler;
+        this.callableMethods = callableMethods;
     }
     
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) {
-        if (method.getDeclaringClass() != type) {
+        if (method.getDeclaringClass() == type) {
+            RemotableMethod meta = callableMethods.get(method);
+            return response(
+                meta,
+                request(uri, meta, args));
+        }
+        if (method.getDeclaringClass() == Object.class) {
             try {
                 return method.invoke(this, args);
             } catch (Exception e) {
-                throw new IllegalStateException("Failed to proxy for " + method, e);
+                throw new IllegalStateException(
+                    "Failed to invoke " + Object.class.getName() + "" + method + ": " + Arrays.toString(args), e);
             }
         }
-        Meta meta = meta(method);
-        return response(
-            meta,
-            request(uri, meta, args));
+        throw new IllegalArgumentException(
+            "Unwilling to invoke " + method + " on " + proxy + ": " + Arrays.toString(args));
     }
     
-    @Override
-    protected DefaultInvoker with(List<Transformer<?>> list) {
-        return new DefaultInvoker(type, uri, getObjectMapper(), list);
-    }
-    
-    private Object response(Meta meta, HttpRequest request) {
-        if (meta.isReturnData()) {
+    private Object response(RemotableMethod callableMethod, HttpRequest request) {
+        if (callableMethod.isReturnData()) {
             HttpResponse<InputStream> response = response(request);
-            if (response.statusCode() == 204 && meta.isReturnOptional()) {
+            if (response.statusCode() == 204 && callableMethod.isReturnOptional()) {
                 return Optional.empty();
             }
-            Object object = parse(meta, response);
-            return wrap(meta, object);
+            Object object = parse(callableMethod, response);
+            return callableMethod.wrapResponse(object);
         }
         response(request);
         return null;
     }
     
-    private Object parse(Meta meta, HttpResponse<InputStream> response) {
+    private Object parse(RemotableMethod callableMethod, HttpResponse<InputStream> response) {
         try (InputStream body = response.body()) {
-            return readBytes(meta.getReturnType(), body);
+            return ioHandler.readBytes(callableMethod.getReturnType(), body);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to read response: " + response, e);
         }
     }
     
-    private HttpRequest request(URI root, Meta meta, Object... args) {
-        HttpRequest.Builder builder = base(root, meta, args);
-        return meta.post()
-            ? builder.POST(bodyPublisher(meta, args)).build()
+    private HttpRequest request(URI root, RemotableMethod callableMethod, Object... args) {
+        HttpRequest.Builder builder = base(root, callableMethod, args);
+        return callableMethod.getHttpMethod() == Request.Method.POST
+            ? builder.POST(bodyPublisher(callableMethod, args)).build()
             : builder.build();
     }
     
-    private HttpRequest.BodyPublisher bodyPublisher(Meta meta, Object[] args) {
-        return meta.bodyArgument(args)
+    private HttpRequest.BodyPublisher bodyPublisher(RemotableMethod callableMethod, Object[] args) {
+        return callableMethod.bodyArgument(args)
             .map(body ->
-                meta.isStringBody()
+                callableMethod.isStringBody()
                     ? bytes(body.toString())
-                    : writeBytes(body))
+                    : ioHandler.writeBytes(body))
             .map(bytes ->
                 HttpRequest.BodyPublishers.ofByteArray(bytes, 0, bytes.length))
             .orElseGet(
@@ -144,11 +129,11 @@ class DefaultInvoker extends AbstractMetable<DefaultInvoker> implements Invocati
         return string.toString().getBytes(StandardCharsets.UTF_8);
     }
     
-    private static HttpRequest.Builder base(URI root, Meta meta, Object... args) {
+    private static HttpRequest.Builder base(URI root, RemotableMethod meta, Object... args) {
         URI uri = URI.create(root.toASCIIString() + meta.path(args));
         return HttpRequest.newBuilder()
             .uri(uri)
-            .header(CONTENT_TYPE, meta.contentType());
+            .header(CONTENT_TYPE, meta.getContentType());
     }
     
     private static HttpResponse<InputStream> response(HttpRequest request) {

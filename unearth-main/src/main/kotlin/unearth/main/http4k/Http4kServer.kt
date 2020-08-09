@@ -53,6 +53,7 @@ import java.net.URI
 import java.net.URL
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.function.Consumer
 import java.util.jar.JarFile
 import java.util.regex.Pattern
 
@@ -79,10 +80,10 @@ class Http4kServer(
 
     private val stopped = AtomicBoolean()
 
-    override fun start(after: (UnearthlyServer) -> Unit): unearth.main.http4k.Http4kServer = apply {
+    override fun start(after: Consumer<UnearthlyServer>?): unearth.main.http4k.Http4kServer = apply {
         if (started.compareAndSet(false, true)) {
             server.start()
-            after(this)
+            after?.accept(this)
         }
     }
 
@@ -90,11 +91,11 @@ class Http4kServer(
         controller.reset()
     }
 
-    override fun stop(after: (UnearthlyServer) -> Unit): unearth.main.http4k.Http4kServer = apply {
+    override fun stop(after: Consumer<UnearthlyServer>?): unearth.main.http4k.Http4kServer = apply {
         if (stopped.compareAndSet(false, true)) {
             controller.use {
                 server.stop()
-                after(this)
+                after?.accept(this)
             }
         }
     }

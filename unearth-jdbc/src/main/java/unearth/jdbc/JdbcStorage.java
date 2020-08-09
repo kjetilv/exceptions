@@ -21,6 +21,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -148,37 +149,40 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     
     @Override
     public List<FeedEntry> feed(long offset, long count) {
-        return loadFaultEvents(
-            "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
-                "  from feed_entry " +
-                "  where global_seq >= ? limit ?",
-            stmt -> stmt
-                .set(offset)
-                .set(count));
+        return count <= 0 ? Collections.emptyList()
+            : loadFaultEvents(
+                "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
+                    "  from feed_entry " +
+                    "  where global_seq >= ? limit ?",
+                stmt -> stmt
+                    .set(offset)
+                    .set(count));
     }
     
     @Override
     public List<FeedEntry> feed(FaultStrandId id, long offset, long count) {
-        return loadFaultEvents(
-            "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
-                "   from feed_entry" +
-                "   where fault_strand = ? and global_seq >= ? limit ?",
-            stmt -> stmt
-                .set(id)
-                .set(offset)
-                .set(count));
+        return count <= 0 ? Collections.emptyList()
+            : loadFaultEvents(
+                "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
+                    "   from feed_entry" +
+                    "   where fault_strand = ? and global_seq >= ? limit ?",
+                stmt -> stmt
+                    .set(id)
+                    .set(offset)
+                    .set(count));
     }
     
     @Override
     public List<FeedEntry> feed(FaultId id, long offset, long count) {
-        return loadFaultEvents(
-            "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
-                "  from feed_entry" +
-                "  where fault = ? and global_seq >= ? limit ?",
-            stmt -> stmt
-                .set(id)
-                .set(offset)
-                .set(count));
+        return count <= 0 ? Collections.emptyList()
+            : loadFaultEvents(
+                "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
+                    "  from feed_entry" +
+                    "  where fault = ? and global_seq >= ? limit ?",
+                stmt -> stmt
+                    .set(id)
+                    .set(offset)
+                    .set(count));
     }
     
     @Override
