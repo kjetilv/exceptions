@@ -34,9 +34,6 @@ class UnearthlyController(
     clock: Clock = Clock.systemDefaultZone()
 ) : UnearthlyResources {
 
-    init {
-    }
-
     val handler: FaultHandler = DefaultFaultHandler(storage, sensor, stats, clock)
 
     override fun close() {
@@ -101,20 +98,14 @@ class UnearthlyController(
     override fun feedLimit(): Long? =
         longish(feed.limit())
 
-    override fun feed(
-        offset: Long,
-        count: Long,
-        fullStack: Boolean,
-        printStack: Boolean
-    ): EventSequenceDto {
-        return EventSequenceDto(
+    override fun feed(offset: Long, count: Long, fullStack: Boolean, printStack: Boolean): EventSequenceDto =
+        EventSequenceDto(
             feed.feed(offset, count).map { feedEntry ->
                 storage.getRequiredFault(feedEntry.faultEvent.faultId).let { fault ->
                     renderer.feedEntryDto(feedEntry, fault, fullStack, printStack)
                 }
             }
         )
-    }
 
     override fun feed(
         id: FaultIdDto,

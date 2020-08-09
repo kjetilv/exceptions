@@ -17,6 +17,8 @@
 
 package unearth.netty;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,11 +50,12 @@ public final class Main {
     private static UnearthlyServer server(UnearthlyController controller, UnearthlyConfig config) {
         ForwardableMethods<UnearthlyApi> methods = new ForwardableMethods<>(
             UnearthlyApi.class,
-            Transformer.from(FaultIdDto.class, FaultIdDto::new),
-            Transformer.from(FaultStrandIdDto.class, FaultStrandIdDto::new),
-            Transformer.from(CauseIdDto.class, CauseIdDto::new),
-            Transformer.from(CauseStrandIdDto.class, CauseStrandIdDto::new),
-            Transformer.from(FeedEntryIdDto.class, FeedEntryIdDto::new));
+            List.of(
+                Transformer.from(FaultIdDto.class, FaultIdDto::new),
+                Transformer.from(FaultStrandIdDto.class, FaultStrandIdDto::new),
+                Transformer.from(CauseIdDto.class, CauseIdDto::new),
+                Transformer.from(CauseStrandIdDto.class, CauseStrandIdDto::new),
+                Transformer.from(FeedEntryIdDto.class, FeedEntryIdDto::new)));
         
         UnearthlyApi api = new DefaultUnearthlyApi(
             controller,

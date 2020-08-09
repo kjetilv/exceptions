@@ -31,15 +31,11 @@ import unearth.norest.common.ProcessedMethod;
 import unearth.norest.common.Request;
 import unearth.norest.common.Transformer;
 
-public class ForwardableMethods<A> {
+public final class ForwardableMethods<A> {
     
     private final Map<Class<?>, Transformer<?>> transformers;
     
     private final List<ForwardableMethod> forwardableMethods;
-    
-    public ForwardableMethods(Class<A> api, Transformer<?>... transformers) {
-        this(api, Arrays.asList(transformers));
-    }
     
     public ForwardableMethods(Class<A> api, List<Transformer<?>> transformers) {
         Objects.requireNonNull(api, "api");

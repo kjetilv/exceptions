@@ -22,70 +22,36 @@ import unearth.api.dto.*
 import unearth.munch.parser.ThrowableParser
 import java.util.*
 
-class DefaultUnearthlyApi(
-    private val controller: UnearthlyController,
-    private val renderer: UnearthlyRenderer
-) : UnearthlyApi {
+class DefaultUnearthlyApi(private val controller: UnearthlyController, private val renderer: UnearthlyRenderer) : UnearthlyApi {
 
-    override fun cause(
-        causeIdDto: CauseIdDto,
-        fullStack: Boolean,
-        printStack: Boolean
-    ) = unpack(
-        controller.lookupCauseDto(causeIdDto, fullStack, printStack)
-    )
+    override fun cause(id: CauseIdDto, fullStack: Boolean, printStack: Boolean) =
+        unpack(controller.lookupCauseDto(id, fullStack, printStack))
 
-    override fun causeStrand(
-        causeStrandIdDto: CauseStrandIdDto,
-        fullStack: Boolean,
-        printStack: Boolean
-    ) = unpack(
-        controller.lookupCauseStrandDto(causeStrandIdDto, fullStack, printStack)
-    )
+    override fun causeStrand(id: CauseStrandIdDto, fullStack: Boolean, printStack: Boolean) =
+        unpack(controller.lookupCauseStrandDto(id, fullStack, printStack))
 
-    override fun fault(
-        faultId: FaultIdDto,
-        fullStack: Boolean,
-        printStack: Boolean
-    ) = unpack(
-        controller.lookupFaultDto(faultId, fullStack, printStack)
-    )
+    override fun fault(id: FaultIdDto, fullStack: Boolean, printStack: Boolean) =
+        unpack(controller.lookupFaultDto(id, fullStack, printStack))
 
-    override fun faultStrand(
-        faultId: FaultStrandIdDto,
-        fullStack: Boolean,
-        printStack: Boolean
-    ) = unpack(
-        controller.lookupFaultStrandDto(faultId, fullStack, printStack)
-    )
+    override fun faultStrand(id: FaultStrandIdDto, fullStack: Boolean, printStack: Boolean) =
+        unpack(controller.lookupFaultStrandDto(id, fullStack, printStack))
 
-    override fun feedEntry(
-        faultEventIdDto: FeedEntryIdDto,
-        fullStack: Boolean,
-        printStack: Boolean
-    ) = unpack(
-        controller.lookupFeedEntryDto(faultEventIdDto, fullStack, printStack)
-    )
+    override fun feedEntry(id: FeedEntryIdDto, fullStack: Boolean, printStack: Boolean) =
+        unpack(controller.lookupFeedEntryDto(id, fullStack, printStack))
 
-    override fun faultFeed(
-        faultId: FaultIdDto,
-        offset: Long,
-        count: Long,
-        fullStack: Boolean,
-        printStack: Boolean
-    ) =
-        controller.feed(faultId, offset, count, fullStack, printStack)
+    override fun faultFeed(id: FaultIdDto, offset: Long, count: Long, fullStack: Boolean, printStack: Boolean) =
+        controller.feed(id, offset, count, fullStack, printStack)
 
-    override fun faultFeedLimit(faultId: FaultIdDto) = controller.feedLimit(faultId) ?: 0
+    override fun faultFeedLimit(id: FaultIdDto) = controller.feedLimit(id) ?: 0
 
     override fun faultStrandFeed(
-        faultId: FaultStrandIdDto,
+        id: FaultStrandIdDto,
         offset: Long,
         count: Long,
         fullStack: Boolean,
         printStack: Boolean
     ) =
-        controller.feed(faultId, offset, count, fullStack, printStack)
+        controller.feed(id, offset, count, fullStack, printStack)
 
     override fun faultStrandFeedLimit(faultId: FaultStrandIdDto) =
         controller.feedLimit(faultId) ?: 0

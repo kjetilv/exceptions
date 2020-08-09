@@ -18,6 +18,7 @@
 package unearth.netty;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.netty.buffer.ByteBuf;
@@ -64,18 +65,24 @@ public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
     
     private ChannelFuture serve(ChannelHandlerContext ctx, Request request) {
         try {
-            return forwardableMethods.invocation(request)
-                .map(invoke ->
-                    invoke.apply(impl))
+            Optional<Object> response = response(request);
+            return response
                 .map(result ->
                     responseFuture(ctx, result))
-                .findFirst()
                 .orElseGet(
                     error(ctx, HttpResponseStatus.NOT_FOUND));
         } catch (Exception e) {
             log.error("Failed to serve {}", request, e);
             return error(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR).get();
         }
+    }
+    
+    private Optional<Object> response(Request request) {
+        Optional<Object> response = forwardableMethods.invocation(request)
+            .map(invoke ->
+                invoke.apply(impl))
+            .findFirst();
+        return response;
     }
     
     private ChannelFuture responseFuture(ChannelHandlerContext ctx, Object result) {

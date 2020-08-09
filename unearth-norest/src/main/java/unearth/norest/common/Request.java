@@ -21,20 +21,19 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
-import java.util.stream.Collectors;
 
 public interface Request {
     
     enum Method {
         
         GET(false), HEAD(false), POST, PUT, PATCH, DELETE(false);
-    
+        
         private final boolean entity;
-    
+        
         Method() {
             this(true);
         }
-    
+        
         Method(boolean entity) {
             this.entity = entity;
         }
@@ -58,21 +57,7 @@ public interface Request {
     
     String getEntity();
     
-    default Map<String, String> getSingleQueryParameters() {
-        return collapse(getQueryParameters());
-    }
+    Map<String, String> getSingleQueryParameters();
     
-    default Map<String, String> getSingleHeaders() {
-        return collapse(getHeaders());
-    }
-    
-    private static Map<String, String> collapse(Map<String, Collection<String>> queryParameters) {
-        return queryParameters.entrySet().stream()
-            .filter(e -> e.getValue() != null)
-            .filter(e -> e.getValue().size() == 1)
-            .collect(Collectors.toMap(
-                Map.Entry::getKey,
-                e -> e.getValue().iterator().next()
-            ));
-    }
+    Map<String, String> getSingleHeaders();
 }

@@ -17,39 +17,122 @@
 
 package unearth.netty;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaders;
+import unearth.norest.common.Request;
+import unearth.util.Streams;
 
-public class SimpleNettyRequest extends AbstractNettyRequest {
+public class SimpleNettyRequest implements Request {
+    
+    private final FullHttpRequest fullHttpRequest;
+    
+    private final String uri;
+    
+    private final int queryIndex;
     
     SimpleNettyRequest(FullHttpRequest fullHttpRequest) {
-        super(fullHttpRequest);
+        this.fullHttpRequest = Objects.requireNonNull(fullHttpRequest, "fullHttpRequest");
+        this.uri = fullHttpRequest.uri();
+        this.queryIndex = uri.indexOf('?');
     }
     
     @Override
     public Method getMethod() {
-        return lazyGetMethod();
+        return switch (this.fullHttpRequest.method().asciiName().toString()) {
+            case "GET" -> Method.GET;
+            case "POST" -> Method.POST;
+            case "PUT" -> Method.PUT;
+            case "HEAD" -> Method.HEAD;
+            case "PATCH" -> Method.PATCH;
+            case "DELETE" -> Method.DELETE;
+            default -> throw new IllegalArgumentException("Unsupported: " +
+                SimpleNettyRequest.this.fullHttpRequest.method());
+        };
     }
     
     @Override
     public String getPath() {
-        return getUri();
+        return uri;
+    }
+    
+    @Override
+    public int getQueryIndex() {
+        return queryIndex;
     }
     
     @Override
     public Map<String, Collection<String>> getQueryParameters() {
-        return lazyGetQueryParameters();
+        int queryIndex = getQueryIndex();
+        if (queryIndex < 0) {
+            return Collections.emptyMap();
+        }
+        return Arrays.stream(uri.substring(queryIndex + 1).split("&"))
+            .map(kv ->
+                kv.split("=", 2))
+            .collect(Collectors.groupingBy(
+                keyValue -> keyValue[0],
+                Collectors.mapping(
+                    kv1 -> kv1.length > 1 ? kv1[1] : "",
+                    Collectors.toCollection(HashSet::new))));
     }
     
     @Override
     public Map<String, Collection<String>> getHeaders() {
-        return lazyGetHeaders();
+        HttpHeaders headers = fullHttpRequest.headers();
+        return headers.names().stream()
+            .collect(Collectors.toMap(
+                Function.identity(),
+                headers::getAll));
+    }
+    
+    @Override
+    public List<String> getPathParameters(Matcher matcher) {
+        return Streams.matches(matcher).collect(Collectors.toList());
     }
     
     @Override
     public String getEntity() {
-        return lazyGetEntity();
+        ByteBuf content = this.fullHttpRequest.content();
+        CharSequence body = content.toString(StandardCharsets.UTF_8);
+        return body.toString();
+    }
+    
+    @Override
+    public Map<String, String> getSingleQueryParameters() {
+        int queryIndex = getQueryIndex();
+        if (queryIndex < 0) {
+            return Collections.emptyMap();
+        }
+        return Arrays.stream(uri.substring(queryIndex + 1).split("&"))
+            .map(kv ->
+                kv.split("=", 2))
+            .collect(Collectors.toMap(
+                kv -> kv[0],
+                kv -> kv.length > 1 ? kv[1] : "",
+                (s1, s2) -> {
+                    throw new IllegalArgumentException("Not a 1-1 query parameters query: " + this);
+                }));
+    }
+    
+    @Override
+    public Map<String, String> getSingleHeaders() {
+        HttpHeaders headers = fullHttpRequest.headers();
+        return headers.names().stream()
+            .collect(Collectors.toMap(
+                Function.identity(),
+                headers::get));
     }
 }

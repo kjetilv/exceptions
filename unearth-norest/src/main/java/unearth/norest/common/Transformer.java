@@ -51,8 +51,8 @@ public interface Transformer<T> {
         return from(type, fun, null);
     }
     
-    static <T> Transformer<T> from(Class<T> type, Function<String, T> fun, T def) {
-        Optional<T> defopt = Optional.ofNullable(def);
+    static <T> Transformer<T> from(Class<T> type, Function<String, T> fun, T defaultValue) {
+        Optional<T> defaultOptional = Optional.ofNullable(defaultValue);
         return new Transformer<T>() {
             
             @Override
@@ -62,7 +62,7 @@ public interface Transformer<T> {
             
             @Override
             public Optional<T> from(String string) {
-                return Optional.ofNullable(string).map(fun).or(() -> defopt);
+                return Optional.ofNullable(string).map(fun).or(() -> defaultOptional);
             }
             
             @Override

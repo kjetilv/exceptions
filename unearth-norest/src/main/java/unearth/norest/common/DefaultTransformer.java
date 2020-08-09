@@ -19,11 +19,11 @@ package unearth.norest.common;
 
 import java.util.Optional;
 
-public class DefaultTransformer<T> implements Transformer<T> {
+class DefaultTransformer<T> implements Transformer<T> {
     
     private final Class<T> type;
     
-    public DefaultTransformer(Class<T> type) {
+    DefaultTransformer(Class<T> type) {
         this.type = type;
     }
     
