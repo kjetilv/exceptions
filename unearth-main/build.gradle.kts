@@ -53,6 +53,7 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("ch.qos.logback:logback-classic")
 
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
     implementation(kotlin("stdlib"))
 
     runtimeOnly("org.postgresql:postgresql")

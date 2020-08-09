@@ -18,6 +18,7 @@
 package unearth.netty;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -29,12 +30,13 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import unearth.norest.common.IOHandler;
-import unearth.norest.server.InvokableMethods;
+import unearth.norest.server.ForwardableMethods;
 
 public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
     
@@ -42,28 +44,34 @@ public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
     
     private final A impl;
     
-    private final InvokableMethods<A> invokableMethods;
+    private final ForwardableMethods<A> forwardableMethods;
     
     private final IOHandler ioHandler;
     
-    public ApiRouter(A impl, InvokableMethods<A> invokableMethods, IOHandler ioHandler) {
+    public ApiRouter(A impl, ForwardableMethods<A> forwardableMethods, IOHandler ioHandler) {
         this.impl = Objects.requireNonNull(impl, "impl");
-        this.invokableMethods = invokableMethods;
+        this.forwardableMethods = forwardableMethods;
         this.ioHandler = ioHandler;
     }
     
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest) {
-        NettyRequest request = new NettyRequest(fullHttpRequest);
-        ChannelFuture channelFuture = invokableMethods.invoke(request)
-            .map(invoker ->
-                invoker.on(impl))
-            .map(result ->
-                responseFuture(ctx, result))
-            .findFirst()
-            .orElseGet(() ->
-                ctx.writeAndFlush(NOT_FOUND));
-        log.debug("{} -> {}", fullHttpRequest, channelFuture);
+        ChannelFuture future;
+        try {
+            NettyRequest request = new NettyRequest(fullHttpRequest);
+            future = forwardableMethods.invocation(request)
+                .map(invoke ->
+                    invoke.apply(impl))
+                .map(result ->
+                    responseFuture(ctx, result))
+                .findFirst()
+                .orElseGet(
+                    error(ctx, HttpResponseStatus.NOT_FOUND));
+        } catch (Exception e) {
+            log.error("Failed to serve {}", fullHttpRequest, e);
+            future = error(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR).get();
+        }
+        log.debug("{} -> {}", fullHttpRequest, future);
     }
     
     private ChannelFuture responseFuture(ChannelHandlerContext ctx, Object result) {
@@ -80,12 +88,22 @@ public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
                 EmptyHttpHeaders.INSTANCE));
     }
     
-    private static final DefaultFullHttpResponse NOT_FOUND = new DefaultFullHttpResponse(
-        HttpVersion.HTTP_1_1,
-        HttpResponseStatus.NOT_FOUND,
-        Unpooled.buffer(0),
-        new DefaultHttpHeaders(true).add(
-            "Content-Length", 0),
-        EmptyHttpHeaders.INSTANCE
-    );
+    private static Supplier<ChannelFuture> error(ChannelHandlerContext ctx, HttpResponseStatus status) {
+        return () -> respond(ctx, status);
+    }
+    
+    private static ChannelFuture respond(ChannelHandlerContext ctx, HttpResponseStatus status) {
+        return ctx.writeAndFlush(error(status));
+    }
+    
+    private static HttpResponse error(HttpResponseStatus status) {
+        return new DefaultFullHttpResponse(
+            HttpVersion.HTTP_1_1,
+            status,
+            Unpooled.buffer(0),
+            new DefaultHttpHeaders(true).add(
+                "Content-Length", 0),
+            EmptyHttpHeaders.INSTANCE
+        );
+    }
 }

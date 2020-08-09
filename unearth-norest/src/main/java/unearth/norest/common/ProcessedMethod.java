@@ -71,10 +71,6 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
     
     private final Map<Integer, String> pathParameters;
     
-    private final int pathParam;
-    
-    private final int bodyParam;
-    
     private final boolean stringBody;
     
     private final Class<?> returnType;
@@ -97,6 +93,8 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
     
     private final String[] parameterNames;
     
+    private final int bodyArgumentIndex;
+    
     public ProcessedMethod(Method method, Map<Class<?>, Transformer<?>> transformers) {
         this.method = Objects.requireNonNull(method, "method");
         
@@ -108,9 +106,12 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
                 new IllegalArgumentException("Non-annotated method " + method));
         String annotatedPath = path(annotation);
         this.path = normalized(annotatedPath);
-        this.rootPath = this.path.indexOf('?') < 0
-            ? this.path
-            : this.path.substring(0, this.path.indexOf('?'));
+        
+        int rootIndex = IntStream.of(this.path.indexOf('?'), this.path.indexOf('{'))
+            .filter(i -> i > 0)
+            .min()
+            .orElse(-1);
+        this.rootPath = rootIndex < 0 ? this.path : this.path.substring(0, rootIndex);
         this.httpMethod = httpMethod(annotation);
         
         String regex = PATH_ARG.matcher(this.path).replaceAll("\\([^/]*\\)");
@@ -127,39 +128,43 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
         this.returnsData = returnType != void.class;
         this.returnType = getActualReturnType(this.method, this.optionalReturn, returnType);
         
-        this.pathParam = this.httpMethod == Request.Method.POST ? -1 : 0;
-        this.bodyParam = this.httpMethod == Request.Method.POST ? 0 : -1;
-        this.stringBody = this.httpMethod == Request.Method.POST && parameterTypes[this.bodyParam] == String.class;
+        this.stringBody = this.httpMethod.isEntity() && parameterTypes[0] == String.class;
+        this.bodyArgumentIndex = this.httpMethod.isEntity() ?
+            IntStream.range(0, parameterAnnotations.length)
+                .filter(i -> parameterAnnotations[i] == null || parameterAnnotations[i].length == 0)
+                .findFirst()
+                .orElseThrow(() ->
+                    new IllegalStateException("No body argument could be derived for " + method)) :
+            -1;
         
         this.queryParameters = paramsWhere(i ->
             parameterAnnotations[i].length > 0);
-        this.pathParameters = paramsWhere(i ->
-            parameterAnnotations[i] == null || parameterAnnotations[i].length == 0);
+        this.pathParameters = httpMethod.isEntity()
+            ? Collections.emptyMap()
+            : paramsWhere(i ->
+                parameterAnnotations[i] == null || parameterAnnotations[i].length == 0);
         this.transformers = transformers == null || transformers.isEmpty()
             ? Collections.emptyMap()
             : Collections.unmodifiableMap(transformers);
     }
     
-    private static String normalized(String annotatedPath) {
-        return "/" + unpreslashed(unpostslashed(annotatedPath.trim()));
-    }
-    
     @Override
-    public Stream<Invoke> matching(Request request) {
+    public Stream<Invocation> getInvocation(Request request) {
         if (request.getMethod() != this.httpMethod) {
             return Stream.empty();
         }
-        String requestedPath = normalized(request.getPath());
-        if (requestedPath.equals(rootPath)) {
-            return Stream.of(new DefaultInvoke(request, null));
-        }
-        if (!requestedPath.startsWith(rootPath)) {
+        String path = normalized(request.getPath());
+        if (!path.startsWith(rootPath)) {
             return Stream.empty();
         }
-        return Stream.of(matchPattern.matcher(request.getPath()))
-            .filter(Matcher::matches)
-            .map(matcher ->
-                new DefaultInvoke(request, matcher));
+        if (path.equals(rootPath)) {
+            return Stream.of(invoke(request, null));
+        }
+        Matcher matcher = matchPattern.matcher(request.getPath());
+        if (!matcher.matches()) {
+            return Stream.empty();
+        }
+        return Stream.of(invoke(request, matcher));
     }
     
     @Override
@@ -179,17 +184,17 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
     
     @Override
     public Optional<Object> bodyArgument(Object... args) {
-        return bodyParam < 0
-            ? Optional.empty()
-            : Optional.ofNullable(args[bodyParam]);
+        return httpMethod.isEntity()
+            ? Optional.ofNullable(args[bodyArgumentIndex])
+            : Optional.empty();
     }
     
     @Override
     public String path(Object... args) {
-        if (args == null || args.length == 0 || pathParam < 0) {
+        if (args == null || args.length == 0 || httpMethod.isEntity()) {
             return path;
         }
-        Object arg = args[pathParam];
+        Object arg = args[0];
         String fullPath = toString(arg)
             .map(string -> path.replace(PAR, string))
             .orElseThrow(() ->
@@ -215,12 +220,15 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
         return returnType;
     }
     
+    private Invocation invoke(Request request, Matcher matcher) {
+        return new DefaultInvoke(request, matcher);
+    }
+    
     private Map<Integer, String> paramsWhere(IntPredicate intPredicate) {
         return IntStream.range(0, parameterAnnotations.length)
             .filter(intPredicate)
             .boxed()
-            .collect(Collectors.toMap(i -> i, i -> parameterNames[i]
-            ));
+            .collect(Collectors.toMap(i -> i, i -> parameterNames[i]));
     }
     
     private Object invoke(Request request, Matcher matcher, Object impl) {
@@ -246,29 +254,40 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
             .map(name -> lookup(name, queryArgs, pathArgs))
             .map(opt -> opt.orElse(null))
             .toArray(Object[]::new);
+        if (httpMethod.isEntity()) {
+            String entity = request.getEntity();
+            args[bodyArgumentIndex] = stringBody
+                ? entity
+                : transformer(parameterTypes[bodyArgumentIndex]).from(entity);
+        }
         Object result;
         try {
             result = method.invoke(impl, args);
         } catch (Exception e) {
             throw new IllegalStateException(
-                "Failed to invoke on " + impl + ": " + method + "" + Arrays.toString(args),
-                e);
+                "Failed to invoke on " + impl + ": " + method + "" + Arrays.toString(args), e);
         }
-        if (isReturnData()) {
-            return result;
+        if (result == null || !isReturnData()) {
+            return null;
         }
-        return null;
+        if (isReturnOptional()) {
+            return ((Optional<?>)result).orElse(null);
+        }
+        return result;
     }
     
-    private String paramName(Integer i) {
-        return annotatedName(parameterAnnotations[i])
+    private String paramName(int index) {
+        if (index == bodyArgumentIndex) {
+            return "";
+        }
+        return annotatedName(parameterAnnotations[index])
             .or(() ->
-                parameters[i].isNamePresent()
-                    ? Optional.of(parameters[i].getName())
+                parameters[index].isNamePresent()
+                    ? Optional.of(parameters[index].getName())
                     : Optional.empty())
             .orElseThrow(() ->
                 new IllegalArgumentException(
-                    "Could not extract argument name #" + i + ": " + parameters[i]));
+                    "Could not extract argument name #" + index + ": " + parameters[index]));
     }
     
     private String queryPath(Object[] args) {
@@ -297,7 +316,7 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
         return (Transformer<T>) transformers.getOrDefault(type, new DefaultTransformer<>(type));
     }
     
-    private final class DefaultInvoke implements Invoke {
+    private final class DefaultInvoke implements Invocation {
         
         private final Request request;
         
@@ -309,8 +328,8 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
         }
         
         @Override
-        public Object on(Object impl) {
-            return ProcessedMethod.this.invoke(request, matcher, impl);
+        public Object apply(Object implementation) {
+            return ProcessedMethod.this.invoke(request, matcher, implementation);
         }
         
         @Override
@@ -326,6 +345,10 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
     private static final String PAR = "{}";
     
     private static final Pattern PATH_ARG = Pattern.compile("\\{\s*}");
+    
+    private static String normalized(String annotatedPath) {
+        return "/" + unpreslashed(unpostslashed(annotatedPath.trim()));
+    }
     
     @SafeVarargs
     private static Optional<?> lookup(String name, Map<String, Optional<?>>... maps) {

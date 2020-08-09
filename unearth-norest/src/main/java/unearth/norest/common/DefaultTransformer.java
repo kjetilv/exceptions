@@ -32,8 +32,15 @@ public class DefaultTransformer<T> implements Transformer<T> {
         return type;
     }
     
+    @SuppressWarnings("unchecked")
     @Override
     public Optional<T> from(String string) {
+        if (string == null || string.trim().isBlank()) {
+            return Optional.empty();
+        }
+        if (type == String.class) {
+            return (Optional<T>) Optional.of(string);
+        }
         throw new IllegalStateException(this + " does not read " + string);
     }
     

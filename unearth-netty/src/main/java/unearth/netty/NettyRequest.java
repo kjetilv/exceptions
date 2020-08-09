@@ -17,6 +17,7 @@
 
 package unearth.netty;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,6 +29,7 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
 import unearth.norest.common.Request;
@@ -70,6 +72,13 @@ class NettyRequest implements Request {
     @Override
     public Map<String, Collection<String>> getHeaders() {
         return this.headers.get();
+    }
+    
+    @Override
+    public String getEntity() {
+        ByteBuf content = fullHttpRequest.content();
+        CharSequence body = content.toString(StandardCharsets.UTF_8);
+        return body.toString();
     }
     
     @Override

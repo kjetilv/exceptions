@@ -17,16 +17,16 @@
 
 package unearth.norest.server;
 
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import unearth.norest.common.Request;
 
 public interface ForwardableMethod {
     
-    Stream<Invoke> matching(Request request);
+    interface Invocation extends Function<Object, Object> {
     
-    interface Invoke {
-        
-        Object on(Object target);
     }
+    
+    Stream<Invocation> getInvocation(Request request);
 }

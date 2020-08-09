@@ -22,6 +22,8 @@ import com.natpryce.konfig.*
 import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import unearth.analysis.CassandraInit
@@ -55,12 +57,19 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
         fun close()
     }
 
-    fun jun(toServer: BiFunction<UnearthlyController, UnearthlyConfig, UnearthlyServer>) =
-        run { controller, config ->
-            toServer.apply(controller, config)
+    fun startJavaServer(toServer: BiFunction<UnearthlyController, UnearthlyConfig, UnearthlyServer>): State {
+        return runBlocking {
+            async {
+                startServer { controller, config ->
+                    toServer.apply(controller, config)
+                }
+            }.await()
         }
+    }
 
-    fun run(toServer: (UnearthlyController, UnearthlyConfig) -> UnearthlyServer): State {
+    suspend fun startServer(
+        toServer: (UnearthlyController, UnearthlyConfig) -> UnearthlyServer
+    ): State {
         logger.info("Building ${Unearth::class.simpleName}...")
 
         val configuration = customConfiguration ?: unearthlyConfig(loadConfiguration())
@@ -70,27 +79,9 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
 
         val storage = JdbcStorage(db, configuration.db.schema, Clock.systemDefaultZone())
 
-        val controller = UnearthlyController(
-            storage,
-            storage,
-            storage,
-            sensor,
-            UnearthlyRenderer(configuration.prefix)
-        )
+        initStorage(storage)
 
-        val server: UnearthlyServer = toServer(controller, configuration)
-
-        if (configuration.unearthlyLogging) {
-            reconfigureLogging(controller)
-        }
-
-        logger.info("Created $server")
-
-        registerShutdown(server)
-
-        server.start(Consumer {
-            logger.info("$it ready at http://${configuration.host}:${server.port()}")
-        })
+        val server: UnearthlyServer = unearthlyServer(configuration, toServer, storage, sensor)
 
         return object : State {
 
@@ -112,6 +103,44 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
 
             override fun port(): Int = server.port()
         }
+    }
+
+
+    private suspend fun initStorage(storage: JdbcStorage) =
+        try {
+            storage.initStorage().run()
+        } catch (e: Exception) {
+            throw IllegalStateException("$this failed to init $storage", e)
+        }
+
+    private suspend fun unearthlyServer(
+        configuration: UnearthlyConfig,
+        toServer: (UnearthlyController, UnearthlyConfig) -> UnearthlyServer,
+        storage: JdbcStorage,
+        sensor: FaultSensor
+    ): UnearthlyServer {
+        val controller = UnearthlyController(
+            storage,
+            storage,
+            storage,
+            sensor,
+            UnearthlyRenderer(configuration.prefix)
+        )
+
+        val server: UnearthlyServer = toServer(controller, configuration)
+
+        if (configuration.unearthlyLogging) {
+            reconfigureLogging(controller)
+        }
+
+        logger.info("Created $server")
+
+        registerShutdown(server)
+
+        server.start(Consumer {
+            logger.info("$it ready at http://${configuration.host}:${server.port()}")
+        })
+        return server
     }
 
     private fun sensor(configuration: UnearthlyConfig): FaultSensor {
@@ -183,7 +212,7 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
 
     private fun registerShutdown(server: UnearthlyServer) {
         Runtime.getRuntime().addShutdownHook(Thread({
-            server.stop (Consumer {
+            server.stop(Consumer {
                 logger.info("Stopped at shutdown: $it")
             })
         }, "Shutdown"))

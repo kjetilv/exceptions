@@ -35,11 +35,6 @@ class UnearthlyController(
 ) : UnearthlyResources {
 
     init {
-        try {
-            storage.initStorage().run()
-        } catch (e: Exception) {
-            throw IllegalStateException("$this failed to init $storage", e)
-        }
     }
 
     val handler: FaultHandler = DefaultFaultHandler(storage, sensor, stats, clock)

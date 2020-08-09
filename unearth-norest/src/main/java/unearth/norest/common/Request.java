@@ -27,7 +27,21 @@ public interface Request {
     
     enum Method {
         
-        GET, HEAD, POST, PUT, PATCH, DELETE
+        GET(false), HEAD(false), POST, PUT, PATCH, DELETE(false);
+    
+        private final boolean entity;
+    
+        Method() {
+            this(true);
+        }
+    
+        Method(boolean entity) {
+            this.entity = entity;
+        }
+        
+        boolean isEntity() {
+            return this.entity;
+        }
     }
     
     Method getMethod();
@@ -39,6 +53,8 @@ public interface Request {
     Map<String, Collection<String>> getHeaders();
     
     List<String> getPathParameters(Matcher matcher);
+    
+    String getEntity();
     
     default Map<String, String> getSingleQueryParameters() {
         return collapse(getQueryParameters());

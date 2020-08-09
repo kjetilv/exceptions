@@ -82,7 +82,7 @@ public final class DefaultDockerStartup implements DockerStartup {
         
         CompletableFuture<UnearthlyClient> client = unearthFuture
             .thenApply(unearth ->
-                unearth.jun((unearthlyController, unearthlyConfig) ->
+                unearth.startJavaServer((unearthlyController, unearthlyConfig) ->
                     new Http4kServer(
                         unearthlyController,
                         unearthlyConfig,

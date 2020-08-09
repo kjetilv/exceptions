@@ -5,6 +5,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Consumer;
 
@@ -17,11 +18,12 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import unearth.norest.common.IOHandler;
-import unearth.norest.server.InvokableMethods;
+import unearth.norest.server.ForwardableMethods;
 import unearth.server.UnearthlyConfig;
 import unearth.server.UnearthlyServer;
 
@@ -29,9 +31,9 @@ import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
 import static java.lang.StrictMath.toIntExact;
 
 @SuppressWarnings("SameParameterValue")
-final class NettyRunner<A> implements UnearthlyServer {
+final class NettyServer<A> implements UnearthlyServer {
     
-    private static final Logger log = LoggerFactory.getLogger(NettyRunner.class);
+    private static final Logger log = LoggerFactory.getLogger(NettyServer.class);
     
     private final int listenThreads;
     
@@ -47,22 +49,19 @@ final class NettyRunner<A> implements UnearthlyServer {
     
     private final int port;
     
-    private final InvokableMethods<A> invokableMethods;
+    private final ForwardableMethods<A> invokableMethods;
     
     private final IOHandler ioHandler;
     
-    private ChannelFuture opened;
+    private final EventLoopGroup listen;
     
-    private EventLoopGroup listen;
+    private final EventLoopGroup work;
     
-    private EventLoopGroup work;
+    private ChannelFuture future;
     
-    NettyRunner(
-        UnearthlyConfig config,
-        A impl,
-        InvokableMethods<A> invokableMethods,
-        IOHandler ioHandler
-    ) {
+    private final AtomicBoolean closed = new AtomicBoolean();
+    
+    NettyServer(UnearthlyConfig config, A impl, ForwardableMethods<A> invokableMethods, IOHandler ioHandler) {
         this.impl = impl;
         this.port = config.getPort();
         
@@ -74,49 +73,46 @@ final class NettyRunner<A> implements UnearthlyServer {
         this.threads = 32;
         this.queue = 32;
         this.connectTimeout = Duration.ofSeconds(10);
+        
+        this.listen = listenGroup();
+        this.work = workGroup();
     }
     
     @Override
     public UnearthlyServer start(Consumer<UnearthlyServer> after) {
-        listen = listenGroup();
-        work = workGroup();
         ChannelFuture bind = new ServerBootstrap()
             .option(CONNECT_TIMEOUT_MILLIS, toIntExact(connectTimeout.toMillis()))
             .group(listen, work)
             .channel(NioServerSocketChannel.class)
-            .handler(new LoggingHandler())
+            .handler(new LoggingHandler(LogLevel.DEBUG))
             .childHandler(new ChannelInitializer<NioSocketChannel>() {
                 
                 @Override
                 protected void initChannel(NioSocketChannel ch) {
                     ch.pipeline()
                         .addLast("decoder", new HttpServerCodec())
-                        .addLast("aggregator", new HttpObjectAggregator(4096))
+                        .addLast("aggregator", new HttpObjectAggregator(MAX_CONTENT_LENGTH))
                         .addLast(new ApiRouter<>(impl, invokableMethods, ioHandler));
                 }
             })
             .bind(port);
-        opened = sync(
-            bind,
-            "Interrupted while starting");
-        log.info("{}: Bound to port {}: {}", this, port, opened.channel());
-        Runtime.getRuntime().addShutdownHook(new Thread(() ->
-            stop(null), "Closer"));
+        future = sync(bind, "Interrupted while starting");
+        log.info("{}: Bound to port {}: {}", this, port, future.channel());
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> stop(null), "Closer"));
         return this;
     }
     
     @Override
-    public NettyRunner<A> stop(Consumer<UnearthlyServer> after) {
+    public NettyServer<A> stop(Consumer<UnearthlyServer> after) {
         try {
-            try {
-                ChannelFuture closed = sync(
-                    this.opened.channel().close(),
-                    "Interrupted while closing");
-                log.info("{}: closed {}: {}", this, port, closed);
-                return this;
-            } finally {
-                listen.shutdownGracefully();
-                work.shutdownGracefully();
+            if (closed.compareAndSet(false, true)) {
+                shutdown();
+            } else {
+                if (after != null) {
+                    log.info("{} already shut down", this);
+                } else {
+                    log.debug("{} already shut down", this);
+                }
             }
         } finally {
             if (after != null) {
@@ -127,6 +123,7 @@ final class NettyRunner<A> implements UnearthlyServer {
                 }
             }
         }
+        return this;
     }
     
     @Override
@@ -144,6 +141,18 @@ final class NettyRunner<A> implements UnearthlyServer {
     
     }
     
+    private void shutdown() {
+        try {
+            ChannelFuture closed = sync(
+                this.future.channel().close(),
+                "Interrupted while closing");
+            log.info("{}: closed {}: {}", this, port, closed);
+        } finally {
+            listen.shutdownGracefully();
+            work.shutdownGracefully();
+        }
+    }
+    
     private EventLoopGroup listenGroup() {
         return new NioEventLoopGroup(this.listenThreads, countingThreadFactory("lst"));
     }
@@ -157,6 +166,8 @@ final class NettyRunner<A> implements UnearthlyServer {
             countingThreadFactory("thr"),
             new ThreadPoolExecutor.CallerRunsPolicy()));
     }
+    
+    private static final int MAX_CONTENT_LENGTH = 16 * 1024 * 1026;
     
     private static ChannelFuture sync(ChannelFuture future, String msg) {
         try {

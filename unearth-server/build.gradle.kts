@@ -30,23 +30,17 @@ dependencies {
     implementation(project(":unearth-jdbc"))
     implementation(project(":unearth-statik"))
 
-    implementation("org.http4k:http4k-core")
-    implementation("org.http4k:http4k-contract")
-    implementation("org.http4k:http4k-format-jackson")
-    implementation("org.http4k:http4k-server-netty")
-
     implementation("ch.qos.logback:logback-classic")
 
     implementation("com.zaxxer:HikariCP")
-
 
     implementation("io.swagger.core.v3:swagger-core")
     implementation("io.micrometer:micrometer-registry-jmx")
 
     implementation("com.natpryce:konfig")
 
-    testImplementation("org.http4k:http4k-client-apache")
     testImplementation("junit:junit:4.12")
 
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
     implementation(kotlin("stdlib"))
 }
