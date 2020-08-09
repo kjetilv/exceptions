@@ -22,6 +22,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -64,6 +65,7 @@ public final class Main {
         UnearthlyConfig unearthlyConfig = new UnearthlyConfig();
         
         IOHandler ioHandler = new IOHandler(new ObjectMapper()
+            .enable(SerializationFeature.INDENT_OUTPUT)
             .deactivateDefaultTyping()
             .setDateFormat(new StdDateFormat())
             .setDefaultPropertyInclusion(JsonInclude.Include.NON_EMPTY)
