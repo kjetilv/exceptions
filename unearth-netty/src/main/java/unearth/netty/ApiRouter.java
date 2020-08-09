@@ -58,7 +58,7 @@ public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
     
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest) {
-        Request request = new SimpleNettyRequest(fullHttpRequest);
+        Request request = request(fullHttpRequest);
         ChannelFuture future = serve(ctx, request);
         log.debug("Served {} -> {}", request, future);
     }
@@ -78,11 +78,10 @@ public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
     }
     
     private Optional<Object> response(Request request) {
-        Optional<Object> response = forwardableMethods.invocation(request)
+        return forwardableMethods.invocation(request)
             .map(invoke ->
                 invoke.apply(impl))
             .findFirst();
-        return response;
     }
     
     private ChannelFuture responseFuture(ChannelHandlerContext ctx, Object result) {
@@ -97,6 +96,10 @@ public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
                 buffer,
                 headers,
                 EmptyHttpHeaders.INSTANCE));
+    }
+    
+    private static Request request(FullHttpRequest fullHttpRequest) {
+        return new SimpleNettyRequest(fullHttpRequest);
     }
     
     private static Supplier<ChannelFuture> error(ChannelHandlerContext ctx, HttpResponseStatus status) {
