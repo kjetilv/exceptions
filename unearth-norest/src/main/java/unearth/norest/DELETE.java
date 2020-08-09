@@ -15,14 +15,16 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.norest.server;
+package unearth.norest;
 
-import java.util.function.Function;
-import java.util.stream.Stream;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import unearth.norest.common.Request;
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface DELETE {
 
-public interface ForwardableMethod {
-    
-    Stream<Function<Object, Object>> matchingInvoker(Request request);
+    String value();
 }

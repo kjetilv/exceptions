@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.IntPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,7 +53,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import unearth.norest.DELETE;
 import unearth.norest.GET;
+import unearth.norest.HEAD;
 import unearth.norest.POST;
 import unearth.norest.PUT;
 import unearth.norest.Q;
@@ -98,7 +101,13 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
     public ProcessedMethod(Method method, Map<Class<?>, Transformer<?>> transformers) {
         this.method = Objects.requireNonNull(method, "method");
         
-        Annotation annotation = List.of(POST.class, GET.class).stream()
+        Annotation annotation = List.of(
+            GET.class,
+            POST.class,
+            PUT.class,
+            DELETE.class,
+            HEAD.class
+        ).stream()
             .flatMap(anno ->
                 Optional.ofNullable(this.method.getAnnotation(anno)).stream())
             .findFirst()
@@ -149,22 +158,23 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
     }
     
     @Override
-    public Stream<Invocation> getInvocation(Request request) {
+    public Stream<Function<Object, Object>> matchingInvoker(Request request) {
         if (request.getMethod() != this.httpMethod) {
             return Stream.empty();
         }
-        String path = normalized(request.getPath());
+        String requestedPath = request.getPath();
+        String path = normalized(requestedPath);
         if (!path.startsWith(rootPath)) {
             return Stream.empty();
         }
         if (path.equals(rootPath)) {
-            return Stream.of(invoke(request, null));
+            return Stream.of(invoker(request, null));
         }
-        Matcher matcher = matchPattern.matcher(request.getPath());
-        if (!matcher.matches()) {
-            return Stream.empty();
+        int queryIndex = request.getQueryIndex();
+        if (queryIndex < 0) {
+            return matching(request, requestedPath);
         }
-        return Stream.of(invoke(request, matcher));
+        return matching(request, requestedPath.substring(0, queryIndex));
     }
     
     @Override
@@ -220,8 +230,17 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
         return returnType;
     }
     
-    private Invocation invoke(Request request, Matcher matcher) {
-        return new DefaultInvoke(request, matcher);
+    private Stream<Function<Object, Object>> matching(Request request, String requestedPath) {
+        Matcher matcher = matchPattern.matcher(requestedPath);
+        if (matcher.matches()) {
+            return Stream.of(invoker(request, matcher));
+        }
+        return Stream.empty();
+    }
+    
+    private Function<Object, Object> invoker(Request request, Matcher matcher) {
+        return impl ->
+            invoke(request, matcher, impl);
     }
     
     private Map<Integer, String> paramsWhere(IntPredicate intPredicate) {
@@ -271,7 +290,7 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
             return null;
         }
         if (isReturnOptional()) {
-            return ((Optional<?>)result).orElse(null);
+            return ((Optional<?>) result).orElse(null);
         }
         return result;
     }
@@ -316,28 +335,6 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
         return (Transformer<T>) transformers.getOrDefault(type, new DefaultTransformer<>(type));
     }
     
-    private final class DefaultInvoke implements Invocation {
-        
-        private final Request request;
-        
-        private final Matcher matcher;
-        
-        private DefaultInvoke(Request request, Matcher matcher) {
-            this.request = Objects.requireNonNull(request, "request");
-            this.matcher = matcher;
-        }
-        
-        @Override
-        public Object apply(Object implementation) {
-            return ProcessedMethod.this.invoke(request, matcher, implementation);
-        }
-        
-        @Override
-        public String toString() {
-            return getClass().getSimpleName() + "[" + request + " > " + matcher + "]";
-        }
-    }
-    
     private static final String JSON = "application/json;charset=UTF-8";
     
     private static final String TEXT = "text/plain;charset=UTF-8";
@@ -373,9 +370,11 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
     }
     
     private static String path(Annotation annotation) {
-        return annotation instanceof POST ? ((POST) annotation).value()
-            : annotation instanceof PUT ? ((PUT) annotation).value()
-                : ((GET) annotation).value();
+        return annotation instanceof GET ? ((GET) annotation).value()
+            : annotation instanceof POST ? ((POST) annotation).value()
+                : annotation instanceof PUT ? ((PUT) annotation).value()
+                    : annotation instanceof DELETE ? ((DELETE) annotation).value()
+                        : ((HEAD) annotation).value();
     }
     
     private static Optional<String> annotatedName(Annotation[] parameterAnnotations) {

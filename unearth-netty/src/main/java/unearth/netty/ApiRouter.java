@@ -36,6 +36,7 @@ import io.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import unearth.norest.common.IOHandler;
+import unearth.norest.common.Request;
 import unearth.norest.server.ForwardableMethods;
 
 public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
@@ -56,10 +57,14 @@ public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
     
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest) {
-        ChannelFuture future;
+        Request request = new SimpleNettyRequest(fullHttpRequest);
+        ChannelFuture future = serve(ctx, request);
+        log.debug("Served {} -> {}", request, future);
+    }
+    
+    private ChannelFuture serve(ChannelHandlerContext ctx, Request request) {
         try {
-            NettyRequest request = new NettyRequest(fullHttpRequest);
-            future = forwardableMethods.invocation(request)
+            return forwardableMethods.invocation(request)
                 .map(invoke ->
                     invoke.apply(impl))
                 .map(result ->
@@ -68,10 +73,9 @@ public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
                 .orElseGet(
                     error(ctx, HttpResponseStatus.NOT_FOUND));
         } catch (Exception e) {
-            log.error("Failed to serve {}", fullHttpRequest, e);
-            future = error(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR).get();
+            log.error("Failed to serve {}", request, e);
+            return error(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR).get();
         }
-        log.debug("{} -> {}", fullHttpRequest, future);
     }
     
     private ChannelFuture responseFuture(ChannelHandlerContext ctx, Object result) {

@@ -48,6 +48,8 @@ public interface Request {
     
     String getPath();
     
+    int getQueryIndex();
+    
     Map<String, Collection<String>> getQueryParameters();
     
     Map<String, Collection<String>> getHeaders();

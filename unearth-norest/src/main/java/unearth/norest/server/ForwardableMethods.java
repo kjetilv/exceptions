@@ -44,15 +44,16 @@ public class ForwardableMethods<A> {
     public ForwardableMethods(Class<A> api, List<Transformer<?>> transformers) {
         Objects.requireNonNull(api, "api");
         this.transformers = transformers(transformers);
-        this.forwardableMethods = Arrays.stream(api.getMethods())
+        List<ForwardableMethod> collect = Arrays.stream(api.getMethods())
             .map(this::processed)
             .collect(Collectors.toList());
+        this.forwardableMethods = collect;
     }
     
-    public Stream<ForwardableMethod.Invocation> invocation(Request request) {
+    public Stream<Function<Object, Object>> invocation(Request request) {
         return forwardableMethods.stream()
             .flatMap(forwardableMethod ->
-                forwardableMethod.getInvocation(request));
+                forwardableMethod.matchingInvoker(request));
     }
     
     private ProcessedMethod processed(java.lang.reflect.Method method) {
@@ -64,22 +65,25 @@ public class ForwardableMethods<A> {
     }
     
     private static final Map<Class<?>, Transformer<?>> PRIMITIVES = Stream.of(
+
         Transformer.from(boolean.class, Boolean::parseBoolean, false),
-        Transformer.from(Boolean.class, Boolean::parseBoolean),
         Transformer.from(float.class, Float::parseFloat, 0.0f),
-        Transformer.from(Float.class, Float::parseFloat),
         Transformer.from(double.class, Double::parseDouble, 0.0d),
-        Transformer.from(Double.class, Double::parseDouble),
         Transformer.from(long.class, Long::parseLong, 0L),
-        Transformer.from(Long.class, Long::parseLong),
         Transformer.from(short.class, Short::parseShort, (short) 0),
-        Transformer.from(Short.class, Short::parseShort),
         Transformer.from(byte.class, Byte::parseByte, (byte) 0),
-        Transformer.from(Byte.class, Byte::parseByte),
         Transformer.from(int.class, Integer::parseInt, 0),
-        Transformer.from(Integer.class, Integer::parseInt),
         Transformer.from(char.class, s -> s.charAt(0), (char) 0),
+        
+        Transformer.from(Boolean.class, Boolean::parseBoolean),
+        Transformer.from(Float.class, Float::parseFloat),
+        Transformer.from(Double.class, Double::parseDouble),
+        Transformer.from(Long.class, Long::parseLong),
+        Transformer.from(Short.class, Short::parseShort),
+        Transformer.from(Byte.class, Byte::parseByte),
+        Transformer.from(Integer.class, Integer::parseInt),
         Transformer.from(Character.class, s -> s.charAt(0))
+    
     ).collect(Collectors.toMap(Transformer::getType, Function.identity()));
     
     private static Map<Class<?>, Transformer<?>> transformers(List<Transformer<?>> transformers) {
