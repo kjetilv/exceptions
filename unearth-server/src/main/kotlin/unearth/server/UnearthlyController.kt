@@ -40,8 +40,10 @@ class UnearthlyController(
         listOf<AutoCloseable>(storage, feed, stats).forEach(AutoCloseable::close)
     }
 
-    override fun submitRaw(t: Throwable): HandlingPolicy =
-        handler.handle(t)!!
+    override fun submitRaw(t: Throwable): HandlingPolicy = handler.handle(t)!!
+
+    override fun submitRaw(t: Throwable, message: String?, args: Array<Any>?): HandlingPolicy =
+        handler.handle(t,  message, *args ?: emptyArray())
 
     override fun lookupFaultStrandDto(
         id: FaultStrandIdDto,

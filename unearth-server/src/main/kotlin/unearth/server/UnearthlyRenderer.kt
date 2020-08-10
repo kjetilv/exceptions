@@ -46,8 +46,6 @@ class UnearthlyRenderer(private val linkPrefix: String) {
             printout = toPrintout(handlingPolicy)
         )
 
-    fun link(id: Identifiable<*>): String = link(id.id)
-
     fun link(id: Id): String = "$linkPrefix/${id.type}/${id.hash}"
 
     fun faultDto(fault: Fault, fullStack: Boolean, printStack: Boolean): FaultDto =
@@ -124,6 +122,8 @@ class UnearthlyRenderer(private val linkPrefix: String) {
             feedEntry.faultStrandSequenceNo
         )
     }
+
+    private fun link(id: Identifiable<*>): String = link(id.id)
 
     private fun feed(id: Identifiable<*>): String = feed(id.id)
 

@@ -25,7 +25,6 @@ import java.util.Spliterators;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -125,28 +124,6 @@ public final class Streams {
             Map.Entry::getValue,
             Map.Entry::getKey
         ));
-    }
-    
-    public static Stream<String> matches(Matcher matcher) {
-        int groupCount = matcher.groupCount();
-        
-        return groupCount == 0
-            ? Stream.empty()
-            : StreamSupport.stream(
-                new Spliterators.AbstractSpliterator<>(
-                    groupCount,
-                    Spliterator.ORDERED
-                ) {
-    
-                    private int group = 0;
-    
-                    @Override
-                    public boolean tryAdvance(Consumer<? super String> action) {
-                        action.accept(matcher.group(group + 1));
-                        group++;
-                        return group < groupCount;
-                    }
-                }, false);
     }
     
     private Streams() {

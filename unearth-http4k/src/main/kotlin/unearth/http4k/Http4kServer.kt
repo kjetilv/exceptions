@@ -75,7 +75,7 @@ import java.util.jar.JarFile
 import java.util.regex.Pattern
 
 class Http4kServer(
-    private val controller: UnearthlyResources,
+    private val resources: UnearthlyResources,
     private val configuration: UnearthlyConfig = UnearthlyConfig(),
     private val renderer: UnearthlyRenderer
 ) : UnearthlyServer {
@@ -105,12 +105,12 @@ class Http4kServer(
     }
 
     override fun reset() {
-        controller.reset()
+        resources.reset()
     }
 
     override fun stop(after: Consumer<UnearthlyServer>?): unearth.http4k.Http4kServer = apply {
         if (stopped.compareAndSet(false, true)) {
-            controller.use {
+            resources.use {
                 server.stop()
                 after?.accept(this)
             }
@@ -141,7 +141,7 @@ class Http4kServer(
             returning(OK, submission to Swaggex.submission())
         } bindContract POST to { request ->
             val throwable = ThrowableParser.parse(request.body.payload)
-            submission.set(Response(OK), renderer.submission(controller.submitRaw(throwable)))
+            submission.set(Response(OK), renderer.submission(resources.submitRaw(throwable)))
         }
 
     private fun retrieveExceptionRoute() =
@@ -151,7 +151,7 @@ class Http4kServer(
             returning(OK, exception to Swaggex.exception())
         } bindContract GET to { faultId ->
             simpleGet(exception, type = TEXT_PLAIN) {
-                controller.lookupThrowable(faultId)
+                resources.lookupThrowable(faultId)
             }
         }
 
@@ -164,7 +164,7 @@ class Http4kServer(
         } bindContract GET to { feedEntryId ->
             { req ->
                 get(feedEntry) {
-                    controller.lookupFeedEntryDto(
+                    resources.lookupFeedEntryDto(
                         feedEntryId,
                         fullStack[req] ?: false,
                         printStack[req] ?: false
@@ -182,7 +182,7 @@ class Http4kServer(
         } bindContract GET to { faultStrandId ->
             { req ->
                 get(faultStrand) {
-                    controller.lookupFaultStrandDto(
+                    resources.lookupFaultStrandDto(
                         faultStrandId,
                         fullStack[req] ?: false,
                         printStack[req] ?: false
@@ -200,7 +200,7 @@ class Http4kServer(
         } bindContract GET to { faultId ->
             { req ->
                 get(fault) {
-                    controller.lookupFaultDto(
+                    resources.lookupFaultDto(
                         faultId,
                         fullStack[req] ?: false,
                         printStack[req] ?: false
@@ -218,7 +218,7 @@ class Http4kServer(
         } bindContract GET to { causeStrandId ->
             { req ->
                 get(causeStrand) {
-                    controller.lookupCauseStrandDto(
+                    resources.lookupCauseStrandDto(
                         causeStrandId,
                         fullStack[req] ?: false,
                         printStack[req] ?: false
@@ -236,7 +236,7 @@ class Http4kServer(
         } bindContract GET to { causeId ->
             { req ->
                 get(cause) {
-                    controller.lookupCauseDto(
+                    resources.lookupCauseDto(
                         causeId,
                         fullStack[req] ?: false,
                         printStack[req] ?: false
@@ -251,7 +251,7 @@ class Http4kServer(
             produces += APPLICATION_JSON
             returning(OK, limit to Swaggex.limit())
         } bindContract GET to simpleGetLong(limit, ifNull = 0L) {
-            controller.feedLimit()
+            resources.feedLimit()
         }
 
     private fun faultFeedLimitRoute() =
@@ -261,7 +261,7 @@ class Http4kServer(
             returning(OK, limit to Swaggex.limit())
         } bindContract GET to { faultId ->
             simpleGetLong(limit, ifNull = 0L) {
-                controller.feedLimit(faultId)
+                resources.feedLimit(faultId)
             }
         }
 
@@ -273,7 +273,7 @@ class Http4kServer(
             returning(OK, limit to Swaggex.limit())
         } bindContract GET to { faultId ->
             simpleGetLong(limit, ifNull = 0L) {
-                controller.feedLimit(faultId)
+                resources.feedLimit(faultId)
             }
         }
 
@@ -285,7 +285,7 @@ class Http4kServer(
             returning(OK, sequence to Swaggex.eventSequence())
         } bindContract GET to { req ->
             get(sequence) {
-                controller.feed(
+                resources.feed(
                     offsetQuery[req] ?: 0L,
                     countQuery[req] ?: 10L,
                     fullStack[req] ?: false,
@@ -303,7 +303,7 @@ class Http4kServer(
         } bindContract GET to { faultId ->
             { req ->
                 get(faultSequence) {
-                    controller.feed(
+                    resources.feed(
                         faultId,
                         offsetQuery[req] ?: 0L,
                         countQuery[req] ?: 0L,
@@ -323,7 +323,7 @@ class Http4kServer(
         } bindContract GET to { faultStrandId ->
             { req ->
                 get(faultStrandSequence) {
-                    controller.feed(
+                    resources.feed(
                         faultStrandId,
                         offsetQuery[req] ?: 0L,
                         countQuery[req] ?: 0L,
@@ -443,7 +443,7 @@ class Http4kServer(
         status: Status? = INTERNAL_SERVER_ERROR
     ): Response {
         val policy = try {
-            controller.submitRaw(error)
+            resources.submitRaw(error)
         } catch (e: Exception) {
             return bareBonesErrorResponse("Failed to submit self-diagnosed error", e)
         }

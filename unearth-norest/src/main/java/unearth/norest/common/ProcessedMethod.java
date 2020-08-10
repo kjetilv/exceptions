@@ -28,6 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
 import java.util.regex.Matcher;
@@ -35,6 +38,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import unearth.norest.DELETE;
 import unearth.norest.GET;
@@ -47,7 +51,7 @@ import unearth.norest.server.ForwardableMethod;
 
 public final class ProcessedMethod implements RemotableMethod, ForwardableMethod {
     
-    private final Request.Method httpMethod;
+    private final RequestMethod httpMethod;
     
     private final String path;
     
@@ -67,7 +71,7 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
     
     private final Pattern matchPattern;
     
-    private final Map<? extends Class<?>, Transformer<?>> transformers;
+    private final Transformers transformers;
     
     private final Method method;
     
@@ -81,7 +85,7 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
     
     private final int bodyArgumentIndex;
     
-    public ProcessedMethod(Method method, Map<Class<?>, Transformer<?>> transformers) {
+    public ProcessedMethod(Method method, Transformers transformers) {
         this.method = Objects.requireNonNull(method, "method");
         
         Annotation annotation = getAnnotation(this.method);
@@ -121,9 +125,7 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
             ? Collections.emptyMap()
             : paramsWhere(i ->
                 parameterAnnotations[i] == null || parameterAnnotations[i].length == 0);
-        this.transformers = transformers == null || transformers.isEmpty()
-            ? Collections.emptyMap()
-            : Collections.unmodifiableMap(transformers);
+        this.transformers = transformers == null ? Transformers.EMPTY : transformers;
     }
     
     @Override
@@ -147,7 +149,7 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
     }
     
     @Override
-    public Request.Method getHttpMethod() {
+    public RequestMethod getRequestMethod() {
         return httpMethod;
     }
     
@@ -220,16 +222,14 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
     }
     
     private Object invoke(Request request, Matcher matcher, Object impl) {
-        Map<String, String> queryParams = request.getSingleQueryParameters();
+        Map<String, String> queryParams = request.getQueryParameters();
         Map<String, Optional<?>> queryArgs = IntStream.range(0, parameters.length)
             .boxed()
             .collect(Collectors.toMap(
                 i -> parameterNames[i],
                 i ->
-                    transformer(parameterTypes[i]).from(queryParams.get(parameterNames[i]))));
-        List<String> pathParams = matcher == null
-            ? Collections.emptyList()
-            : request.getPathParameters(matcher);
+                    transformers.from(parameterTypes[i], queryParams.get(parameterNames[i]))));
+        List<String> pathParams = matches(matcher);
         if (pathParams.size() != pathParameters.size()) {
             throw new IllegalArgumentException(this + " got bad path: " + request);
         }
@@ -237,7 +237,7 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
             .collect(Collectors.toMap(
                 e -> parameterNames[e.getKey()],
                 e ->
-                    transformer(parameterTypes[e.getKey()]).from(pathParams.get(e.getKey()))));
+                    transformers.from(parameterTypes[e.getKey()], pathParams.get(e.getKey()))));
         Object[] args = Arrays.stream(parameterNames)
             .map(name -> lookup(name, queryArgs, pathArgs))
             .map(opt -> opt.orElse(null))
@@ -246,7 +246,7 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
             String entity = request.getEntity();
             args[bodyArgumentIndex] = stringBody
                 ? entity
-                : transformer(parameterTypes[bodyArgumentIndex]).from(entity);
+                : transformers.from(parameterTypes[bodyArgumentIndex], entity);
         }
         Object result;
         try {
@@ -290,18 +290,9 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
             .collect(Collectors.joining("&"));
     }
     
-    private Optional<String> toString(Object arg) {
-        return this.transformer(arg).to(arg);
-    }
-    
     @SuppressWarnings("unchecked")
-    private <T> Transformer<T> transformer(Object arg) {
-        return transformer((Class<T>) arg.getClass());
-    }
-    
-    @SuppressWarnings("unchecked")
-    private <T> Transformer<T> transformer(Class<T> type) {
-        return (Transformer<T>) transformers.getOrDefault(type, new DefaultTransformer<>(type));
+    private <T> Optional<String> toString(T arg) {
+        return this.transformers.to((Class<T>) arg.getClass(), arg);
     }
     
     private static final String JSON = "application/json;charset=UTF-8";
@@ -338,6 +329,20 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
         return "/" + unpreslashed(unpostslashed(annotatedPath.trim()));
     }
     
+    private static List<String> matches(Matcher matcher) {
+        if (matcher == null) {
+            return Collections.emptyList();
+        }
+        
+        int groupCount = matcher.groupCount();
+        if (groupCount == 0) {
+            return Collections.emptyList();
+        }
+        
+        return StreamSupport.stream(new MatchSpliterator(matcher), false)
+            .collect(Collectors.toList());
+    }
+    
     @SafeVarargs
     private static Optional<?> lookup(String name, Map<String, Optional<?>>... maps) {
         return Arrays.stream(maps)
@@ -346,10 +351,10 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
             .findFirst();
     }
     
-    private static Request.Method httpMethod(Annotation annotation) {
-        return annotation instanceof POST ? Request.Method.POST
-            : annotation instanceof PUT ? Request.Method.PUT
-                : Request.Method.GET;
+    private static RequestMethod httpMethod(Annotation annotation) {
+        return annotation instanceof POST ? RequestMethod.POST
+            : annotation instanceof PUT ? RequestMethod.PUT
+                : RequestMethod.GET;
     }
     
     private static String unpreslashed(String path) {
@@ -388,6 +393,29 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
             throw new IllegalStateException("Could not resolve generic type of " + genType + ": " + method);
         }
         return (Class<?>) args[0];
+    }
+    
+    private static class MatchSpliterator extends Spliterators.AbstractSpliterator<String> {
+        
+        private int group;
+        
+        private final int groupCount;
+        
+        private final Matcher matcher;
+        
+        private MatchSpliterator(Matcher matcher) {
+            super(matcher.groupCount(), Spliterator.ORDERED);
+            this.groupCount = matcher.groupCount();
+            this.matcher = matcher;
+            group = 0;
+        }
+        
+        @Override
+        public boolean tryAdvance(Consumer<? super String> action) {
+            action.accept(matcher.group(group + 1));
+            group++;
+            return group < groupCount;
+        }
     }
     
     @Override

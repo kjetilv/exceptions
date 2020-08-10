@@ -22,7 +22,10 @@ import unearth.api.dto.*
 import unearth.munch.parser.ThrowableParser
 import java.util.*
 
-class DefaultUnearthlyApi(private val controller: UnearthlyController, private val renderer: UnearthlyRenderer) : UnearthlyApi {
+class DefaultUnearthlyApi(
+    private val controller: UnearthlyResources,
+    private val renderer: UnearthlyRenderer
+) : UnearthlyApi {
 
     override fun cause(id: CauseIdDto, fullStack: Boolean, printStack: Boolean) =
         unpack(controller.lookupCauseDto(id, fullStack, printStack))

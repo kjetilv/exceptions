@@ -19,11 +19,11 @@ package unearth.norest.client;
 
 import java.util.Optional;
 
-import unearth.norest.common.Request;
+import unearth.norest.common.RequestMethod;
 
 public interface RemotableMethod {
     
-    Request.Method getHttpMethod();
+    RequestMethod getRequestMethod();
     
     String getContentType();
     

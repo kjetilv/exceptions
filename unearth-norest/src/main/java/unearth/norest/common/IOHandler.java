@@ -20,9 +20,27 @@ package unearth.norest.common;
 import java.io.InputStream;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.util.StdDateFormat;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 public final class IOHandler {
+    
+    public static IOHandler createDefault() {
+        return new IOHandler(new ObjectMapper()
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .deactivateDefaultTyping()
+            .setDateFormat(new StdDateFormat())
+            .setDefaultPropertyInclusion(JsonInclude.Include.NON_EMPTY)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true)
+            .configure(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, true)
+            .registerModule(new Jdk8Module())
+            .registerModule(new JavaTimeModule()));
+    }
     
     private final ObjectMapper objectMapper;
     

@@ -25,6 +25,7 @@ import java.util.List;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import unearth.norest.common.IOHandler;
 import unearth.norest.common.Transformer;
+import unearth.norest.common.Transformers;
 
 public final class Proto {
     
@@ -40,7 +41,7 @@ public final class Proto {
                 api,
                 uri,
                 new IOHandler(objectMapper),
-                new RemotableMethods(transformers))));
+                new RemotableMethods(new Transformers(transformers)))));
     }
     
     private Proto() {

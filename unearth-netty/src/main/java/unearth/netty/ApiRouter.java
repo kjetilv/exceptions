@@ -44,7 +44,10 @@ public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
     
     private final ApiInvoker<A> apiInvoker;
     
-    public ApiRouter(IOHandler ioHandler, ApiInvoker<A> apiInvoker) {
+    public ApiRouter(
+        IOHandler ioHandler,
+        ApiInvoker<A> apiInvoker
+    ) {
         this.ioHandler = ioHandler;
         this.apiInvoker = apiInvoker;
     }

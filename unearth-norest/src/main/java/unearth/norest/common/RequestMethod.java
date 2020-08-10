@@ -15,12 +15,23 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.server
+package unearth.norest.common;
 
-import unearth.api.dto.Submission
-
-data class UnearthlyError(
-
-        val message: String,
-
-        val submission: Submission? = null)
+public enum RequestMethod {
+    
+    GET(false), HEAD(false), POST, PUT, PATCH, DELETE(false);
+    
+    private final boolean entity;
+    
+    RequestMethod() {
+        this(true);
+    }
+    
+    RequestMethod(boolean entity) {
+        this.entity = entity;
+    }
+    
+    boolean isEntity() {
+        return this.entity;
+    }
+}

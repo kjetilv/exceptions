@@ -34,7 +34,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import unearth.norest.common.IOHandler;
-import unearth.norest.common.Request;
+import unearth.norest.common.RequestMethod;
 
 class ClientInvocationHandler implements InvocationHandler {
     
@@ -98,7 +98,7 @@ class ClientInvocationHandler implements InvocationHandler {
     
     private HttpRequest request(URI root, RemotableMethod callableMethod, Object... args) {
         HttpRequest.Builder builder = base(root, callableMethod, args);
-        return callableMethod.getHttpMethod() == Request.Method.POST
+        return callableMethod.getRequestMethod() == RequestMethod.POST
             ? builder.POST(bodyPublisher(callableMethod, args)).build()
             : builder.build();
     }

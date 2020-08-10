@@ -23,13 +23,13 @@ import ch.qos.logback.classic.turbo.TurboFilter
 import ch.qos.logback.core.spi.FilterReply
 import org.slf4j.Marker
 import org.slf4j.spi.LocationAwareLogger
-import unearth.core.FaultHandler
 import unearth.core.HandlingPolicy
 import unearth.munch.print.CausesRenderer
 import unearth.munch.print.CausesRendering
+import unearth.server.UnearthlyResources
 
 class UnearthlyTurboFilter(
-    private val faultHandler: FaultHandler,
+    private val resources: UnearthlyResources,
     private val renderer: CausesRenderer,
     private val renderers: Map<HandlingPolicy.Action, CausesRenderer> = emptyMap()
 ) : TurboFilter() {
@@ -45,7 +45,7 @@ class UnearthlyTurboFilter(
         if (t == null) {
             return FilterReply.NEUTRAL
         }
-        val policy = faultHandler.handle(t, format, *params ?: emptyArray())
+        val policy = resources.submitRaw(t, format, params)
         (logger as LocationAwareLogger).log(
             marker,
             (logger as LocationAwareLogger).name,
@@ -69,7 +69,7 @@ class UnearthlyTurboFilter(
     }
 
     fun withRendererFor(action: HandlingPolicy.Action, renderer: CausesRenderer): UnearthlyTurboFilter =
-        UnearthlyTurboFilter(faultHandler, renderer, renderers.plus(Pair(action, renderer)))
+        UnearthlyTurboFilter(resources, renderer, renderers.plus(Pair(action, renderer)))
 
     companion object {
 

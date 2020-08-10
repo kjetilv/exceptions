@@ -19,13 +19,6 @@ package unearth.netty;
 
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.util.StdDateFormat;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import unearth.api.UnearthlyApi;
 import unearth.api.dto.CauseIdDto;
 import unearth.api.dto.CauseStrandIdDto;
@@ -35,12 +28,13 @@ import unearth.api.dto.FeedEntryIdDto;
 import unearth.norest.ApiInvoker;
 import unearth.norest.common.IOHandler;
 import unearth.norest.common.Transformer;
+import unearth.norest.common.Transformers;
 import unearth.norest.server.ForwardableMethods;
 import unearth.server.DefaultUnearthlyApi;
 import unearth.server.Unearth;
 import unearth.server.UnearthlyConfig;
-import unearth.server.UnearthlyController;
 import unearth.server.UnearthlyRenderer;
+import unearth.server.UnearthlyResources;
 import unearth.server.UnearthlyServer;
 
 public final class Main {
@@ -49,35 +43,30 @@ public final class Main {
         new Unearth().startJavaServer(Main::nettyServer);
     }
     
-    public static UnearthlyServer nettyServer(UnearthlyController controller, UnearthlyConfig config) {
+    public static UnearthlyServer nettyServer(UnearthlyResources controller, UnearthlyConfig config) {
         
         UnearthlyApi api = new DefaultUnearthlyApi(
             controller,
             new UnearthlyRenderer(config.getPrefix()));
         
-        UnearthlyConfig unearthlyConfig = new UnearthlyConfig();
+        ForwardableMethods<UnearthlyApi> forwardableMethods = new ForwardableMethods<>(
+            UnearthlyApi.class,
+            new Transformers(List.of(
+                Transformer.from(FaultIdDto.class, FaultIdDto::new),
+                Transformer.from(FaultStrandIdDto.class, FaultStrandIdDto::new),
+                Transformer.from(CauseIdDto.class, CauseIdDto::new),
+                Transformer.from(CauseStrandIdDto.class, CauseStrandIdDto::new),
+                Transformer.from(FeedEntryIdDto.class, FeedEntryIdDto::new))));
         
-        IOHandler ioHandler = new IOHandler(new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .deactivateDefaultTyping()
-            .setDateFormat(new StdDateFormat())
-            .setDefaultPropertyInclusion(JsonInclude.Include.NON_EMPTY)
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true)
-            .configure(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, true)
-            .registerModule(new Jdk8Module())
-            .registerModule(new JavaTimeModule()));
+        ApiInvoker<UnearthlyApi> apiInvoker = new ApiInvoker<>(
+            config.getPrefix(),
+            api,
+            forwardableMethods);
         
         return new NettyServer<>(
-            unearthlyConfig,
-            new ApiInvoker<>(api, new ForwardableMethods<>(
-                UnearthlyApi.class,
-                List.of(
-                    Transformer.from(FaultIdDto.class, FaultIdDto::new),
-                    Transformer.from(FaultStrandIdDto.class, FaultStrandIdDto::new),
-                    Transformer.from(CauseIdDto.class, CauseIdDto::new),
-                    Transformer.from(CauseStrandIdDto.class, CauseStrandIdDto::new),
-                    Transformer.from(FeedEntryIdDto.class, FeedEntryIdDto::new)))),
-            ioHandler);
+            config,
+            apiInvoker,
+            IOHandler.createDefault());
     }
     
     private Main() {

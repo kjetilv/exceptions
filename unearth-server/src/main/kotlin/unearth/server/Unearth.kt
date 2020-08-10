@@ -18,11 +18,8 @@
 package unearth.server
 
 import ch.qos.logback.classic.LoggerContext
-import com.natpryce.konfig.*
-import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import unearth.analysis.CassandraInit
 import unearth.analysis.CassandraSensor
@@ -37,28 +34,32 @@ import unearth.server.turbo.UnearthlyTurboFilter
 import java.net.URI
 import java.time.Clock
 import java.util.*
+import java.util.concurrent.CompletableFuture
 import java.util.function.BiFunction
 import java.util.function.Consumer
 import java.util.stream.Stream
 import javax.sql.DataSource
 
-class Unearth(private val configuration: UnearthlyConfig = unearthlyConfig(loadConfiguration())) {
+class Unearth(private val configuration: UnearthlyConfig = UnearthlyConfig.load()) {
 
-    fun startJavaServer(toServer: BiFunction<UnearthlyController, UnearthlyConfig, UnearthlyServer>): State =
+    companion object {
+
+        private val logger = LoggerFactory.getLogger(Unearth::class.java)
+    }
+
+    fun startJavaServer(toServer: BiFunction<UnearthlyResources, UnearthlyConfig, UnearthlyServer>): State =
         startServer { controller, config ->
             toServer.apply(controller, config)
         }
 
-    fun startServer(toServer: (UnearthlyController, UnearthlyConfig) -> UnearthlyServer): State {
+    fun startServer(toServer: (UnearthlyResources, UnearthlyConfig) -> UnearthlyServer): State {
         logger.info("Building ${Unearth::class.simpleName}...")
 
-        val db: DataSource = db(configuration)
-        val sensor: FaultSensor = sensor(configuration)
-        val storage = JdbcStorage(db, configuration.db.schema, Clock.systemDefaultZone())
+        val sensorFuture = CompletableFuture.supplyAsync { sensor() }
 
-        initStorage(storage)
+        val dbFuture = CompletableFuture.supplyAsync { storage() }
 
-        val server: UnearthlyServer = unearthlyServer(configuration, toServer, storage, sensor)
+        val server = unearthlyServer(configuration, toServer, dbFuture.join(), sensorFuture.join())
 
         return object : State {
 
@@ -82,6 +83,12 @@ class Unearth(private val configuration: UnearthlyConfig = unearthlyConfig(loadC
         }
     }
 
+    private fun storage(): JdbcStorage {
+        val db: DataSource = db(configuration)
+        val storage = JdbcStorage(db, configuration.db.schema, Clock.systemDefaultZone())
+        initStorage(storage)
+        return storage
+    }
 
     private fun initStorage(storage: JdbcStorage) =
         try {
@@ -92,11 +99,11 @@ class Unearth(private val configuration: UnearthlyConfig = unearthlyConfig(loadC
 
     private fun unearthlyServer(
         configuration: UnearthlyConfig,
-        toServer: (UnearthlyController, UnearthlyConfig) -> UnearthlyServer,
+        toServer: (UnearthlyResources, UnearthlyConfig) -> UnearthlyServer,
         storage: JdbcStorage,
         sensor: FaultSensor
     ): UnearthlyServer {
-        val controller = UnearthlyController(
+        val resources = UnearthlyController(
             storage,
             storage,
             storage,
@@ -104,10 +111,10 @@ class Unearth(private val configuration: UnearthlyConfig = unearthlyConfig(loadC
             UnearthlyRenderer(configuration.prefix)
         )
 
-        val server: UnearthlyServer = toServer(controller, configuration)
+        val server: UnearthlyServer = toServer(resources, configuration)
 
         if (configuration.unearthlyLogging) {
-            reconfigureLogging(controller)
+            reconfigureLogging(resources)
         }
 
         logger.info("Created $server")
@@ -115,12 +122,12 @@ class Unearth(private val configuration: UnearthlyConfig = unearthlyConfig(loadC
         registerShutdown(server)
 
         server.start(Consumer {
-            logger.info("$it ready at http://${configuration.host}:${server.port()}")
+            logger.info("$it ready at http://${configuration.host}:${server.port()}${configuration.prefix}")
         })
         return server
     }
 
-    private fun sensor(configuration: UnearthlyConfig): FaultSensor {
+    private fun sensor(): FaultSensor {
         if (configuration.unearthlyMemory) {
             return Sensor.memory()
         }
@@ -151,7 +158,7 @@ class Unearth(private val configuration: UnearthlyConfig = unearthlyConfig(loadC
             }))
         }
 
-    private fun reconfigureLogging(controller: UnearthlyController) {
+    private fun reconfigureLogging(resources: UnearthlyResources) {
         val squasher: (t: MutableCollection<String>, u: MutableList<CauseFrame>) -> Stream<String> =
             { _, causeFrames ->
                 Stream.of(" * [${causeFrames.size} hidden]")
@@ -175,7 +182,7 @@ class Unearth(private val configuration: UnearthlyConfig = unearthlyConfig(loadC
             .turboFilterList
             .add(
                 UnearthlyTurboFilter(
-                    controller.handler,
+                    resources,
                     SimpleCausesRenderer(defaultStackRenderer)
                 ).withRendererFor(
                     HandlingPolicy.Action.LOG_MESSAGES,
@@ -193,40 +200,6 @@ class Unearth(private val configuration: UnearthlyConfig = unearthlyConfig(loadC
                 logger.info("Stopped at shutdown: $it")
             })
         }, "Shutdown"))
-    }
-
-    companion object {
-
-        private val logger: Logger = LoggerFactory.getLogger(Unearth::class.java)
-
-        private fun unearthlyConfig(config: Configuration): UnearthlyConfig =
-            UnearthlyConfig(
-                prefix = config[Key("server.api", stringType)],
-                host = config[Key("server.host", stringType)],
-                port = config[Key("server.port", intType)],
-                selfDiagnose = config[Key("unearth.self-diagnose", booleanType)],
-                unearthlyLogging = config[Key("unearth.logging", booleanType)],
-                unearthlyMemory = config[Key("unearth.memory", booleanType)],
-                cassandra = UnearthlyCassandraConfig(
-                    host = config[Key("unearth.cassandra-host", stringType)],
-                    port = config[Key("unearth.cassandra-port", intType)],
-                    dc = config[Key("unearth.cassandra-dc", stringType)],
-                    keyspace = config[Key("unearth.cassandra-keyspace", stringType)]
-                ),
-                db = UnearthlyDbConfig(
-                    host = config[Key("unearth.db-host", stringType)],
-                    port = config[Key("unearth.db-port", intType)],
-                    username = config[Key("unearth.db-username", stringType)],
-                    password = config[Key("unearth.db-password", stringType)],
-                    schema = config[Key("unearth.db-schema", stringType)]
-                )
-            )
-
-        private fun loadConfiguration(): Configuration {
-            return systemProperties() overriding
-                    EnvironmentVariables() overriding
-                    ConfigurationProperties.fromResource("defaults.properties")
-        }
     }
 }
 

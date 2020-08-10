@@ -95,7 +95,7 @@ final class Sql {
     }
     
     static void saveFeedEntry(Session session, FeedEntry entry) {
-        session.update(
+        session.effect(
             "insert into feed_entry " +
                 "(id, fault, fault_strand, time, global_seq, fault_seq, fault_strand_seq)" +
                 " values " +
@@ -113,7 +113,7 @@ final class Sql {
         return session.exists(
             "select id from cause_strand where id = ?", stmt -> stmt.set(causeStrand), getId()
         ).onInsert(() ->
-            session.update(
+            session.effect(
                 "insert into cause_strand (id, class_name) values (?, ?)",
                 stmt -> Setter.causeStrand(stmt, causeStrand)
                     .set(causeStrand.getClassName()))
@@ -199,7 +199,7 @@ final class Sql {
     }
     
     static void linkFaultToCauses(Session session, Fault fault) {
-        session.updateBatch(
+        session.effectBatch(
             "insert into fault_2_cause (" +
                 "  fault, seq, cause" +
                 ") values (" +
@@ -214,7 +214,7 @@ final class Sql {
     }
     
     static void linkFaultStrandToCauseStrands(Session session, FaultStrand faultStrand) {
-        session.updateBatch(
+        session.effectBatch(
             "insert into fault_strand_2_cause_strand (" +
                 "  fault_strand, seq, cause_strand" +
                 ") values (" +
@@ -229,7 +229,7 @@ final class Sql {
     }
     
     static void linkCauseStrandToCauseFrames(Session session, CauseStrand causeStrand) {
-        session.updateBatch(
+        session.effectBatch(
             "insert into cause_strand_2_cause_frame (cause_strand, seq, cause_frame) values (?, ?, ?)",
             indexed(causeStrand.getCauseFrames()),
             (stmt, item) ->

@@ -443,21 +443,21 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     }
     
     private static Long sequenced(Session session, Id hashable, String update, long inc) {
-        session.update(update, stmt -> stmt.set(inc).set(hashable));
+        session.effect(update, stmt -> stmt.set(inc).set(hashable));
         return inc;
     }
     
     private static long updateGlobalSeq(Session session) {
         return loadLimit(session).map(seq -> {
             long inc = seq + 1L;
-            session.update(
+            session.effect(
                 "update global_sequence set seq = ? where id = 0",
                 stmt ->
                     stmt.set(inc)
             );
             return inc;
         }).orElseGet(() -> {
-            session.update(
+            session.effect(
                 "insert into global_sequence (id, seq) values (0, ?)",
                 stmt ->
                     stmt.set(1L)
@@ -493,7 +493,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         return session.exists(
             "select id from cause where id = ?", setId(cause), getId()
         ).onInsert(() ->
-            session.update(
+            session.effect(
                 "insert into cause (id, cause_strand, message) values (?, ?, ?)",
                 stmt -> Setter.cause(stmt, cause)
                     .set(cause.getCauseStrand())
@@ -505,7 +505,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         return session.exists(
             "select id from fault where id = ?", setId(fault), getId()
         ).onInsert(() ->
-            session.update(
+            session.effect(
                 "insert into fault (id, fault_strand) values (?, ?)",
                 stmt -> Setter.fault(stmt, fault)
                     .set(fault.getFaultStrand()))
@@ -515,7 +515,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     private static Outcome storeFaultStrand(FaultStrand faultStrand, Session session) {
         return ifExistsId(session, "select id from fault_strand where id = ?", faultStrand, FaultStrandId::new)
             .onInsert(() ->
-                session.update(
+                session.effect(
                     "insert into fault_strand (id) values (?)",
                     stmt ->
                         Setter.faultStrand(stmt, faultStrand)

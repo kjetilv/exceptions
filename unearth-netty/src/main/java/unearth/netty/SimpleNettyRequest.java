@@ -19,47 +19,52 @@ package unearth.netty;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpHeaders;
 import unearth.norest.common.Request;
-import unearth.util.Streams;
+import unearth.norest.common.RequestMethod;
 
 public class SimpleNettyRequest implements Request {
     
-    private final FullHttpRequest fullHttpRequest;
+    private final FullHttpRequest httpRequest;
     
     private final String uri;
     
     private final int queryIndex;
     
-    SimpleNettyRequest(FullHttpRequest fullHttpRequest) {
-        this.fullHttpRequest = Objects.requireNonNull(fullHttpRequest, "fullHttpRequest");
-        this.uri = fullHttpRequest.uri();
-        this.queryIndex = uri.indexOf('?');
+    public SimpleNettyRequest(FullHttpRequest httpRequest) {
+        this(null, null, httpRequest);
+    }
+    
+    private SimpleNettyRequest(String prefix, String uri, FullHttpRequest httpRequest) {
+        this.httpRequest = Objects.requireNonNull(httpRequest, "fullHttpRequest");
+        this.uri = uri(prefix, uri == null ? httpRequest.uri() : uri);
+        this.queryIndex = this.uri.indexOf('?');
     }
     
     @Override
-    public Method getMethod() {
-        return switch (this.fullHttpRequest.method().asciiName().toString()) {
-            case "GET" -> Method.GET;
-            case "POST" -> Method.POST;
-            case "PUT" -> Method.PUT;
-            case "HEAD" -> Method.HEAD;
-            case "PATCH" -> Method.PATCH;
-            case "DELETE" -> Method.DELETE;
+    public Request suffix(String prefix) {
+        return prefix == null
+            ? this
+            : new SimpleNettyRequest(prefix, uri, httpRequest);
+    }
+    
+    @Override
+    public RequestMethod getMethod() {
+        return switch (this.httpRequest.method().asciiName().toString()) {
+            case "GET" -> RequestMethod.GET;
+            case "POST" -> RequestMethod.POST;
+            case "PUT" -> RequestMethod.PUT;
+            case "HEAD" -> RequestMethod.HEAD;
+            case "PATCH" -> RequestMethod.PATCH;
+            case "DELETE" -> RequestMethod.DELETE;
             default -> throw new IllegalArgumentException("Unsupported: " +
-                SimpleNettyRequest.this.fullHttpRequest.method());
+                SimpleNettyRequest.this.httpRequest.method());
         };
     }
     
@@ -74,44 +79,14 @@ public class SimpleNettyRequest implements Request {
     }
     
     @Override
-    public Map<String, Collection<String>> getQueryParameters() {
-        int queryIndex = getQueryIndex();
-        if (queryIndex < 0) {
-            return Collections.emptyMap();
-        }
-        return Arrays.stream(uri.substring(queryIndex + 1).split("&"))
-            .map(kv ->
-                kv.split("=", 2))
-            .collect(Collectors.groupingBy(
-                keyValue -> keyValue[0],
-                Collectors.mapping(
-                    kv1 -> kv1.length > 1 ? kv1[1] : "",
-                    Collectors.toCollection(HashSet::new))));
-    }
-    
-    @Override
-    public Map<String, Collection<String>> getHeaders() {
-        HttpHeaders headers = fullHttpRequest.headers();
-        return headers.names().stream()
-            .collect(Collectors.toMap(
-                Function.identity(),
-                headers::getAll));
-    }
-    
-    @Override
-    public List<String> getPathParameters(Matcher matcher) {
-        return Streams.matches(matcher).collect(Collectors.toList());
-    }
-    
-    @Override
     public String getEntity() {
-        ByteBuf content = this.fullHttpRequest.content();
+        ByteBuf content = this.httpRequest.content();
         CharSequence body = content.toString(StandardCharsets.UTF_8);
         return body.toString();
     }
     
     @Override
-    public Map<String, String> getSingleQueryParameters() {
+    public Map<String, String> getQueryParameters() {
         int queryIndex = getQueryIndex();
         if (queryIndex < 0) {
             return Collections.emptyMap();
@@ -127,12 +102,21 @@ public class SimpleNettyRequest implements Request {
                 }));
     }
     
-    @Override
-    public Map<String, String> getSingleHeaders() {
-        HttpHeaders headers = fullHttpRequest.headers();
-        return headers.names().stream()
-            .collect(Collectors.toMap(
-                Function.identity(),
-                headers::get));
+    private static String uri(String prefix, String uri) {
+        if (prefix == null) {
+            return clean(uri);
+        }
+        if (!uri.startsWith(prefix)) {
+            throw new IllegalArgumentException("Invalid prefix for " + uri + ": " + prefix);
+        }
+        return clean(uri.substring(prefix.length()));
+    }
+    
+    private static String clean(String uri) {
+        int badTail = uri.indexOf("/?");
+        if (badTail < 0) {
+            return uri.trim();
+        }
+        return uri.substring(0, badTail) + '?' + uri.substring(badTail + 2).trim();
     }
 }

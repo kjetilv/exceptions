@@ -25,8 +25,8 @@ import unearth.server.UnearthlyRenderer
 fun main() {
 
     GlobalScope.launch {
-        Unearth().startServer { controller, config ->
-            Http4kServer(controller, config, UnearthlyRenderer(config.prefix))
+        Unearth().startServer { resources, config ->
+            Http4kServer(resources, config, UnearthlyRenderer(config.prefix))
         }
     }
 }

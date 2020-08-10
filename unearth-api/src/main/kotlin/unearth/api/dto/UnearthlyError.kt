@@ -15,16 +15,10 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.norest;
+package unearth.api.dto
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+data class UnearthlyError(
 
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface HEAD {
-    
-    String value();
-}
+        val message: String,
+
+        val submission: Submission? = null)

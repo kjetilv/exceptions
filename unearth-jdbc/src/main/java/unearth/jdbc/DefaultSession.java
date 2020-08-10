@@ -59,7 +59,7 @@ final class DefaultSession implements Session {
     }
 
     @Override
-    public int update(String sql, Set set) {
+    public int effect(String sql, Set set) {
         return withStatement(sql, (ps, stmt) -> {
             set.set(stmt);
             return ps.executeUpdate();
@@ -67,7 +67,7 @@ final class DefaultSession implements Session {
     }
 
     @Override
-    public <T> int[] updateBatch(String sql, Collection<T> items, BatchSet<T> set) {
+    public <T> int[] effectBatch(String sql, Collection<T> items, BatchSet<T> set) {
         return withStatement(sql, (ps, stmt) ->
             statementWithItems(ps, stmt, set, items).executeBatch());
     }

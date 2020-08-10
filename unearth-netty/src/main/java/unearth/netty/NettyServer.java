@@ -97,7 +97,7 @@ final class NettyServer<A> implements UnearthlyServer {
                 .handler(new LoggingHandler(LogLevel.DEBUG))
                 .bind(port)
                 .addListener(future -> {
-                    log.info("{}: Bound to port {}: {}", this, port, future);
+                    log.info("{}: Bound to port {}", this, port);
                     Runtime.getRuntime().addShutdownHook(new Thread(() -> stop(null), "Closer"));
                 })
                 .addListener(future -> {

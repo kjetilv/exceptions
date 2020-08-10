@@ -17,6 +17,7 @@
 
 package unearth.server
 
+import com.natpryce.konfig.*
 import java.time.Duration
 
 data class UnearthlyConfig(
@@ -38,7 +39,41 @@ data class UnearthlyConfig(
     val cassandra: UnearthlyCassandraConfig = UnearthlyCassandraConfig(),
 
     val db: UnearthlyDbConfig = UnearthlyDbConfig()
-)
+) {
+
+    companion object {
+
+        fun load(config: Configuration = loadConfiguration()): UnearthlyConfig =
+            UnearthlyConfig(
+                prefix = config[Key("server.api", stringType)],
+                host = config[Key("server.host", stringType)],
+                port = config[Key("server.port", intType)],
+                selfDiagnose = config[Key("unearth.self-diagnose", booleanType)],
+                unearthlyLogging = config[Key("unearth.logging", booleanType)],
+                unearthlyMemory = config[Key("unearth.memory", booleanType)],
+                cassandra = UnearthlyCassandraConfig(
+                    host = config[Key("unearth.cassandra-host", stringType)],
+                    port = config[Key("unearth.cassandra-port", intType)],
+                    dc = config[Key("unearth.cassandra-dc", stringType)],
+                    keyspace = config[Key("unearth.cassandra-keyspace", stringType)]
+                ),
+                db = UnearthlyDbConfig(
+                    host = config[Key("unearth.db-host", stringType)],
+                    port = config[Key("unearth.db-port", intType)],
+                    username = config[Key("unearth.db-username", stringType)],
+                    password = config[Key("unearth.db-password", stringType)],
+                    schema = config[Key("unearth.db-schema", stringType)]
+                )
+            )
+
+        private fun loadConfiguration(): Configuration {
+            return ConfigurationProperties.systemProperties() overriding
+                    EnvironmentVariables() overriding
+                    ConfigurationProperties.fromResource("defaults.properties")
+        }
+    }
+
+}
 
 data class UnearthlyDbConfig(
 

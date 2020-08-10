@@ -17,26 +17,20 @@
 
 package unearth.norest.client;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import unearth.norest.common.ProcessedMethod;
-import unearth.norest.common.Transformer;
+import unearth.norest.common.Transformers;
 
 final class RemotableMethods {
     
-    private final Map<Class<?>, Transformer<?>> transformers;
+    private final Transformers transformers;
     
     private final Map<java.lang.reflect.Method, RemotableMethod> callableMethods = new HashMap<>();
     
-    RemotableMethods(List<Transformer<?>> transformers) {
-        this.transformers = transformers == null || transformers.isEmpty()
-            ? Collections.emptyMap()
-            : transformers.stream()
-                .collect(Collectors.toMap(Transformer::getType, e -> e));
+    RemotableMethods(Transformers transformers) {
+        this.transformers = transformers == null ? Transformers.EMPTY : transformers;
     }
     
     RemotableMethod get(java.lang.reflect.Method method) {
@@ -48,6 +42,6 @@ final class RemotableMethods {
     
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[metas:" + callableMethods.size() + " transformers:" + transformers.size() + "]";
+        return getClass().getSimpleName() + "[metas:" + callableMethods.size() + " " + transformers + "]";
     }
 }

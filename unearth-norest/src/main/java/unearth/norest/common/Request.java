@@ -17,47 +17,19 @@
 
 package unearth.norest.common;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 
 public interface Request {
     
-    enum Method {
-        
-        GET(false), HEAD(false), POST, PUT, PATCH, DELETE(false);
-        
-        private final boolean entity;
-        
-        Method() {
-            this(true);
-        }
-        
-        Method(boolean entity) {
-            this.entity = entity;
-        }
-        
-        boolean isEntity() {
-            return this.entity;
-        }
-    }
+    Request suffix(String prefix);
     
-    Method getMethod();
+    RequestMethod getMethod();
     
     String getPath();
     
     int getQueryIndex();
     
-    Map<String, Collection<String>> getQueryParameters();
-    
-    Map<String, Collection<String>> getHeaders();
-    
-    List<String> getPathParameters(Matcher matcher);
-    
     String getEntity();
     
-    Map<String, String> getSingleQueryParameters();
-    
-    Map<String, String> getSingleHeaders();
+    Map<String, String> getQueryParameters();
 }

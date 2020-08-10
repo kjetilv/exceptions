@@ -26,6 +26,9 @@ interface UnearthlyResources : AutoCloseable, Resettable {
     fun submitRaw(t: Throwable)
             : HandlingPolicy
 
+    fun submitRaw(t: Throwable, message: String?, args: Array<Any>?)
+            : HandlingPolicy
+
     fun lookupFaultStrandDto(id: FaultStrandIdDto, fullStack: Boolean = false, printStack: Boolean = false)
             : FaultStrandDto?
 

@@ -141,12 +141,12 @@ interface Session extends AutoCloseable {
     
     <T> MultiExistence<T> exists(String sql, Collection<T> items, Set set, Sel<T> selector);
     
-    int update(String sql, Set set);
+    int effect(String sql, Set set);
     
-    <T> int[] updateBatch(String sql, Collection<T> items, BatchSet<T> set);
+    <T> int[] effectBatch(String sql, Collection<T> items, BatchSet<T> set);
     
     default <T> int updateBatchTotal(String sql, Collection<T> items, BatchSet<T> set) {
-        return IntStream.of(updateBatch(sql, items, set)).sum();
+        return IntStream.of(effectBatch(sql, items, set)).sum();
     }
     
     @Override
