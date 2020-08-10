@@ -15,19 +15,17 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.main
+package unearth.server
 
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import unearth.main.http4k.Http4kServer
-import unearth.server.Unearth
-import unearth.server.UnearthlyRenderer
+import java.net.URI
 
-fun main() {
+interface State {
 
-    GlobalScope.launch {
-        Unearth().startServer { controller, config ->
-            Http4kServer(controller, config, UnearthlyRenderer(config.prefix))
-        }
-    }
+    fun url(): URI
+
+    fun port(): Int
+
+    fun reset()
+
+    fun close()
 }

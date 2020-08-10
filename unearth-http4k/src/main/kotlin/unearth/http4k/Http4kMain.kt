@@ -15,19 +15,18 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-api",
-        "unearth-core",
-        "unearth-memory",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-norest",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-netty",
-        "unearth-http4k")
+package unearth.http4k
 
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import unearth.server.Unearth
+import unearth.server.UnearthlyRenderer
+
+fun main() {
+
+    GlobalScope.launch {
+        Unearth().startServer { controller, config ->
+            Http4kServer(controller, config, UnearthlyRenderer(config.prefix))
+        }
+    }
+}

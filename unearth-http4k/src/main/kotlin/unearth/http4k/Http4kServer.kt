@@ -15,7 +15,24 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.main.http4k
+/*
+ *     This file is part of Unearth.
+ *
+ *     Unearth is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     Unearth is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package unearth.http4k
 
 import org.http4k.asString
 import org.http4k.contract.contract
@@ -42,7 +59,7 @@ import org.http4k.server.Http4kServer
 import org.http4k.server.asServer
 import org.slf4j.LoggerFactory
 import unearth.api.dto.*
-import unearth.main.http4k.JSON.auto
+import unearth.http4k.JSON.auto
 import unearth.munch.model.Fault
 import unearth.munch.parser.ThrowableParser
 import unearth.server.*
@@ -80,7 +97,7 @@ class Http4kServer(
 
     private val stopped = AtomicBoolean()
 
-    override fun start(after: Consumer<UnearthlyServer>?): unearth.main.http4k.Http4kServer = apply {
+    override fun start(after: Consumer<UnearthlyServer>?): unearth.http4k.Http4kServer = apply {
         if (started.compareAndSet(false, true)) {
             server.start()
             after?.accept(this)
@@ -91,7 +108,7 @@ class Http4kServer(
         controller.reset()
     }
 
-    override fun stop(after: Consumer<UnearthlyServer>?): unearth.main.http4k.Http4kServer = apply {
+    override fun stop(after: Consumer<UnearthlyServer>?): unearth.http4k.Http4kServer = apply {
         if (stopped.compareAndSet(false, true)) {
             controller.use {
                 server.stop()

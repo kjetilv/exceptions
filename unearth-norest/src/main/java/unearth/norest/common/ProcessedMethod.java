@@ -15,23 +15,6 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/*
- *     This file is part of Unearth.
- *
- *     Unearth is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- *
- *     Unearth is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 package unearth.norest.common;
 
 import java.lang.annotation.Annotation;
@@ -101,25 +84,11 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
     public ProcessedMethod(Method method, Map<Class<?>, Transformer<?>> transformers) {
         this.method = Objects.requireNonNull(method, "method");
         
-        Annotation annotation = List.of(
-            GET.class,
-            POST.class,
-            PUT.class,
-            DELETE.class,
-            HEAD.class
-        ).stream()
-            .flatMap(anno ->
-                Optional.ofNullable(this.method.getAnnotation(anno)).stream())
-            .findFirst()
-            .orElseThrow(() ->
-                new IllegalArgumentException("Non-annotated method " + method));
+        Annotation annotation = getAnnotation(this.method);
         String annotatedPath = path(annotation);
         this.path = normalized(annotatedPath);
         
-        int rootIndex = IntStream.of(this.path.indexOf('?'), this.path.indexOf('{'))
-            .filter(i -> i > 0)
-            .min()
-            .orElse(-1);
+        int rootIndex = rootIndex(this.path);
         this.rootPath = rootIndex < 0 ? this.path : this.path.substring(0, rootIndex);
         this.httpMethod = httpMethod(annotation);
         
@@ -342,6 +311,28 @@ public final class ProcessedMethod implements RemotableMethod, ForwardableMethod
     private static final String PAR = "{}";
     
     private static final Pattern PATH_ARG = Pattern.compile("\\{\s*}");
+    
+    private static int rootIndex(String path) {
+        return IntStream.of(path.indexOf('?'), path.indexOf('{'))
+            .filter(i -> i > 0)
+            .min()
+            .orElse(-1);
+    }
+    
+    private static Annotation getAnnotation(Method method) {
+        return List.of(
+            GET.class,
+            POST.class,
+            PUT.class,
+            DELETE.class,
+            HEAD.class
+        ).stream()
+            .flatMap(anno ->
+                Optional.ofNullable(method.getAnnotation(anno)).stream())
+            .findFirst()
+            .orElseThrow(() ->
+                new IllegalArgumentException("Non-annotated method " + method));
+    }
     
     private static String normalized(String annotatedPath) {
         return "/" + unpreslashed(unpostslashed(annotatedPath.trim()));

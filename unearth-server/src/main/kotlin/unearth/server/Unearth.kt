@@ -22,8 +22,6 @@ import com.natpryce.konfig.*
 import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import unearth.analysis.CassandraInit
@@ -44,39 +42,18 @@ import java.util.function.Consumer
 import java.util.stream.Stream
 import javax.sql.DataSource
 
-class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
+class Unearth(private val configuration: UnearthlyConfig = unearthlyConfig(loadConfiguration())) {
 
-    interface State {
-
-        fun url(): URI
-
-        fun port(): Int
-
-        fun reset()
-
-        fun close()
-    }
-
-    fun startJavaServer(toServer: BiFunction<UnearthlyController, UnearthlyConfig, UnearthlyServer>): State {
-        return runBlocking {
-            async {
-                startServer { controller, config ->
-                    toServer.apply(controller, config)
-                }
-            }.await()
+    fun startJavaServer(toServer: BiFunction<UnearthlyController, UnearthlyConfig, UnearthlyServer>): State =
+        startServer { controller, config ->
+            toServer.apply(controller, config)
         }
-    }
 
-    suspend fun startServer(
-        toServer: (UnearthlyController, UnearthlyConfig) -> UnearthlyServer
-    ): State {
+    fun startServer(toServer: (UnearthlyController, UnearthlyConfig) -> UnearthlyServer): State {
         logger.info("Building ${Unearth::class.simpleName}...")
-
-        val configuration = customConfiguration ?: unearthlyConfig(loadConfiguration())
 
         val db: DataSource = db(configuration)
         val sensor: FaultSensor = sensor(configuration)
-
         val storage = JdbcStorage(db, configuration.db.schema, Clock.systemDefaultZone())
 
         initStorage(storage)
@@ -106,14 +83,14 @@ class Unearth(private val customConfiguration: UnearthlyConfig? = null) {
     }
 
 
-    private suspend fun initStorage(storage: JdbcStorage) =
+    private fun initStorage(storage: JdbcStorage) =
         try {
             storage.initStorage().run()
         } catch (e: Exception) {
             throw IllegalStateException("$this failed to init $storage", e)
         }
 
-    private suspend fun unearthlyServer(
+    private fun unearthlyServer(
         configuration: UnearthlyConfig,
         toServer: (UnearthlyController, UnearthlyConfig) -> UnearthlyServer,
         storage: JdbcStorage,

@@ -32,6 +32,7 @@ import unearth.api.dto.CauseStrandIdDto;
 import unearth.api.dto.FaultIdDto;
 import unearth.api.dto.FaultStrandIdDto;
 import unearth.api.dto.FeedEntryIdDto;
+import unearth.norest.ApiInvoker;
 import unearth.norest.common.IOHandler;
 import unearth.norest.common.Transformer;
 import unearth.norest.server.ForwardableMethods;
@@ -45,18 +46,10 @@ import unearth.server.UnearthlyServer;
 public final class Main {
     
     public static void main(String[] args) {
-        new Unearth().startJavaServer(Main::server);
+        new Unearth().startJavaServer(Main::nettyServer);
     }
     
-    private static UnearthlyServer server(UnearthlyController controller, UnearthlyConfig config) {
-        ForwardableMethods<UnearthlyApi> methods = new ForwardableMethods<>(
-            UnearthlyApi.class,
-            List.of(
-                Transformer.from(FaultIdDto.class, FaultIdDto::new),
-                Transformer.from(FaultStrandIdDto.class, FaultStrandIdDto::new),
-                Transformer.from(CauseIdDto.class, CauseIdDto::new),
-                Transformer.from(CauseStrandIdDto.class, CauseStrandIdDto::new),
-                Transformer.from(FeedEntryIdDto.class, FeedEntryIdDto::new)));
+    public static UnearthlyServer nettyServer(UnearthlyController controller, UnearthlyConfig config) {
         
         UnearthlyApi api = new DefaultUnearthlyApi(
             controller,
@@ -74,6 +67,19 @@ public final class Main {
             .registerModule(new Jdk8Module())
             .registerModule(new JavaTimeModule()));
         
-        return new NettyServer<>(unearthlyConfig, api, methods, ioHandler);
+        return new NettyServer<>(
+            unearthlyConfig,
+            new ApiInvoker<>(api, new ForwardableMethods<>(
+                UnearthlyApi.class,
+                List.of(
+                    Transformer.from(FaultIdDto.class, FaultIdDto::new),
+                    Transformer.from(FaultStrandIdDto.class, FaultStrandIdDto::new),
+                    Transformer.from(CauseIdDto.class, CauseIdDto::new),
+                    Transformer.from(CauseStrandIdDto.class, CauseStrandIdDto::new),
+                    Transformer.from(FeedEntryIdDto.class, FeedEntryIdDto::new)))),
+            ioHandler);
+    }
+    
+    private Main() {
     }
 }

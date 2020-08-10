@@ -15,19 +15,16 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-rootProject.name = "unearth"
-include("unearth-client",
-        "unearth-util",
-        "unearth-api",
-        "unearth-core",
-        "unearth-memory",
-        "unearth-munch",
-        "unearth-jdbc",
-        "unearth-norest",
-        "unearth-analysis",
-        "unearth-statik",
-        "unearth-server",
-        "unearth-test",
-        "unearth-netty",
-        "unearth-http4k")
+package unearth.norest;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface HEAD {
+
+    String value();
+}

@@ -64,16 +64,20 @@ final class WellformedThrowableParser {
         return ParsedThrowable.reconstructed(throwables);
     }
     
-    private static Map<Integer, Integer> indexToIndex(Collection<Integer> ts, int lastIndex) {
-        if (ts == null || ts.isEmpty()) {
+    private static Map<Integer, Integer> indexToIndex(int[] ts, int lastIndex) {
+        if (ts == null || ts.length == 0) {
             return Collections.emptyMap();
         }
         if (ts.length == 1) {
             return Map.of(ts[0], lastIndex);
         }
-        return Stream.concat(
-            Streams.tuplify(ts, 2),
-            Stream.of(List.of(new LinkedList<>(ts).getLast(), lastIndex)))
+        Stream<List<Integer>> twoTuples = Streams.tuplify(IntStream.of(ts).boxed(), 2);
+        Stream<List<Integer>> lastTuple = Stream.of(List.of(ts[ts.length - 1], lastIndex));
+        return toMap(Stream.concat(twoTuples, lastTuple));
+    }
+    
+    private static LinkedHashMap<Integer, Integer> toMap(Stream<List<Integer>> tuples) {
+        return tuples
             .collect(Collectors.toMap(
                 list -> list.get(0),
                 list -> list.get(1),
@@ -161,19 +165,12 @@ final class WellformedThrowableParser {
             .collect(Collectors.toList());
     }
     
-    private static int mainStopIndex(
-        List<Integer> suppressedIndexes,
-        List<Integer> causeIndexes,
-        int stopIndex
-    ) {
-        if (!suppressedIndexes.isEmpty()) {
-            return suppressedIndexes.get(0);
-        }
-        ;
-        if (!causeIndexes.isEmpty()) {
-            return causeIndexes.get(0);
-        }
-        return stopIndex;
+    private static OptionalInt firstIndex(int[]... indexLists) {
+        return Arrays.stream(indexLists)
+            .map(IntStream::of)
+            .flatMap(IntStream::boxed)
+            .mapToInt(Integer::intValue)
+            .findFirst();
     }
     
     private static List<CauseFrame> stackFrames(List<String> lines, int startIndex, int stopIndex) {
@@ -185,8 +182,8 @@ final class WellformedThrowableParser {
     
     private static List<String> lines(String in) {
         return Arrays.stream(LINE.split(in))
-            .filter(obj -> !
-                (obj == null || obj.isBlank()))
+            .filter(obj ->
+                !(obj == null || obj.isBlank()))
             .collect(Collectors.toList());
     }
     
@@ -212,8 +209,9 @@ final class WellformedThrowableParser {
     }
     
     private static Optional<CauseFrame> parseCauseFrame(String line) {
-        return Arrays.stream(StackTraceElementType.values()).flatMap(type ->
-            reconstructed(type, line))
+        return Arrays.stream(StackTraceElementType.values())
+            .flatMap(type ->
+                reconstructed(type, line))
             .findFirst();
     }
     

@@ -57,7 +57,11 @@ public final class Streams {
         }, false);
     }
     
-    public static <T> Stream<List<T>> tuplify(Collection<T> ts, int tupleSize) {
+    public static <T> Stream<List<T>> tuplify(Stream<T> ts, int tupleSize) {
+        return tuplify(ts.collect(Collectors.toList()), tupleSize);
+    }
+    
+    public static <T> Stream<List<T>> tuplify(List<T> ts, int tupleSize) {
         if (ts.size() < tupleSize) {
             return Stream.empty();
         }
@@ -65,19 +69,17 @@ public final class Streams {
             return Stream.of(new ArrayList<>(ts));
         }
         return StreamSupport.stream(new Spliterators.AbstractSpliterator<>(
-            ts.size() - tupleSize,
+            ts.size() - tupleSize + 1,
             Spliterator.IMMUTABLE
         ) {
-            
-            private final ArrayList<T> list = new ArrayList<>(ts);
             
             private int index = 0;
             
             @Override
             public boolean tryAdvance(Consumer<? super List<T>> action) {
-                action.accept(list.subList(index, index + tupleSize));
+                action.accept(ts.subList(index, index + tupleSize));
                 index++;
-                return index <= list.size() - tupleSize;
+                return index <= ts.size() - tupleSize;
             }
         }, false);
     }

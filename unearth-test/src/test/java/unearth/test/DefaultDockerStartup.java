@@ -24,7 +24,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.testcontainers.containers.GenericContainer;
 import unearth.analysis.CassandraInit;
 import unearth.client.UnearthlyClient;
-import unearth.main.http4k.Http4kServer;
+import unearth.http4k.Http4kServer;
+import unearth.server.State;
 import unearth.server.Unearth;
 import unearth.server.UnearthlyCassandraConfig;
 import unearth.server.UnearthlyConfig;
@@ -34,7 +35,7 @@ import unearth.server.UnearthlyRenderer;
 @SuppressWarnings({ "FieldCanBeLocal", "WeakerAccess", "SameParameterValue" })
 public final class DefaultDockerStartup implements DockerStartup {
     
-    private final AtomicReference<Unearth.State> state = new AtomicReference<>();
+    private final AtomicReference<State> state = new AtomicReference<>();
     
     private final AtomicReference<UnearthlyClient> client = new AtomicReference<>();
     
@@ -82,13 +83,15 @@ public final class DefaultDockerStartup implements DockerStartup {
         
         CompletableFuture<UnearthlyClient> client = unearthFuture
             .thenApply(unearth ->
-                unearth.startJavaServer((unearthlyController, unearthlyConfig) ->
-                    new Http4kServer(
-                        unearthlyController,
-                        unearthlyConfig,
-                        new UnearthlyRenderer(unearthlyConfig.getPrefix()))))
-            .whenComplete((state, throwable) -> this.state.set(state))
-            .thenApply(Unearth.State::url)
+                unearth.startJavaServer(
+                    (unearthlyController, unearthlyConfig) ->
+                        new Http4kServer(
+                            unearthlyController,
+                            unearthlyConfig,
+                            new UnearthlyRenderer(unearthlyConfig.getPrefix()))))
+            .whenComplete((state, throwable) ->
+                this.state.set(state))
+            .thenApply(State::url)
             .thenApply(UnearthlyClient::connect)
             .whenComplete((unearthlyClient, throwable) ->
                 this.client.set(unearthlyClient));
@@ -103,7 +106,7 @@ public final class DefaultDockerStartup implements DockerStartup {
     
     @Override
     public void stop() {
-        Unearth.State state = this.state.get();
+        State state = this.state.get();
         if (state != null) {
             state.close();
         }
@@ -120,7 +123,7 @@ public final class DefaultDockerStartup implements DockerStartup {
     
     @Override
     public void reset() {
-        Unearth.State state = this.state.get();
+        State state = this.state.get();
         if (state != null) {
             state.reset();
         }

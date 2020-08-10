@@ -20,15 +20,18 @@ plugins {
 }
 
 dependencies {
-    testImplementation(project(":unearth-main"))
-    testImplementation(project(":unearth-server"))
-    testImplementation(project(":unearth-analysis"))
     testImplementation(project(":unearth-util"))
-    testImplementation(project(":unearth-munch"))
+    testImplementation(project(":unearth-api"))
     testImplementation(project(":unearth-core"))
+    testImplementation(project(":unearth-analysis"))
+    testImplementation(project(":unearth-munch"))
+
+    testImplementation(project(":unearth-server"))
     testImplementation(project(":unearth-client"))
     testImplementation(project(":unearth-norest"))
-    testImplementation(project(":unearth-api"))
+
+    testImplementation(project(":unearth-netty"))
+    testImplementation(project(":unearth-http4k"))
 
     testImplementation("org.testcontainers:cassandra")
 
