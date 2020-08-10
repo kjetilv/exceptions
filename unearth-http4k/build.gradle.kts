@@ -47,13 +47,10 @@ dependencies {
     implementation("org.http4k:http4k-format-jackson")
     implementation("org.http4k:http4k-server-netty")
 
-    implementation("io.netty", "netty-all", "4.1.51.Final")
-
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("ch.qos.logback:logback-classic")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
     implementation(kotlin("stdlib"))
 
     runtimeOnly("org.postgresql:postgresql")

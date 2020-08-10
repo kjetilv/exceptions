@@ -17,14 +17,11 @@
 
 package unearth.server
 
-import unearth.core.Resettable
-import java.util.function.Consumer
+interface UnearthlyServer: AutoCloseable {
 
-interface UnearthlyServer: Resettable, AutoCloseable {
+    fun start()
 
-    fun start(after: Consumer<UnearthlyServer>? = Consumer {  }): UnearthlyServer?
-
-    fun stop(after: Consumer<UnearthlyServer>? = Consumer {  }): UnearthlyServer?
+    fun stop()
 
     override fun close() {
         stop()

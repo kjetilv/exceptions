@@ -70,7 +70,6 @@ import java.net.URI
 import java.net.URL
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.function.Consumer
 import java.util.jar.JarFile
 import java.util.regex.Pattern
 
@@ -97,22 +96,16 @@ class Http4kServer(
 
     private val stopped = AtomicBoolean()
 
-    override fun start(after: Consumer<UnearthlyServer>?): unearth.http4k.Http4kServer = apply {
+    override fun start() {
         if (started.compareAndSet(false, true)) {
             server.start()
-            after?.accept(this)
         }
     }
 
-    override fun reset() {
-        resources.reset()
-    }
-
-    override fun stop(after: Consumer<UnearthlyServer>?): unearth.http4k.Http4kServer = apply {
+    override fun stop() {
         if (stopped.compareAndSet(false, true)) {
             resources.use {
                 server.stop()
-                after?.accept(this)
             }
         }
     }

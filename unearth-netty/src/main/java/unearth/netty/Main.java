@@ -57,16 +57,15 @@ public final class Main {
                 Transformer.from(CauseIdDto.class, CauseIdDto::new),
                 Transformer.from(CauseStrandIdDto.class, CauseStrandIdDto::new),
                 Transformer.from(FeedEntryIdDto.class, FeedEntryIdDto::new))));
-        
-        ApiInvoker<UnearthlyApi> apiInvoker = new ApiInvoker<>(
-            config.getPrefix(),
-            api,
-            forwardableMethods);
-        
+    
         return new NettyServer<>(
-            config,
-            apiInvoker,
-            IOHandler.createDefault());
+            config.getPort(),
+            new ApiRouter<>(
+                IOHandler.createDefault(),
+                new ApiInvoker<>(
+                    config.getPrefix(),
+                    api,
+                    forwardableMethods)));
     }
     
     private Main() {

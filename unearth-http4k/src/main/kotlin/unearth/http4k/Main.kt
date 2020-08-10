@@ -17,16 +17,12 @@
 
 package unearth.http4k
 
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import unearth.server.Unearth
 import unearth.server.UnearthlyRenderer
 
 fun main() {
 
-    GlobalScope.launch {
-        Unearth().startServer { resources, config ->
-            Http4kServer(resources, config, UnearthlyRenderer(config.prefix))
-        }
+    Unearth().startServer { resources, config ->
+        Http4kServer(resources, config, UnearthlyRenderer(config.prefix))
     }
 }

@@ -1,6 +1,8 @@
 package unearth.netty;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -8,11 +10,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.function.Consumer;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -23,9 +26,6 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import unearth.norest.ApiInvoker;
-import unearth.norest.common.IOHandler;
-import unearth.server.UnearthlyConfig;
 import unearth.server.UnearthlyServer;
 
 import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
@@ -48,23 +48,24 @@ final class NettyServer<A> implements UnearthlyServer {
     
     private final int port;
     
-    private final ApiInvoker<A> apiInvoker;
-    
-    private final IOHandler ioHandler;
-    
     private final EventLoopGroup listen;
     
     private final EventLoopGroup work;
     
-    private final AtomicReference<ChannelFuture> future = new AtomicReference<ChannelFuture>();
+    private final AtomicReference<ChannelFuture> future = new AtomicReference<>();
     
     private final AtomicBoolean closed = new AtomicBoolean();
     
-    NettyServer(UnearthlyConfig config, ApiInvoker<A> apiInvoker, IOHandler ioHandler) {
-        this.port = config.getPort();
-        this.apiInvoker = apiInvoker;
+    private final List<ChannelHandler> handlers;
+    
+    NettyServer(int port, ChannelHandler... handlers) {
+        this(port, Arrays.asList(handlers));
+    }
+    
+    NettyServer(int port, List<ChannelHandler> handlers) {
+        this.port = port;
         
-        this.ioHandler = ioHandler;
+        this.handlers = List.copyOf(handlers);
         
         this.listenThreads = Runtime.getRuntime().availableProcessors();
         this.workThreads = 10;
@@ -77,7 +78,7 @@ final class NettyServer<A> implements UnearthlyServer {
     }
     
     @Override
-    public UnearthlyServer start(Consumer<UnearthlyServer> after) {
+    public void start() {
         future.updateAndGet(fucheer -> fucheer != null
             ? fucheer
             : new ServerBootstrap()
@@ -85,10 +86,11 @@ final class NettyServer<A> implements UnearthlyServer {
                     
                     @Override
                     protected void initChannel(NioSocketChannel channel) {
-                        channel.pipeline()
+                        ChannelPipeline pipeline = channel.pipeline()
                             .addLast("decoder", new HttpServerCodec())
-                            .addLast("aggregator", new HttpObjectAggregator(MAX_CONTENT_LENGTH))
-                            .addLast("apiInvoker", new ApiRouter<>(ioHandler, apiInvoker));
+                            .addLast("aggregator", new HttpObjectAggregator(MAX_CONTENT_LENGTH));
+                        handlers.forEach(handler ->
+                            pipeline.addLast(handler.getClass().getSimpleName(), handler));
                     }
                 })
                 .channel(NioServerSocketChannel.class)
@@ -98,41 +100,20 @@ final class NettyServer<A> implements UnearthlyServer {
                 .bind(port)
                 .addListener(future -> {
                     log.info("{}: Bound to port {}", this, port);
-                    Runtime.getRuntime().addShutdownHook(new Thread(() -> stop(null), "Closer"));
-                })
-                .addListener(future -> {
-                    if (after != null) {
-                        after.accept(this);
-                    }
+                    Runtime.getRuntime().addShutdownHook(new Thread(() -> stop(), "Closer"));
                 }));
-        return this;
     }
     
     @Override
-    public NettyServer<A> stop(Consumer<UnearthlyServer> after) {
+    public void stop() {
         if (closed.compareAndSet(false, true)) {
-            shutdown().addListener(future -> {
-                if (after != null) {
-                    try {
-                        after.accept(this);
-                    } catch (Exception e) {
-                        log.error(this + ": Failure after close", e);
-                    }
-                }
-            });
-        } else {
-            if (after != null) {
-                log.info("{} already shut down", this);
-            } else {
-                log.debug("{} already shut down", this);
-            }
+            shutdown();
         }
-        return this;
     }
     
     @Override
     public void close() {
-        stop(null);
+        stop();
     }
     
     @Override
@@ -140,13 +121,9 @@ final class NettyServer<A> implements UnearthlyServer {
         return port;
     }
     
-    @Override
-    public void reset() {
-    }
-    
-    private ChannelFuture shutdown() {
+    private void shutdown() {
         try {
-            return future.get().channel().close()
+            future.get().channel().close()
                 .addListener(future ->
                     log.info("{}: closed {}: {}", this, port, future));
         } finally {

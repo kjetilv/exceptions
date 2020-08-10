@@ -38,18 +38,6 @@ public class ApiInvoker<A> {
         this.prefix = prefix == null || prefix.isBlank() ? null : prefix.trim();
         this.impl = Objects.requireNonNull(impl, "impl");
         this.forwardableMethods = forwardableMethods;
-        
-        if (this.prefix != null) {
-            if (!this.prefix.startsWith("/")) {
-                throw new IllegalArgumentException("Bad prefix/not pre-slashed: " + this.prefix);
-            }
-            if (this.prefix.endsWith("/")) {
-                throw new IllegalArgumentException("Bad prefix/post-slashed: " + this.prefix);
-            }
-            if (this.prefix.contains("?") || this.prefix.contains("&")) {
-                throw new IllegalArgumentException("Bad prefix: " + this.prefix);
-            }
-        }
     }
     
     public Optional<Object> response(Request request) {

@@ -24,7 +24,7 @@ plugins {
 tasks.withType<ShadowJar>() {
     manifest {
         attributes(
-            mapOf(Pair("Main-Class", "no.scienta.unearth.netty.MainKt"))
+            mapOf(Pair("Main-Class", "unearth.netty.Main"))
         )
     }
     mergeServiceFiles()
@@ -41,13 +41,12 @@ dependencies {
     implementation(project(":unearth-analysis"))
     implementation(project(":unearth-server"))
 
-    implementation("io.netty", "netty-all", "4.1.51.Final")
+    implementation("io.netty:netty-all")
 
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("ch.qos.logback:logback-classic")
 
     runtimeOnly("org.postgresql:postgresql")
-    runtimeOnly("org.webjars:swagger-ui")
     runtimeOnly("ch.qos.logback:logback-classic")
 }

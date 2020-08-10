@@ -36,7 +36,6 @@ import java.time.Clock
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiFunction
-import java.util.function.Consumer
 import java.util.stream.Stream
 import javax.sql.DataSource
 
@@ -56,30 +55,31 @@ class Unearth(private val configuration: UnearthlyConfig = UnearthlyConfig.load(
         logger.info("Building ${Unearth::class.simpleName}...")
 
         val sensorFuture = CompletableFuture.supplyAsync { sensor() }
-
         val dbFuture = CompletableFuture.supplyAsync { storage() }
 
-        val server = unearthlyServer(configuration, toServer, dbFuture.join(), sensorFuture.join())
+        val storage = dbFuture.join()
+        val sensor = sensorFuture.join()
+
+        val resources = UnearthlyController(
+            storage,
+            storage,
+            storage,
+            sensor,
+            UnearthlyRenderer(configuration.prefix)
+        )
+        val server: UnearthlyServer = toServer(resources, configuration)
+        if (configuration.unearthlyLogging) {
+            reconfigureLogging(resources)
+        }
+        logger.info("Created $server")
+        registerShutdown(server)
+        server.start()
 
         return object : State {
-
-            override fun close() {
-                server.stop(Consumer {
-                    logger.debug("Stopped by demand: $it")
-                })
-            }
-
-            override fun reset() {
-                server.reset()
-            }
-
-            override fun url(): URI = URI.create(
-                "http://" + configuration.host + ":" + server.port() +
-                        configuration.prefix +
-                        (if (configuration.prefix.endsWith("/")) "" else "/")
-            )
-
-            override fun port(): Int = server.port()
+            override fun url(): URI = configuration.connectUri
+            override fun port(): Int = configuration.port
+            override fun reset() = resources.reset()
+            override fun close() = server.stop()
         }
     }
 
@@ -96,36 +96,6 @@ class Unearth(private val configuration: UnearthlyConfig = UnearthlyConfig.load(
         } catch (e: Exception) {
             throw IllegalStateException("$this failed to init $storage", e)
         }
-
-    private fun unearthlyServer(
-        configuration: UnearthlyConfig,
-        toServer: (UnearthlyResources, UnearthlyConfig) -> UnearthlyServer,
-        storage: JdbcStorage,
-        sensor: FaultSensor
-    ): UnearthlyServer {
-        val resources = UnearthlyController(
-            storage,
-            storage,
-            storage,
-            sensor,
-            UnearthlyRenderer(configuration.prefix)
-        )
-
-        val server: UnearthlyServer = toServer(resources, configuration)
-
-        if (configuration.unearthlyLogging) {
-            reconfigureLogging(resources)
-        }
-
-        logger.info("Created $server")
-
-        registerShutdown(server)
-
-        server.start(Consumer {
-            logger.info("$it ready at http://${configuration.host}:${server.port()}${configuration.prefix}")
-        })
-        return server
-    }
 
     private fun sensor(): FaultSensor {
         if (configuration.unearthlyMemory) {
@@ -196,9 +166,7 @@ class Unearth(private val configuration: UnearthlyConfig = UnearthlyConfig.load(
 
     private fun registerShutdown(server: UnearthlyServer) {
         Runtime.getRuntime().addShutdownHook(Thread({
-            server.stop(Consumer {
-                logger.info("Stopped at shutdown: $it")
-            })
+            server.stop()
         }, "Shutdown"))
     }
 }
