@@ -19,14 +19,10 @@ package unearth.norest;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import unearth.norest.common.Request;
 import unearth.norest.server.ForwardableMethods;
 
 public class ApiInvoker<A> {
-    
-    private static final Logger log = LoggerFactory.getLogger(ApiInvoker.class);
     
     private final String prefix;
     

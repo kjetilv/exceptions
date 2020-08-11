@@ -34,6 +34,7 @@ dependencies {
     implementation(project(":unearth-api"))
     implementation(project(":unearth-core"))
     implementation(project(":unearth-norest"))
+    implementation(project(":unearth-norest-netty"))
     implementation(project(":unearth-util"))
     implementation(project(":unearth-statik"))
     implementation(project(":unearth-munch"))
@@ -47,6 +48,7 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("ch.qos.logback:logback-classic")
 
+    runtimeOnly("org.webjars:swagger-ui")
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("ch.qos.logback:logback-classic")
 }

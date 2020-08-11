@@ -22,25 +22,24 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import unearth.norest.common.IOHandler;
 import unearth.norest.common.Transformer;
 import unearth.norest.common.Transformers;
 
 public final class Proto {
     
-    public static <T> T type(Class<T> api, URI uri, ObjectMapper objectMapper, Transformer<?>... transformers) {
-        return type(api, uri, objectMapper, Arrays.asList(transformers));
+    public static <T> T type(Class<T> api, URI uri, IOHandler ioHandler, Transformer<?>... transformers) {
+        return type(api, uri, ioHandler, Arrays.asList(transformers));
     }
     
-    public static <T> T type(Class<T> api, URI uri, ObjectMapper objectMapper, List<Transformer<?>> transformers) {
+    public static <T> T type(Class<T> api, URI uri, IOHandler ioHandler, List<Transformer<?>> transformers) {
         return api.cast(Proxy.newProxyInstance(
             Thread.currentThread().getContextClassLoader(),
             new Class<?>[] { api },
             new ClientInvocationHandler(
                 api,
                 uri,
-                new IOHandler(objectMapper),
+                ioHandler,
                 new RemotableMethods(new Transformers(transformers)))));
     }
     

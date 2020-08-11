@@ -48,6 +48,7 @@ import unearth.api.dto.FeedEntryIdDto;
 import unearth.api.dto.StackTraceElementDto;
 import unearth.api.dto.Submission;
 import unearth.norest.client.Proto;
+import unearth.norest.common.JacksonIOHandler;
 
 public class DefaultUnearthlyClient implements UnearthlyClient {
     
@@ -59,7 +60,10 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     private final UnearthlyApi unearthlyService;
     
     DefaultUnearthlyClient(URI uri) {
-        this.unearthlyService = Proto.type(UnearthlyApi.class, uri, OBJECT_MAPPER);
+        this.unearthlyService = Proto.type(
+            UnearthlyApi.class,
+            uri,
+            JacksonIOHandler.withDefaults(OBJECT_MAPPER));
     }
     
     @Override
@@ -136,8 +140,8 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     @Override
     public EventSequenceDto globalFeed(Page page, StackType stackType) {
         return unearthlyService.globalFeed(
-            (long)page.getPageNo() * page.getPageSize(),
-            (long)page.getPageNo(),
+            (long) page.getPageNo() * page.getPageSize(),
+            (long) page.getPageNo(),
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
     }
@@ -146,8 +150,8 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     public FaultEventSequenceDto faultFeed(FaultIdDto faultId, Page page, StackType stackType) {
         return unearthlyService.faultFeed(
             faultId,
-            (long)page.getPageNo() * page.getPageSize(),
-            (long)page.getPageNo(),
+            (long) page.getPageNo() * page.getPageSize(),
+            (long) page.getPageNo(),
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
     }
@@ -156,8 +160,8 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     public FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultStrandId, Page page, StackType stackType) {
         return unearthlyService.faultStrandFeed(
             faultStrandId,
-            (long)page.getPageNo() * page.getPageSize(),
-            (long)page.getPageNo(),
+            (long) page.getPageNo() * page.getPageSize(),
+            (long) page.getPageNo(),
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
     }

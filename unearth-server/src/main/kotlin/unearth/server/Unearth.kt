@@ -55,24 +55,22 @@ class Unearth(private val configuration: UnearthlyConfig = UnearthlyConfig.load(
         logger.info("Building ${Unearth::class.simpleName}...")
 
         val sensorFuture = CompletableFuture.supplyAsync { sensor() }
-        val dbFuture = CompletableFuture.supplyAsync { storage() }
+        val storageFuture = CompletableFuture.supplyAsync { storage() }
 
-        val storage = dbFuture.join()
+        val storage = storageFuture.join()
         val sensor = sensorFuture.join()
 
-        val resources = UnearthlyController(
-            storage,
-            storage,
-            storage,
-            sensor,
-            UnearthlyRenderer(configuration.prefix)
-        )
+        val renderer = UnearthlyRenderer(configuration.prefix)
+        val resources = UnearthlyController(storage, storage, storage, sensor, renderer)
+
         val server: UnearthlyServer = toServer(resources, configuration)
+
         if (configuration.unearthlyLogging) {
             reconfigureLogging(resources)
         }
-        logger.info("Created $server")
-        registerShutdown(server)
+
+        Runtime.getRuntime().addShutdownHook(Thread({ server.stop() }, "Shutdown"))
+
         server.start()
 
         return object : State {
@@ -97,36 +95,20 @@ class Unearth(private val configuration: UnearthlyConfig = UnearthlyConfig.load(
             throw IllegalStateException("$this failed to init $storage", e)
         }
 
-    private fun sensor(): FaultSensor {
-        if (configuration.unearthlyMemory) {
-            return Sensor.memory()
+    private fun sensor(): FaultSensor =
+        if (configuration.unearthlyMemory) Sensor.memory()
+        else configuration.cassandra.run {
+            CassandraInit(host, port, dc, keyspace).init()
+            return CassandraSensor(host, port, dc, keyspace)
         }
-
-        CassandraInit(
-            configuration.cassandra.host,
-            configuration.cassandra.port,
-            configuration.cassandra.dc,
-            configuration.cassandra.keyspace
-        ).init()
-
-        return CassandraSensor(
-            configuration.cassandra.host,
-            configuration.cassandra.port,
-            configuration.cassandra.dc,
-            configuration.cassandra.keyspace
-        )
-    }
 
     private fun db(configuration: UnearthlyConfig): DataSource =
-        if (configuration.unearthlyMemory) {
-            Db.memory()
-        } else {
-            HikariDataSource(HikariConfig(Properties().apply {
-                setProperty("jdbcUrl", configuration.db.jdbc)
-                setProperty("username", configuration.db.username)
-                setProperty("password", configuration.db.password)
-            }))
-        }
+        if (configuration.unearthlyMemory) Db.memory()
+        else HikariDataSource(HikariConfig(Properties().apply {
+            setProperty("jdbcUrl", configuration.db.jdbc)
+            setProperty("username", configuration.db.username)
+            setProperty("password", configuration.db.password)
+        }))
 
     private fun reconfigureLogging(resources: UnearthlyResources) {
         val squasher: (t: MutableCollection<String>, u: MutableList<CauseFrame>) -> Stream<String> =
@@ -162,12 +144,6 @@ class Unearth(private val configuration: UnearthlyConfig = UnearthlyConfig.load(
                     SimpleCausesRenderer(shortStackRenderer)
                 )
             )
-    }
-
-    private fun registerShutdown(server: UnearthlyServer) {
-        Runtime.getRuntime().addShutdownHook(Thread({
-            server.stop()
-        }, "Shutdown"))
     }
 }
 

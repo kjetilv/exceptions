@@ -15,13 +15,16 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.norest.common;
+dependencies {
 
-import java.io.InputStream;
+    implementation(project(":unearth-norest"))
+    implementation(project(":unearth-statik"))
 
-public interface IOHandler {
-    
-    byte[] writeBytes(Object value);
-    
-    Object readBytes(Class<?> type, InputStream inputStream);
+    implementation("io.netty:netty-all")
+
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("ch.qos.logback:logback-classic")
+
+    runtimeOnly("org.webjars:swagger-ui")
 }

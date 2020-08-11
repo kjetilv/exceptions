@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 
 import unearth.norest.common.ProcessedMethod;
 import unearth.norest.common.Request;
+import unearth.norest.common.Transformer;
 import unearth.norest.common.Transformers;
 
 public final class ForwardableMethods<A> {
@@ -33,6 +34,10 @@ public final class ForwardableMethods<A> {
     private final Transformers transformers;
     
     private final List<ForwardableMethod> forwardableMethods;
+    
+    public ForwardableMethods(Class<A> api, List<Transformer<?>> transformers) {
+        this(api, new Transformers(transformers));
+    }
     
     public ForwardableMethods(Class<A> api, Transformers transformers) {
         Objects.requireNonNull(api, "api");

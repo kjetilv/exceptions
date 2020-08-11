@@ -15,20 +15,40 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.memory;
+package unearth.netty;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import unearth.core.FaultSensor;
+import unearth.norest.netty.NettyServer;
+import unearth.server.UnearthlyConfig;
+import unearth.server.UnearthlyServer;
 
-public final class Sensor {
+public final class UnearthlyNettyServer implements UnearthlyServer {
     
-    private static final Logger log = LoggerFactory.getLogger(Sensor.class);
+    private final NettyServer nettyServer;
     
-    public static FaultSensor memory() {
-        return feedEntry -> log.info("Received: {}", feedEntry);
+    private final UnearthlyConfig config;
+    
+    public UnearthlyNettyServer(UnearthlyConfig config, NettyServer nettyServer) {
+        this.nettyServer = nettyServer;
+        this.config = config;
     }
     
-    private Sensor() {
+    @Override
+    public void start() {
+        nettyServer.start();
+    }
+    
+    @Override
+    public void stop() {
+        nettyServer.stop();
+    }
+    
+    @Override
+    public void close() {
+        stop();
+    }
+    
+    @Override
+    public int port() {
+        return config.getPort();
     }
 }
