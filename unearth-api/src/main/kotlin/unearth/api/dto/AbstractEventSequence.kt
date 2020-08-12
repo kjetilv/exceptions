@@ -19,7 +19,9 @@ package unearth.api.dto
 
 abstract class AbstractEventSequence(
     private val events: List<FeedEntryDto>,
-    private val sequenceType: SequenceType
+    private val sequenceType: SequenceType,
+    private val requestedOffset: Long? = null,
+    private val requestedCount: Long? = null
 ) {
 
     val offset = seqs().min().orElse(0L)

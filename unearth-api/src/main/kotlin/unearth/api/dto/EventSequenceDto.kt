@@ -22,6 +22,10 @@ data class EventSequenceDto(
 
     val events: List<FeedEntryDto> = Collections.emptyList(),
 
-    val sequenceType: SequenceType = SequenceType.GLOBAL
+    val sequenceType: SequenceType = SequenceType.GLOBAL,
 
-) : AbstractEventSequence(events, sequenceType)
+    val requestedOffset: Long? = null,
+
+    val requestedCount: Long? = null
+
+) : AbstractEventSequence(events, sequenceType, requestedOffset, requestedCount)

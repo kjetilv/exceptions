@@ -93,8 +93,6 @@ public abstract class AbstractProcessedMethod {
         this.parameterTypes = this.method.getParameterTypes();
         this.parameters = this.method.getParameters();
         this.parameterAnnotations = this.method.getParameterAnnotations();
-        this.parameterNames =
-            IntStream.range(0, parameters.length).mapToObj(this::paramName).toArray(String[]::new);
         
         this.optionalReturn = Optional.class.isAssignableFrom(returnType);
         this.returnData = returnType != void.class;
@@ -109,12 +107,23 @@ public abstract class AbstractProcessedMethod {
                     new IllegalStateException("No body argument could be derived for " + method)) :
             -1;
         
-        this.queryParameters = paramsWhere(i ->
-            parameterAnnotations[i].length > 0);
+        this.parameterNames = IntStream.range(0, parameters.length)
+            .mapToObj(index ->
+                index == bodyArgumentIndex
+                    ? ""
+                    : annotatedName(parameterAnnotations[index])
+                        .or(() ->
+                            reflectiveName(parameters[index]))
+                        .orElseThrow(() ->
+                            new IllegalArgumentException(
+                                "Could not extract argument name #" + index + ": " + parameters[index])))
+            .toArray(String[]::new);
+        this.queryParameters = paramsWhere(i1 ->
+            parameterAnnotations[i1].length > 0, this.parameterNames);
         this.pathParameters = requestMethod.isEntity()
             ? Collections.emptyMap()
             : paramsWhere(i ->
-                parameterAnnotations[i] == null || parameterAnnotations[i].length == 0);
+                parameterAnnotations[i] == null || parameterAnnotations[i].length == 0, this.parameterNames);
         this.transformers = transformers == null ? Transformers.EMPTY : transformers;
     }
     
@@ -182,28 +191,20 @@ public abstract class AbstractProcessedMethod {
         return bodyArgumentIndex;
     }
     
-    private Map<Integer, String> paramsWhere(IntPredicate intPredicate) {
-        return IntStream.range(0, parameterAnnotations.length)
+    private static final Pattern PATH_ARG = Pattern.compile("\\{\s*}");
+    
+    private static Optional<String> reflectiveName(Parameter parameter) {
+        return parameter.isNamePresent()
+            ? Optional.of(parameter.getName())
+            : Optional.empty();
+    }
+    
+    private static Map<Integer, String> paramsWhere(IntPredicate intPredicate, String[] parameterNames) {
+        return IntStream.range(0, parameterNames.length)
             .filter(intPredicate)
             .boxed()
             .collect(Collectors.toMap(i -> i, i -> parameterNames[i]));
     }
-    
-    private String paramName(int index) {
-        if (index == bodyArgumentIndex) {
-            return "";
-        }
-        return annotatedName(parameterAnnotations[index])
-            .or(() ->
-                parameters[index].isNamePresent()
-                    ? Optional.of(parameters[index].getName())
-                    : Optional.empty())
-            .orElseThrow(() ->
-                new IllegalArgumentException(
-                    "Could not extract argument name #" + index + ": " + parameters[index]));
-    }
-    
-    private static final Pattern PATH_ARG = Pattern.compile("\\{\s*}");
     
     private static int rootIndex(String path) {
         return IntStream.of(path.indexOf('?'), path.indexOf('{'))

@@ -106,7 +106,9 @@ class UnearthlyController(
                 storage.getRequiredFault(feedEntry.faultEvent.faultId).let { fault ->
                     renderer.feedEntryDto(feedEntry, fault, fullStack, printStack)
                 }
-            }
+            },
+            requestedCount = count,
+            requestedOffset = offset
         )
 
     override fun feed(
@@ -122,7 +124,10 @@ class UnearthlyController(
                 storage.getRequiredFault(feedEntry.faultEvent.faultId).let { fault ->
                     renderer.feedEntryDto(feedEntry, fault, fullStack, printStack)
                 }
-            })
+            },
+            requestedCount = count,
+            requestedOffset = offset
+        )
 
     override fun feed(
         id: FaultStrandIdDto,
@@ -137,7 +142,10 @@ class UnearthlyController(
                 storage.getRequiredFault(feedEntry.faultEvent.faultId).let { fault ->
                     renderer.feedEntryDto(feedEntry, fault, fullStack, printStack)
                 }
-            })
+            },
+            requestedCount = count,
+            requestedOffset = offset
+        )
 
     override fun reset() {
         storage.reset()

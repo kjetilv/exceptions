@@ -25,6 +25,10 @@ data class FaultStrandEventSequenceDto(
 
     val events: List<FeedEntryDto> = Collections.emptyList(),
 
-    val sequenceType: SequenceType = SequenceType.FAULT_STRAND
+    val sequenceType: SequenceType = SequenceType.FAULT_STRAND,
 
-) : AbstractEventSequence(events, sequenceType)
+    val requestedOffset: Long? = null,
+
+    val requestedCount: Long? = null
+
+) : AbstractEventSequence(events, sequenceType, requestedOffset, requestedCount)
