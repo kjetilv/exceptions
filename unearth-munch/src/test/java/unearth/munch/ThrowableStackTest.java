@@ -24,13 +24,13 @@ import org.junit.Test;
 import unearth.munch.model.CauseStrand;
 
 public class ThrowableStackTest {
-
+    
     @Test
     public void can_hash() {
         CauseStrand digest = CauseStrand.create(new Exception());
-
+        
         UUID hash = digest.getHash();
-
+        
         Assert.assertEquals(hash, digest.getHash());
     }
 }

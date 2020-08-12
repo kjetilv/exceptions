@@ -38,11 +38,11 @@ data class Submission(
 )
 
 data class PrintoutDto(
-        val exception: String,
+    val exception: String,
 
-        val message: String = "null",
+    val message: String = "null",
 
-        val stack: Collection<String>? = emptyList()
+    val stack: Collection<String>? = emptyList()
 )
 
 @Suppress("EnumEntryName", "unused")

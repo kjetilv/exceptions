@@ -19,6 +19,7 @@ package unearth.api.dto
 
 data class UnearthlyError(
 
-        val message: String,
+    val message: String,
 
-        val submission: Submission? = null)
+    val submission: Submission? = null
+)

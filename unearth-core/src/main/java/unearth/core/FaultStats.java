@@ -29,92 +29,92 @@ import unearth.munch.model.FaultStrand;
 import unearth.munch.model.FeedEntry;
 
 public interface FaultStats extends AutoCloseable, Resettable {
-
+    
     @Override
     default void close() {
     }
-
+    
     default long getFeedEntryCount(FaultStrandId id) {
         return getFeedEntryCount(id, null);
     }
-
+    
     default long getFeedEntryCount(FaultStrandId id, Instant sinceTime) {
         return getFeedEntryCount(id, sinceTime, null);
     }
-
+    
     default Optional<FeedEntry> getLastFeedEntry(FaultId id) {
         return getLastFeedEntry(id, null);
     }
-
+    
     default Optional<FeedEntry> getLastFeedEntry(FaultStrandId id) {
         return getLastFeedEntry(id, null);
     }
-
+    
     Optional<FeedEntry> getLastFeedEntry(FaultId id, Instant sinceTime);
-
+    
     Optional<FeedEntry> getLastFeedEntry(FaultStrandId id, Instant sinceTime);
-
+    
     Optional<FeedEntry> getLastFeedEntry(FaultId id, Instant sinceTime, Long ceiling);
-
+    
     long getFeedEntryCount(Instant sinceTime, Duration interval);
-
+    
     long getFeedEntryCount(FaultStrandId id, Instant sinceTime, Duration interval);
-
+    
     long getFeedEntryCount(FaultId id, Instant sinceTime, Duration interval);
-
+    
     default List<FeedEntry> getFeed(FaultStrand faultStrand) {
         return getFeed(faultStrand.getId());
     }
-
+    
     default List<FeedEntry> getFeed(FaultStrandId id) {
         return getFeed(id, null);
     }
-
+    
     default List<FeedEntry> getFeed(FaultStrand faultStrand, Instant sinceTime) {
         return getFeed(faultStrand.getId(), sinceTime);
     }
-
+    
     default List<FeedEntry> getFeed(FaultStrandId id, Instant sinceTime) {
         return getFeed(id, sinceTime, null);
     }
-
+    
     default List<FeedEntry> getFeed(FaultStrand faultStrand, Instant sinceTime, Duration period) {
         return getFeed(faultStrand.getId(), sinceTime, period);
     }
-
+    
     List<FeedEntry> getFeed(FaultStrandId id, Instant sinceTime, Duration period);
-
+    
     default List<FeedEntry> getFeed() {
         return getFeed((Instant) null);
     }
-
+    
     default List<FeedEntry> getFeed(Instant sinceTime) {
         return getFeed(sinceTime, null);
     }
-
+    
     List<FeedEntry> getFeed(Instant sinceTime, Duration period);
-
+    
     default List<FeedEntry> getFeed(Fault fault) {
         return getFeed(fault.getId());
     }
-
+    
     default List<FeedEntry> getFeed(FaultId id) {
         return getFeed(id, null);
     }
-
+    
     default List<FeedEntry> getFeed(Fault fault, Instant sinceTime) {
         return getFeed(fault.getId(), sinceTime);
     }
-
+    
     default List<FeedEntry> getFeed(FaultId id, Instant sinceTime) {
         return getFeed(id, sinceTime, null);
     }
-
+    
     default List<FeedEntry> getFeed(Fault fault, Instant sinceTime, Duration period) {
         return getFeed(fault.getId(), sinceTime, period);
     }
-
+    
     List<FeedEntry> getFeed(FaultId id, Instant sinceTime, Duration period);
-
+    
     void reset();
 }

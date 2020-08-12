@@ -20,11 +20,11 @@ import java.util.*
 
 data class CauseIdDto(
 
-        val uuid: UUID,
+    val uuid: UUID,
 
-        val link: String? = null,
+    val link: String? = null,
 
-        val type: String = "cause"
+    val type: String = "cause"
 ) {
     constructor(uuid: UUID) : this(uuid, null)
     constructor(uuid: String) : this(UUID.fromString(uuid), null)

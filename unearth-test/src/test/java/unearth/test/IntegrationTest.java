@@ -57,6 +57,10 @@ public class IntegrationTest {
         dockerStartup.close();
     }
     
+    private static DockerStartup dockerStartup;
+    
+    private static UnearthlyClient client;
+    
     @Ignore
     @Test
     public void verifyFeedCounters() {
@@ -154,8 +158,4 @@ public class IntegrationTest {
     public void reset() {
         dockerStartup.reset();
     }
-    
-    private static DockerStartup dockerStartup;
-    
-    private static UnearthlyClient client;
 }

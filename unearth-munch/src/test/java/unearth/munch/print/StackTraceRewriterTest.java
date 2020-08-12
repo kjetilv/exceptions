@@ -26,7 +26,7 @@ import unearth.munch.model.Fault;
 import unearth.munch.model.FrameFun;
 
 public class StackTraceRewriterTest {
-
+    
     @Test
     public void test() {
         StackRenderer causeChainRenderer = new ConfigurableStackRenderer()
@@ -44,10 +44,10 @@ public class StackTraceRewriterTest {
                 FrameFun::shortenClassName)
             .framePrinter((sb, cf) ->
                 cf.defaultPrint(sb.append("--  ")));
-
+        
         Fault fault = Fault.create(new Throwable());
         CausesRendering render = new SimpleCausesRenderer(causeChainRenderer).render(fault);
-
+        
         render.getStrings("##  ").forEach(System.out::println);
     }
 }

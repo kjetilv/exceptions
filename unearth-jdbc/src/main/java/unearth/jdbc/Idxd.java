@@ -18,20 +18,20 @@
 package unearth.jdbc;
 
 class Idxd<T> {
-
+    
     private final int index;
-
+    
     private final T t;
-
+    
     Idxd(int index, T t) {
         this.index = index;
         this.t = t;
     }
-
+    
     int getIndex() {
         return index;
     }
-
+    
     T getT() {
         return t;
     }

@@ -18,4 +18,5 @@
 package unearth.jdbc;
 
 interface D<T> extends S<T, Stmt> {
+
 }

@@ -20,11 +20,11 @@ import java.util.*
 
 data class FeedEntryIdDto(
 
-        val uuid: UUID,
+    val uuid: UUID,
 
-        val link: String? = null,
+    val link: String? = null,
 
-        val type: String = "feed-entry"
+    val type: String = "feed-entry"
 ) {
     constructor(uuid: UUID) : this(uuid, null)
     constructor(uuid: String) : this(UUID.fromString(uuid), null)

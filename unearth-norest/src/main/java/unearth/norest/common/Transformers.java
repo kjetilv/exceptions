@@ -55,13 +55,8 @@ public final class Transformers {
         return (Transformer<T>) transformers.getOrDefault(type, new DefaultTransformer<>(type));
     }
     
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" + transformers.size() + "]";
-    }
-    
     private static final Map<Class<?>, Transformer<?>> PRIMITIVES = Stream.of(
-
+        
         Transformer.from(boolean.class, Boolean::parseBoolean, false),
         Transformer.from(float.class, Float::parseFloat, 0.0f),
         Transformer.from(double.class, Double::parseDouble, 0.0d),
@@ -93,5 +88,10 @@ public final class Transformers {
         ).flatMap(Set::stream).collect(Collectors.toMap(
             Map.Entry::getKey,
             Map.Entry::getValue));
+    }
+    
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + transformers.size() + "]";
     }
 }

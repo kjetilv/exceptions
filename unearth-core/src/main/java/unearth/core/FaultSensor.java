@@ -20,10 +20,10 @@ package unearth.core;
 import unearth.munch.model.FeedEntry;
 
 public interface FaultSensor extends AutoCloseable {
-
+    
     @Override
     default void close() {
     }
-
+    
     void register(FeedEntry feedEntry);
 }

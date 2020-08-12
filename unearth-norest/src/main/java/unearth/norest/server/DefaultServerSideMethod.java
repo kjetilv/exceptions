@@ -14,24 +14,6 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-/*
- *     This file is part of Unearth.
- *
- *     Unearth is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- *
- *     Unearth is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 package unearth.norest.server;
 
 import java.lang.reflect.Method;
@@ -50,34 +32,32 @@ import unearth.norest.common.AbstractProcessedMethod;
 import unearth.norest.common.Request;
 import unearth.norest.common.Transformers;
 
-public final class DefaultServerSideMethod extends AbstractProcessedMethod implements ServerSideMethod {
+final class DefaultServerSideMethod extends AbstractProcessedMethod implements ServerSideMethod {
     
-    public DefaultServerSideMethod(Method method, Transformers transformers) {
+    DefaultServerSideMethod(Method method, Transformers transformers) {
         super(method, transformers);
     }
     
     @Override
     public Stream<Function<Object, Object>> invocation(Request request) {
-        if (request.getMethod() != this.getHttpMethod()) {
+        if (request.getMethod() != this.requestMethod()) {
             return Stream.empty();
         }
-        String requestedPath = request.getPath();
-        String path = normalized(requestedPath);
-        if (!path.startsWith(getRootPath())) {
+        return invocation(request, request.getPath(false));
+    }
+    
+    private Stream<Function<Object, Object>> invocation(Request request, String path) {
+        if (!path.startsWith(rootPath())) {
             return Stream.empty();
         }
-        if (path.equals(getRootPath())) {
+        if (path.equals(rootPath())) {
             return Stream.of(invoker(request, null));
         }
-        int queryIndex = request.getQueryIndex();
-        if (queryIndex < 0) {
-            return matching(request, requestedPath);
-        }
-        return matching(request, requestedPath.substring(0, queryIndex));
+        return matching(request, path);
     }
     
     private Stream<Function<Object, Object>> matching(Request request, String requestedPath) {
-        Matcher matcher = getMatchPattern().matcher(requestedPath);
+        Matcher matcher = matchPattern().matcher(requestedPath);
         if (matcher.matches()) {
             return Stream.of(invoker(request, matcher));
         }
@@ -96,49 +76,45 @@ public final class DefaultServerSideMethod extends AbstractProcessedMethod imple
     
     private Object invoke(Request request, Matcher matcher, Object impl) {
         Map<String, String> queryParams = request.getQueryParameters();
-        Map<String, Optional<?>> queryArgs = IntStream.range(0, getParameters().length)
+        Map<String, Optional<?>> queryArgs = IntStream.range(0, parameters().length)
             .boxed()
             .collect(Collectors.toMap(
-                i -> getParameterNames()[i],
+                i -> parameterNames()[i],
                 i ->
-                    getTransformers().from(getParameterTypes()[i], queryParams.get(getParameterNames()[i]))));
+                    transformers().from(parameterTypes()[i], queryParams.get(parameterNames()[i]))));
         List<String> pathParams = matches(matcher);
-        if (pathParams.size() != getPathParameters().size()) {
+        if (pathParams.size() != pathParameters().size()) {
             throw new IllegalArgumentException(this + " got bad path: " + request);
         }
-        Map<String, Optional<?>> pathArgs = getPathParameters().entrySet().stream()
+        Map<String, Optional<?>> pathArgs = pathParameters().entrySet().stream()
             .collect(Collectors.toMap(
-                e -> getParameterNames()[e.getKey()],
+                e -> parameterNames()[e.getKey()],
                 e ->
-                    getTransformers().from(getParameterTypes()[e.getKey()], pathParams.get(e.getKey()))));
-        Object[] args = Arrays.stream(getParameterNames())
+                    transformers().from(parameterTypes()[e.getKey()], pathParams.get(e.getKey()))));
+        Object[] args = Arrays.stream(parameterNames())
             .map(name -> lookup(name, queryArgs, pathArgs))
             .map(opt -> opt.orElse(null))
             .toArray(Object[]::new);
-        if (getHttpMethod().isEntity()) {
+        if (requestMethod().isEntity()) {
             String entity = request.getEntity();
-            args[getBodyArgumentIndex()] = isStringBody()
+            args[bodyArgumentIndex()] = stringBody()
                 ? entity
-                : getTransformers().from(getParameterTypes()[getBodyArgumentIndex()], entity);
+                : transformers().from(parameterTypes()[bodyArgumentIndex()], entity);
         }
         Object result;
         try {
-            result = getMethod().invoke(impl, args);
+            result = method().invoke(impl, args);
         } catch (Exception e) {
             throw new IllegalStateException(
-                "Failed to invoke on " + impl + ": " + getMethod() + "" + Arrays.toString(args), e);
+                "Failed to invoke on " + impl + ": " + method() + "" + Arrays.toString(args), e);
         }
-        if (result == null || !isReturnData()) {
+        if (result == null || nullReturn()) {
             return null;
         }
-        if (isOptionalReturn()) {
+        if (optionalReturn()) {
             return ((Optional<?>) result).orElse(null);
         }
         return result;
-    }
-    
-    private static String normalized(String annotatedPath) {
-        return "/" + unpreslashed(unpostslashed(annotatedPath.trim()));
     }
     
     private static List<String> matches(Matcher matcher) {
@@ -163,18 +139,10 @@ public final class DefaultServerSideMethod extends AbstractProcessedMethod imple
             .findFirst();
     }
     
-    private static String unpreslashed(String path) {
-        return path.startsWith("/") ? unpreslashed(path.substring(1)) : path;
-    }
-    
-    private static String unpostslashed(String path) {
-        return path.endsWith("/") ? unpostslashed(path.substring(0, path.length() - 1)) : path;
-    }
-    
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + getHttpMethod() + " " + getPath() + (
-            getQueryParameters().isEmpty() ? "" : "?" + String.join("&", getQueryParameters().values())
+        return getClass().getSimpleName() + "[" + requestMethod() + " " + path() + (
+            queryParameters().isEmpty() ? "" : "?" + String.join("&", queryParameters().values())
         ) + "]";
     }
 }

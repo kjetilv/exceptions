@@ -25,19 +25,19 @@ import unearth.munch.model.Fault;
 import unearth.munch.model.FeedEntry;
 
 class SimpleHandlingPolicy implements HandlingPolicy {
-
+    
     private final String summary;
-
+    
     private final FeedEntry feedEntry;
-
+    
     private final Fault fault;
-
+    
     private final Action action;
-
+    
     SimpleHandlingPolicy(FeedEntry feedEntry, Fault fault) {
         this(null, feedEntry, fault, null);
     }
-
+    
     private SimpleHandlingPolicy(
         String summary,
         FeedEntry feedEntry,
@@ -49,61 +49,61 @@ class SimpleHandlingPolicy implements HandlingPolicy {
         this.fault = fault;
         this.action = action;
     }
-
+    
     @Override
     public String getSummary() {
         return summary;
     }
-
+    
     @Override
     public Action getAction() {
         return action;
     }
-
+    
     @Override
     public FaultStrandId getFaultStrandId() {
         return feedEntry.getFaultEvent().getFaultStrandId();
     }
-
+    
     @Override
     public FaultId getFaultId() {
         return feedEntry.getFaultEvent().getFaultId();
     }
-
+    
     @Override
     public FeedEntryId getFeedEntryId() {
         return feedEntry.getId();
     }
-
+    
     @Override
     public FeedEntry getFeedEntry() {
         return feedEntry;
     }
-
+    
     @Override
     public Fault getFault() {
         return fault;
     }
-
+    
     @Override
     public long getGlobalSequence() {
         return feedEntry.getGlobalSequenceNo();
     }
-
+    
     @Override
     public long getFaultStrandSequence() {
         return feedEntry.getFaultStrandSequenceNo();
     }
-
+    
     @Override
     public long getFaultSequence() {
         return feedEntry.getFaultSequenceNo();
     }
-
+    
     SimpleHandlingPolicy withSummary(String summary) {
         return new SimpleHandlingPolicy(summary, feedEntry, fault, action);
     }
-
+    
     SimpleHandlingPolicy withAction(Action action) {
         return new SimpleHandlingPolicy(summary, feedEntry, fault, action);
     }

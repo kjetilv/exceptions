@@ -33,15 +33,15 @@ import static unearth.jdbc.Session.Outcome.UPDATED;
 import static unearth.jdbc.Session.Set;
 
 class DefaultMultiExistence<T> implements Session.MultiExistence<T> {
-
+    
     private final Collection<T> items;
-
+    
     private final Collection<T> existing;
-
+    
     private Function<Collection<T>, Integer> inserter;
-
+    
     private Function<Collection<T>, Integer> updater;
-
+    
     DefaultMultiExistence(
         DefaultSession session,
         Collection<T> items,
@@ -52,19 +52,19 @@ class DefaultMultiExistence<T> implements Session.MultiExistence<T> {
         this.items = items;
         this.existing = new HashSet<>(session.select(sql, set, sel));
     }
-
+    
     @Override
     public Session.MultiExistence<T> onUpdate(Function<Collection<T>, Integer> updater) {
         this.updater = updater;
         return this;
     }
-
+    
     @Override
     public Session.MultiExistence<T> onInsert(Function<Collection<T>, Integer> inserter) {
         this.inserter = inserter;
         return this;
     }
-
+    
     @Override
     public Outcome go() {
         int updated = updated();
@@ -74,7 +74,7 @@ class DefaultMultiExistence<T> implements Session.MultiExistence<T> {
                 updated > 0 ? UPDATED :
                     NOOP;
     }
-
+    
     private int inserted() {
         if (inserter == null) {
             return -1;
@@ -85,16 +85,15 @@ class DefaultMultiExistence<T> implements Session.MultiExistence<T> {
         }
         return inserter.apply(unknown);
     }
-
+    
     private Predicate<T> exists() {
         return existing::contains;
     }
-
+    
     private int updated() {
         if (existing.isEmpty() || updater == null) {
             return -1;
         }
         return updater.apply(existing);
     }
-
 }

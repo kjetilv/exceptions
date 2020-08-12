@@ -20,6 +20,6 @@ package unearth.munch.base;
 import java.util.UUID;
 
 public interface Hashed {
-
+    
     UUID getHash();
 }

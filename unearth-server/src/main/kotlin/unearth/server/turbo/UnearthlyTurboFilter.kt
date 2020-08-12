@@ -81,7 +81,7 @@ class UnearthlyTurboFilter(
         )
 
         private fun message(format: String?, policy: HandlingPolicy): String =
-            "${format?.let { "$format " }?: ""}{} {}${if (policy.`is`(HandlingPolicy.Action.LOG_ID)) "" else "\n{}"}"
+            "${format?.let { "$format " } ?: ""}{} {}${if (policy.`is`(HandlingPolicy.Action.LOG_ID)) "" else "\n{}"}"
 
         private fun locationAwareLevel(level: Level): Int = when (level) {
             Level.INFO -> LocationAwareLogger.INFO_INT

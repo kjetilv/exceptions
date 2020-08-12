@@ -27,13 +27,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 public class FaultStrandTest {
-
+    
     @Test
     public void hash() {
         FaultStrand d1 = newFaultStrand(), d2 = newFaultStrand();
         assertEquals(d1.getHash(), d2.getHash());
     }
-
+    
     @Test
     public void hash2() {
         FaultStrand[] strands = new FaultStrand[2];
@@ -41,15 +41,15 @@ public class FaultStrandTest {
         strands[1] = newFaultStrand();
         assertNotEquals(strands[0].getHash(), strands[1].getHash());
     }
-
+    
+    @Test
+    public void fail() {
+        new IOException("Foo is bar", new IOException("Zot")).printStackTrace(System.out);
+    }
+    
     private FaultStrand newFaultStrand() {
         Throwable cause = new Throwable();
         Throwable cause1 = new Throwable(cause);
         return FaultStrand.create(Cause.causes(cause1));
-    }
-
-    @Test
-    public void fail() {
-        new IOException("Foo is bar", new IOException("Zot")).printStackTrace(System.out);
     }
 }

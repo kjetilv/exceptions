@@ -45,33 +45,33 @@ import unearth.api.dto.Submission;
 import unearth.client.UnearthlyClient;
 
 public final class Feed {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-        .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-        .enable(SerializationFeature.INDENT_OUTPUT)
-        .registerModule(new Jdk8Module())
-        .registerModule(new JavaTimeModule());
-
+    
     public static void main(String[] args) {
         URI uri = URI.create(args[0]);
         Collection<?> uuids =
             Arrays.stream(args).skip(1).map(Feed::fromString).collect(Collectors.toList());
         UnearthlyClient client = UnearthlyClient.connect(uri);
-
+        
         uuids.stream()
             .map(fetchFrom(client))
             .filter(Optional::isPresent)
             .map(Optional::get)
             .map(Feed::serialize)
             .forEach(System.out::println);
-
+        
         String input = stdin();
         Submission submit = client.submit(input);
         System.out.println(submit.getFaultId());
         System.out.println(submit.getFaultStrandId());
         System.out.println(submit.getFeedEntryId());
     }
-
+    
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+        .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+        .enable(SerializationFeature.INDENT_OUTPUT)
+        .registerModule(new Jdk8Module())
+        .registerModule(new JavaTimeModule());
+    
     private static String serialize(Object value) {
         try {
             return OBJECT_MAPPER.writeValueAsString(value);
@@ -79,7 +79,7 @@ public final class Feed {
             throw new IllegalStateException(e);
         }
     }
-
+    
     private static Function<Object, Optional<?>> fetchFrom(UnearthlyClient client) {
         return id -> {
             if (id instanceof FaultIdDto) {
@@ -100,7 +100,7 @@ public final class Feed {
             throw new IllegalArgumentException("Invalid id: " + id);
         };
     }
-
+    
     private static Object fromString(String input) {
         int split = input.indexOf(":");
         if (split == -1) {
@@ -117,10 +117,11 @@ public final class Feed {
             default -> throw new IllegalStateException("Unused type " + type + ":" + uuid);
         };
     }
-
+    
     private static String stdin() {
-        try (BufferedReader reader = new BufferedReader(
-            new InputStreamReader(System.in, StandardCharsets.UTF_8))
+        try (
+            BufferedReader reader = new BufferedReader(
+                new InputStreamReader(System.in, StandardCharsets.UTF_8))
         ) {
             return reader.lines().collect(Collectors.joining("\n"));
         } catch (IOException e) {

@@ -28,17 +28,17 @@ import unearth.norest.common.Request;
 import unearth.norest.common.Transformer;
 import unearth.norest.common.Transformers;
 
-public final class ServerSideMethods<A> {
+final class ServerSideMethods<A> {
     
     private final Transformers transformers;
     
     private final List<ServerSideMethod> serverSideMethods;
     
-    public ServerSideMethods(Class<A> api, List<Transformer<?>> transformers) {
+    ServerSideMethods(Class<A> api, List<Transformer<?>> transformers) {
         this(api, new Transformers(transformers));
     }
     
-    public ServerSideMethods(Class<A> api, Transformers transformers) {
+    ServerSideMethods(Class<A> api, Transformers transformers) {
         Objects.requireNonNull(api, "api");
         this.transformers = transformers;
         this.serverSideMethods = Arrays.stream(api.getMethods())
@@ -60,6 +60,5 @@ public final class ServerSideMethods<A> {
             throw new IllegalStateException("Failed to process: " + method, e);
         }
     }
-    
 }
 

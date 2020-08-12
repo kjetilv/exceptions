@@ -24,35 +24,35 @@ import unearth.munch.model.Fault;
 import unearth.munch.model.FeedEntry;
 
 public interface HandlingPolicy {
-
-    default boolean is(Action action) {
-        return getAction() == action;
-    }
     
-    String getSummary();
-
-    Action getAction();
-
-    FaultStrandId getFaultStrandId();
-
-    FaultId getFaultId();
-
-    FeedEntryId getFeedEntryId();
-
-    FeedEntry getFeedEntry();
-
-    Fault getFault();
-
-    long getGlobalSequence();
-
-    long getFaultStrandSequence();
-
-    long getFaultSequence();
-
     enum Action {
         LOG,
         LOG_SHORT,
         LOG_MESSAGES,
         LOG_ID
     }
+    
+    default boolean is(Action action) {
+        return getAction() == action;
+    }
+    
+    String getSummary();
+    
+    Action getAction();
+    
+    FaultStrandId getFaultStrandId();
+    
+    FaultId getFaultId();
+    
+    FeedEntryId getFeedEntryId();
+    
+    FeedEntry getFeedEntry();
+    
+    Fault getFault();
+    
+    long getGlobalSequence();
+    
+    long getFaultStrandSequence();
+    
+    long getFaultSequence();
 }

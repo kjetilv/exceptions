@@ -23,16 +23,16 @@ import java.util.stream.Stream;
 import unearth.munch.print.CauseFrame;
 
 final class StackTraceParts {
-
+    
     private final StackTraceElementType type;
-
+    
     private final String[] parts;
-
+    
     StackTraceParts(StackTraceElementType type, String[] parts) {
         this.type = type;
         this.parts = parts;
     }
-
+    
     Stream<CauseFrame> reconstruct() {
         if (type == StackTraceElementType.MORE) {
             return Stream.of(new CauseFrame(type.more(parts)));
@@ -54,7 +54,7 @@ final class StackTraceParts {
             throw new IllegalStateException(this + " failed to reconstruct", e);
         }
     }
-
+    
     @Override
     public String toString() {
         return getClass().getSimpleName() +

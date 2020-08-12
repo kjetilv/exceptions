@@ -22,6 +22,6 @@ import java.util.List;
 import unearth.munch.model.Cause;
 
 public interface StackRenderer {
-
+    
     List<String> render(Cause cause);
 }

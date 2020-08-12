@@ -28,16 +28,16 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 
 @ChannelHandler.Sharable
-public class ErrorRouter extends SimpleChannelInboundHandler<Object> {
-    
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
-        errorFuture(ctx, HttpResponseStatus.NOT_FOUND);
-    }
+class ErrorHandler extends SimpleChannelInboundHandler<Object> {
     
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         errorFuture(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    }
+    
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
+        errorFuture(ctx, HttpResponseStatus.NOT_FOUND);
     }
     
     private static void errorFuture(ChannelHandlerContext ctx, HttpResponseStatus notFound) {

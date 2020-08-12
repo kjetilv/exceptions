@@ -20,4 +20,5 @@ data class FaultStrandDto(
 
     val id: FaultStrandIdDto,
 
-    val causeStrands: List<CauseStrandDto>)
+    val causeStrands: List<CauseStrandDto>
+)

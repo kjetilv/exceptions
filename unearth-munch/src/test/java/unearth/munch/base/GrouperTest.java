@@ -27,13 +27,13 @@ import org.junit.Test;
 import unearth.munch.print.GroupedList;
 
 public class GrouperTest {
-
+    
     @Test
     public void groupTest() {
         Function<String, Optional<Collection<String>>> stringOptionalFunction =
             s -> s.startsWith("zot.x") ? Optional.of(Collections.singleton("zot.x"))
                 : s.startsWith("zot") ? Optional.of(Collections.singleton("zot"))
-                : Optional.empty();
+                    : Optional.empty();
         GroupedList<Collection<String>, String> group = GroupedList.group(
             Arrays.asList(
                 "foo.bar",

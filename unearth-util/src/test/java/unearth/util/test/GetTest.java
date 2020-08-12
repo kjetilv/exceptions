@@ -91,6 +91,8 @@ public class GetTest {
         }
     }
     
+    private static final AtomicInteger COUNTER = new AtomicInteger();
+    
     private static Throwable getRoot(Exception e) {
         Throwable walker = e;
         while (true) {
@@ -109,8 +111,6 @@ public class GetTest {
         }
         throw new IllegalStateException("Foo");
     }
-    
-    private static final AtomicInteger COUNTER = new AtomicInteger();
     
     private static Data await(Future<Data> future) {
         try {

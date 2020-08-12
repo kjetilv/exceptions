@@ -13,25 +13,7 @@
  *
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
- */
-
-/*
- *     This file is part of Unearth.
- *
- *     Unearth is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- *
- *     Unearth is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
- */
-package unearth.http4k
+ */package unearth.http4k
 
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel.*
@@ -47,8 +29,8 @@ import org.http4k.server.ServerConfig
 import java.net.InetSocketAddress
 
 data class NettyConfig(
-        val host: String = "0.0.0.0",
-        val port: Int = 8080
+    val host: String = "0.0.0.0",
+    val port: Int = 8080
 ) : ServerConfig {
 
     override fun toServer(httpHandler: HttpHandler) = object : Http4kServer {
@@ -64,16 +46,16 @@ data class NettyConfig(
         override fun start(): Http4kServer = apply {
             val bootstrap = ServerBootstrap()
             bootstrap.group(masterGroup, workerGroup)
-                    .channelFactory(ChannelFactory<ServerChannel> { NioServerSocketChannel() })
-                    .childHandler(object : ChannelInitializer<SocketChannel>() {
-                        public override fun initChannel(ch: SocketChannel) {
-                            ch.pipeline().addLast("codec", HttpServerCodec())
-                            ch.pipeline().addLast("aggregator", HttpObjectAggregator(Int.MAX_VALUE))
-                            ch.pipeline().addLast("handler", Http4kChannelHandler(httpHandler))
-                        }
-                    })
-                    .option(ChannelOption.SO_BACKLOG, 1000)
-                    .childOption(ChannelOption.SO_KEEPALIVE, true)
+                .channelFactory(ChannelFactory<ServerChannel> { NioServerSocketChannel() })
+                .childHandler(object : ChannelInitializer<SocketChannel>() {
+                    public override fun initChannel(ch: SocketChannel) {
+                        ch.pipeline().addLast("codec", HttpServerCodec())
+                        ch.pipeline().addLast("aggregator", HttpObjectAggregator(Int.MAX_VALUE))
+                        ch.pipeline().addLast("handler", Http4kChannelHandler(httpHandler))
+                    }
+                })
+                .option(ChannelOption.SO_BACKLOG, 1000)
+                .childOption(ChannelOption.SO_KEEPALIVE, true)
 
             val channel = bootstrap.bind(InetSocketAddress(host, port)).sync().channel()
             address = channel.localAddress() as InetSocketAddress

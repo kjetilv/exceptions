@@ -19,17 +19,17 @@ package unearth.api.dto
 
 data class StackTraceElementDto(
 
-        val classLoaderName: String?,
+    val classLoaderName: String?,
 
-        val moduleName: String?,
+    val moduleName: String?,
 
-        val moduleVersion: String?,
+    val moduleVersion: String?,
 
-        val declaringClass: String,
+    val declaringClass: String,
 
-        val methodName: String,
+    val methodName: String,
 
-        val fileName: String?,
+    val fileName: String?,
 
-        val lineNumber: Int?
+    val lineNumber: Int?
 )

@@ -23,13 +23,13 @@ import unearth.munch.model.Cause;
 import unearth.util.Streams;
 
 public final class SimpleCausesRenderer implements CausesRenderer {
-
+    
     private final StackRenderer renderer;
-
+    
     public SimpleCausesRenderer(StackRenderer renderer) {
         this.renderer = renderer;
     }
-
+    
     @Override
     public CausesRendering render(Collection<Cause> causeCollection) {
         return Streams.quickReduce(

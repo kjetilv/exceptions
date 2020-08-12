@@ -18,14 +18,14 @@
 package unearth.analysis;
 
 public class CassandraInit extends AbstractCassandraConnected {
-
+    
     private final String keyspace;
-
+    
     public CassandraInit(String host, int port, String dc, String keyspace) {
         super(host, port, dc, null);
         this.keyspace = keyspace;
     }
-
+    
     public CassandraInit init() {
         inSession(cqlSession -> {
             cqlSession.execute(
@@ -33,7 +33,7 @@ public class CassandraInit extends AbstractCassandraConnected {
                     " IF NOT EXISTS " + keyspace +
                     " WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor' : 1}");
             cqlSession.execute("USE " + keyspace);
-
+            
             cqlSession.execute(
                 "CREATE TABLE IF NOT EXISTS fault " +
                     "(id UUID PRIMARY KEY," +

@@ -20,18 +20,18 @@ import java.util.Objects;
 import java.util.Optional;
 
 public final class ChameleonException extends Exception {
-
+    
     private final String proxiedClassName;
     
     public ChameleonException(String proxiedClassName, String message, boolean suppressed, Throwable cause) {
         super(message, cause, suppressed, true);
         this.proxiedClassName = Objects.requireNonNull(proxiedClassName, "proxiedClassName");
     }
-
+    
     public String getProxiedClassName() {
         return proxiedClassName;
     }
-
+    
     @Override
     public String toString() {
         return proxiedClassName + Optional.ofNullable(getMessage()).map(msg -> ": " + msg).orElse("");

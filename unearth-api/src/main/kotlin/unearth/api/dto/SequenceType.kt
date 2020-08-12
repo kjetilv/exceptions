@@ -18,7 +18,7 @@
 package unearth.api.dto
 
 enum class SequenceType(
-        val seq: (FeedEntryDto) -> Long
+    val seq: (FeedEntryDto) -> Long
 ) : (FeedEntryDto) -> Long {
 
     GLOBAL(FeedEntryDto::sequenceNo),

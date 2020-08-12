@@ -17,7 +17,7 @@
 
 package unearth.server
 
-interface UnearthlyServer: AutoCloseable {
+interface UnearthlyServer : AutoCloseable {
 
     fun start()
 

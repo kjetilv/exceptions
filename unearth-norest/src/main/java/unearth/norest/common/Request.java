@@ -23,9 +23,17 @@ public interface Request {
     
     RequestMethod getMethod();
     
-    String getPath();
+    default String getPath() {
+        return getPath(true);
+    }
+    
+    String getPath(boolean withQueryParameters);
     
     int getQueryIndex();
+    
+    default boolean hasQueryParameters() {
+        return getQueryIndex() > 0;
+    }
     
     String getEntity();
     

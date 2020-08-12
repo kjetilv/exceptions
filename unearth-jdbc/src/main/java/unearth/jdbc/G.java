@@ -18,6 +18,6 @@
 package unearth.jdbc;
 
 interface G<T, R> {
-
+    
     T get(T t);
 }

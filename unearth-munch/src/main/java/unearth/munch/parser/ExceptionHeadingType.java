@@ -30,12 +30,12 @@ public enum ExceptionHeadingType implements ExceptionHeadingPicker {
         public String type(String... parts) {
             return parts[0];
         }
-    
+        
         @Override
         public String message(String... parts) {
             return parts[1];
         }
-    
+        
         @Override
         public String[] toParts(String line) {
             return COLON.split(line, 2);

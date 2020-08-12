@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 import unearth.util.UncheckedCloseable;
 
 public final class UnearthlyDocker {
-
+    
     public static void main(String[] args) {
         start(DefaultDockerStartup::new);
     }

@@ -25,26 +25,26 @@ import unearth.munch.id.Id;
 
 @SuppressWarnings("UnusedReturnValue")
 interface Stmt extends AutoCloseable {
-
+    
     default Stmt set(Hashed hashed) {
         return set(hashed.getHash());
     }
-
+    
     default Stmt set(Id id) {
         return set(id.getHash());
     }
-
+    
     Stmt set(String string);
-
+    
     Stmt set(Boolean bool);
-
+    
     Stmt set(Integer i);
-
+    
     Stmt set(Long l);
-
+    
     Stmt set(Instant instant);
-
+    
     Stmt set(UUID uuid);
-
+    
     void reset();
 }

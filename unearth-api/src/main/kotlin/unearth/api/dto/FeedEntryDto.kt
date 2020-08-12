@@ -24,4 +24,5 @@ data class FeedEntryDto(
 
     val faultSequenceNo: Long,
 
-    val faultStrandSequenceNo: Long)
+    val faultStrandSequenceNo: Long
+)

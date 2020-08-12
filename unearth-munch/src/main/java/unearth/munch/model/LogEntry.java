@@ -27,11 +27,15 @@ import unearth.munch.id.AbstractHashableIdentifiable;
 import unearth.munch.id.FaultLogId;
 
 public final class LogEntry extends AbstractHashableIdentifiable<FaultLogId> {
-
+    
+    public static LogEntry create(String logMessage, Object... args) {
+        return new LogEntry(logMessage, args);
+    }
+    
     private final String logMessage;
-
+    
     private final String[] args;
-
+    
     private LogEntry(
         String logMessage,
         Object... args
@@ -45,25 +49,21 @@ public final class LogEntry extends AbstractHashableIdentifiable<FaultLogId> {
             throw new IllegalArgumentException("Empty log statement");
         }
     }
-
-    public static LogEntry create(String logMessage, Object... args) {
-        return new LogEntry(logMessage, args);
-    }
-
+    
     public String getLogMessage() {
         return logMessage;
     }
-
+    
     public String[] getArgs() {
         return args;
     }
-
+    
     @Override
     public void hashTo(Consumer<byte[]> h) {
         hash(h, logMessage);
         hash(h, args);
     }
-
+    
     @Override
     protected FaultLogId id(UUID hash) {
         return new FaultLogId(hash);

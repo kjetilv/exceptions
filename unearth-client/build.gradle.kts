@@ -24,7 +24,7 @@ plugins {
 tasks.withType<ShadowJar>() {
     manifest {
         attributes(
-                mapOf(Pair("Main-Class", "no.scienta.unearth.client.main.Feed"))
+            mapOf(Pair("Main-Class", "no.scienta.unearth.client.main.Feed"))
         )
     }
     mergeServiceFiles()

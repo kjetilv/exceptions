@@ -23,27 +23,30 @@ import unearth.munch.base.Hashed;
 import unearth.munch.model.FeedEntry;
 
 public class CassandraSensor extends AbstractCassandraConnected implements FaultSensor {
-
+    
     public CassandraSensor(String host, int port, String dc, String keyspace) {
         super(host, port, dc, keyspace);
     }
-
+    
     @Override
     public void register(FeedEntry feedEntry) {
         inSession(session -> {
-            exec(session,
+            exec(
+                session,
                 "INSERT INTO fault " +
                     "(id," +
                     " faultStrand" +
                     ") VALUES (?, ?)",
                 uuid(feedEntry.getFaultEvent().getFaultId()),
                 uuid(feedEntry.getFaultEvent().getFaultStrandId()));
-            exec(session,
+            exec(
+                session,
                 "INSERT INTO faultStrand (" +
                     "id" +
                     ") VALUES (?)",
                 uuid(feedEntry.getFaultEvent().getFaultStrandId()));
-            exec(session,
+            exec(
+                session,
                 "INSERT INTO faultEvent " +
                     "(id," +
                     " fault," +
@@ -61,7 +64,7 @@ public class CassandraSensor extends AbstractCassandraConnected implements Fault
             );
         });
     }
-
+    
     private static UUID uuid(Hashed identifiable) {
         return identifiable.getHash();
     }

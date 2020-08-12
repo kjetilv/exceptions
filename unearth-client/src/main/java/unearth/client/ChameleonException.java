@@ -21,9 +21,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class ChameleonException extends Exception {
-
+    
     private final String proxiedClassName;
-
+    
     ChameleonException(String proxiedClassName, String message, Throwable cause) {
         super(message, cause, true, true);
         this.proxiedClassName = Objects.requireNonNull(proxiedClassName, "proxiedClassName");

@@ -44,9 +44,9 @@ public final class Streams {
             end - start,
             Spliterator.IMMUTABLE
         ) {
-    
+            
             private int index = s;
-    
+            
             @Override
             public boolean tryAdvance(Consumer<? super T> action) {
                 action.accept(array[index]);

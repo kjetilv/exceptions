@@ -27,19 +27,19 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 public final class SimplePackageGrouper implements ConfigurableStackRenderer.PackageGrouper {
-
+    
     private final Collection<Collection<String>> groups;
-
+    
     public SimplePackageGrouper(List<String> groups) {
         this(Collections.singleton(groups));
     }
-
+    
     public SimplePackageGrouper(Collection<Collection<String>> groups) {
         this.groups = groups == null || groups.isEmpty() || groups.stream().allMatch(g -> g == null || g.isEmpty())
             ? Collections.emptyList()
             : Collections.unmodifiableCollection(new ArrayList<>(groups));
     }
-
+    
     @Override
     public Optional<Collection<String>> apply(CauseFrame causeFrame) {
         Stream<Collection<String>> collectionStream = groups.stream()
@@ -49,7 +49,7 @@ public final class SimplePackageGrouper implements ConfigurableStackRenderer.Pac
         return collectionStream
             .max(Comparator.comparing(maxMatch(causeFrame)));
     }
-
+    
     private static Function<Collection<String>, Integer> maxMatch(CauseFrame causeFrame) {
         return group -> group.stream()
             .filter(name ->

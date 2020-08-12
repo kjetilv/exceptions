@@ -24,14 +24,11 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 public final class IO {
-
-    private IO() {
-    }
-
+    
     public static String readPath(String name) {
         return readPath(null, name);
     }
-
+    
     public static String readPath(ClassLoader classLoader, String name) {
         byte[] buffer = new byte[8192];
         ClassLoader cl = classLoader == null
@@ -55,5 +52,8 @@ public final class IO {
         } catch (IOException e) {
             throw new IllegalStateException("Failed to read " + name, e);
         }
+    }
+    
+    private IO() {
     }
 }

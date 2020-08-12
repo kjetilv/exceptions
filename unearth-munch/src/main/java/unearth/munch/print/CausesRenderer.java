@@ -27,6 +27,6 @@ public interface CausesRenderer {
     default CausesRendering render(Fault fault) {
         return render(fault.getCauses());
     }
-
+    
     CausesRendering render(Collection<Cause> causeChain);
 }

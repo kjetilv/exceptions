@@ -14,25 +14,10 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-/*
- *     This file is part of Unearth.
- *
- *     Unearth is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- *
- *     Unearth is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 package unearth.norest.netty;
+
+import java.util.Optional;
+import java.util.function.Function;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -51,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import unearth.norest.common.IOHandler;
 import unearth.norest.common.Request;
-import unearth.norest.server.ApiInvoker;
 
 @ChannelHandler.Sharable
 public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
@@ -62,12 +46,12 @@ public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
     
     private final IOHandler ioHandler;
     
-    private final ApiInvoker<A> apiInvoker;
+    private final Function<Request, Optional<Object>> invoker;
     
-    public ApiRouter(String prefix, IOHandler ioHandler, ApiInvoker<A> apiInvoker) {
+    public ApiRouter(String prefix, IOHandler ioHandler, Function<Request, Optional<Object>> invoker) {
         this.prefix = prefix;
         this.ioHandler = ioHandler;
-        this.apiInvoker = apiInvoker;
+        this.invoker = invoker;
     }
     
     @Override
@@ -75,9 +59,10 @@ public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
         if (fullHttpRequest.uri().startsWith(prefix)) {
             try {
                 Request request = new SimpleNettyRequest(prefix, fullHttpRequest);
-                apiInvoker.response(request)
-                    .ifPresentOrElse(response -> {
-                            log.info("{} -> {}", fullHttpRequest, response);
+                invoker.apply(request)
+                    .ifPresentOrElse(
+                        response -> {
+                            log.info("OK: {}", request);
                             respond(ctx, response);
                         },
                         () -> {

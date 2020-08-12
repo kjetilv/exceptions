@@ -20,24 +20,24 @@ package unearth.munch.parser;
 import java.util.Objects;
 
 public final class ExceptionHeading {
-
+    
     private final String name;
-
+    
     private final String message;
-
+    
     ExceptionHeading(String name, String message) {
         this.name = Objects.requireNonNull(name, "name");
         this.message = message == null || message.trim().isBlank() ? null : message;
     }
-
+    
     String getName() {
         return name;
     }
-
+    
     String getMessage() {
         return message;
     }
-
+    
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[" + message + "/" + name + "]";

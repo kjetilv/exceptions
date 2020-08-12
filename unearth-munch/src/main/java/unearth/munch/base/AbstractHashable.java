@@ -30,7 +30,7 @@ import unearth.util.once.Get;
 
 @SuppressWarnings("unused")
 public abstract class AbstractHashable implements Hashable {
-
+    
     /**
      * A supplier which computes {@link Hashable this hashable's} uuid with a {@link Get#mostlyOnce(Supplier)}.
      */
@@ -40,125 +40,20 @@ public abstract class AbstractHashable implements Hashable {
         Get.mostlyOnce(() ->
             getClass().getSimpleName() + '[' + toStringIdentifier() + toStringContents() + ']');
     
-    private static final String HASH = "MD5";
-
-    private static final byte[] NO_TRUTH = "none".getBytes();
-
-    private static final byte[] TRUTHYNESS = "true".getBytes();
-
-    private static final byte[] FALSYNESS = "false".getBytes();
-
     @Override
     public final UUID getHash() {
         return hash.get();
     }
-
-    protected static void hash(Consumer<byte[]> hash, String... strings) {
-        hashStrings(hash, Arrays.asList(strings));
-    }
-
-    protected static void hash(Consumer<byte[]> h, Hashed... ids) {
-        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * 2 * ids.length);
-        for (Hashed id : ids) {
-            UUID uuid = id.getHash();
-            buffer.putLong(uuid.getMostSignificantBits());
-            buffer.putLong(uuid.getLeastSignificantBits());
-        }
-        h.accept(buffer.array());
-    }
-
-    protected static void hash(Consumer<byte[]> h, Hashable... hashables) {
-        hash(h, Arrays.asList(hashables));
-    }
-
-    protected static void hash(Consumer<byte[]> hash, Long... values) {
-        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * values.length);
-        for (Long value : values) {
-            if (value != null) {
-                buffer.putLong(value);
-            }
-        }
-        hash.accept(buffer.array());
-    }
-
-    protected static void hashLongs(Consumer<byte[]> hash, long... values) {
-        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * values.length);
-        for (long value : values) {
-            buffer.putLong(value);
-        }
-        hash.accept(buffer.array());
-    }
-
-    protected static void hash(Consumer<byte[]> hash, Integer... values) {
-        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES * values.length);
-        for (Integer value : values) {
-            if (value != null) {
-                buffer.putInt(value);
-            }
-        }
-        hash.accept(buffer.array());
-    }
-
-    protected static void hashInts(Consumer<byte[]> hash, int... values) {
-        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES * values.length);
-        for (int value : values) {
-            buffer.putInt(value);
-        }
-        hash.accept(buffer.array());
-    }
-
-    protected static void hash(Consumer<byte[]> h, Collection<? extends Hashable> hasheds) {
-        for (Hashable hashable : hasheds) {
-            if (hashable != null) {
-                hashable.hashTo(h);
-            }
-        }
-    }
-
-    protected static void hashBools(Consumer<byte[]> h, Boolean... truths) {
-        for (Boolean truth : truths) {
-            h.accept(truth == null ? NO_TRUTH : truth ? TRUTHYNESS : FALSYNESS);
-        }
-    }
-
+    
     protected Object toStringBody() {
         return null;
     }
-
+    
     private Object toStringIdentifier() {
         String hash = getHash().toString();
         return hash.substring(0, hash.indexOf("-"));
     }
-
-    /**
-     * Takes a {@link Hashable hashable} and returns a supplier which computs its UUID
-     *
-     * @param hashable Hashable
-     * @return UUID supplier
-     */
-    private static Supplier<UUID> uuid(Hashable hashable) {
-        return Get.mostlyOnce(() -> {
-            MessageDigest md5 = md5();
-            hashable.hashTo(md5::update);
-            return UUID.nameUUIDFromBytes(md5.digest());
-        });
-    }
-
-    private static MessageDigest md5() {
-        try {
-            return MessageDigest.getInstance(HASH);
-        } catch (Exception e) {
-            throw new IllegalStateException("Expected " + HASH + " implementation", e);
-        }
-    }
-
-    private static void hashStrings(Consumer<byte[]> hash, Collection<String> strings) {
-        strings.stream()
-            .filter(Objects::nonNull)
-            .forEach(s ->
-                hash.accept(s.getBytes(StandardCharsets.UTF_8)));
-    }
-
+    
     private String toStringContents() {
         Object body = toStringBody();
         if (body == null) {
@@ -170,18 +65,124 @@ public abstract class AbstractHashable implements Hashable {
         }
         return ' ' + string;
     }
-
+    
+    private static final String HASH = "MD5";
+    
+    private static final byte[] NO_TRUTH = "none".getBytes();
+    
+    private static final byte[] TRUTHYNESS = "true".getBytes();
+    
+    private static final byte[] FALSYNESS = "false".getBytes();
+    
+    /**
+     * Takes a {@link Hashable hashable} and returns a supplier which computs its UUID
+     *
+     * @param hashable Hashable
+     *
+     * @return UUID supplier
+     */
+    private static Supplier<UUID> uuid(Hashable hashable) {
+        return Get.mostlyOnce(() -> {
+            MessageDigest md5 = md5();
+            hashable.hashTo(md5::update);
+            return UUID.nameUUIDFromBytes(md5.digest());
+        });
+    }
+    
+    private static MessageDigest md5() {
+        try {
+            return MessageDigest.getInstance(HASH);
+        } catch (Exception e) {
+            throw new IllegalStateException("Expected " + HASH + " implementation", e);
+        }
+    }
+    
+    private static void hashStrings(Consumer<byte[]> hash, Collection<String> strings) {
+        strings.stream()
+            .filter(Objects::nonNull)
+            .forEach(s ->
+                hash.accept(s.getBytes(StandardCharsets.UTF_8)));
+    }
+    
+    protected static void hash(Consumer<byte[]> hash, String... strings) {
+        hashStrings(hash, Arrays.asList(strings));
+    }
+    
+    protected static void hash(Consumer<byte[]> h, Hashed... ids) {
+        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * 2 * ids.length);
+        for (Hashed id: ids) {
+            UUID uuid = id.getHash();
+            buffer.putLong(uuid.getMostSignificantBits());
+            buffer.putLong(uuid.getLeastSignificantBits());
+        }
+        h.accept(buffer.array());
+    }
+    
+    protected static void hash(Consumer<byte[]> h, Hashable... hashables) {
+        hash(h, Arrays.asList(hashables));
+    }
+    
+    protected static void hash(Consumer<byte[]> hash, Long... values) {
+        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * values.length);
+        for (Long value: values) {
+            if (value != null) {
+                buffer.putLong(value);
+            }
+        }
+        hash.accept(buffer.array());
+    }
+    
+    protected static void hashLongs(Consumer<byte[]> hash, long... values) {
+        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * values.length);
+        for (long value: values) {
+            buffer.putLong(value);
+        }
+        hash.accept(buffer.array());
+    }
+    
+    protected static void hash(Consumer<byte[]> hash, Integer... values) {
+        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES * values.length);
+        for (Integer value: values) {
+            if (value != null) {
+                buffer.putInt(value);
+            }
+        }
+        hash.accept(buffer.array());
+    }
+    
+    protected static void hashInts(Consumer<byte[]> hash, int... values) {
+        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES * values.length);
+        for (int value: values) {
+            buffer.putInt(value);
+        }
+        hash.accept(buffer.array());
+    }
+    
+    protected static void hash(Consumer<byte[]> h, Collection<? extends Hashable> hasheds) {
+        for (Hashable hashable: hasheds) {
+            if (hashable != null) {
+                hashable.hashTo(h);
+            }
+        }
+    }
+    
+    protected static void hashBools(Consumer<byte[]> h, Boolean... truths) {
+        for (Boolean truth: truths) {
+            h.accept(truth == null ? NO_TRUTH : truth ? TRUTHYNESS : FALSYNESS);
+        }
+    }
+    
     @Override
     public final int hashCode() {
         return getHash().hashCode();
     }
-
+    
     @Override
     public final boolean equals(Object obj) {
         return obj == this || obj.getClass() == getClass()
             && ((Hashed) obj).getHash().equals(getHash());
     }
-
+    
     @Override
     public final String toString() {
         return toString.get();

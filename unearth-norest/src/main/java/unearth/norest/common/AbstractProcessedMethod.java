@@ -43,7 +43,7 @@ public abstract class AbstractProcessedMethod {
     
     private final boolean returnData;
     
-    private final RequestMethod httpMethod;
+    private final RequestMethod requestMethod;
     
     private final String path;
     
@@ -84,7 +84,7 @@ public abstract class AbstractProcessedMethod {
         
         int rootIndex = rootIndex(this.path);
         this.rootPath = rootIndex < 0 ? this.path : this.path.substring(0, rootIndex);
-        this.httpMethod = httpMethod(annotation);
+        this.requestMethod = httpMethod(annotation);
         
         String regex = PATH_ARG.matcher(this.path).replaceAll("\\([^/]*\\)");
         this.matchPattern = Pattern.compile(regex);
@@ -100,8 +100,8 @@ public abstract class AbstractProcessedMethod {
         this.returnData = returnType != void.class;
         this.returnType = getActualReturnType(this.method, this.optionalReturn, returnType);
         
-        this.stringBody = this.httpMethod.isEntity() && parameterTypes[0] == String.class;
-        this.bodyArgumentIndex = this.httpMethod.isEntity() ?
+        this.stringBody = this.requestMethod.isEntity() && parameterTypes[0] == String.class;
+        this.bodyArgumentIndex = this.requestMethod.isEntity() ?
             IntStream.range(0, parameterAnnotations.length)
                 .filter(i -> parameterAnnotations[i] == null || parameterAnnotations[i].length == 0)
                 .findFirst()
@@ -111,74 +111,74 @@ public abstract class AbstractProcessedMethod {
         
         this.queryParameters = paramsWhere(i ->
             parameterAnnotations[i].length > 0);
-        this.pathParameters = httpMethod.isEntity()
+        this.pathParameters = requestMethod.isEntity()
             ? Collections.emptyMap()
             : paramsWhere(i ->
                 parameterAnnotations[i] == null || parameterAnnotations[i].length == 0);
         this.transformers = transformers == null ? Transformers.EMPTY : transformers;
     }
     
-    protected boolean isReturnData() {
-        return returnData;
+    protected boolean nullReturn() {
+        return !returnData;
     }
     
-    protected RequestMethod getHttpMethod() {
-        return httpMethod;
+    protected RequestMethod requestMethod() {
+        return requestMethod;
     }
     
-    protected String getPath() {
+    protected String path() {
         return path;
     }
     
-    protected String getRootPath() {
+    protected String rootPath() {
         return rootPath;
     }
     
-    protected Map<Integer, String> getQueryParameters() {
+    protected Map<Integer, String> queryParameters() {
         return queryParameters;
     }
     
-    protected Map<Integer, String> getPathParameters() {
+    protected Map<Integer, String> pathParameters() {
         return pathParameters;
     }
     
-    protected boolean isStringBody() {
+    protected boolean stringBody() {
         return stringBody;
     }
     
-    protected Class<?> getReturnType() {
+    protected Class<?> returnType() {
         return returnType;
     }
     
-    protected boolean isOptionalReturn() {
+    protected boolean optionalReturn() {
         return optionalReturn;
     }
     
-    protected Pattern getMatchPattern() {
+    protected Pattern matchPattern() {
         return matchPattern;
     }
     
-    protected Transformers getTransformers() {
+    protected Transformers transformers() {
         return transformers;
     }
     
-    protected Method getMethod() {
+    protected Method method() {
         return method;
     }
     
-    protected Class<?>[] getParameterTypes() {
+    protected Class<?>[] parameterTypes() {
         return parameterTypes;
     }
     
-    protected Parameter[] getParameters() {
+    protected Parameter[] parameters() {
         return parameters;
     }
     
-    protected String[] getParameterNames() {
+    protected String[] parameterNames() {
         return parameterNames;
     }
     
-    protected int getBodyArgumentIndex() {
+    protected int bodyArgumentIndex() {
         return bodyArgumentIndex;
     }
     
@@ -277,7 +277,7 @@ public abstract class AbstractProcessedMethod {
     
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + httpMethod + " " + path + (
+        return getClass().getSimpleName() + "[" + requestMethod + " " + path + (
             queryParameters.isEmpty() ? "" : "?" + String.join("&", queryParameters.values())
         ) + "]";
     }

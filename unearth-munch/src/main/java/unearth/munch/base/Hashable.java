@@ -19,6 +19,6 @@ package unearth.munch.base;
 import java.util.function.Consumer;
 
 public interface Hashable extends Hashed {
-
+    
     void hashTo(Consumer<byte[]> h);
 }

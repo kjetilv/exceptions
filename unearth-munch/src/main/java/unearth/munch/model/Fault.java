@@ -33,11 +33,21 @@ import unearth.util.Streams;
  * A fault has a {@link FaultStrand fault strand} and a list of {@link Cause causes}.
  */
 public final class Fault extends AbstractHashableIdentifiable<FaultId> {
-
+    
+    public static Fault create(Throwable throwable) {
+        List<Cause> causes = Cause.causes(throwable);
+        FaultStrand faultStrand = FaultStrand.create(causes);
+        return new Fault(faultStrand, causes);
+    }
+    
+    public static Fault create(FaultStrand faultStrand, Collection<Cause> causes) {
+        return new Fault(faultStrand, causes);
+    }
+    
     private final FaultStrand faultStrand;
-
+    
     private final List<Cause> causes;
-
+    
     private Fault(FaultStrand faultStrand, Collection<Cause> causes) {
         this.faultStrand = Objects.requireNonNull(faultStrand);
         this.causes = causes == null || causes.isEmpty() ? Collections.emptyList() : List.copyOf(causes);
@@ -46,21 +56,11 @@ public final class Fault extends AbstractHashableIdentifiable<FaultId> {
                 "Expected same arity: " + this.faultStrand.getCauseStrands().size() + '/' + this.causes.size());
         }
     }
-
-    public static Fault create(Throwable throwable) {
-        List<Cause> causes = Cause.causes(throwable);
-        FaultStrand faultStrand = FaultStrand.create(causes);
-        return new Fault(faultStrand, causes);
-    }
-
-    public static Fault create(FaultStrand faultStrand, Collection<Cause> causes) {
-        return new Fault(faultStrand, causes);
-    }
-
+    
     public FaultStrand getFaultStrand() {
         return faultStrand;
     }
-
+    
     public List<Cause> getCauses() {
         return causes;
     }
@@ -70,18 +70,18 @@ public final class Fault extends AbstractHashableIdentifiable<FaultId> {
             Streams.reverse(causes),
             (cause, throwable) -> throwable.toChameleon(cause));
     }
-
+    
     @Override
     public void hashTo(Consumer<byte[]> h) {
         hash(h, faultStrand);
         hash(h, causes);
     }
-
+    
     @Override
     protected FaultId id(UUID hash) {
         return new FaultId(hash);
     }
-
+    
     @Override
     protected String toStringBody() {
         String ell = "...";

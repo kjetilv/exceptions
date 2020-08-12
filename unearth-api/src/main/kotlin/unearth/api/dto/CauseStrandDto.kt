@@ -24,4 +24,5 @@ data class CauseStrandDto(
 
     val fullStack: List<StackTraceElementDto>?,
 
-    val printStack: List<String>?)
+    val printStack: List<String>?
+)
