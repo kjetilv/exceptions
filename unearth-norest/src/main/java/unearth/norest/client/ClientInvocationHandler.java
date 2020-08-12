@@ -44,21 +44,21 @@ class ClientInvocationHandler implements InvocationHandler {
     
     private final IOHandler ioHandler;
     
-    private final ClientSideMethods callableMethods;
+    private final ClientSideMethods clientSideMethods;
     
-    ClientInvocationHandler(Class<?> type, URI uri, IOHandler ioHandler, ClientSideMethods callableMethods) {
+    ClientInvocationHandler(Class<?> type, URI uri, IOHandler ioHandler, ClientSideMethods clientSideMethods) {
         this.type = Objects.requireNonNull(type, "type");
         this.uri = Objects.requireNonNull(uri, "uri").toASCIIString().endsWith("/")
             ? uri
             : URI.create(uri.toASCIIString() + "/");
         this.ioHandler = ioHandler;
-        this.callableMethods = callableMethods;
+        this.clientSideMethods = clientSideMethods;
     }
     
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) {
         if (method.getDeclaringClass() == type) {
-            ClientSideMethod meta = callableMethods.get(method);
+            ClientSideMethod meta = clientSideMethods.get(method);
             return response(
                 meta,
                 request(uri, meta, args));
@@ -75,38 +75,38 @@ class ClientInvocationHandler implements InvocationHandler {
             "Unwilling to invoke " + method + " on " + proxy + ": " + Arrays.toString(args));
     }
     
-    private Object response(ClientSideMethod callableMethod, HttpRequest request) {
-        if (callableMethod.isReturnData()) {
+    private Object response(ClientSideMethod clientSideMethod, HttpRequest request) {
+        if (clientSideMethod.isReturnData()) {
             HttpResponse<InputStream> response = response(request);
-            if (response.statusCode() == 204 && callableMethod.isReturnOptional()) {
+            if (response.statusCode() == 204 && clientSideMethod.isReturnOptional()) {
                 return Optional.empty();
             }
-            Object object = parse(callableMethod, response);
-            return callableMethod.wrapResponse(object);
+            Object object = parse(clientSideMethod, response);
+            return clientSideMethod.wrapResponse(object);
         }
         response(request);
         return null;
     }
     
-    private Object parse(ClientSideMethod callableMethod, HttpResponse<InputStream> response) {
+    private Object parse(ClientSideMethod clientSideMethod, HttpResponse<InputStream> response) {
         try (InputStream body = response.body()) {
-            return ioHandler.readBytes(callableMethod.getReturnType(), body);
+            return ioHandler.readBytes(clientSideMethod.getReturnType(), body);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to read response: " + response, e);
         }
     }
     
-    private HttpRequest request(URI root, ClientSideMethod callableMethod, Object... args) {
-        HttpRequest.Builder builder = base(root, callableMethod, args);
-        return callableMethod.getRequestMethod() == RequestMethod.POST
-            ? builder.POST(bodyPublisher(callableMethod, args)).build()
+    private HttpRequest request(URI root, ClientSideMethod clientSideMethod, Object... args) {
+        HttpRequest.Builder builder = base(root, clientSideMethod, args);
+        return clientSideMethod.getRequestMethod() == RequestMethod.POST
+            ? builder.POST(bodyPublisher(clientSideMethod, args)).build()
             : builder.build();
     }
     
-    private HttpRequest.BodyPublisher bodyPublisher(ClientSideMethod callableMethod, Object[] args) {
-        return callableMethod.bodyArgument(args)
+    private HttpRequest.BodyPublisher bodyPublisher(ClientSideMethod clientSideMethod, Object[] args) {
+        return clientSideMethod.bodyArgument(args)
             .map(body ->
-                callableMethod.isStringBody()
+                clientSideMethod.isStringBody()
                     ? bytes(body.toString())
                     : ioHandler.writeBytes(body))
             .map(bytes ->

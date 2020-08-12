@@ -29,18 +29,25 @@ import unearth.norest.common.Transformers;
 public final class Proto {
     
     public static <T> T type(Class<T> api, URI uri, IOHandler ioHandler, Transformer<?>... transformers) {
-        return type(api, uri, ioHandler, Arrays.asList(transformers));
+        return type(
+            api,
+            uri,
+            ioHandler,
+            Arrays.asList(transformers));
     }
     
     public static <T> T type(Class<T> api, URI uri, IOHandler ioHandler, List<Transformer<?>> transformers) {
-        return api.cast(Proxy.newProxyInstance(
-            Thread.currentThread().getContextClassLoader(),
-            new Class<?>[] { api },
-            new ClientInvocationHandler(
-                api,
-                uri,
-                ioHandler,
-                new ClientSideMethods(new Transformers(transformers)))));
+        return api.cast(
+            Proxy.newProxyInstance(
+                Thread.currentThread().getContextClassLoader(),
+                new Class<?>[] {
+                    api
+                },
+                new ClientInvocationHandler(
+                    api,
+                    uri,
+                    ioHandler,
+                    new ClientSideMethods(new Transformers(transformers)))));
     }
     
     private Proto() {
