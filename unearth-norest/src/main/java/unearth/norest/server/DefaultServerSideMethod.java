@@ -26,7 +26,6 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import unearth.norest.common.AbstractProcessedMethod;
 import unearth.norest.common.Request;
@@ -39,29 +38,27 @@ final class DefaultServerSideMethod extends AbstractProcessedMethod implements S
     }
     
     @Override
-    public Stream<Function<Object, Object>> invocation(Request request) {
+    public Optional<Function<Object, Object>> invocation(Request request) {
         if (request.getMethod() != this.requestMethod()) {
-            return Stream.empty();
+            return Optional.empty();
         }
         return invocation(request, request.getPath(false));
     }
     
-    private Stream<Function<Object, Object>> invocation(Request request, String path) {
+    private Optional<Function<Object, Object>> invocation(Request request, String path) {
         if (!path.startsWith(rootPath())) {
-            return Stream.empty();
+            return Optional.empty();
         }
         if (path.equals(rootPath())) {
-            return Stream.of(invoker(request, null));
+            return Optional.of(invoker(request, null));
         }
         return matching(request, path);
     }
     
-    private Stream<Function<Object, Object>> matching(Request request, String requestedPath) {
-        Matcher matcher = matchPattern().matcher(requestedPath);
-        if (matcher.matches()) {
-            return Stream.of(invoker(request, matcher));
-        }
-        return Stream.empty();
+    private Optional<Function<Object, Object>> matching(Request request, String requestedPath) {
+        return Optional.of(matchPattern().matcher(requestedPath))
+            .filter(Matcher::matches)
+            .map(matcher -> invoker(request, matcher));
     }
     
     private Function<Object, Object> invoker(Request request, Matcher matcher) {

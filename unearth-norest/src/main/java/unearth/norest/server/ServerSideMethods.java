@@ -48,8 +48,9 @@ final class ServerSideMethods<A> {
     
     public Optional<Function<Object, Object>> invocation(Request request) {
         return serverSideMethods.stream()
-            .flatMap(serverSideMethod ->
+            .map(serverSideMethod ->
                 serverSideMethod.invocation(request))
+            .flatMap(Optional::stream)
             .findFirst();
     }
     

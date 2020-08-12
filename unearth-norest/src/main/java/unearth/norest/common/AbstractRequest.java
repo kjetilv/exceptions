@@ -18,7 +18,9 @@ package unearth.norest.common;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public abstract class AbstractRequest implements Request {
@@ -27,9 +29,20 @@ public abstract class AbstractRequest implements Request {
     
     private final int queryIndex;
     
-    public AbstractRequest(String prefix, String uri) {
+    protected AbstractRequest(String prefix, String uri) {
         this.uri = normalized(prefix, uri);
         this.queryIndex = this.uri.indexOf('?');
+    }
+    
+    @Override
+    public Optional<Request> prefixed(String prefix) {
+        if (prefix == null) {
+            return Optional.of(this);
+        }
+        if (uri.startsWith(prefix)) {
+            return Optional.of(createPrefixed(prefix));
+        }
+        return Optional.empty();
     }
     
     @Override
@@ -39,8 +52,7 @@ public abstract class AbstractRequest implements Request {
     
     @Override
     public String getPath(boolean withQueryParameters) {
-        return withQueryParameters || !hasQueryParameters()
-            ? uri
+        return withQueryParameters || !hasQueryParameters() ? uri
             : uri.substring(0, getQueryIndex());
     }
     
@@ -51,8 +63,17 @@ public abstract class AbstractRequest implements Request {
     
     @Override
     public String getEntity() {
-        CharSequence body = getBodyContent();
-        return body.toString();
+        return getBodyContent().toString();
+    }
+    
+    @Override
+    public Map<String, String> getHeaders() {
+        return retrieveHeaders().entrySet().stream()
+            .filter(e ->
+                !e.getValue().isEmpty())
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                e -> single(e.getKey(), e.getValue())));
     }
     
     @Override
@@ -72,9 +93,13 @@ public abstract class AbstractRequest implements Request {
                 }));
     }
     
+    protected abstract Request createPrefixed(String prefix);
+    
     protected abstract CharSequence getBodyContent();
     
     protected abstract String getMethodName();
+    
+    protected abstract Map<String, List<String>> retrieveHeaders();
     
     private static final String BAD_TAIL = "/?";
     
@@ -96,6 +121,13 @@ public abstract class AbstractRequest implements Request {
     
     private static String unpostslashed(String path) {
         return path.endsWith("/") ? unpostslashed(path.substring(0, path.length() - 1)) : path;
+    }
+    
+    protected static String single(String name, List<String> value) {
+        if (value.size() > 1) {
+            throw new IllegalStateException("Multi-value header: " + name + ": " + value);
+        }
+        return value.iterator().next();
     }
     
     protected static String normalized(String prefix, String uri) {

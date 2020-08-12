@@ -15,14 +15,20 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.norest.server;
+package unearth.norest.netty;
 
-import java.util.Optional;
-import java.util.function.Function;
-
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
 import unearth.norest.common.Request;
 
-interface ServerSideMethod {
+public class MetricsOutbound extends SimpleChannelInboundHandler<Request> {
     
-    Optional<Function<Object, Object>> invocation(Request request);
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, Request msg) {
+        try {
+        
+        } finally {
+            ctx.fireChannelRead(msg);
+        }
+    }
 }

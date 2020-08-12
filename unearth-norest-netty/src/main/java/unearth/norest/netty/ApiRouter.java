@@ -28,7 +28,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
-import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
@@ -38,7 +37,7 @@ import unearth.norest.common.IOHandler;
 import unearth.norest.common.Request;
 
 @ChannelHandler.Sharable
-public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
+public class ApiRouter extends SimpleChannelInboundHandler<Request> {
     
     private static final Logger log = LoggerFactory.getLogger(ApiRouter.class);
     
@@ -55,30 +54,22 @@ public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
     }
     
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest) {
-        if (fullHttpRequest.uri().startsWith(prefix)) {
-            try {
-                Request request = new SimpleNettyRequest(prefix, fullHttpRequest);
-                invoker.apply(request)
-                    .ifPresentOrElse(
-                        response -> {
-                            log.info("OK: {}", request);
-                            respond(ctx, response);
-                        },
-                        () -> {
-                            log.warn("Not found : " + fullHttpRequest);
-                            ctx.fireChannelRead(fullHttpRequest);
-                        });
-            } catch (Exception e) {
-                log.error("Failed to serve {} {}", fullHttpRequest.method().name(), fullHttpRequest.uri(), e);
-                ctx.fireExceptionCaught(e);
+    protected void channelRead0(ChannelHandlerContext ctx, Request request) {
+        try {
+            Optional<Object> response = request.prefixed(prefix)
+                .flatMap(req ->
+                    invoker.apply(req).map(res ->
+                        respond(ctx, res)));
+            if (response.isEmpty()) {
+                ctx.fireChannelRead(request);
             }
-        } else {
-            ctx.fireChannelRead(fullHttpRequest);
+        } catch (Exception e) {
+            log.error("Failed to serve {} {}", request.getMethod(), request.getPath(false), e);
+            ctx.fireExceptionCaught(e);
         }
     }
     
-    private void respond(ChannelOutboundInvoker ctx, Object result) {
+    private Object respond(ChannelOutboundInvoker ctx, Object result) {
         byte[] bytes = ioHandler.writeBytes(result);
         ByteBuf content = Unpooled.wrappedBuffer(bytes);
         HttpHeaders headers = new DefaultHttpHeaders(true)
@@ -90,5 +81,6 @@ public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
                 content,
                 headers,
                 EmptyHttpHeaders.INSTANCE));
+        return result;
     }
 }

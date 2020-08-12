@@ -18,19 +18,42 @@
 package unearth.norest.netty;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaders;
 import unearth.norest.common.AbstractRequest;
+import unearth.norest.common.Request;
 
 public final class SimpleNettyRequest extends AbstractRequest {
     
     private final FullHttpRequest httpRequest;
     
+    public SimpleNettyRequest(FullHttpRequest httpRequest) {
+        this(null, httpRequest);
+    }
+    
     public SimpleNettyRequest(String prefix, FullHttpRequest httpRequest) {
         super(prefix, Objects.requireNonNull(httpRequest, "fullHttpRequest").uri());
         this.httpRequest = httpRequest;
+    }
+    
+    @Override
+    protected Map<String, List<String>> retrieveHeaders() {
+        HttpHeaders headers = httpRequest.headers();
+        return headers.names().stream().collect(Collectors.toMap(
+            Function.identity(),
+            headers::getAllAsString));
+    }
+    
+    @Override
+    protected Request createPrefixed(String prefix) {
+        return new SimpleNettyRequest(prefix, httpRequest);
     }
     
     @Override

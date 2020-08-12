@@ -18,8 +18,11 @@
 package unearth.norest.common;
 
 import java.util.Map;
+import java.util.Optional;
 
 public interface Request {
+    
+    Optional<Request> prefixed(String prefix);
     
     RequestMethod getMethod();
     
@@ -36,6 +39,8 @@ public interface Request {
     }
     
     String getEntity();
+    
+    Map<String, String> getHeaders();
     
     Map<String, String> getQueryParameters();
 }

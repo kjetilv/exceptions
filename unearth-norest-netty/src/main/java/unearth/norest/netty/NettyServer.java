@@ -103,7 +103,7 @@ public final class NettyServer {
     }
     
     public void start() {
-        started.updateAndGet(exsting -> exsting != null ? exsting
+        started.updateAndGet(existing -> existing != null ? existing
             : new ServerBootstrap()
                 .group(listen, work)
                 .childHandler(new ChannelInit(handlers))
@@ -158,7 +158,8 @@ public final class NettyServer {
         protected void initChannel(NioSocketChannel channel) {
             ChannelPipeline pipeline = channel.pipeline()
                 .addLast("decoder", new HttpServerCodec())
-                .addLast("aggregator", new HttpObjectAggregator(MAX_CONTENT_LENGTH));
+                .addLast("aggregator", new HttpObjectAggregator(MAX_CONTENT_LENGTH))
+                .addLast("wrapper", new RequestWrapper(SimpleNettyRequest::new));
             handlers.forEach(h ->
                 pipeline.addLast(h.getClass().getSimpleName(), h));
             pipeline.addLast("errors", new ErrorHandler());

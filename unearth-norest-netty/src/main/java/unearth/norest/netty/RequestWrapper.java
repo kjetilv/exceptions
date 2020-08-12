@@ -15,14 +15,26 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.norest.server;
+package unearth.norest.netty;
 
-import java.util.Optional;
+import java.util.Objects;
 import java.util.function.Function;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.FullHttpRequest;
 import unearth.norest.common.Request;
 
-interface ServerSideMethod {
+public final class RequestWrapper extends SimpleChannelInboundHandler<FullHttpRequest> {
     
-    Optional<Function<Object, Object>> invocation(Request request);
+    private final Function<FullHttpRequest, Request> wrapper;
+    
+    public RequestWrapper(Function<FullHttpRequest, Request> wrapper) {
+        this.wrapper = Objects.requireNonNull(wrapper, "wrapper");
+    }
+    
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) {
+        ctx.fireChannelRead(wrapper.apply(msg));
+    }
 }
