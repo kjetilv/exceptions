@@ -56,12 +56,7 @@ public final class DefaultClientSideMethod extends AbstractProcessedMethod imple
     
     @Override
     public String getContentType() {
-        return super.isStringBody() ? TEXT : JSON;
-    }
-    
-    @Override
-    public boolean isStringBody() {
-        return super.isStringBody();
+        return isStringBody() ? TEXT : JSON;
     }
     
     @Override
@@ -72,7 +67,7 @@ public final class DefaultClientSideMethod extends AbstractProcessedMethod imple
     }
     
     @Override
-    public String path(Object... args) {
+    public String buildPath(Object... args) {
         if (args == null || args.length == 0 || getHttpMethod().isEntity()) {
             return getPath();
         }
@@ -89,17 +84,29 @@ public final class DefaultClientSideMethod extends AbstractProcessedMethod imple
     
     @Override
     public boolean isReturnData() {
-        return isReturnsData();
+        return super.isReturnData();
     }
     
     @Override
-    public boolean isReturnOptional() {
-        return isOptionalReturn();
+    public boolean isStringBody() {
+        return super.isStringBody();
     }
     
     @Override
     public Class<?> getReturnType() {
         return super.getReturnType();
+    }
+    
+    @Override
+    public boolean isOptionalReturn() {
+        return super.isOptionalReturn();
+    }
+    
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + getHttpMethod() + " " + getPath() + (
+            getQueryParameters().isEmpty() ? "" : "?" + String.join("&", getQueryParameters().values())
+        ) + "]";
     }
     
     private String queryPath(Object[] args) {
@@ -124,11 +131,4 @@ public final class DefaultClientSideMethod extends AbstractProcessedMethod imple
     private static final String TEXT = "text/plain;charset=UTF-8";
     
     private static final String PAR = "{}";
-    
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" + getHttpMethod() + " " + getPath() + (
-            getQueryParameters().isEmpty() ? "" : "?" + String.join("&", getQueryParameters().values())
-        ) + "]";
-    }
 }

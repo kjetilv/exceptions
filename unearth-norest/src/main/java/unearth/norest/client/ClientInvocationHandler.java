@@ -78,7 +78,7 @@ class ClientInvocationHandler implements InvocationHandler {
     private Object response(ClientSideMethod clientSideMethod, HttpRequest request) {
         if (clientSideMethod.isReturnData()) {
             HttpResponse<InputStream> response = response(request);
-            if (response.statusCode() == 204 && clientSideMethod.isReturnOptional()) {
+            if (response.statusCode() == 204 && clientSideMethod.isOptionalReturn()) {
                 return Optional.empty();
             }
             Object object = parse(clientSideMethod, response);
@@ -130,7 +130,7 @@ class ClientInvocationHandler implements InvocationHandler {
     }
     
     private static HttpRequest.Builder base(URI root, ClientSideMethod meta, Object... args) {
-        URI uri = URI.create(root.toASCIIString() + meta.path(args));
+        URI uri = URI.create(root.toASCIIString() + meta.buildPath(args));
         return HttpRequest.newBuilder()
             .uri(uri)
             .header(CONTENT_TYPE, meta.getContentType());

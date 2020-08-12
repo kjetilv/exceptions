@@ -49,9 +49,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import unearth.norest.ApiInvoker;
 import unearth.norest.common.IOHandler;
 import unearth.norest.common.Request;
+import unearth.norest.server.ApiInvoker;
 
 @ChannelHandler.Sharable
 public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {

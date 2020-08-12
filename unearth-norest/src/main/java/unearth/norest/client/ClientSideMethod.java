@@ -31,21 +31,21 @@ public interface ClientSideMethod {
     
     Optional<Object> bodyArgument(Object... args);
     
-    String path(Object... args);
+    String buildPath(Object... args);
     
     boolean isReturnData();
     
-    boolean isReturnOptional();
+    boolean isOptionalReturn();
     
     Class<?> getReturnType();
     
     default Object wrapResponse(Object object) {
         if (object == null) {
-            if (isReturnOptional()) {
+            if (isOptionalReturn()) {
                 return Optional.empty();
             }
             throw new IllegalStateException("No object returned");
         }
-        return isReturnOptional() ? Optional.of(object) : object;
+        return isOptionalReturn() ? Optional.of(object) : object;
     }
 }

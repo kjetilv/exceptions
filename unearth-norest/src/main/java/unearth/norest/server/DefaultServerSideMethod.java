@@ -128,7 +128,7 @@ public final class DefaultServerSideMethod extends AbstractProcessedMethod imple
             throw new IllegalStateException(
                 "Failed to invoke on " + impl + ": " + getMethod() + "" + Arrays.toString(args), e);
         }
-        if (result == null || !isReturnsData()) {
+        if (result == null || !isReturnData()) {
             return null;
         }
         if (isOptionalReturn()) {

@@ -41,7 +41,7 @@ import unearth.norest.Q;
 
 public abstract class AbstractProcessedMethod {
     
-    private final boolean returnsData;
+    private final boolean returnData;
     
     private final RequestMethod httpMethod;
     
@@ -97,7 +97,7 @@ public abstract class AbstractProcessedMethod {
             IntStream.range(0, parameters.length).mapToObj(this::paramName).toArray(String[]::new);
         
         this.optionalReturn = Optional.class.isAssignableFrom(returnType);
-        this.returnsData = returnType != void.class;
+        this.returnData = returnType != void.class;
         this.returnType = getActualReturnType(this.method, this.optionalReturn, returnType);
         
         this.stringBody = this.httpMethod.isEntity() && parameterTypes[0] == String.class;
@@ -118,8 +118,8 @@ public abstract class AbstractProcessedMethod {
         this.transformers = transformers == null ? Transformers.EMPTY : transformers;
     }
     
-    protected boolean isReturnsData() {
-        return returnsData;
+    protected boolean isReturnData() {
+        return returnData;
     }
     
     protected RequestMethod getHttpMethod() {
