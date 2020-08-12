@@ -153,7 +153,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
             : loadFaultEvents(
                 "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
                     "  from feed_entry " +
-                    "  where global_seq >= ? limit ?",
+                    "  where global_seq > ? limit ?",
                 stmt -> stmt
                     .set(offset)
                     .set(count));
@@ -165,7 +165,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
             : loadFaultEvents(
                 "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
                     "   from feed_entry" +
-                    "   where fault_strand = ? and global_seq >= ? limit ?",
+                    "   where fault_strand = ? and global_seq > ? limit ?",
                 stmt -> stmt
                     .set(id)
                     .set(offset)
@@ -178,7 +178,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
             : loadFaultEvents(
                 "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
                     "  from feed_entry" +
-                    "  where fault = ? and global_seq >= ? limit ?",
+                    "  where fault = ? and global_seq > ? limit ?",
                 stmt -> stmt
                     .set(id)
                     .set(offset)
@@ -249,7 +249,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
             "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq from feed_entry" +
                 (id == null ? "" : " where " + (id instanceof FaultId ? "fault" : "fault_strand") + " = ?") +
                 (sinceTime == null ? ""
-                    : " and time >= ?" + (
+                    : " and time > ?" + (
                         period == null ? ""
                             : " and time <= ? ")),
             stmt ->
@@ -350,7 +350,7 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         return session.select(
             "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
                 " from feed_entry" +
-                " where fault = ? and time >= ? order by fault_seq desc limit 1",
+                " where fault = ? and time > ? order by fault_seq desc limit 1",
             stmt ->
                 stmt.set(id),
             Sql::readFeedEntry);
