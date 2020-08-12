@@ -24,9 +24,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import unearth.norest.Transformer;
+import unearth.norest.Transformers;
 import unearth.norest.common.Request;
-import unearth.norest.common.Transformer;
-import unearth.norest.common.Transformers;
 
 final class ServerSideMethods<A> {
     
@@ -56,7 +56,7 @@ final class ServerSideMethods<A> {
     
     private ServerSideMethod processed(java.lang.reflect.Method method) {
         try {
-            return new DefaultServerSideMethod(method, this.transformers);
+            return new ServerSideMethod(method, this.transformers);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to process: " + method, e);
         }

@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import unearth.norest.Transformer;
 import unearth.norest.common.Request;
-import unearth.norest.common.Transformer;
 
 public final class ApiInvoker<A> {
     

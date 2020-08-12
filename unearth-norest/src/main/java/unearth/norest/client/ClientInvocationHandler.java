@@ -33,7 +33,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import unearth.norest.common.IOHandler;
+import unearth.norest.IOHandler;
 import unearth.norest.common.RequestMethod;
 
 class ClientInvocationHandler implements InvocationHandler {

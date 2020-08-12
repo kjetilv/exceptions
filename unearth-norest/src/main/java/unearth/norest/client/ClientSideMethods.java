@@ -21,7 +21,7 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import unearth.norest.common.Transformers;
+import unearth.norest.Transformers;
 
 final class ClientSideMethods {
     
@@ -37,7 +37,7 @@ final class ClientSideMethods {
         return callableMethods.computeIfAbsent(
             method,
             __ ->
-                new DefaultClientSideMethod(method, transformers));
+                new ClientSideMethod(method, transformers));
     }
     
     @Override

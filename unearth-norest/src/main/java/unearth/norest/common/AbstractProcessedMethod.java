@@ -32,12 +32,13 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import unearth.norest.DELETE;
-import unearth.norest.GET;
-import unearth.norest.HEAD;
-import unearth.norest.POST;
-import unearth.norest.PUT;
-import unearth.norest.Q;
+import unearth.norest.Transformers;
+import unearth.norest.annotations.DELETE;
+import unearth.norest.annotations.GET;
+import unearth.norest.annotations.HEAD;
+import unearth.norest.annotations.POST;
+import unearth.norest.annotations.PUT;
+import unearth.norest.annotations.Q;
 
 public abstract class AbstractProcessedMethod {
     

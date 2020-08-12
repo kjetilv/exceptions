@@ -33,9 +33,9 @@ import unearth.api.dto.FaultStrandIdDto;
 import unearth.api.dto.FeedEntryDto;
 import unearth.api.dto.FeedEntryIdDto;
 import unearth.api.dto.Submission;
-import unearth.norest.GET;
-import unearth.norest.POST;
-import unearth.norest.Q;
+import unearth.norest.annotations.GET;
+import unearth.norest.annotations.POST;
+import unearth.norest.annotations.Q;
 
 public interface UnearthlyApi {
     

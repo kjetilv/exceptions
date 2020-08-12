@@ -44,6 +44,7 @@ import unearth.api.dto.FeedEntryDto;
 import unearth.api.dto.FeedEntryIdDto;
 import unearth.api.dto.StackTraceElementDto;
 import unearth.api.dto.Submission;
+import unearth.norest.Transformer;
 import unearth.norest.client.Proto;
 import unearth.norest.common.JacksonIOHandler;
 
@@ -55,7 +56,13 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
         this.unearthlyService = Proto.type(
             UnearthlyApi.class,
             uri,
-            JacksonIOHandler.withDefaults(new ObjectMapper()));
+            JacksonIOHandler.withDefaults(new ObjectMapper()),
+            List.of(
+                Transformer.from(FaultIdDto.class, FaultIdDto::new),
+                Transformer.from(FaultStrandIdDto.class, FaultStrandIdDto::new),
+                Transformer.from(CauseIdDto.class, CauseIdDto::new),
+                Transformer.from(CauseStrandIdDto.class, CauseStrandIdDto::new),
+                Transformer.from(FeedEntryIdDto.class, FeedEntryIdDto::new)));
     }
     
     @Override
@@ -132,8 +139,8 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     @Override
     public EventSequenceDto globalFeed(Page page, StackType stackType) {
         return unearthlyService.globalFeed(
-            (long) page.getPageNo() * page.getPageSize(),
-            (long) page.getPageNo(),
+            page.getPageNo() * page.getPageSize(),
+            page.getPageNo(),
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
     }
@@ -142,18 +149,22 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     public FaultEventSequenceDto faultFeed(FaultIdDto faultId, Page page, StackType stackType) {
         return unearthlyService.faultFeed(
             faultId,
-            (long) page.getPageNo() * page.getPageSize(),
-            (long) page.getPageNo(),
+            page.getPageNo() * page.getPageSize(),
+            page.getPageNo(),
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
     }
     
     @Override
-    public FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultStrandId, Page page, StackType stackType) {
+    public FaultStrandEventSequenceDto faultStrandFeed(
+        FaultStrandIdDto faultStrandId,
+        Page page,
+        StackType stackType
+    ) {
         return unearthlyService.faultStrandFeed(
             faultStrandId,
-            (long) page.getPageNo() * page.getPageSize(),
-            (long) page.getPageNo(),
+            page.getPageNo() * page.getPageSize(),
+            page.getPageNo(),
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
     }

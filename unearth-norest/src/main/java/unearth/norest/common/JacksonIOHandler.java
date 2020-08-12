@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import unearth.norest.IOHandler;
 
 public final class JacksonIOHandler implements IOHandler {
     

@@ -33,7 +33,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import unearth.norest.common.IOHandler;
+import unearth.norest.IOHandler;
 import unearth.norest.common.Request;
 
 @ChannelHandler.Sharable
