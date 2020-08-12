@@ -20,42 +20,42 @@ package unearth.norest.server;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import unearth.norest.common.ProcessedMethod;
 import unearth.norest.common.Request;
 import unearth.norest.common.Transformer;
 import unearth.norest.common.Transformers;
 
-public final class ForwardableMethods<A> {
+public final class ServerSideMethods<A> {
     
     private final Transformers transformers;
     
-    private final List<ForwardableMethod> forwardableMethods;
+    private final List<ServerSideMethod> serverSideMethods;
     
-    public ForwardableMethods(Class<A> api, List<Transformer<?>> transformers) {
+    public ServerSideMethods(Class<A> api, List<Transformer<?>> transformers) {
         this(api, new Transformers(transformers));
     }
     
-    public ForwardableMethods(Class<A> api, Transformers transformers) {
+    public ServerSideMethods(Class<A> api, Transformers transformers) {
         Objects.requireNonNull(api, "api");
         this.transformers = transformers;
-        this.forwardableMethods = Arrays.stream(api.getMethods())
+        this.serverSideMethods = Arrays.stream(api.getMethods())
             .map(this::processed)
             .collect(Collectors.toList());
     }
     
-    public Stream<Function<Object, Object>> invocation(Request request) {
-        return forwardableMethods.stream()
-            .flatMap(forwardableMethod ->
-                forwardableMethod.matchingInvoker(request));
+    public Optional<Function<Object, Object>> invocation(Request request) {
+        return serverSideMethods.stream()
+            .flatMap(serverSideMethod ->
+                serverSideMethod.invocation(request))
+            .findFirst();
     }
     
-    private ProcessedMethod processed(java.lang.reflect.Method method) {
+    private ServerSideMethod processed(java.lang.reflect.Method method) {
         try {
-            return new ProcessedMethod(method, this.transformers);
+            return new DefaultServerSideMethod(method, this.transformers);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to process: " + method, e);
         }

@@ -31,7 +31,7 @@ public enum RequestMethod {
         this.entity = entity;
     }
     
-    boolean isEntity() {
+    public boolean isEntity() {
         return this.entity;
     }
 }

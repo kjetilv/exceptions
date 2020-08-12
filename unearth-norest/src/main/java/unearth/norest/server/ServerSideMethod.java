@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 
 import unearth.norest.common.Request;
 
-public interface ForwardableMethod {
+public interface ServerSideMethod {
     
-    Stream<Function<Object, Object>> matchingInvoker(Request request);
+    Stream<Function<Object, Object>> invocation(Request request);
 }

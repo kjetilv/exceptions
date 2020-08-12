@@ -54,21 +54,12 @@ public class SimpleNettyRequest implements Request {
     
     private final int queryIndex;
     
-    public SimpleNettyRequest(FullHttpRequest httpRequest) {
-        this(null, null, httpRequest);
-    }
-    
-    private SimpleNettyRequest(String prefix, String uri, FullHttpRequest httpRequest) {
+    public SimpleNettyRequest(String prefix, FullHttpRequest httpRequest) {
         this.httpRequest = Objects.requireNonNull(httpRequest, "fullHttpRequest");
-        this.uri = uri(prefix, uri == null ? httpRequest.uri() : uri);
+        this.uri = clean(prefix == null
+            ? httpRequest.uri()
+            : httpRequest.uri().substring(prefix.length()));
         this.queryIndex = this.uri.indexOf('?');
-    }
-    
-    @Override
-    public Request suffix(String prefix) {
-        return prefix == null
-            ? this
-            : new SimpleNettyRequest(prefix, uri, httpRequest);
     }
     
     @Override
@@ -119,21 +110,16 @@ public class SimpleNettyRequest implements Request {
                 }));
     }
     
-    private static String uri(String prefix, String uri) {
-        if (prefix == null) {
-            return clean(uri);
-        }
-        if (!uri.startsWith(prefix)) {
-            throw new IllegalArgumentException("Invalid prefix for " + uri + ": " + prefix);
-        }
-        return clean(uri.substring(prefix.length()));
-    }
-    
     private static String clean(String uri) {
         int badTail = uri.indexOf("/?");
         if (badTail < 0) {
             return uri.trim();
         }
         return uri.substring(0, badTail) + '?' + uri.substring(badTail + 2).trim();
+    }
+    
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + httpRequest.method().name() + " " + uri + "]";
     }
 }

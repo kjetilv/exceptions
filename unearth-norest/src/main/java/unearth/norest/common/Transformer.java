@@ -62,7 +62,8 @@ public interface Transformer<T> {
             
             @Override
             public Optional<T> from(String string) {
-                return Optional.ofNullable(string).map(fun).or(() -> defaultOptional);
+                return Optional.ofNullable(string).map(fun)
+                    .or(() -> defaultOptional);
             }
             
             @Override

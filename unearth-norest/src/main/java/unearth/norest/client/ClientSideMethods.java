@@ -17,27 +17,27 @@
 
 package unearth.norest.client;
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import unearth.norest.common.ProcessedMethod;
 import unearth.norest.common.Transformers;
 
-final class RemotableMethods {
+final class ClientSideMethods {
     
     private final Transformers transformers;
     
-    private final Map<java.lang.reflect.Method, RemotableMethod> callableMethods = new HashMap<>();
+    private final Map<Method, ClientSideMethod> callableMethods = new HashMap<>();
     
-    RemotableMethods(Transformers transformers) {
+    ClientSideMethods(Transformers transformers) {
         this.transformers = transformers == null ? Transformers.EMPTY : transformers;
     }
     
-    RemotableMethod get(java.lang.reflect.Method method) {
+    ClientSideMethod get(java.lang.reflect.Method method) {
         return callableMethods.computeIfAbsent(
             method,
             __ ->
-                new ProcessedMethod(method, transformers));
+                new DefaultClientSideMethod(method, transformers));
     }
     
     @Override

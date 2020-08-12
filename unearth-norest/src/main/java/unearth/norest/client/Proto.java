@@ -40,7 +40,7 @@ public final class Proto {
                 api,
                 uri,
                 ioHandler,
-                new RemotableMethods(new Transformers(transformers)))));
+                new ClientSideMethods(new Transformers(transformers)))));
     }
     
     private Proto() {

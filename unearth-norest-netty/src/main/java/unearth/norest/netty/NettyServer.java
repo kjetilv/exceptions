@@ -35,7 +35,6 @@
 package unearth.norest.netty;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadFactory;
@@ -91,12 +90,13 @@ public final class NettyServer {
     
     private final List<ChannelHandler> handlers;
     
-    public NettyServer(int port, ChannelHandler... handlers) {
-        if (handlers.length == 0) {
+    public NettyServer(int port, List<ChannelHandler> handlers) {
+        this.port = port;
+        
+        if (handlers == null || handlers.isEmpty()) {
             throw new IllegalArgumentException("No handlers");
         }
-        this.port = port;
-        this.handlers = Arrays.asList(handlers);
+        this.handlers = List.copyOf(handlers);
         
         this.listenThreads = Runtime.getRuntime().availableProcessors();
         this.workThreads = 10;
@@ -111,6 +111,7 @@ public final class NettyServer {
             new ArrayBlockingQueue<>(queue),
             countingThreadFactory("work"),
             new ThreadPoolExecutor.CallerRunsPolicy());
+        
         this.listen = new NioEventLoopGroup(
             this.listenThreads,
             executor);
@@ -123,8 +124,8 @@ public final class NettyServer {
         started.updateAndGet(exsting -> exsting != null ? exsting
             : new ServerBootstrap()
                 .group(listen, work)
-                .channel(NioServerSocketChannel.class)
                 .childHandler(new ChannelInit(handlers))
+                .channel(NioServerSocketChannel.class)
                 .option(
                     CONNECT_TIMEOUT_MILLIS,
                     toIntExact(connectTimeout.toMillis()))
@@ -176,8 +177,8 @@ public final class NettyServer {
             ChannelPipeline pipeline = channel.pipeline()
                 .addLast("decoder", new HttpServerCodec())
                 .addLast("aggregator", new HttpObjectAggregator(MAX_CONTENT_LENGTH));
-            handlers.forEach(handler1 ->
-                pipeline.addLast(handler1.getClass().getSimpleName(), handler1));
+            handlers.forEach(h ->
+                pipeline.addLast(h.getClass().getSimpleName(), h));
         }
     }
     

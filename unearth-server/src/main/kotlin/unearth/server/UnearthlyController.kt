@@ -34,7 +34,7 @@ class UnearthlyController(
     clock: Clock = Clock.systemDefaultZone()
 ) : UnearthlyResources {
 
-    val handler: FaultHandler = DefaultFaultHandler(storage, sensor, stats, clock)
+    private val handler: FaultHandler = DefaultFaultHandler(storage, sensor, stats, clock)
 
     override fun close() {
         listOf<AutoCloseable>(storage, feed, stats).forEach(AutoCloseable::close)

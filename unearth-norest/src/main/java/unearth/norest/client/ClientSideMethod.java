@@ -21,7 +21,7 @@ import java.util.Optional;
 
 import unearth.norest.common.RequestMethod;
 
-public interface RemotableMethod {
+public interface ClientSideMethod {
     
     RequestMethod getRequestMethod();
     

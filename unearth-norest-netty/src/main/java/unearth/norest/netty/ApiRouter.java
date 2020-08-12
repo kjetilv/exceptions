@@ -36,7 +36,7 @@ package unearth.norest.netty;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundInvoker;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -53,58 +53,57 @@ import unearth.norest.ApiInvoker;
 import unearth.norest.common.IOHandler;
 import unearth.norest.common.Request;
 
+@ChannelHandler.Sharable
 public class ApiRouter<A> extends SimpleChannelInboundHandler<FullHttpRequest> {
     
     private static final Logger log = LoggerFactory.getLogger(ApiRouter.class);
+    
+    private final String prefix;
     
     private final IOHandler ioHandler;
     
     private final ApiInvoker<A> apiInvoker;
     
-    public ApiRouter(
-        IOHandler ioHandler,
-        ApiInvoker<A> apiInvoker
-    ) {
+    public ApiRouter(String prefix, IOHandler ioHandler, ApiInvoker<A> apiInvoker) {
+        this.prefix = prefix;
         this.ioHandler = ioHandler;
         this.apiInvoker = apiInvoker;
     }
     
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest) {
-        Request request = new SimpleNettyRequest(fullHttpRequest);
-        try {
-            apiInvoker.response(request)
-                .map(result ->
-                    responseFuture(ctx, result))
-                .orElseGet(() ->
-                    errorFuture(ctx, HttpResponseStatus.NOT_FOUND));
-        } catch (Exception e) {
-            log.error("Failed to serve {}", request, e);
-            errorFuture(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+        if (fullHttpRequest.uri().startsWith(prefix)) {
+            try {
+                Request request = new SimpleNettyRequest(prefix, fullHttpRequest);
+                apiInvoker.response(request)
+                    .ifPresentOrElse(response -> {
+                            log.info("{} -> {}", fullHttpRequest, response);
+                            respond(ctx, response);
+                        },
+                        () -> {
+                            log.warn("Not found : " + fullHttpRequest);
+                            ctx.fireChannelRead(fullHttpRequest);
+                        });
+            } catch (Exception e) {
+                log.error("Failed to serve {} {}", fullHttpRequest.method().name(), fullHttpRequest.uri(), e);
+                ctx.fireExceptionCaught(e);
+            }
+        } else {
+            ctx.fireChannelRead(fullHttpRequest);
         }
     }
     
-    private ChannelFuture responseFuture(ChannelOutboundInvoker ctx, Object result) {
+    private void respond(ChannelOutboundInvoker ctx, Object result) {
         byte[] bytes = ioHandler.writeBytes(result);
         ByteBuf content = Unpooled.wrappedBuffer(bytes);
         HttpHeaders headers = new DefaultHttpHeaders(true)
             .add("Content-Length", bytes.length);
-        return ctx.writeAndFlush(
+        ctx.writeAndFlush(
             new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
                 HttpResponseStatus.OK,
                 content,
                 headers,
                 EmptyHttpHeaders.INSTANCE));
-    }
-    
-    private static ChannelFuture errorFuture(ChannelHandlerContext ctx, HttpResponseStatus notFound) {
-        return ctx.writeAndFlush(new DefaultFullHttpResponse(
-            HttpVersion.HTTP_1_1,
-            notFound,
-            Unpooled.buffer(0),
-            new DefaultHttpHeaders(true).add(
-                "Content-Length", 0),
-            EmptyHttpHeaders.INSTANCE));
     }
 }

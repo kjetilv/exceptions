@@ -39,7 +39,11 @@ public final class Transformers {
     }
     
     public <T> Optional<T> from(Class<T> type, String string) {
-        return transformer(type).from(string);
+        try {
+            return transformer(type).from(string);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Could not transform to " + type + ": " + string, e);
+        }
     }
     
     public <T> Optional<String> to(Class<T> type, T t) {

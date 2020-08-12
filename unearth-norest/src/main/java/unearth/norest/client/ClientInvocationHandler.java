@@ -44,9 +44,9 @@ class ClientInvocationHandler implements InvocationHandler {
     
     private final IOHandler ioHandler;
     
-    private final RemotableMethods callableMethods;
+    private final ClientSideMethods callableMethods;
     
-    ClientInvocationHandler(Class<?> type, URI uri, IOHandler ioHandler, RemotableMethods callableMethods) {
+    ClientInvocationHandler(Class<?> type, URI uri, IOHandler ioHandler, ClientSideMethods callableMethods) {
         this.type = Objects.requireNonNull(type, "type");
         this.uri = Objects.requireNonNull(uri, "uri").toASCIIString().endsWith("/")
             ? uri
@@ -58,7 +58,7 @@ class ClientInvocationHandler implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) {
         if (method.getDeclaringClass() == type) {
-            RemotableMethod meta = callableMethods.get(method);
+            ClientSideMethod meta = callableMethods.get(method);
             return response(
                 meta,
                 request(uri, meta, args));
@@ -75,7 +75,7 @@ class ClientInvocationHandler implements InvocationHandler {
             "Unwilling to invoke " + method + " on " + proxy + ": " + Arrays.toString(args));
     }
     
-    private Object response(RemotableMethod callableMethod, HttpRequest request) {
+    private Object response(ClientSideMethod callableMethod, HttpRequest request) {
         if (callableMethod.isReturnData()) {
             HttpResponse<InputStream> response = response(request);
             if (response.statusCode() == 204 && callableMethod.isReturnOptional()) {
@@ -88,7 +88,7 @@ class ClientInvocationHandler implements InvocationHandler {
         return null;
     }
     
-    private Object parse(RemotableMethod callableMethod, HttpResponse<InputStream> response) {
+    private Object parse(ClientSideMethod callableMethod, HttpResponse<InputStream> response) {
         try (InputStream body = response.body()) {
             return ioHandler.readBytes(callableMethod.getReturnType(), body);
         } catch (Exception e) {
@@ -96,14 +96,14 @@ class ClientInvocationHandler implements InvocationHandler {
         }
     }
     
-    private HttpRequest request(URI root, RemotableMethod callableMethod, Object... args) {
+    private HttpRequest request(URI root, ClientSideMethod callableMethod, Object... args) {
         HttpRequest.Builder builder = base(root, callableMethod, args);
         return callableMethod.getRequestMethod() == RequestMethod.POST
             ? builder.POST(bodyPublisher(callableMethod, args)).build()
             : builder.build();
     }
     
-    private HttpRequest.BodyPublisher bodyPublisher(RemotableMethod callableMethod, Object[] args) {
+    private HttpRequest.BodyPublisher bodyPublisher(ClientSideMethod callableMethod, Object[] args) {
         return callableMethod.bodyArgument(args)
             .map(body ->
                 callableMethod.isStringBody()
@@ -129,7 +129,7 @@ class ClientInvocationHandler implements InvocationHandler {
         return string.toString().getBytes(StandardCharsets.UTF_8);
     }
     
-    private static HttpRequest.Builder base(URI root, RemotableMethod meta, Object... args) {
+    private static HttpRequest.Builder base(URI root, ClientSideMethod meta, Object... args) {
         URI uri = URI.create(root.toASCIIString() + meta.path(args));
         return HttpRequest.newBuilder()
             .uri(uri)

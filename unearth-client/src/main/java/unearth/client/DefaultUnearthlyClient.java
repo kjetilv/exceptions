@@ -27,10 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import unearth.api.UnearthlyApi;
 import unearth.api.dto.CauseDto;
 import unearth.api.dto.CauseIdDto;
@@ -52,18 +49,13 @@ import unearth.norest.common.JacksonIOHandler;
 
 public class DefaultUnearthlyClient implements UnearthlyClient {
     
-    static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-        .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-        .registerModule(new Jdk8Module())
-        .registerModule(new JavaTimeModule());
-    
     private final UnearthlyApi unearthlyService;
     
     DefaultUnearthlyClient(URI uri) {
         this.unearthlyService = Proto.type(
             UnearthlyApi.class,
             uri,
-            JacksonIOHandler.withDefaults(OBJECT_MAPPER));
+            JacksonIOHandler.withDefaults(new ObjectMapper()));
     }
     
     @Override

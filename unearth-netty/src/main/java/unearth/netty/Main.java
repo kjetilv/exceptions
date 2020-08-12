@@ -30,8 +30,9 @@ import unearth.norest.ApiInvoker;
 import unearth.norest.common.JacksonIOHandler;
 import unearth.norest.common.Transformer;
 import unearth.norest.netty.ApiRouter;
+import unearth.norest.netty.ErrorRouter;
 import unearth.norest.netty.NettyServer;
-import unearth.norest.server.ForwardableMethods;
+import unearth.norest.server.ServerSideMethods;
 import unearth.server.DefaultUnearthlyApi;
 import unearth.server.Unearth;
 import unearth.server.UnearthlyConfig;
@@ -63,15 +64,15 @@ public final class Main {
     }
     
     private static NettyServer nettyServer(UnearthlyConfig config, UnearthlyApi api) {
-        return new NettyServer(
-            config.getPort(),
+        return new NettyServer(config.getPort(), List.of(
             new ApiRouter<>(
+                config.getPrefix(),
                 JacksonIOHandler.withDefaults(new ObjectMapper()),
                 new ApiInvoker<>(
-                    config.getPrefix(),
                     api,
-                    new ForwardableMethods<>(
+                    new ServerSideMethods<>(
                         UnearthlyApi.class,
-                        UUID_TO_ID))));
+                        UUID_TO_ID))),
+            new ErrorRouter()));
     }
 }

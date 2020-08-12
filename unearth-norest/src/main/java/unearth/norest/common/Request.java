@@ -21,8 +21,6 @@ import java.util.Map;
 
 public interface Request {
     
-    Request suffix(String prefix);
-    
     RequestMethod getMethod();
     
     String getPath();

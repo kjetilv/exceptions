@@ -20,29 +20,28 @@ import java.util.Objects;
 import java.util.Optional;
 
 import unearth.norest.common.Request;
-import unearth.norest.server.ForwardableMethods;
+import unearth.norest.server.ServerSideMethods;
 
-public class ApiInvoker<A> {
+public final class ApiInvoker<A> {
     
-    private final String prefix;
+    private final ServerSideMethods<A> serverSideMethods;
     
     private final A impl;
     
-    private final ForwardableMethods<A> forwardableMethods;
-    
-    public ApiInvoker(String prefix, A impl, ForwardableMethods<A> forwardableMethods) {
-        this.prefix = prefix == null || prefix.isBlank() ? null : prefix.trim();
+    public ApiInvoker(A impl, ServerSideMethods<A> serverSideMethods) {
         this.impl = Objects.requireNonNull(impl, "impl");
-        this.forwardableMethods = forwardableMethods;
+        this.serverSideMethods = serverSideMethods;
     }
     
     public Optional<Object> response(Request request) {
-        if (prefix == null || request.getPath().startsWith(prefix)) {
-            return forwardableMethods.invocation(request.suffix(prefix))
-                .map(invoke ->
-                    invoke.apply(impl))
-                .findFirst();
-        }
-        return Optional.empty();
+        return Optional.ofNullable(request)
+            .flatMap(serverSideMethods::invocation)
+            .map(invocation -> {
+                try {
+                    return invocation.apply(impl);
+                } catch (Exception e) {
+                    throw new IllegalStateException("Failed to invoke on " + impl + ": " + request, e);
+                }
+            });
     }
 }
