@@ -15,11 +15,6 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.munch.base;
-
-import java.util.UUID;
-
-public interface Hashed {
-    
-    UUID getHash();
+dependencies {
+    implementation(project(":unearth-util"))
 }

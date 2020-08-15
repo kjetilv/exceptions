@@ -19,7 +19,7 @@ package unearth.analysis;
 import java.util.UUID;
 
 import unearth.core.FaultSensor;
-import unearth.munch.base.Hashed;
+import unearth.hashable.Hashed;
 import unearth.munch.model.FeedEntry;
 
 public class CassandraSensor extends AbstractCassandraConnected implements FaultSensor {

@@ -15,15 +15,11 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.http4k
+dependencies {
+    implementation(project(":unearth-util"))
+    implementation("net.bytebuddy:byte-buddy")
+    implementation("org.slf4j:slf4j-api")
 
-import unearth.metrics.MetricsFactory
-import unearth.server.Unearth
-import unearth.server.UnearthlyRenderer
-
-fun main() {
-
-    Unearth().startServer(MetricsFactory.DEFAULT) { resources, config ->
-        Http4kServer(resources, config, UnearthlyRenderer(config.prefix))
-    }
+    implementation("io.micrometer:micrometer-registry-jmx")
+    implementation("io.micrometer:micrometer-core")
 }

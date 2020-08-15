@@ -17,8 +17,9 @@
 
 dependencies {
     implementation(project(":unearth-util"))
-    implementation(project(":unearth-core"))
+    implementation(project(":unearth-hashable"))
     implementation(project(":unearth-munch"))
+    implementation(project(":unearth-core"))
 
     implementation("org.slf4j:slf4j-api")
     implementation("com.zaxxer:HikariCP")

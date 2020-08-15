@@ -15,15 +15,12 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.http4k
+package unearth.norest.netty;
 
-import unearth.metrics.MetricsFactory
-import unearth.server.Unearth
-import unearth.server.UnearthlyRenderer
+import io.netty.handler.codec.http.FullHttpRequest;
+import unearth.norest.common.Request;
 
-fun main() {
-
-    Unearth().startServer(MetricsFactory.DEFAULT) { resources, config ->
-        Http4kServer(resources, config, UnearthlyRenderer(config.prefix))
-    }
+public interface RequestFactory {
+    
+    Request create(FullHttpRequest httpRequest);
 }

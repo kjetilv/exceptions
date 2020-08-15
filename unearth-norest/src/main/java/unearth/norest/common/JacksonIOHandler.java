@@ -31,6 +31,8 @@ import unearth.norest.IOHandler;
 
 public final class JacksonIOHandler implements IOHandler {
     
+    public static final IOHandler DEFAULT = withDefaults(new ObjectMapper());
+    
     public static IOHandler withDefaults(ObjectMapper objectMapper) {
         return new JacksonIOHandler(objectMapper
             .enable(SerializationFeature.INDENT_OUTPUT)
@@ -51,6 +53,9 @@ public final class JacksonIOHandler implements IOHandler {
     
     @Override
     public byte[] writeBytes(Object value) {
+        if (value == null) {
+            return NO_BYTES;
+        }
         try {
             return objectMapper.writeValueAsBytes(value);
         } catch (Exception e) {
@@ -66,6 +71,8 @@ public final class JacksonIOHandler implements IOHandler {
             throw new IllegalStateException("Failed to read response: " + type + " <= " + inputStream, e);
         }
     }
+    
+    private static final byte[] NO_BYTES = new byte[0];
     
     @Override
     public String toString() {

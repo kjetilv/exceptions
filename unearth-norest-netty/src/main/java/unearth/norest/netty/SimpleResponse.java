@@ -15,40 +15,45 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.netty;
+package unearth.norest.netty;
 
-import unearth.norest.netty.NettyRunner;
-import unearth.server.UnearthlyConfig;
-import unearth.server.UnearthlyServer;
+import java.util.function.Consumer;
 
-final class UnearthlyNettyServer implements UnearthlyServer {
+import unearth.hashable.AbstractHashable;
+import unearth.norest.common.Request;
+import unearth.norest.common.Response;
+
+public class SimpleResponse extends AbstractHashable implements Response {
     
-    private final NettyRunner nettyServer;
+    private final Request request;
     
-    private final UnearthlyConfig config;
+    private final byte[] bytes;
     
-    UnearthlyNettyServer(UnearthlyConfig config, NettyRunner nettyServer) {
-        this.nettyServer = nettyServer;
-        this.config = config;
+    public SimpleResponse(Request request, byte[] bytes) {
+        this.request = request;
+        this.bytes = bytes == null || bytes.length == 0 ? NO_BYTES : bytes;
     }
     
     @Override
-    public void start() {
-        nettyServer.start();
+    public Request getRequest() {
+        return request;
     }
     
     @Override
-    public void stop() {
-        nettyServer.stop();
+    public byte[] getEntity() {
+        return bytes;
     }
     
     @Override
-    public void close() {
-        stop();
+    public void hashTo(Consumer<byte[]> h) {
+        hash(h, request);
+        hashThis(h);
     }
     
     @Override
-    public int port() {
-        return config.getPort();
+    protected Object toStringBody() {
+        return bytes.length;
     }
+    
+    private static final byte[] NO_BYTES = new byte[0];
 }

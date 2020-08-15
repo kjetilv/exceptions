@@ -18,6 +18,7 @@
 package unearth.norest.netty;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,12 +35,14 @@ public final class SimpleNettyRequest extends AbstractRequest {
     
     private final FullHttpRequest httpRequest;
     
-    public SimpleNettyRequest(FullHttpRequest httpRequest) {
-        this(null, httpRequest);
+    public SimpleNettyRequest(FullHttpRequest httpRequest, Instant time) {
+        this(null, httpRequest, time);
     }
     
-    public SimpleNettyRequest(String prefix, FullHttpRequest httpRequest) {
-        super(prefix, Objects.requireNonNull(httpRequest, "fullHttpRequest").uri());
+    public SimpleNettyRequest(String prefix, FullHttpRequest httpRequest, Instant time) {
+        super(prefix,
+            Objects.requireNonNull(httpRequest, "fullHttpRequest").uri(),
+            time);
         this.httpRequest = httpRequest;
     }
     
@@ -53,7 +56,7 @@ public final class SimpleNettyRequest extends AbstractRequest {
     
     @Override
     protected Request createPrefixed(String prefix) {
-        return new SimpleNettyRequest(prefix, httpRequest);
+        return new SimpleNettyRequest(prefix, httpRequest, getInitTime());
     }
     
     @Override

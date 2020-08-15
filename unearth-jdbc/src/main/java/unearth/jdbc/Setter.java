@@ -19,8 +19,8 @@ package unearth.jdbc;
 
 import java.time.Instant;
 
-import unearth.munch.base.Hashable;
-import unearth.munch.base.Hashed;
+import unearth.hashable.Hashable;
+import unearth.hashable.Hashed;
 import unearth.munch.id.FaultId;
 import unearth.munch.id.FaultStrandId;
 import unearth.munch.model.Cause;

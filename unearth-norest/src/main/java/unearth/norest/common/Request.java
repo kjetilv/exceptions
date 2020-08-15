@@ -17,18 +17,18 @@
 
 package unearth.norest.common;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
-public interface Request {
+import unearth.hashable.Hashable;
+
+public interface Request extends Hashable {
     
     Optional<Request> prefixed(String prefix);
     
     RequestMethod getMethod();
-    
-    default String getPath() {
-        return getPath(true);
-    }
     
     String getPath(boolean withQueryParameters);
     
@@ -43,4 +43,6 @@ public interface Request {
     Map<String, String> getHeaders();
     
     Map<String, String> getQueryParameters();
+    
+    Duration timeTaken(Instant completionTime);
 }

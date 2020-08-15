@@ -37,6 +37,7 @@ val testcontainersVer = "1.14.3"
 val hsqldbVer = "2.5.1"
 val assertjVer = "3.13.2"
 val shadowVer = "6.0.0"
+val bytebuddyVer = "1.10.14"
 
 plugins {
     kotlin("jvm") version "1.3.72"
@@ -94,6 +95,8 @@ allprojects {
             implementation(jackson("datatype", "jdk8"))
             implementation(jackson("datatype", "jsr310"))
             implementation(jackson("module", "kotlin"))
+
+            implementation("net.bytebuddy:byte-buddy:$bytebuddyVer")
 
             implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVer")
             implementation("io.swagger.core.v3:swagger-core:$swaggerVer")

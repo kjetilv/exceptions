@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-import unearth.munch.base.Hashed;
+import unearth.hashable.Hashed;
 
 public abstract class Id implements Hashed {
     

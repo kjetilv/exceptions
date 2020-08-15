@@ -57,7 +57,7 @@ public class JdbcStorageTest {
         DataSource dataSource = Db.memory();
         
         Clock clock = newAtomicClock();
-        JdbcStorage jdbcStorage = storage(dataSource, clock);
+        JdbcStorage jdbcStorage = storage(dataSource, clock, null);
         storage = jdbcStorage;
         feed = jdbcStorage;
         stats = jdbcStorage;
@@ -211,7 +211,7 @@ public class JdbcStorageTest {
         return Fault.create(parse);
     }
     
-    private static JdbcStorage storage(DataSource dataSource, Clock clock) {
-        return new JdbcStorage(dataSource, "unearth", clock);
+    private static JdbcStorage storage(DataSource dataSource, Clock clock, Metrics metrics) {
+        return new JdbcStorage(dataSource, "unearth", clock, metrics);
     }
 }

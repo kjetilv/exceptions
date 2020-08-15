@@ -15,20 +15,31 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.norest.netty;
+package unearth.jdbc;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
-import unearth.norest.common.Request;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.Timer;
 
-public class MetricsOutbound extends SimpleChannelInboundHandler<Request> {
+public interface Metrics {
     
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Request msg) {
-        try {
-        
-        } finally {
-            ctx.fireChannelRead(msg);
-        }
+    default Counter writes(Class<?> type) {
+        return null;
+    }
+    
+    default Counter reads(Class<?> type) {
+        return null;
+    }
+    
+    default Timer readTimer(Class<?> type) {
+        return null;
+    }
+    
+    default Timer writeTimer(Class<?> type) {
+        return null;
+    }
+    
+    default DistributionSummary stackTraceLength(Class<?> type) {
+        return null;
     }
 }

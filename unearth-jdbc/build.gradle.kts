@@ -17,11 +17,14 @@
 
 dependencies {
     implementation(project(":unearth-util"))
+    implementation(project(":unearth-hashable"))
     implementation(project(":unearth-munch"))
     implementation(project(":unearth-core"))
+    implementation(project(":unearth-metrics"))
 
     implementation("org.flywaydb:flyway-core")
     implementation("org.slf4j:slf4j-api")
+    implementation("io.micrometer:micrometer-core")
 
     testImplementation(project(":unearth-memory"))
     testImplementation("com.zaxxer:HikariCP")

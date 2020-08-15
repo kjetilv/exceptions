@@ -17,6 +17,7 @@
 
 dependencies {
     implementation(project(":unearth-util"))
+    implementation(project(":unearth-hashable"))
 
     implementation("org.slf4j:slf4j-api")
     implementation("com.fasterxml.jackson.core:jackson-databind")

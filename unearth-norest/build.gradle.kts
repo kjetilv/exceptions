@@ -16,6 +16,7 @@
  */
 
 dependencies {
+    implementation(project(":unearth-hashable"))
 
     implementation("org.slf4j:slf4j-api")
 

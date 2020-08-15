@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import unearth.munch.base.AbstractHashable;
+import unearth.hashable.AbstractHashable;
 import unearth.util.StringlyTyped;
 
 public final class CauseFrame extends AbstractHashable {

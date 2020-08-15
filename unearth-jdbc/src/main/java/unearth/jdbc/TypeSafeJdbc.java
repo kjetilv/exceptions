@@ -21,8 +21,8 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import unearth.munch.base.Hashable;
-import unearth.munch.base.Hashed;
+import unearth.hashable.Hashable;
+import unearth.hashable.Hashed;
 import unearth.munch.id.Id;
 import unearth.util.StringlyTyped;
 

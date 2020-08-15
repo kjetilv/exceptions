@@ -25,6 +25,7 @@ import org.testcontainers.containers.GenericContainer;
 import unearth.analysis.CassandraInit;
 import unearth.client.UnearthlyClient;
 import unearth.http4k.Http4kServer;
+import unearth.metrics.MetricsFactory;
 import unearth.server.State;
 import unearth.server.Unearth;
 import unearth.server.UnearthlyCassandraConfig;
@@ -56,13 +57,12 @@ public final class DefaultDockerStartup implements DockerStartup {
             .whenComplete((genericContainer, e) -> postgresContainer.set(genericContainer))
             .thenApply(container -> postgresConfig(container, "postgres"));
         
-        cassandraFuture
-            .thenApply(cassandraConfig ->
-                new CassandraInit(
-                    cassandraConfig.getHost(),
-                    cassandraConfig.getPort(),
-                    cassandraConfig.getDc(),
-                    cassandraConfig.getKeyspace()))
+        cassandraFuture.thenApply(cassandraConfig ->
+            new CassandraInit(
+                cassandraConfig.getHost(),
+                cassandraConfig.getPort(),
+                cassandraConfig.getDc(),
+                cassandraConfig.getKeyspace()))
             .whenComplete((init, throwable) ->
                 cassandraInit.set(init))
             .thenApply(CassandraInit::init);
@@ -81,9 +81,12 @@ public final class DefaultDockerStartup implements DockerStartup {
                     dbConfig))
             .thenApply(Unearth::new);
         
+        MetricsFactory metricsFactory = MetricsFactory.DEFAULT;
+        
         CompletableFuture<UnearthlyClient> client = unearthFuture
             .thenApply(unearth ->
                 unearth.startJavaServer(
+                    metricsFactory,
                     (unearthlyController, unearthlyConfig) ->
                         new Http4kServer(
                             unearthlyController,

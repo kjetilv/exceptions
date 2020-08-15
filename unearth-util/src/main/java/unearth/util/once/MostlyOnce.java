@@ -28,7 +28,7 @@ final class MostlyOnce<T> extends AbstractSupplier<T> {
     }
     
     @Override
-    protected T doGet(Supplier<T> supplier, boolean required) {
+    protected T get(Supplier<T> supplier, boolean required) {
         return value.updateAndGet(v -> v == null && required ? supplier.get() : v);
     }
 }

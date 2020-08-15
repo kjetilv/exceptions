@@ -17,10 +17,14 @@
 
 dependencies {
 
+    implementation(project(":unearth-hashable"))
+    implementation(project(":unearth-util"))
     implementation(project(":unearth-norest"))
     implementation(project(":unearth-statik"))
+    implementation(project(":unearth-metrics"))
 
     implementation("io.netty:netty-all")
+    implementation("io.micrometer:micrometer-core")
 
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")

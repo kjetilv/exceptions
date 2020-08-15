@@ -31,15 +31,15 @@ abstract class AbstractSupplier<T> implements Supplier<T> {
     
     @Override
     public final T get() {
-        return doGet(supplier, true);
+        return get(supplier, true);
     }
     
     final Supplier<Optional<T>> maybe() {
         return () ->
-            Optional.ofNullable(doGet(supplier, false));
+            Optional.ofNullable(get(supplier, false));
     }
     
-    protected abstract T doGet(Supplier<T> supplier, boolean required);
+    protected abstract T get(Supplier<T> supplier, boolean required);
     
     @Override
     public final String toString() {

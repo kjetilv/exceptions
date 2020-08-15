@@ -17,19 +17,20 @@
 
 package unearth.netty;
 
+import java.time.Clock;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import unearth.api.UnearthlyApi;
 import unearth.api.dto.CauseIdDto;
 import unearth.api.dto.CauseStrandIdDto;
 import unearth.api.dto.FaultIdDto;
 import unearth.api.dto.FaultStrandIdDto;
 import unearth.api.dto.FeedEntryIdDto;
+import unearth.metrics.MetricsFactory;
 import unearth.norest.Transformer;
 import unearth.norest.common.JacksonIOHandler;
-import unearth.norest.netty.ApiRouter;
-import unearth.norest.netty.NettyServer;
+import unearth.norest.netty.ApiInvocationHandler;
+import unearth.norest.netty.NettyRunner;
 import unearth.norest.server.ApiInvoker;
 import unearth.server.DefaultUnearthlyApi;
 import unearth.server.Unearth;
@@ -38,29 +39,37 @@ import unearth.server.UnearthlyRenderer;
 public final class Main {
     
     public static void main(String[] args) {
-        new Unearth().startJavaServer((resources, configuration) -> {
-            
-            UnearthlyRenderer renderer = new UnearthlyRenderer(configuration.getPrefix());
-            UnearthlyApi api = new DefaultUnearthlyApi(resources, renderer);
-            
-            ApiInvoker<UnearthlyApi> invoker =
-                new ApiInvoker<>(UnearthlyApi.class, api, List.of(
-                    Transformer.from(FaultIdDto.class, FaultIdDto::new),
-                    Transformer.from(FaultStrandIdDto.class, FaultStrandIdDto::new),
-                    Transformer.from(CauseIdDto.class, CauseIdDto::new),
-                    Transformer.from(CauseStrandIdDto.class, CauseStrandIdDto::new),
-                    Transformer.from(FeedEntryIdDto.class, FeedEntryIdDto::new)));
-            
-            ApiRouter apiRouter =
-                new ApiRouter(
-                    configuration.getPrefix(),
-                    JacksonIOHandler.withDefaults(new ObjectMapper()),
-                    invoker::response);
-            NettyServer nettyServer =
-                new NettyServer(configuration.getPort(), List.of(apiRouter));
-            
-            return new UnearthlyNettyServer(configuration, nettyServer);
-        });
+        
+        MetricsFactory metricsFactory = MetricsFactory.DEFAULT;
+        
+        new Unearth().startJavaServer(
+            metricsFactory,
+            (resources, configuration) -> {
+                
+                UnearthlyRenderer renderer = new UnearthlyRenderer(configuration.getPrefix());
+                UnearthlyApi api = new DefaultUnearthlyApi(resources, renderer);
+                
+                ApiInvoker<UnearthlyApi> invoker =
+                    new ApiInvoker<>(UnearthlyApi.class, api, List.of(
+                        Transformer.from(FaultIdDto.class, FaultIdDto::new),
+                        Transformer.from(FaultStrandIdDto.class, FaultStrandIdDto::new),
+                        Transformer.from(CauseIdDto.class, CauseIdDto::new),
+                        Transformer.from(CauseStrandIdDto.class, CauseStrandIdDto::new),
+                        Transformer.from(FeedEntryIdDto.class, FeedEntryIdDto::new)));
+                
+                ApiInvocationHandler apiRouter =
+                    new ApiInvocationHandler(
+                        configuration.getPrefix(),
+                        JacksonIOHandler.DEFAULT,
+                        invoker::response);
+                NettyRunner nettyServer = new NettyRunner(
+                    configuration.getPort(),
+                    apiRouter,
+                    metricsFactory,
+                    Clock.systemDefaultZone());
+                
+                return new UnearthlyNettyServer(configuration, nettyServer);
+            });
     }
     
     private Main() {

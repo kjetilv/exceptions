@@ -15,26 +15,25 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.norest.netty;
+package unearth.netty;
 
-import java.util.Objects;
-import java.util.function.Function;
+import java.time.Clock;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.FullHttpRequest;
-import unearth.norest.common.Request;
-
-public final class RequestWrapper extends SimpleChannelInboundHandler<FullHttpRequest> {
+class MicrometerClock implements io.micrometer.core.instrument.Clock {
     
-    private final Function<FullHttpRequest, Request> wrapper;
+    private final Clock clock;
     
-    public RequestWrapper(Function<FullHttpRequest, Request> wrapper) {
-        this.wrapper = Objects.requireNonNull(wrapper, "wrapper");
+    MicrometerClock(Clock clock) {
+        this.clock = clock;
     }
     
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) {
-        ctx.fireChannelRead(wrapper.apply(msg));
+    public long wallTime() {
+        return clock.instant().toEpochMilli();
+    }
+    
+    @Override
+    public long monotonicTime() {
+        return clock.instant().getNano();
     }
 }

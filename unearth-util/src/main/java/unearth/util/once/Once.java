@@ -37,41 +37,29 @@ final class Once<T> extends AbstractSupplier<T> {
     }
     
     @Override
-    protected T doGet(Supplier<T> supplier, boolean required) {
+    protected T get(Supplier<T> supplier, boolean required) {
         if (required) {
-            if (isFirstAccess()) {
-                return resolve(supplier);
+            if (started.compareAndSet(false, true)) {
+                T val;
+                try {
+                    val = supplier.get();
+                } catch (RuntimeException e) {
+                    error.set(e);
+                    ok.complete(false);
+                    throw new IllegalStateException(this + ": failed", e);
+                }
+                value.set(val);
+                ok.complete(true);
+                return val;
             }
         } else {
             if (!ok.isDone()) {
                 return null;
             }
         }
-        return futureValue();
-    }
-    
-    private T resolve(Supplier<T> supplier) {
-        T val;
-        try {
-            val = supplier.get();
-        } catch (RuntimeException e) {
-            error.set(e);
-            ok.complete(false);
-            throw new IllegalStateException(this + ": failed", e);
-        }
-        value.set(val);
-        ok.complete(true);
-        return val;
-    }
-    
-    private T futureValue() {
         if (ok.join()) {
             return value.get();
         }
         throw new IllegalStateException(this + ": failed", error.get());
-    }
-    
-    private boolean isFirstAccess() {
-        return started.compareAndSet(false, true);
     }
 }

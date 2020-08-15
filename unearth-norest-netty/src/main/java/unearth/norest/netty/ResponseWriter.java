@@ -17,42 +17,41 @@
 
 package unearth.norest.netty;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
+import unearth.norest.common.Response;
 
-class ErrorHandler extends SimpleChannelInboundHandler<Object> {
-    
-    public static void notFound(ChannelHandlerContext ctx) {
-        errorFuture(ctx, HttpResponseStatus.NOT_FOUND);
-    }
-    
-    public static void internalError(ChannelHandlerContext ctx) {
-        errorFuture(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR);
-    }
+public final class ResponseWriter extends ChannelOutboundHandlerAdapter {
     
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        internalError(ctx);
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+        if (msg instanceof Response) {
+            ctx.writeAndFlush(httpResponse((Response) msg), promise);
+        } else {
+            super.write(ctx, msg, promise);
+        }
     }
     
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
-        notFound(ctx);
-    }
-    
-    private static void errorFuture(ChannelHandlerContext ctx, HttpResponseStatus notFound) {
-        ctx.writeAndFlush(new DefaultFullHttpResponse(
+    private static HttpResponse httpResponse(Response msg) {
+        byte[] bytes = msg.getEntity();
+        ByteBuf content = Unpooled.wrappedBuffer(bytes);
+        HttpHeaders headers = new DefaultHttpHeaders(true)
+            .add("Content-Length", bytes.length);
+        return new DefaultFullHttpResponse(
             HttpVersion.HTTP_1_1,
-            notFound,
-            Unpooled.buffer(0),
-            new DefaultHttpHeaders(true).add(
-                "Content-Length", 0),
-            EmptyHttpHeaders.INSTANCE));
+            HttpResponseStatus.OK,
+            content,
+            headers,
+            EmptyHttpHeaders.INSTANCE);
     }
 }

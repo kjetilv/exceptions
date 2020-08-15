@@ -21,12 +21,14 @@ plugins {
 
 dependencies {
     implementation(project(":unearth-util"))
+    implementation(project(":unearth-hashable"))
     implementation(project(":unearth-core"))
-    implementation(project(":unearth-analysis"))
     implementation(project(":unearth-munch"))
     implementation(project(":unearth-norest"))
     implementation(project(":unearth-api"))
+    implementation(project(":unearth-analysis"))
     implementation(project(":unearth-memory"))
+    implementation(project(":unearth-metrics"))
     implementation(project(":unearth-jdbc"))
     implementation(project(":unearth-statik"))
 
@@ -35,7 +37,7 @@ dependencies {
     implementation("com.zaxxer:HikariCP")
 
     implementation("io.swagger.core.v3:swagger-core")
-    implementation("io.micrometer:micrometer-registry-jmx")
+    implementation("io.micrometer:micrometer-core")
 
     implementation("com.natpryce:konfig")
 

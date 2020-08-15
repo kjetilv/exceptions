@@ -26,8 +26,10 @@ import unearth.analysis.CassandraSensor
 import unearth.core.FaultSensor
 import unearth.core.HandlingPolicy
 import unearth.jdbc.JdbcStorage
+import unearth.jdbc.Metrics
 import unearth.memory.Db
 import unearth.memory.Sensor
+import unearth.metrics.MetricsFactory
 import unearth.munch.model.FrameFun
 import unearth.munch.print.*
 import unearth.server.turbo.UnearthlyTurboFilter
@@ -46,16 +48,22 @@ class Unearth(private val configuration: UnearthlyConfig = UnearthlyConfig.load(
         private val logger = LoggerFactory.getLogger(Unearth::class.java)
     }
 
-    fun startJavaServer(toServer: BiFunction<UnearthlyResources, UnearthlyConfig, UnearthlyServer>): State =
-        startServer { controller, config ->
+    fun startJavaServer(
+        metricsFactory: MetricsFactory,
+        toServer: BiFunction<UnearthlyResources, UnearthlyConfig, UnearthlyServer>
+    ): State =
+        startServer(metricsFactory) { controller, config ->
             toServer.apply(controller, config)
         }
 
-    fun startServer(toServer: (UnearthlyResources, UnearthlyConfig) -> UnearthlyServer): State {
+    fun startServer(
+        metricsFactory: MetricsFactory,
+        toServer: (UnearthlyResources, UnearthlyConfig) -> UnearthlyServer
+    ): State {
         logger.info("Building ${Unearth::class.simpleName}...")
 
         val sensorFuture = CompletableFuture.supplyAsync { sensor() }
-        val storageFuture = CompletableFuture.supplyAsync { storage() }
+        val storageFuture = CompletableFuture.supplyAsync { storage(metricsFactory) }
 
         val storage = storageFuture.join()
         val sensor = sensorFuture.join()
@@ -81,9 +89,14 @@ class Unearth(private val configuration: UnearthlyConfig = UnearthlyConfig.load(
         }
     }
 
-    private fun storage(): JdbcStorage {
+    private fun storage(metricsFactory: MetricsFactory): JdbcStorage {
         val db: DataSource = db(configuration)
-        val storage = JdbcStorage(db, configuration.db.schema, Clock.systemDefaultZone())
+        val storage = JdbcStorage(
+            db,
+            configuration.db.schema,
+            Clock.systemDefaultZone(),
+            metricsFactory.instantiate(Metrics::class.java)
+        )
         initStorage(storage)
         return storage
     }
@@ -144,6 +157,11 @@ class Unearth(private val configuration: UnearthlyConfig = UnearthlyConfig.load(
                     SimpleCausesRenderer(shortStackRenderer)
                 )
             )
+    }
+
+    internal class MicrometerClock(private val clock: Clock) : io.micrometer.core.instrument.Clock {
+        override fun wallTime(): Long = clock.instant().toEpochMilli()
+        override fun monotonicTime(): Long = clock.instant().nano.toLong()
     }
 }
 

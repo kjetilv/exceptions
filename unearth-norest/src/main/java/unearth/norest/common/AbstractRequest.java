@@ -16,22 +16,31 @@
  */
 package unearth.norest.common;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public abstract class AbstractRequest implements Request {
+import unearth.hashable.AbstractHashable;
+
+public abstract class AbstractRequest extends AbstractHashable implements Request {
+    
+    private final Instant initTime;
     
     private final String uri;
     
     private final int queryIndex;
     
-    protected AbstractRequest(String prefix, String uri) {
+    protected AbstractRequest(String prefix, String uri, Instant initTime) {
         this.uri = normalized(prefix, uri);
         this.queryIndex = this.uri.indexOf('?');
+        this.initTime = initTime;
     }
     
     @Override
@@ -93,6 +102,18 @@ public abstract class AbstractRequest implements Request {
                 }));
     }
     
+    @Override
+    public Duration timeTaken(Instant completionTime) {
+        return Duration.between(initTime, completionTime);
+    }
+    
+    @Override
+    public void hashTo(Consumer<byte[]> h) {
+        hash(h, initTime.toEpochMilli());
+        hash(h, uri);
+        hashThis(h);
+    }
+    
     protected abstract Request createPrefixed(String prefix);
     
     protected abstract CharSequence getBodyContent();
@@ -101,7 +122,13 @@ public abstract class AbstractRequest implements Request {
     
     protected abstract Map<String, List<String>> retrieveHeaders();
     
-    private static final String BAD_TAIL = "/?";
+    protected Instant getInitTime() {
+        return initTime;
+    }
+    
+    private static final Pattern LE_DEUX_SLASH = Pattern.compile("//");
+    
+    private static final Pattern BAD_TAIL = Pattern.compile("/\\?");
     
     private static RequestMethod getMethod(String methodName) {
         return switch (methodName.toUpperCase()) {
@@ -115,6 +142,20 @@ public abstract class AbstractRequest implements Request {
         };
     }
     
+    private static String normalized(String prefix, String uri) {
+        return "/" + goodTail(
+            unpreslashed(
+                unpostslashed(
+                    unmidslashed(
+                        urlPart(prefix, uri)))));
+    }
+    
+    private static String goodTail(String suffixed) {
+        return suffixed.contains("?/")
+            ? suffixed
+            : BAD_TAIL.matcher(suffixed).replaceAll("?");
+    }
+    
     private static String unpreslashed(String path) {
         return path.startsWith("/") ? unpreslashed(path.substring(1)) : path;
     }
@@ -123,24 +164,25 @@ public abstract class AbstractRequest implements Request {
         return path.endsWith("/") ? unpostslashed(path.substring(0, path.length() - 1)) : path;
     }
     
-    protected static String single(String name, List<String> value) {
+    private static String unmidslashed(String uri) {
+        return uri.contains("//")
+            ? unmidslashed(LE_DEUX_SLASH.matcher(uri).replaceAll("/"))
+            : uri;
+    }
+    
+    private static String urlPart(String prefix, String uri) {
+        return prefix == null ? uri : uri.substring(prefix.length()).trim();
+    }
+    
+    private static String single(String name, List<String> value) {
         if (value.size() > 1) {
             throw new IllegalStateException("Multi-value header: " + name + ": " + value);
         }
         return value.iterator().next();
     }
     
-    protected static String normalized(String prefix, String uri) {
-        String suffixed = prefix == null ? uri : uri.substring(prefix.length()).trim();
-        int badTail = suffixed.indexOf(BAD_TAIL);
-        String fixed = badTail < 0
-            ? suffixed
-            : suffixed.substring(0, badTail) + '?' + suffixed.substring(badTail + 2);
-        return "/" + unpreslashed(unpostslashed(fixed));
-    }
-    
     @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" + getMethodName() + " " + uri + "]";
+    protected Object toStringBody() {
+        return uri;
     }
 }

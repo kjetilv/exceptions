@@ -19,6 +19,7 @@ package unearth.util.once;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class Get {
@@ -44,6 +45,14 @@ public final class Get {
             ? supplier
             : mostlyOnce(supplier);
         return ((AbstractSupplier<T>) tSupplier).maybe();
+    }
+    
+    public static <T> void ifPresent(Supplier<T> supplier, Consumer<T> then) {
+        ifExists(supplier).ifPresent(then);
+    }
+    
+    public static <T> Optional<T> ifExists(Supplier<T> supplier) {
+        return maybeOnce(supplier).get();
     }
     
     private Get() {

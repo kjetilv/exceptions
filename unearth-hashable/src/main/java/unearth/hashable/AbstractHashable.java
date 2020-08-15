@@ -14,7 +14,24 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
-package unearth.munch.base;
+
+/*
+ *     This file is part of Unearth.
+ *
+ *     Unearth is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     Unearth is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
+ */
+package unearth.hashable;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -28,7 +45,6 @@ import java.util.function.Supplier;
 
 import unearth.util.once.Get;
 
-@SuppressWarnings("unused")
 public abstract class AbstractHashable implements Hashable {
     
     /**
@@ -47,6 +63,10 @@ public abstract class AbstractHashable implements Hashable {
     
     protected Object toStringBody() {
         return null;
+    }
+    
+    protected void hashThis(Consumer<byte[]> h) {
+        hash(h, System.identityHashCode(this), System.identityHashCode(getClass()));
     }
     
     private Object toStringIdentifier() {

@@ -38,11 +38,13 @@ dependencies {
     implementation(project(":unearth-util"))
     implementation(project(":unearth-statik"))
     implementation(project(":unearth-munch"))
+    implementation(project(":unearth-metrics"))
     implementation(project(":unearth-jdbc"))
     implementation(project(":unearth-analysis"))
     implementation(project(":unearth-server"))
 
     implementation("io.netty:netty-all")
+    implementation("io.micrometer:micrometer-core")
 
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")

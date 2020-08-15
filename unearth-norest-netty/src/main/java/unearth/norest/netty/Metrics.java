@@ -17,14 +17,13 @@
 
 package unearth.norest.netty;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelOutboundHandlerAdapter;
-import io.netty.channel.ChannelPromise;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Timer;
+import unearth.norest.common.RequestMethod;
 
-public class MetricsInbound extends ChannelOutboundHandlerAdapter {
+public interface Metrics {
     
-    @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
-        ctx.write(msg, promise);
-    }
+    Counter request(RequestMethod method, String uri);
+    
+    Timer requestTime(RequestMethod method, String uri);
 }

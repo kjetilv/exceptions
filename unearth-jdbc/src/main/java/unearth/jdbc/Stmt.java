@@ -20,7 +20,7 @@ package unearth.jdbc;
 import java.time.Instant;
 import java.util.UUID;
 
-import unearth.munch.base.Hashed;
+import unearth.hashable.Hashed;
 import unearth.munch.id.Id;
 
 @SuppressWarnings("UnusedReturnValue")

@@ -38,9 +38,9 @@ import org.slf4j.LoggerFactory;
 import unearth.core.FaultFeed;
 import unearth.core.FaultStats;
 import unearth.core.FaultStorage;
+import unearth.hashable.Hashable;
+import unearth.hashable.Hashed;
 import unearth.jdbc.Session.Outcome;
-import unearth.munch.base.Hashable;
-import unearth.munch.base.Hashed;
 import unearth.munch.id.CauseId;
 import unearth.munch.id.CauseStrandId;
 import unearth.munch.id.FaultId;
@@ -72,10 +72,13 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     
     private final Clock clock;
     
-    public JdbcStorage(DataSource dataSource, String schema, Clock clock) {
+    private final Metrics metrics;
+    
+    public JdbcStorage(DataSource dataSource, String schema, Clock clock, Metrics metrics) {
         this.dataSource = dataSource;
         this.schema = schema;
         this.clock = clock;
+        this.metrics = metrics;
     }
     
     @Override
@@ -277,6 +280,57 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
             Instant.now(clock));
     }
     
+    private void store(Fault fault, Session session) {
+        metrics.writes(Fault.class);
+        log.debug("Storing {}", fault);
+        Outcome faultStrandOutcome = storeFaultStrand(fault.getFaultStrand(), session);
+        if (inserted(faultStrandOutcome)) {
+            log.debug("Inserted fault strand: {}", fault.getFaultStrand());
+            Map<CauseStrand, Outcome> causeStrandOutcomes = storeCauseStrands(fault, session);
+            causeStrandOutcomes.forEach((causeStrand, strandOutcome) -> {
+                log.debug("Inserted cause strand: {}", causeStrand);
+                if (inserted(storeCauseFrames(session, causeStrand))) {
+                    log.debug("Inserted cause frames for {}", causeStrand);
+                } else {
+                    log.debug("No new cause frames inserted for {}", causeStrand);
+                }
+                linkCauseStrandToCauseFrames(session, causeStrand);
+            });
+            linkFaultStrandToCauseStrands(session, fault.getFaultStrand());
+        } else {
+            log.debug("Already known fault strand: {}", fault.getFaultStrand());
+        }
+        Outcome faultOutcome = storeFault(fault, session);
+        if (inserted(faultOutcome)) {
+            log.debug("Inserted fault: {}", fault);
+            if (inserted(faultOutcome)) {
+                Map<Cause, Outcome> causeOutcomes = storeCauses(fault, session);
+                causeOutcomes.forEach((cause, causeOutCome) -> {
+                    if (inserted(causeOutCome)) {
+                        log.debug("Inserted cause: {}", cause);
+                    } else {
+                        log.debug("Already known cause: {}", cause);
+                    }
+                });
+                linkFaultToCauses(session, fault);
+            }
+        } else {
+            log.debug("Already known fault: {}", fault);
+        }
+    }
+    
+    private FeedEntry store(Session session, FaultEvent event) {
+        metrics.writes(FaultEvent.class);
+        FeedEntry entry = new FeedEntry(
+            event,
+            updateGlobalSeq(session),
+            updateFaultStrandSeq(session, event.getFaultStrandId()),
+            updateFaultSeq(session, event.getFaultId()));
+        metrics.writeTimer(FaultEvent.class).record(() ->
+            saveFeedEntry(session, entry));
+        return entry;
+    }
+    
     private static Session.Existence<FaultStrandId> ifExistsId(
         Session session,
         String sql,
@@ -362,44 +416,6 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     
     private static Stmt sinceTime(Stmt stmt, Instant sinceTime) {
         return sinceTime == null ? stmt : stmt.set(sinceTime);
-    }
-    
-    private static void store(Fault fault, Session session) {
-        log.debug("Storing {}", fault);
-        Outcome faultStrandOutcome = storeFaultStrand(fault.getFaultStrand(), session);
-        if (inserted(faultStrandOutcome)) {
-            log.debug("Inserted fault strand: {}", fault.getFaultStrand());
-            Map<CauseStrand, Outcome> causeStrandOutcomes = storeCauseStrands(fault, session);
-            causeStrandOutcomes.forEach((causeStrand, strandOutcome) -> {
-                log.debug("Inserted cause strand: {}", causeStrand);
-                if (inserted(storeCauseFrames(session, causeStrand))) {
-                    log.debug("Inserted cause frames for {}", causeStrand);
-                } else {
-                    log.debug("No new cause frames inserted for {}", causeStrand);
-                }
-                linkCauseStrandToCauseFrames(session, causeStrand);
-            });
-            linkFaultStrandToCauseStrands(session, fault.getFaultStrand());
-        } else {
-            log.debug("Already known fault strand: {}", fault.getFaultStrand());
-        }
-        Outcome faultOutcome = storeFault(fault, session);
-        if (inserted(faultOutcome)) {
-            log.debug("Inserted fault: {}", fault);
-            if (inserted(faultOutcome)) {
-                Map<Cause, Outcome> causeOutcomes = storeCauses(fault, session);
-                causeOutcomes.forEach((cause, causeOutCome) -> {
-                    if (inserted(causeOutCome)) {
-                        log.debug("Inserted cause: {}", cause);
-                    } else {
-                        log.debug("Already known cause: {}", cause);
-                    }
-                });
-                linkFaultToCauses(session, fault);
-            }
-        } else {
-            log.debug("Already known fault: {}", fault);
-        }
     }
     
     private static boolean inserted(Outcome outcome) {
@@ -524,16 +540,6 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     
     private static Session.Set setId(Hashable fault1) {
         return stmt -> stmt.set(fault1);
-    }
-    
-    private static FeedEntry store(Session session, FaultEvent event) {
-        FeedEntry entry = new FeedEntry(
-            event,
-            updateGlobalSeq(session),
-            updateFaultStrandSeq(session, event.getFaultStrandId()),
-            updateFaultSeq(session, event.getFaultId()));
-        saveFeedEntry(session, entry);
-        return entry;
     }
     
     private static <K, V> boolean singleEntry(Map.Entry<K, Set<V>> e) {
