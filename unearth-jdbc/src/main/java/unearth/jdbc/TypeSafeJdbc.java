@@ -23,15 +23,14 @@ import java.util.function.Supplier;
 
 import unearth.hashable.Hashable;
 import unearth.hashable.Hashed;
-import unearth.munch.id.Id;
 import unearth.util.StringlyTyped;
 
 @SuppressWarnings("WeakerAccess")
-class TypeSafeJdbc<T extends Hashed> {
+public class TypeSafeJdbc<T extends Hashed> {
     
     private final Stmt stmt;
     
-    TypeSafeJdbc(Stmt stmt, T hashable) {
+    public TypeSafeJdbc(Stmt stmt, T hashable) {
         this.stmt = stmt;
         if (hashable != null) {
             this.stmt.set(hashable);
@@ -40,10 +39,6 @@ class TypeSafeJdbc<T extends Hashed> {
     
     protected Stmt s(Hashable hashable) {
         return stmt.set(hashable);
-    }
-    
-    protected Stmt s(Id id) {
-        return stmt.set(id);
     }
     
     protected Stmt s(Instant instant) {
@@ -74,7 +69,7 @@ class TypeSafeJdbc<T extends Hashed> {
         return stmt.set(bool);
     }
     
-    protected Stmt noop() {
+    public Stmt noop() {
         return stmt;
     }
     

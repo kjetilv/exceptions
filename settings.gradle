@@ -30,6 +30,7 @@ include("unearth-client",
         "unearth-analysis",
         "unearth-statik",
         "unearth-server",
+        "unearth-storage",
         "unearth-test",
         "unearth-netty",
         "unearth-http4k")

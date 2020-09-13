@@ -18,6 +18,7 @@
 package unearth.norest.netty;
 
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Timer;
 import unearth.norest.common.RequestMethod;
 
@@ -26,4 +27,8 @@ public interface Metrics {
     Counter request(RequestMethod method, String uri);
     
     Timer requestTime(RequestMethod method, String uri);
+    
+    DistributionSummary requestSize(RequestMethod method, String uri);
+    
+    DistributionSummary responseSize(RequestMethod method, String uri);
 }

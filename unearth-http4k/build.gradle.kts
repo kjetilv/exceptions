@@ -43,6 +43,7 @@ dependencies {
     implementation(project(":unearth-statik"))
     implementation(project(":unearth-metrics"))
     implementation(project(":unearth-jdbc"))
+    implementation(project(":unearth-storage"))
     implementation(project(":unearth-analysis"))
     implementation(project(":unearth-server"))
 

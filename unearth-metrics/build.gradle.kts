@@ -20,6 +20,9 @@ dependencies {
     implementation("net.bytebuddy:byte-buddy")
     implementation("org.slf4j:slf4j-api")
 
+    implementation("net.bytebuddy:byte-buddy-parent:1.10.14")
+
     implementation("io.micrometer:micrometer-registry-jmx")
     implementation("io.micrometer:micrometer-core")
+
 }

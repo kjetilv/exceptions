@@ -23,26 +23,23 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import unearth.hashable.AbstractHashable;
+public abstract class AbstractRequest implements Request {
 
-public abstract class AbstractRequest extends AbstractHashable implements Request {
-    
     private final Instant initTime;
-    
+
     private final String uri;
-    
+
     private final int queryIndex;
-    
+
     protected AbstractRequest(String prefix, String uri, Instant initTime) {
         this.uri = normalized(prefix, uri);
         this.queryIndex = this.uri.indexOf('?');
         this.initTime = initTime;
     }
-    
+
     @Override
     public Optional<Request> prefixed(String prefix) {
         if (prefix == null) {
@@ -53,28 +50,28 @@ public abstract class AbstractRequest extends AbstractHashable implements Reques
         }
         return Optional.empty();
     }
-    
+
     @Override
     public RequestMethod getMethod() {
         return getMethod(getMethodName());
     }
-    
+
     @Override
     public String getPath(boolean withQueryParameters) {
         return withQueryParameters || !hasQueryParameters() ? uri
             : uri.substring(0, getQueryIndex());
     }
-    
+
     @Override
     public int getQueryIndex() {
         return queryIndex;
     }
-    
+
     @Override
     public String getEntity() {
         return getBodyContent().toString();
     }
-    
+
     @Override
     public Map<String, String> getHeaders() {
         return retrieveHeaders().entrySet().stream()
@@ -84,7 +81,7 @@ public abstract class AbstractRequest extends AbstractHashable implements Reques
                 Map.Entry::getKey,
                 e -> single(e.getKey(), e.getValue())));
     }
-    
+
     @Override
     public Map<String, String> getQueryParameters() {
         int queryIndex = getQueryIndex();
@@ -101,35 +98,28 @@ public abstract class AbstractRequest extends AbstractHashable implements Reques
                     throw new IllegalArgumentException("Not a 1-1 query parameters query: " + this);
                 }));
     }
-    
+
     @Override
     public Duration timeTaken(Instant completionTime) {
         return Duration.between(initTime, completionTime);
     }
-    
-    @Override
-    public void hashTo(Consumer<byte[]> h) {
-        hash(h, initTime.toEpochMilli());
-        hash(h, uri);
-        hashThis(h);
-    }
-    
+
     protected abstract Request createPrefixed(String prefix);
-    
+
     protected abstract CharSequence getBodyContent();
-    
+
     protected abstract String getMethodName();
-    
+
     protected abstract Map<String, List<String>> retrieveHeaders();
-    
+
     protected Instant getInitTime() {
         return initTime;
     }
-    
+
     private static final Pattern LE_DEUX_SLASH = Pattern.compile("//");
-    
+
     private static final Pattern BAD_TAIL = Pattern.compile("/\\?");
-    
+
     private static RequestMethod getMethod(String methodName) {
         return switch (methodName.toUpperCase()) {
             case "GET" -> RequestMethod.GET;
@@ -141,7 +131,7 @@ public abstract class AbstractRequest extends AbstractHashable implements Reques
             default -> throw new IllegalArgumentException("Unsupported: " + methodName);
         };
     }
-    
+
     private static String normalized(String prefix, String uri) {
         return "/" + goodTail(
             unpreslashed(
@@ -149,40 +139,35 @@ public abstract class AbstractRequest extends AbstractHashable implements Reques
                     unmidslashed(
                         urlPart(prefix, uri)))));
     }
-    
+
     private static String goodTail(String suffixed) {
         return suffixed.contains("?/")
             ? suffixed
             : BAD_TAIL.matcher(suffixed).replaceAll("?");
     }
-    
+
     private static String unpreslashed(String path) {
         return path.startsWith("/") ? unpreslashed(path.substring(1)) : path;
     }
-    
+
     private static String unpostslashed(String path) {
         return path.endsWith("/") ? unpostslashed(path.substring(0, path.length() - 1)) : path;
     }
-    
+
     private static String unmidslashed(String uri) {
         return uri.contains("//")
             ? unmidslashed(LE_DEUX_SLASH.matcher(uri).replaceAll("/"))
             : uri;
     }
-    
+
     private static String urlPart(String prefix, String uri) {
         return prefix == null ? uri : uri.substring(prefix.length()).trim();
     }
-    
+
     private static String single(String name, List<String> value) {
         if (value.size() > 1) {
             throw new IllegalStateException("Multi-value header: " + name + ": " + value);
         }
         return value.iterator().next();
-    }
-    
-    @Override
-    protected Object toStringBody() {
-        return uri;
     }
 }

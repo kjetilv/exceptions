@@ -25,11 +25,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
-final class DefaultSession implements Session {
+public final class DefaultSession implements Session {
     
     private final Connection connection;
     
-    DefaultSession(DataSource dataSource, String schema) {
+    public DefaultSession(DataSource dataSource, String schema) {
         try {
             connection = dataSource.getConnection();
             connection.setSchema(schema);

@@ -23,6 +23,8 @@ dependencies {
     testImplementation(project(":unearth-util"))
     testImplementation(project(":unearth-api"))
     testImplementation(project(":unearth-core"))
+    testImplementation(project(":unearth-jdbc"))
+    testImplementation(project(":unearth-storage"))
     testImplementation(project(":unearth-analysis"))
     testImplementation(project(":unearth-munch"))
 

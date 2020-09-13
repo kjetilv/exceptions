@@ -57,6 +57,30 @@ public final class Fault extends AbstractHashableIdentifiable<FaultId> {
         }
     }
     
+    @Override
+    public void hashTo(Consumer<byte[]> h) {
+        hash(h, faultStrand);
+        hashables(h, causes);
+    }
+    
+    @Override
+    protected FaultId id(UUID hash) {
+        return new FaultId(hash);
+    }
+    
+    @Override
+    protected StringBuilder withStringBody(StringBuilder sb) {
+        String ell = "...";
+        int len = 30;
+        return sb.append(faultStrand)
+            .append(", ")
+            .append(causes.stream()
+                .map(Cause::getMessage)
+                .map(message ->
+                    message.length() > len ? message.substring(0, len - ell.length()) + ell : message)
+                .collect(Collectors.joining(" <= ")));
+    }
+    
     public FaultStrand getFaultStrand() {
         return faultStrand;
     }
@@ -69,27 +93,5 @@ public final class Fault extends AbstractHashableIdentifiable<FaultId> {
         return Streams.quickReduce(
             Streams.reverse(causes),
             (cause, throwable) -> throwable.toChameleon(cause));
-    }
-    
-    @Override
-    public void hashTo(Consumer<byte[]> h) {
-        hash(h, faultStrand);
-        hash(h, causes);
-    }
-    
-    @Override
-    protected FaultId id(UUID hash) {
-        return new FaultId(hash);
-    }
-    
-    @Override
-    protected String toStringBody() {
-        String ell = "...";
-        int len = 30;
-        return faultStrand + ", " + causes.stream()
-            .map(Cause::getMessage)
-            .map(message ->
-                message.length() > len ? message.substring(0, len - ell.length()) + ell : message)
-            .collect(Collectors.joining(" <= "));
     }
 }

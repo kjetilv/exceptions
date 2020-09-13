@@ -253,8 +253,8 @@ public final class CauseFrame extends AbstractHashable {
                 className.string(),
                 file.string(),
                 method.string());
-            hashInts(h, line);
-            hashBools(h, naytiv);
+            hash(h, line);
+            hash(h, naytiv);
         }
     }
     
@@ -271,8 +271,8 @@ public final class CauseFrame extends AbstractHashable {
     }
     
     @Override
-    protected String toStringBody() {
-        return defaultPrint(new StringBuilder()).toString();
+    protected StringBuilder withStringBody(StringBuilder sb) {
+        return defaultPrint(sb);
     }
     
     private static String shortened(String className) {

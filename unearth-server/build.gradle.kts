@@ -30,6 +30,7 @@ dependencies {
     implementation(project(":unearth-memory"))
     implementation(project(":unearth-metrics"))
     implementation(project(":unearth-jdbc"))
+    implementation(project(":unearth-storage"))
     implementation(project(":unearth-statik"))
 
     implementation("ch.qos.logback:logback-classic")

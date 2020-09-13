@@ -106,6 +106,7 @@ allprojects {
             implementation(cassandra("mapper-runtime"))
 
             implementation("io.micrometer:micrometer-registry-jmx:$micrometerVer")
+            implementation("io.micrometer:micrometer-registry-prometheus:$micrometerVer")
             implementation("io.micrometer:micrometer-core:$micrometerVer")
 
             implementation("org.slf4j:slf4j-api:$slf4jVer")

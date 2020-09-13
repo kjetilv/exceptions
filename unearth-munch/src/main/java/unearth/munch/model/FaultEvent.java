@@ -77,6 +77,25 @@ public final class FaultEvent extends AbstractHashableIdentifiable<FeedEntryId> 
         this.time = Objects.requireNonNull(time, "time");
     }
     
+    @Override
+    public void hashTo(Consumer<byte[]> h) {
+        hash(h, time.toEpochMilli());
+        hash(h, faultId);
+    }
+    
+    @Override
+    protected StringBuilder withStringBody(StringBuilder sb) {
+        return sb.append("F: ")
+            .append(getFaultId())
+            .append("@")
+            .append(getTime().atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
+    }
+    
+    @Override
+    protected FeedEntryId id(UUID hash) {
+        return new FeedEntryId(hash);
+    }
+    
     public int getThrowableHashCode() {
         return throwableHashCode;
     }
@@ -95,22 +114,5 @@ public final class FaultEvent extends AbstractHashableIdentifiable<FeedEntryId> 
     
     public LogEntry getLogEntry() {
         return logEntry;
-    }
-    
-    @Override
-    public void hashTo(Consumer<byte[]> h) {
-        hash(h, time.toEpochMilli());
-        hash(h, faultId);
-    }
-    
-    @Override
-    protected String toStringBody() {
-        return "F: " + getFaultId() +
-            "@" + getTime().atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_ZONED_DATE_TIME);
-    }
-    
-    @Override
-    protected FeedEntryId id(UUID hash) {
-        return new FeedEntryId(hash);
     }
 }

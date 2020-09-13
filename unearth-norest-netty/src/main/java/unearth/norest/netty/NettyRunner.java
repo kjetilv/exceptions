@@ -44,19 +44,20 @@ import unearth.util.once.Get;
 import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
 
 public final class NettyRunner {
-    
+
     private static final Logger log = LoggerFactory.getLogger(NettyRunner.class);
-    
+
     private final Supplier<EventLoopGroup> listen;
-    
+
     private final Supplier<EventLoopGroup> work;
-    
+
     private final Supplier<ChannelFuture> started;
-    
+
     public NettyRunner(
         int port,
-        ApiInvocationHandler handler,
+        NettyApi api,
         MetricsFactory metricsFactory,
+        Supplier<byte[]> metricsOut,
         Clock clock
     ) {
         ThreadPoolExecutor executor = new ThreadPoolExecutor(
@@ -66,34 +67,36 @@ public final class NettyRunner {
             new ArrayBlockingQueue<>(64),
             countingThreadFactory(),
             new ThreadPoolExecutor.AbortPolicy());
-        
+
         this.listen = Get.once(() ->
             new NioEventLoopGroup(Runtime.getRuntime().availableProcessors(), executor));
         this.work = Get.once(() ->
             new NioEventLoopGroup(10, executor));
         this.started = Get.once(() -> {
+
             RequestFactory requestFactory = httpRequest ->
                 new SimpleNettyRequest(httpRequest, clock.instant());
-        
             MetricsTracker metricsTracker =
-                new MetricsTracker(clock::instant, metricsFactory.instantiate(Metrics.class));
-            
+                new MetricsTracker(clock::instant, () -> metricsFactory.instantiate(Metrics.class));
+
             ChannelInitializer<Channel> childHandler = new ChannelInitializer<>() {
-                
+
                 @Override
                 protected void initChannel(Channel ch) {
                     ch.pipeline().addLast(
                         new HttpServerCodec(),
                         new HttpObjectAggregator(MAX_CONTENT_LENGTH),
-                        new RequestGatekeeper(handler, requestFactory),
+                        new HealthServer("/health/", () -> Health.OK),
+                        new MetricsServer(METRICS_PATH, metricsOut),
+                        new RequestReader(requestFactory),
                         new ResponseWriter(),
                         metricsTracker.getOutbound(),
                         metricsTracker.getInbound(),
-                        handler,
+                        api,
                         new ErrorHandler());
                 }
             };
-            
+
             ChannelFuture bindFuture = new ServerBootstrap()
                 .group(listen.get(), work.get())
                 .childHandler(childHandler)
@@ -111,12 +114,12 @@ public final class NettyRunner {
             }
         });
     }
-    
+
     public void start() {
         ChannelFuture channelFuture = started.get();
         log.info(this + " started: " + channelFuture);
     }
-    
+
     public void stop() {
         Get.ifPresent(started, channelFuture -> {
             try {
@@ -135,9 +138,11 @@ public final class NettyRunner {
             }
         });
     }
-    
+
     private static final int MAX_CONTENT_LENGTH = 16 * 1024 * 1026;
-    
+
+    private static final String METRICS_PATH = "/metrics";
+
     private static ThreadFactory countingThreadFactory() {
         LongAdder count = new LongAdder();
         return runnable -> {
@@ -148,7 +153,7 @@ public final class NettyRunner {
             }
         };
     }
-    
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[]";

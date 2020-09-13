@@ -40,15 +40,21 @@ dependencies {
     implementation(project(":unearth-munch"))
     implementation(project(":unearth-metrics"))
     implementation(project(":unearth-jdbc"))
+    implementation(project(":unearth-storage"))
     implementation(project(":unearth-analysis"))
     implementation(project(":unearth-server"))
 
     implementation("io.netty:netty-all")
     implementation("io.micrometer:micrometer-core")
+    implementation("io.micrometer:micrometer-registry-jmx")
+    implementation("io.micrometer:micrometer-registry-prometheus")
 
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("ch.qos.logback:logback-classic")
+
+    implementation("io.prometheus:simpleclient:0.9.0")
+    implementation("io.prometheus:simpleclient_httpserver:0.9.0")
 
     runtimeOnly("org.webjars:swagger-ui")
     runtimeOnly("org.postgresql:postgresql")

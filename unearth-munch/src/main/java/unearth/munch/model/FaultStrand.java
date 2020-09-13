@@ -57,7 +57,7 @@ public final class FaultStrand extends AbstractHashableIdentifiable<FaultStrandI
     
     @Override
     public void hashTo(Consumer<byte[]> h) {
-        hash(h, causeStrands);
+        hashables(h, causeStrands);
     }
     
     int getCauseCount() {
@@ -65,9 +65,10 @@ public final class FaultStrand extends AbstractHashableIdentifiable<FaultStrandI
     }
     
     @Override
-    protected String toStringBody() {
-        return "[" + causeStrands.size() + "] " +
-            causeStrands.stream().map(Objects::toString).collect(Collectors.joining(" <= "));
+    protected StringBuilder withStringBody(StringBuilder sb) {
+        return sb.append(causeStrands.size())
+            .append(" ")
+            .append(causeStrands.stream().map(Objects::toString).collect(Collectors.joining(" <= ")));
     }
     
     @Override

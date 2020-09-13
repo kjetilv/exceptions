@@ -17,13 +17,13 @@
 
 package unearth.http4k
 
-import unearth.metrics.MetricsFactory
+import unearth.metrics.ByteBuddyMetricsFactory
 import unearth.server.Unearth
 import unearth.server.UnearthlyRenderer
 
 fun main() {
 
-    Unearth().startServer(MetricsFactory.DEFAULT) { resources, config ->
+    Unearth().startServer(ByteBuddyMetricsFactory.DEFAULT) { resources, config ->
         Http4kServer(resources, config, UnearthlyRenderer(config.prefix))
     }
 }

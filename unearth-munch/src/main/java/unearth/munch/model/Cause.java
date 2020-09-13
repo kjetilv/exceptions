@@ -106,8 +106,8 @@ public final class Cause extends AbstractHashableIdentifiable<CauseId> {
     }
     
     @Override
-    protected String toStringBody() {
-        return "causeStrand:" + causeStrand + " message:" + message;
+    protected StringBuilder withStringBody(StringBuilder sb) {
+        return sb.append("causeStrand:").append(causeStrand).append(" message:").append(message);
     }
     
     private static Collection<Fault> suppressed(Throwable t) {

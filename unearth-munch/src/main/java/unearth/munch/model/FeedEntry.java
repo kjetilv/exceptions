@@ -90,9 +90,11 @@ public final class FeedEntry extends AbstractHashableIdentifiable<FeedEntryId> {
     }
     
     @Override
-    protected String toStringBody() {
-        return faultEvent.toStringBody() +
-            " g#" + globalSequenceNo + " ft#" + faultStrandSequenceNo + " f#" + faultSequenceNo;
+    protected StringBuilder withStringBody(StringBuilder sb) {
+        return faultEvent.withStringBody(sb)
+            .append(" g#").append(globalSequenceNo)
+            .append(" ft#").append(faultStrandSequenceNo)
+            .append(" f#").append(faultSequenceNo);
     }
     
     private static Long valid(long seqNo) {

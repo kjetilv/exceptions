@@ -65,6 +65,11 @@ public final class LogEntry extends AbstractHashableIdentifiable<FaultLogId> {
     }
     
     @Override
+    protected StringBuilder withStringBody(StringBuilder sb) {
+        return sb;
+    }
+    
+    @Override
     protected FaultLogId id(UUID hash) {
         return new FaultLogId(hash);
     }

@@ -22,24 +22,14 @@ import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Timer;
 
 public interface Metrics {
-    
-    default Counter writes(Class<?> type) {
-        return null;
-    }
-    
-    default Counter reads(Class<?> type) {
-        return null;
-    }
-    
-    default Timer readTimer(Class<?> type) {
-        return null;
-    }
-    
-    default Timer writeTimer(Class<?> type) {
-        return null;
-    }
-    
-    default DistributionSummary stackTraceLength(Class<?> type) {
-        return null;
-    }
+
+    Counter writes(Class<?> type);
+
+    Counter reads(Class<?> type);
+
+    Timer readTimer(Class<?> type);
+
+    Timer writeTimer(Class<?> type);
+
+    DistributionSummary stackTraceLength(Class<?> type);
 }

@@ -46,12 +46,8 @@ public abstract class Id implements Hashed {
         return hash;
     }
     
-    public String getUuid() {
-        return getHash().toString();
-    }
-    
     public String toHashString() {
-        return hash.toString();
+        return getHash().toString();
     }
     
     private static final Map<Class<?>, String> NAMES = new HashMap<>();
@@ -90,6 +86,6 @@ public abstract class Id implements Hashed {
     
     @Override
     public String toString() {
-        return type + ":" + getHash();
+        return type + ":" + this.getHash();
     }
 }

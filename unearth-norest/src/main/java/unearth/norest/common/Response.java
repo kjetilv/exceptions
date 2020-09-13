@@ -17,11 +17,9 @@
 
 package unearth.norest.common;
 
-import unearth.hashable.Hashable;
+public interface Response {
 
-public interface Response extends Hashable {
-    
     Request getRequest();
-    
+
     byte[] getEntity();
 }

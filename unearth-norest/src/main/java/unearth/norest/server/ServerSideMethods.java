@@ -29,15 +29,15 @@ import unearth.norest.Transformers;
 import unearth.norest.common.Request;
 
 final class ServerSideMethods<A> {
-    
+
     private final Transformers transformers;
-    
+
     private final List<ServerSideMethod> serverSideMethods;
-    
+
     ServerSideMethods(Class<A> api, List<Transformer<?>> transformers) {
         this(api, new Transformers(transformers));
     }
-    
+
     ServerSideMethods(Class<A> api, Transformers transformers) {
         Objects.requireNonNull(api, "api");
         this.transformers = transformers;
@@ -45,7 +45,7 @@ final class ServerSideMethods<A> {
             .map(this::processed)
             .collect(Collectors.toList());
     }
-    
+
     public Optional<Function<Object, Object>> invocation(Request request) {
         return serverSideMethods.stream()
             .map(serverSideMethod ->
@@ -53,7 +53,7 @@ final class ServerSideMethods<A> {
             .flatMap(Optional::stream)
             .findFirst();
     }
-    
+
     private ServerSideMethod processed(java.lang.reflect.Method method) {
         try {
             return new ServerSideMethod(method, this.transformers);

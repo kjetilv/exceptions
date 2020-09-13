@@ -29,58 +29,65 @@ import io.netty.channel.ChannelPromise;
 import io.netty.channel.SimpleChannelInboundHandler;
 import unearth.norest.common.Request;
 import unearth.norest.common.Response;
+import unearth.util.once.Get;
 
 public final class MetricsTracker {
-    
+
     private final Supplier<Instant> time;
-    
-    private final Metrics metrics;
-    
+
+    private final Supplier<Metrics> metrics;
+
     private final Map<Request, Stats> stats = new ConcurrentHashMap<>();
-    
-    public MetricsTracker(Supplier<Instant> time, Metrics metrics) {
+
+    public MetricsTracker(Supplier<Instant> time, Supplier<Metrics> metrics) {
         this.time = time;
-        this.metrics = metrics;
+        this.metrics = Get.once(metrics);
     }
-    
+
     public SimpleChannelInboundHandler<Request> getInbound() {
         return new MetricsInbound();
     }
-    
+
     public ChannelOutboundHandlerAdapter getOutbound() {
         return new MetricsOutbund();
     }
-    
+
     private void updateStats(Request request) {
         stats.put(request, new Stats(request));
     }
-    
-    private void updateStats(Response msg) {
-        stats.remove(msg.getRequest()).finish();
+
+    private void updateStats(Response response) {
+        stats.remove(response.getRequest()).finish(response);
     }
-    
+
     private class Stats {
-        
+
         private final Request request;
-        
+
         private final Instant startTime;
-        
+
         Stats(Request request) {
             this.request = request;
             this.startTime = time.get();
-            metrics.request(request.getMethod(), request.getPath(false))
-                .increment();
         }
-        
-        void finish() {
+
+        void finish(Response response) {
             Instant endTime = time.get();
-            metrics.requestTime(request.getMethod(), request.getPath(false))
+            String path = request.getPath(false);
+            Metrics m = metrics.get();
+            m.request(request.getMethod(), path)
+                .increment();
+            m.requestTime(request.getMethod(), path)
                 .record(Duration.between(startTime, endTime));
+            m.requestSize(request.getMethod(), path)
+                .record(request.getEntity().length());
+            m.responseSize(request.getMethod(), path)
+                .record(response.getEntity().length);
         }
     }
-    
+
     private class MetricsInbound extends SimpleChannelInboundHandler<Request> {
-        
+
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, Request request) {
             try {
@@ -90,9 +97,9 @@ public final class MetricsTracker {
             }
         }
     }
-    
+
     private class MetricsOutbund extends ChannelOutboundHandlerAdapter {
-        
+
         @Override
         public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
             try {

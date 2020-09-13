@@ -22,13 +22,13 @@ import javax.sql.DataSource;
 
 import org.flywaydb.core.Flyway;
 
-class JdbcSetup implements Runnable {
+public class JdbcSetup implements Runnable {
     
     private final DataSource dataSource;
     
     private final String schema;
     
-    JdbcSetup(DataSource dataSource, String schema) {
+    public JdbcSetup(DataSource dataSource, String schema) {
         this.dataSource = Objects.requireNonNull(dataSource, "dataSource");
         this.schema = Objects.requireNonNull(schema, "schema");
         if (schema.isBlank()) {

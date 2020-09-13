@@ -15,24 +15,24 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.jdbc;
+package unearth.norest.netty;
 
-class Idxd<T> {
+import java.util.Objects;
+
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.FullHttpRequest;
+
+public final class RequestReader extends SimpleChannelInboundHandler<FullHttpRequest> {
     
-    private final int index;
+    private final RequestFactory wrapper;
     
-    private final T t;
-    
-    Idxd(int index, T t) {
-        this.index = index;
-        this.t = t;
+    public RequestReader(RequestFactory wrapper) {
+        this.wrapper = Objects.requireNonNull(wrapper, "wrapper");
     }
     
-    int getIndex() {
-        return index;
-    }
-    
-    T getT() {
-        return t;
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) {
+        ctx.fireChannelRead(wrapper.create(msg));
     }
 }

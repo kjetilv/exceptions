@@ -55,18 +55,10 @@ public final class CauseStrand extends AbstractHashableIdentifiable<CauseStrandI
                 : List.copyOf(stackFrames);
     }
     
-    public List<CauseFrame> getCauseFrames() {
-        return causeFrames;
-    }
-    
-    public String getClassName() {
-        return className;
-    }
-    
     @Override
     public void hashTo(Consumer<byte[]> h) {
         hash(h, this.className);
-        hash(h, this.causeFrames);
+        hashables(h, this.causeFrames);
     }
     
     @Override
@@ -75,9 +67,18 @@ public final class CauseStrand extends AbstractHashableIdentifiable<CauseStrandI
     }
     
     @Override
-    protected String toStringBody() {
+    protected StringBuilder withStringBody(StringBuilder sb) {
         int dotIndex = className.lastIndexOf(".");
-        return (dotIndex >= 0 ? className.substring(dotIndex + 1) : className) + '/' + causeFrames.size();
+        return sb.append(dotIndex >= 0 ? className.substring(dotIndex + 1) : className)
+            .append('/').append(causeFrames.size());
+    }
+    
+    public List<CauseFrame> getCauseFrames() {
+        return causeFrames;
+    }
+    
+    public String getClassName() {
+        return className;
     }
     
     private static List<CauseFrame> causeFrames(StackTraceElement[] stackTrace) {

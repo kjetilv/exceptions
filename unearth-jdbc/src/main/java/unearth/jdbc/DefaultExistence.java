@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 
 class DefaultExistence<T> implements Session.Existence<T> {
     
-    private final DefaultSession session;
+    private final Session session;
     
     private final String sql;
     
@@ -35,7 +35,7 @@ class DefaultExistence<T> implements Session.Existence<T> {
     
     private Supplier<Integer> insert;
     
-    DefaultExistence(DefaultSession session, String sql, Session.Set set, Session.Sel<T> sel) {
+    DefaultExistence(Session session, String sql, Session.Set set, Session.Sel<T> sel) {
         this.session = session;
         this.sql = sql;
         this.set = set;

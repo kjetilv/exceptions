@@ -24,16 +24,16 @@ import unearth.norest.Transformer;
 import unearth.norest.common.Request;
 
 public final class ApiInvoker<A> {
-    
+
     private final ServerSideMethods<A> serverSideMethods;
-    
+
     private final A impl;
-    
+
     public ApiInvoker(Class<A> type, A impl, List<Transformer<?>> transformers) {
         this.impl = Objects.requireNonNull(impl, "impl");
         this.serverSideMethods = new ServerSideMethods<A>(type, transformers);
     }
-    
+
     public Optional<Object> response(Request request) {
         return Optional.ofNullable(request)
             .flatMap(serverSideMethods::invocation)

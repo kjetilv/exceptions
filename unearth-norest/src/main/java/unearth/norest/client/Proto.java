@@ -27,7 +27,7 @@ import unearth.norest.Transformer;
 import unearth.norest.Transformers;
 
 public final class Proto {
-    
+
     public static <T> T type(Class<T> api, URI uri, IOHandler ioHandler, List<Transformer<?>> transformers) {
         ClientSideMethods methods = new ClientSideMethods(new Transformers(transformers));
         InvocationHandler invocationHandler = new ClientInvocationHandler(
@@ -40,7 +40,7 @@ public final class Proto {
             new Class<?>[] { api },
             invocationHandler));
     }
-    
+
     private Proto() {
     }
 }

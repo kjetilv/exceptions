@@ -25,7 +25,6 @@ import unearth.analysis.CassandraInit
 import unearth.analysis.CassandraSensor
 import unearth.core.FaultSensor
 import unearth.core.HandlingPolicy
-import unearth.jdbc.JdbcStorage
 import unearth.jdbc.Metrics
 import unearth.memory.Db
 import unearth.memory.Sensor
@@ -33,6 +32,7 @@ import unearth.metrics.MetricsFactory
 import unearth.munch.model.FrameFun
 import unearth.munch.print.*
 import unearth.server.turbo.UnearthlyTurboFilter
+import unearth.storage.JdbcStorage
 import java.net.URI
 import java.time.Clock
 import java.util.*
@@ -157,11 +157,6 @@ class Unearth(private val configuration: UnearthlyConfig = UnearthlyConfig.load(
                     SimpleCausesRenderer(shortStackRenderer)
                 )
             )
-    }
-
-    internal class MicrometerClock(private val clock: Clock) : io.micrometer.core.instrument.Clock {
-        override fun wallTime(): Long = clock.instant().toEpochMilli()
-        override fun monotonicTime(): Long = clock.instant().nano.toLong()
     }
 }
 

@@ -18,7 +18,6 @@
 dependencies {
     implementation(project(":unearth-util"))
     implementation(project(":unearth-hashable"))
-    implementation(project(":unearth-munch"))
     implementation(project(":unearth-core"))
     implementation(project(":unearth-metrics"))
 

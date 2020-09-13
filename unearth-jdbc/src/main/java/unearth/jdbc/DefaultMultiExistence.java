@@ -43,7 +43,7 @@ class DefaultMultiExistence<T> implements Session.MultiExistence<T> {
     private Function<Collection<T>, Integer> updater;
     
     DefaultMultiExistence(
-        DefaultSession session,
+        Session session,
         Collection<T> items,
         String sql,
         Set set,

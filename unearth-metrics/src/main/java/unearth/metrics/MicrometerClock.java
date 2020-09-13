@@ -14,24 +14,23 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-package unearth.netty;
+package unearth.metrics;
 
 import java.time.Clock;
 
-class MicrometerClock implements io.micrometer.core.instrument.Clock {
-    
+public class MicrometerClock implements io.micrometer.core.instrument.Clock {
+
     private final Clock clock;
-    
-    MicrometerClock(Clock clock) {
+
+    public MicrometerClock(Clock clock) {
         this.clock = clock;
     }
-    
+
     @Override
     public long wallTime() {
         return clock.instant().toEpochMilli();
     }
-    
+
     @Override
     public long monotonicTime() {
         return clock.instant().getNano();

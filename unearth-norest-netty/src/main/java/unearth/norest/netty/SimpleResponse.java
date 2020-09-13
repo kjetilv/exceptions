@@ -17,43 +17,44 @@
 
 package unearth.norest.netty;
 
-import java.util.function.Consumer;
+import java.util.Arrays;
+import java.util.Objects;
 
-import unearth.hashable.AbstractHashable;
 import unearth.norest.common.Request;
 import unearth.norest.common.Response;
 
-public class SimpleResponse extends AbstractHashable implements Response {
-    
+public class SimpleResponse implements Response {
+
     private final Request request;
-    
+
     private final byte[] bytes;
-    
+
     public SimpleResponse(Request request, byte[] bytes) {
         this.request = request;
         this.bytes = bytes == null || bytes.length == 0 ? NO_BYTES : bytes;
     }
-    
+
     @Override
     public Request getRequest() {
         return request;
     }
-    
+
     @Override
     public byte[] getEntity() {
         return bytes;
     }
-    
-    @Override
-    public void hashTo(Consumer<byte[]> h) {
-        hash(h, request);
-        hashThis(h);
-    }
-    
-    @Override
-    protected Object toStringBody() {
-        return bytes.length;
-    }
-    
+
     private static final byte[] NO_BYTES = new byte[0];
+
+    @Override
+    public int hashCode() {
+        return 31 * Objects.hash(request) + Arrays.hashCode(bytes);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return this == o || o instanceof SimpleResponse &&
+            Objects.equals(request, ((SimpleResponse) o).request) &&
+            Arrays.equals(bytes, ((SimpleResponse) o).bytes);
+    }
 }

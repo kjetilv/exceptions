@@ -32,20 +32,37 @@ import unearth.norest.common.AbstractRequest;
 import unearth.norest.common.Request;
 
 public final class SimpleNettyRequest extends AbstractRequest {
-    
+
     private final FullHttpRequest httpRequest;
-    
+
     public SimpleNettyRequest(FullHttpRequest httpRequest, Instant time) {
         this(null, httpRequest, time);
     }
-    
+
     public SimpleNettyRequest(String prefix, FullHttpRequest httpRequest, Instant time) {
-        super(prefix,
+        super(
+            prefix,
             Objects.requireNonNull(httpRequest, "fullHttpRequest").uri(),
             time);
         this.httpRequest = httpRequest;
     }
-    
+
+    @Override
+    protected Request createPrefixed(String prefix) {
+        return new SimpleNettyRequest(prefix, httpRequest, getInitTime());
+    }
+
+    @Override
+    protected CharSequence getBodyContent() {
+        ByteBuf content = this.httpRequest.content();
+        return content.toString(StandardCharsets.UTF_8);
+    }
+
+    @Override
+    protected String getMethodName() {
+        return this.httpRequest.method().asciiName().toString();
+    }
+
     @Override
     protected Map<String, List<String>> retrieveHeaders() {
         HttpHeaders headers = httpRequest.headers();
@@ -53,20 +70,15 @@ public final class SimpleNettyRequest extends AbstractRequest {
             Function.identity(),
             headers::getAllAsString));
     }
-    
+
     @Override
-    protected Request createPrefixed(String prefix) {
-        return new SimpleNettyRequest(prefix, httpRequest, getInitTime());
+    public int hashCode() {
+        return Objects.hash(httpRequest);
     }
-    
+
     @Override
-    protected CharSequence getBodyContent() {
-        ByteBuf content = this.httpRequest.content();
-        return content.toString(StandardCharsets.UTF_8);
-    }
-    
-    @Override
-    protected String getMethodName() {
-        return this.httpRequest.method().asciiName().toString();
+    public boolean equals(Object o) {
+        return this == o || o instanceof SimpleNettyRequest &&
+            Objects.equals(httpRequest, ((SimpleNettyRequest) o).httpRequest);
     }
 }

@@ -14,24 +14,6 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-/*
- *     This file is part of Unearth.
- *
- *     Unearth is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- *
- *     Unearth is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 package unearth.norest;
 
 import java.util.Collections;
@@ -44,17 +26,17 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class Transformers {
-    
+
     public static final Transformers EMPTY = new Transformers(Collections.emptyList());
-    
+
     private final Map<Class<?>, Transformer<?>> transformers;
-    
+
     public Transformers(List<Transformer<?>> transformers) {
         this.transformers = transformers == null || transformers.isEmpty()
             ? Collections.emptyMap()
             : allTransformers(transformers);
     }
-    
+
     public <T> Optional<T> from(Class<T> type, String string) {
         try {
             return transformer(type).from(string);
@@ -62,18 +44,18 @@ public final class Transformers {
             throw new IllegalArgumentException("Could not transform to " + type + ": " + string, e);
         }
     }
-    
+
     public <T> Optional<String> to(Class<T> type, T t) {
         return transformer(type).to(t);
     }
-    
+
     @SuppressWarnings("unchecked")
     private <T> Transformer<T> transformer(Class<T> type) {
         return (Transformer<T>) transformers.getOrDefault(type, new DefaultTransformer<>(type));
     }
-    
+
     private static final Map<Class<?>, Transformer<?>> PRIMITIVES = Stream.of(
-        
+
         Transformer.from(boolean.class, Boolean::parseBoolean, false),
         Transformer.from(float.class, Float::parseFloat, 0.0f),
         Transformer.from(double.class, Double::parseDouble, 0.0d),
@@ -82,7 +64,7 @@ public final class Transformers {
         Transformer.from(byte.class, Byte::parseByte, (byte) 0),
         Transformer.from(int.class, Integer::parseInt, 0),
         Transformer.from(char.class, s -> s.charAt(0), (char) 0),
-        
+
         Transformer.from(Boolean.class, Boolean::parseBoolean),
         Transformer.from(Float.class, Float::parseFloat),
         Transformer.from(Double.class, Double::parseDouble),
@@ -90,10 +72,10 @@ public final class Transformers {
         Transformer.from(Short.class, Short::parseShort),
         Transformer.from(Byte.class, Byte::parseByte),
         Transformer.from(Integer.class, Integer::parseInt),
-        Transformer.from(Character.class, s -> s.charAt(0))
-    
+        Transformer.from(Character.class, Transformers::parseChar)
+
     ).collect(Collectors.toMap(Transformer::getType, Function.identity()));
-    
+
     private static Map<Class<?>, Transformer<?>> allTransformers(List<Transformer<?>> transformers) {
         Map<Class<?>, Transformer<?>> added = transformers == null || transformers.isEmpty()
             ? Collections.emptyMap()
@@ -106,25 +88,35 @@ public final class Transformers {
             Map.Entry::getKey,
             Map.Entry::getValue));
     }
-    
+
+    private static Character parseChar(String s) {
+        if (s.length() == 0) {
+            return null;
+        }
+        if (s.length() == 1) {
+            return s.charAt(0);
+        }
+        throw new IllegalArgumentException("Could not parse to char: '" + s + "'");
+    }
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[" + transformers.size() + "]";
     }
-    
+
     static final class DefaultTransformer<T> implements Transformer<T> {
-        
+
         private final Class<T> type;
-        
+
         DefaultTransformer(Class<T> type) {
             this.type = type;
         }
-        
+
         @Override
         public Class<T> getType() {
             return type;
         }
-        
+
         @SuppressWarnings("unchecked")
         @Override
         public Optional<T> from(String string) {
@@ -136,12 +128,12 @@ public final class Transformers {
             }
             throw new IllegalStateException(this + " does not read " + string);
         }
-        
+
         @Override
         public Optional<String> to(T o) {
             return Optional.of(o).map(String::valueOf);
         }
-        
+
         @Override
         public String toString() {
             return getClass().getSimpleName() + "[type=" + type + "]";

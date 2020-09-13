@@ -45,7 +45,7 @@ public abstract class AbstractHashableIdentifiable<I extends Id>
     /**
      * A supplier which computes {@link Identifiable this identifiable's} {@link Id id} once-only.
      */
-    private final Supplier<I> id = Get.mostlyOnce(() -> id(getHash()));
+    private final Supplier<I> id = Get.mostlyOnce(() -> id(this.getHash()));
     
     @Override
     public final I getId() {

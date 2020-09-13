@@ -17,7 +17,7 @@
 
 package unearth.jdbc;
 
-interface S<T, R> {
+public interface S<T, R> {
     
     R set(T t);
 }

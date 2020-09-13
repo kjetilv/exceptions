@@ -22,27 +22,25 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
-import unearth.hashable.Hashable;
+public interface Request {
 
-public interface Request extends Hashable {
-    
     Optional<Request> prefixed(String prefix);
-    
+
     RequestMethod getMethod();
-    
+
     String getPath(boolean withQueryParameters);
-    
+
     int getQueryIndex();
-    
+
     default boolean hasQueryParameters() {
         return getQueryIndex() > 0;
     }
-    
+
     String getEntity();
-    
+
     Map<String, String> getHeaders();
-    
+
     Map<String, String> getQueryParameters();
-    
+
     Duration timeTaken(Instant completionTime);
 }

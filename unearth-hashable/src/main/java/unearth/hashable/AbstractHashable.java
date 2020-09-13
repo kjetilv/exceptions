@@ -1,38 +1,6 @@
-/*
- *     This file is part of Unearth.
- *
- *     Unearth is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- *
- *     Unearth is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
- */
-
-/*
- *     This file is part of Unearth.
- *
- *     Unearth is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- *
- *     Unearth is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
- */
 package unearth.hashable;
 
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -40,74 +8,60 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.stream.LongStream;
 
-import unearth.util.once.Get;
-
-public abstract class AbstractHashable implements Hashable {
+public abstract class AbstractHashable
+    implements Hashable, Serializable {
     
-    /**
-     * A supplier which computes {@link Hashable this hashable's} uuid with a {@link Get#mostlyOnce(Supplier)}.
-     */
-    private final Supplier<UUID> hash = Get.mostlyOnce(uuid(this));
+    private final AtomicReference<UUID> hash = new AtomicReference<>();
     
-    private final Supplier<String> toString =
-        Get.mostlyOnce(() ->
-            getClass().getSimpleName() + '[' + toStringIdentifier() + toStringContents() + ']');
+    private final AtomicReference<String> toString = new AtomicReference<>();
     
     @Override
     public final UUID getHash() {
-        return hash.get();
+        return hash.updateAndGet(v -> v != null ? v : uuid());
     }
     
-    protected Object toStringBody() {
-        return null;
+    protected void hashThis(Consumer<byte[]> hash) {
+        hash(hash, System.identityHashCode(getClass()), System.identityHashCode(this));
     }
     
-    protected void hashThis(Consumer<byte[]> h) {
-        hash(h, System.identityHashCode(this), System.identityHashCode(getClass()));
+    protected abstract StringBuilder withStringBody(StringBuilder sb);
+    
+    private String build() {
+        return withStringContents(
+            withStringIdentifier(
+                new StringBuilder(getClass().getSimpleName())
+                    .append('['))
+                .append("<")
+        ).append(">]").toString();
     }
     
-    private Object toStringIdentifier() {
-        String hash = getHash().toString();
-        return hash.substring(0, hash.indexOf("-"));
+    private StringBuilder withStringIdentifier(StringBuilder sb) {
+        return sb.append(getHash());
     }
     
-    private String toStringContents() {
-        Object body = toStringBody();
-        if (body == null) {
-            return "";
+    private UUID uuid() {
+        MessageDigest md5 = md5();
+        hashTo(md5::update);
+        return UUID.nameUUIDFromBytes(md5.digest());
+    }
+    
+    private StringBuilder withStringContents(StringBuilder sb) {
+        int length = sb.length();
+        StringBuilder sb2 = sb.append(' ');
+        StringBuilder sb3 = withStringBody(sb2);
+        if (sb3.length() == sb2.length()) {
+            return sb2.delete(length, length + 1);
         }
-        String string = body.toString().trim();
-        if (string.isBlank()) {
-            return "";
-        }
-        return ' ' + string;
+        return sb2;
     }
     
     private static final String HASH = "MD5";
     
-    private static final byte[] NO_TRUTH = "none".getBytes();
-    
-    private static final byte[] TRUTHYNESS = "true".getBytes();
-    
-    private static final byte[] FALSYNESS = "false".getBytes();
-    
-    /**
-     * Takes a {@link Hashable hashable} and returns a supplier which computs its UUID
-     *
-     * @param hashable Hashable
-     *
-     * @return UUID supplier
-     */
-    private static Supplier<UUID> uuid(Hashable hashable) {
-        return Get.mostlyOnce(() -> {
-            MessageDigest md5 = md5();
-            hashable.hashTo(md5::update);
-            return UUID.nameUUIDFromBytes(md5.digest());
-        });
-    }
+    private static final long serialVersionUID = -2993413752909173835L;
     
     private static MessageDigest md5() {
         try {
@@ -124,53 +78,17 @@ public abstract class AbstractHashable implements Hashable {
                 hash.accept(s.getBytes(StandardCharsets.UTF_8)));
     }
     
+    protected static void hash(Consumer<byte[]> hash, byte[]... bytes) {
+        for (byte[] bite: bytes) {
+            hash.accept(bite);
+        }
+    }
+    
     protected static void hash(Consumer<byte[]> hash, String... strings) {
         hashStrings(hash, Arrays.asList(strings));
     }
     
-    protected static void hash(Consumer<byte[]> h, Hashed... ids) {
-        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * 2 * ids.length);
-        for (Hashed id: ids) {
-            UUID uuid = id.getHash();
-            buffer.putLong(uuid.getMostSignificantBits());
-            buffer.putLong(uuid.getLeastSignificantBits());
-        }
-        h.accept(buffer.array());
-    }
-    
-    protected static void hash(Consumer<byte[]> h, Hashable... hashables) {
-        hash(h, Arrays.asList(hashables));
-    }
-    
-    protected static void hash(Consumer<byte[]> hash, Long... values) {
-        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * values.length);
-        for (Long value: values) {
-            if (value != null) {
-                buffer.putLong(value);
-            }
-        }
-        hash.accept(buffer.array());
-    }
-    
-    protected static void hashLongs(Consumer<byte[]> hash, long... values) {
-        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * values.length);
-        for (long value: values) {
-            buffer.putLong(value);
-        }
-        hash.accept(buffer.array());
-    }
-    
-    protected static void hash(Consumer<byte[]> hash, Integer... values) {
-        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES * values.length);
-        for (Integer value: values) {
-            if (value != null) {
-                buffer.putInt(value);
-            }
-        }
-        hash.accept(buffer.array());
-    }
-    
-    protected static void hashInts(Consumer<byte[]> hash, int... values) {
+    protected static void hash(Consumer<byte[]> hash, int... values) {
         ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES * values.length);
         for (int value: values) {
             buffer.putInt(value);
@@ -178,7 +96,27 @@ public abstract class AbstractHashable implements Hashable {
         hash.accept(buffer.array());
     }
     
-    protected static void hash(Consumer<byte[]> h, Collection<? extends Hashable> hasheds) {
+    protected static void hash(Consumer<byte[]> hash, Boolean... values) {
+        hash(hash, Arrays.stream(values).mapToInt(b -> b ? 1 : 0).toArray());
+    }
+    
+    protected static void hash(Consumer<byte[]> hash, long... values) {
+        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * values.length);
+        for (long value: values) {
+            buffer.putLong(value);
+        }
+        hash.accept(buffer.array());
+    }
+    
+    protected static void hash(Consumer<byte[]> h, Hashable... hasheds) {
+        hashables(h, Arrays.asList(hasheds));
+    }
+    
+    protected static void hash(Consumer<byte[]> h, Hashed... hasheds) {
+        hasheds(h, Arrays.asList(hasheds));
+    }
+    
+    protected static void hashables(Consumer<byte[]> h, Collection<? extends Hashable> hasheds) {
         for (Hashable hashable: hasheds) {
             if (hashable != null) {
                 hashable.hashTo(h);
@@ -186,10 +124,12 @@ public abstract class AbstractHashable implements Hashable {
         }
     }
     
-    protected static void hashBools(Consumer<byte[]> h, Boolean... truths) {
-        for (Boolean truth: truths) {
-            h.accept(truth == null ? NO_TRUTH : truth ? TRUTHYNESS : FALSYNESS);
-        }
+    protected static void hasheds(Consumer<byte[]> h, Collection<? extends Hashed> hasheds) {
+        hash(h, hasheds.stream()
+            .flatMapToLong(hashed -> LongStream.of(
+                hashed.getHash().getMostSignificantBits(),
+                hashed.getHash().getLeastSignificantBits()))
+            .toArray());
     }
     
     @Override
@@ -199,12 +139,12 @@ public abstract class AbstractHashable implements Hashable {
     
     @Override
     public final boolean equals(Object obj) {
-        return obj == this || obj.getClass() == getClass()
+        return obj == this || obj != null && obj.getClass() == getClass()
             && ((Hashed) obj).getHash().equals(getHash());
     }
     
     @Override
     public final String toString() {
-        return toString.get();
+        return toString.updateAndGet(v -> v == null ? build() : v);
     }
 }

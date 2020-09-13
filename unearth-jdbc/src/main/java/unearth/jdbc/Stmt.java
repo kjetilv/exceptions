@@ -21,17 +21,12 @@ import java.time.Instant;
 import java.util.UUID;
 
 import unearth.hashable.Hashed;
-import unearth.munch.id.Id;
 
 @SuppressWarnings("UnusedReturnValue")
-interface Stmt extends AutoCloseable {
+public interface Stmt extends AutoCloseable {
     
     default Stmt set(Hashed hashed) {
         return set(hashed.getHash());
-    }
-    
-    default Stmt set(Id id) {
-        return set(id.getHash());
     }
     
     Stmt set(String string);
