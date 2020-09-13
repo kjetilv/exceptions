@@ -24,11 +24,6 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -91,20 +86,6 @@ public final class Main {
                 UnearthlyRenderer renderer = new UnearthlyRenderer(configuration.getPrefix());
                 UnearthlyApi api = new DefaultUnearthlyApi(resources, renderer);
 
-                LongAdder threadCount = new LongAdder();
-                Executor executor = new ThreadPoolExecutor(
-                    16, 128,
-                    10, TimeUnit.SECONDS,
-                    new ArrayBlockingQueue<>(10),
-                    r -> {
-                        try {
-                            return new Thread(r, "api-" + threadCount.longValue());
-                        } finally {
-                            threadCount.increment();
-                        }
-                    },
-                    new ThreadPoolExecutor.CallerRunsPolicy());
-
                 ApiInvoker<UnearthlyApi> invoker =
                     new ApiInvoker<>(UnearthlyApi.class, api, List.of(
                         Transformer.from(FaultIdDto.class, FaultIdDto::new),
@@ -116,7 +97,6 @@ public final class Main {
                 NettyApi apiRouter = new NettyApi(
                     configuration.getPrefix(),
                     JacksonIOHandler.DEFAULT,
-                    executor,
                     invoker::response);
                 NettyRunner nettyServer = new NettyRunner(
                     configuration.getPort(),

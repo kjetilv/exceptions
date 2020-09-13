@@ -18,7 +18,6 @@ package unearth.norest.netty;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Executor;
 import java.util.function.Function;
 
 import io.netty.channel.ChannelHandlerContext;
@@ -33,40 +32,32 @@ public class NettyApi extends SimpleChannelInboundHandler<Request>
 
     private final IOHandler ioHandler;
 
-    private final Executor executor;
-
     private final Function<Request, Optional<Object>> invoker;
 
     public NettyApi(
         String prefix,
         IOHandler ioHandler,
-        Executor executor,
         Function<Request, Optional<Object>> invoker
     ) {
         this.prefix = Objects.requireNonNull(prefix, "prefix");
         this.ioHandler = Objects.requireNonNull(ioHandler, "ioHandler");
-        this.executor = Objects.requireNonNull(executor, "executor");
         this.invoker = Objects.requireNonNull(invoker, "invoker");
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Request request) {
-//        CompletableFuture.runAsync(
-//            () -> {
-                try {
-                    request.prefixed(prefix)
-                        .flatMap(req ->
-                            invoker.apply(req).map(result ->
-                                new SimpleResponse(req, ioHandler.writeBytes(result))))
-                        .ifPresentOrElse(
-                            ctx::writeAndFlush,
-                            () ->
-                                ctx.fireChannelRead(request));
-                } catch (Exception e) {
-                    ctx.fireExceptionCaught(e);
-                }
-//            },
-//            executor);
+        try {
+            request.prefixed(prefix)
+                .flatMap(req ->
+                    invoker.apply(req).map(result ->
+                        new SimpleResponse(req, ioHandler.writeBytes(result))))
+                .ifPresentOrElse(
+                    ctx::writeAndFlush,
+                    () ->
+                        ctx.fireChannelRead(request));
+        } catch (Exception e) {
+            ctx.fireExceptionCaught(e);
+        }
     }
 
     @Override
