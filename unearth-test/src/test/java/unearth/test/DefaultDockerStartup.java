@@ -25,7 +25,7 @@ import org.testcontainers.containers.GenericContainer;
 import unearth.analysis.CassandraInit;
 import unearth.client.UnearthlyClient;
 import unearth.http4k.Http4kServer;
-import unearth.metrics.ByteBuddyMetricsFactory;
+import unearth.metrics.CodeGenMetricsFactory;
 import unearth.metrics.MetricsFactory;
 import unearth.server.State;
 import unearth.server.Unearth;
@@ -82,7 +82,7 @@ public final class DefaultDockerStartup implements DockerStartup {
                     dbConfig))
             .thenApply(Unearth::new);
 
-        MetricsFactory metricsFactory = ByteBuddyMetricsFactory.DEFAULT;
+        MetricsFactory metricsFactory = CodeGenMetricsFactory.DEFAULT;
 
         CompletableFuture<UnearthlyClient> client = unearthFuture
             .thenApply(unearth ->

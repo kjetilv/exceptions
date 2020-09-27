@@ -38,16 +38,16 @@ import static net.bytebuddy.matcher.ElementMatchers.isPublic;
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static net.bytebuddy.matcher.ElementMatchers.returns;
 
-public class ByteBuddyMetricsFactory extends AbstractMetricsFactory {
+public class CodeGenMetricsFactory extends AbstractMetricsFactory {
 
-    public static final ByteBuddyMetricsFactory DEFAULT = new ByteBuddyMetricsFactory(
+    public static final CodeGenMetricsFactory DEFAULT = new CodeGenMetricsFactory(
         new SimpleMeterRegistry(SimpleConfig.DEFAULT, Clock.SYSTEM));
 
     private final MeterRegistry meterRegistry;
 
     private final Function<Class<?>, Object> instantiator;
 
-    public ByteBuddyMetricsFactory(MeterRegistry meterRegistry) {
+    public CodeGenMetricsFactory(MeterRegistry meterRegistry) {
         super(meterRegistry);
         this.meterRegistry = Objects.requireNonNull(meterRegistry, "meterRegistry");
         this.instantiator = Apply.memoized(metrics -> inst(metrics, this.meterRegistry));

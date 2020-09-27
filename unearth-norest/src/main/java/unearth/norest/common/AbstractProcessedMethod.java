@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import unearth.norest.IO;
 import unearth.norest.Transformers;
 import unearth.norest.annotations.DELETE;
 import unearth.norest.annotations.GET;
@@ -39,6 +40,9 @@ import unearth.norest.annotations.HEAD;
 import unearth.norest.annotations.POST;
 import unearth.norest.annotations.PUT;
 import unearth.norest.annotations.Q;
+
+import static unearth.norest.IO.ContentType.APPLICATION_JSON;
+import static unearth.norest.IO.ContentType.TEXT_PLAIN;
 
 public abstract class AbstractProcessedMethod {
 
@@ -76,6 +80,8 @@ public abstract class AbstractProcessedMethod {
 
     private final int bodyArgumentIndex;
 
+    private final IO.ContentType contentType;
+
     protected AbstractProcessedMethod(Method method, Transformers transformers) {
         this.method = Objects.requireNonNull(method, "method");
 
@@ -108,6 +114,12 @@ public abstract class AbstractProcessedMethod {
                     new IllegalStateException("No body argument could be derived for " + method)) :
             -1;
 
+        this.contentType = Optional.ofNullable(method.getAnnotation(unearth.norest.annotations.ContentType.class))
+            .map(unearth.norest.annotations.ContentType::value)
+            .orElse(stringBody
+                ? TEXT_PLAIN
+                : APPLICATION_JSON);
+
         this.parameterNames = IntStream.range(0, parameters.length)
             .mapToObj(index ->
                 index == bodyArgumentIndex
@@ -130,6 +142,10 @@ public abstract class AbstractProcessedMethod {
 
     protected boolean nullReturn() {
         return !returnData;
+    }
+
+    public IO.ContentType getContentType() {
+        return contentType;
     }
 
     protected RequestMethod requestMethod() {
@@ -234,9 +250,16 @@ public abstract class AbstractProcessedMethod {
     }
 
     private static RequestMethod httpMethod(Annotation annotation) {
-        return annotation instanceof POST ? RequestMethod.POST
-            : annotation instanceof PUT ? RequestMethod.PUT
-                : RequestMethod.GET;
+        if (annotation instanceof GET) {
+            return RequestMethod.GET;
+        }
+        if (annotation instanceof POST) {
+            return RequestMethod.POST;
+        }
+        if (annotation instanceof PUT) {
+            return RequestMethod.PUT;
+        }
+        return RequestMethod.HEAD;
     }
 
     private static String unpreslashed(String path) {

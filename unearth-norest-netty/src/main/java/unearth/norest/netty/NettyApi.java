@@ -22,25 +22,19 @@ import java.util.function.Function;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import unearth.norest.IOHandler;
 import unearth.norest.common.Request;
+import unearth.norest.common.Response;
+import unearth.norest.server.ApiInvoker;
 
 public class NettyApi extends SimpleChannelInboundHandler<Request>
     implements Function<Request, Optional<Request>> {
 
     private final String prefix;
 
-    private final IOHandler ioHandler;
+    private final ApiInvoker<?> invoker;
 
-    private final Function<Request, Optional<Object>> invoker;
-
-    public NettyApi(
-        String prefix,
-        IOHandler ioHandler,
-        Function<Request, Optional<Object>> invoker
-    ) {
+    public NettyApi(String prefix, ApiInvoker<?> invoker) {
         this.prefix = Objects.requireNonNull(prefix, "prefix");
-        this.ioHandler = Objects.requireNonNull(ioHandler, "ioHandler");
         this.invoker = Objects.requireNonNull(invoker, "invoker");
     }
 
@@ -49,10 +43,11 @@ public class NettyApi extends SimpleChannelInboundHandler<Request>
         try {
             request.prefixed(prefix)
                 .flatMap(req ->
-                    invoker.apply(req).map(result ->
-                        new SimpleResponse(req, ioHandler.writeBytes(result))))
+                    invoker.response(req).map(result ->
+                        new SimpleResponse(req, result)))
                 .ifPresentOrElse(
-                    ctx::writeAndFlush,
+                    msg ->
+                        write(ctx, msg),
                     () ->
                         ctx.fireChannelRead(request));
         } catch (Exception e) {
@@ -68,5 +63,9 @@ public class NettyApi extends SimpleChannelInboundHandler<Request>
     @Override
     public Optional<Request> apply(Request request) {
         return request.prefixed(prefix);
+    }
+
+    private static void write(ChannelHandlerContext ctx, Response msg) {
+        ctx.writeAndFlush(msg);
     }
 }

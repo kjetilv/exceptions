@@ -28,7 +28,7 @@ public interface Request {
 
     RequestMethod getMethod();
 
-    String getPath(boolean withQueryParameters);
+    String getPath();
 
     int getQueryIndex();
 

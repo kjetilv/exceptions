@@ -14,16 +14,26 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
+package unearth.norest.server;
 
-package unearth.http4k
+import java.lang.reflect.Method;
+import java.util.Arrays;
 
-import unearth.metrics.CodeGenMetricsFactory
-import unearth.server.Unearth
-import unearth.server.UnearthlyRenderer
+import unearth.norest.Transformers;
 
-fun main() {
+final class ReflectiveServerSideMethod extends ServerSideMethod {
 
-    Unearth().startServer(CodeGenMetricsFactory.DEFAULT) { resources, config ->
-        Http4kServer(resources, config, UnearthlyRenderer(config.prefix))
+    ReflectiveServerSideMethod(Method method, Transformers transformers) {
+        super(method, transformers);
+    }
+
+    @Override
+    protected Object call(Object impl, Object[] args) {
+        try {
+            return method().invoke(impl, args);
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                "Failed to invoke on " + impl + ": " + method() + "" + Arrays.toString(args), e);
+        }
     }
 }

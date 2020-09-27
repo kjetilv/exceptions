@@ -17,10 +17,15 @@
 package unearth.norest.server;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import unearth.norest.HandlerIO;
+import unearth.norest.IO;
+import unearth.norest.IOHandler;
 import unearth.norest.Transformer;
+import unearth.norest.Transformers;
 import unearth.norest.common.Request;
 
 public final class ApiInvoker<A> {
@@ -29,14 +34,22 @@ public final class ApiInvoker<A> {
 
     private final A impl;
 
-    public ApiInvoker(Class<A> type, A impl, List<Transformer<?>> transformers) {
+    public ApiInvoker(
+        Class<A> type,
+        A impl,
+        Map<IO.ContentType, IOHandler> handlers,
+        List<Transformer<?>> transformers
+    ) {
         this.impl = Objects.requireNonNull(impl, "impl");
-        this.serverSideMethods = new ServerSideMethods<A>(type, transformers);
+        this.serverSideMethods = new ServerSideMethods<>(
+            type,
+            new HandlerIO(handlers),
+            new Transformers(transformers));
     }
 
-    public Optional<Object> response(Request request) {
+    public Optional<byte[]> response(Request request) {
         return Optional.ofNullable(request)
-            .flatMap(serverSideMethods::invocation)
+            .flatMap(serverSideMethods::invoker)
             .map(invocation -> {
                 try {
                     return invocation.apply(impl);

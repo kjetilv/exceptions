@@ -33,59 +33,72 @@ import unearth.api.dto.FaultStrandIdDto;
 import unearth.api.dto.FeedEntryDto;
 import unearth.api.dto.FeedEntryIdDto;
 import unearth.api.dto.Submission;
+import unearth.norest.annotations.ContentType;
 import unearth.norest.annotations.GET;
+import unearth.norest.annotations.HEAD;
 import unearth.norest.annotations.POST;
 import unearth.norest.annotations.Q;
 
+import static unearth.norest.IO.ContentType.TEXT_PLAIN;
+
 public interface UnearthlyApi {
-    
+
+    @HEAD
+    @ContentType(TEXT_PLAIN)
+    default void pingHead() {
+    }
+
+    @GET
+    @ContentType(TEXT_PLAIN)
+    String ping();
+
     @POST("catch")
     Submission throwable(String throwable);
-    
+
     @GET("fault/{}")
     Optional<FaultDto> fault(
         FaultIdDto faultId,
         @Q boolean fullStack,
         @Q boolean printStack
     );
-    
+
     @GET("fault-strand/{}")
     Optional<FaultStrandDto> faultStrand(
         FaultStrandIdDto faultId,
         @Q boolean fullStack,
         @Q boolean printStack
     );
-    
+
     @GET("cause/{}")
     Optional<CauseDto> cause(
         CauseIdDto causeIdDto,
         @Q boolean fullStack,
         @Q boolean printStack
     );
-    
+
     @GET("cause-strand/{}")
     Optional<CauseStrandDto> causeStrand(
         CauseStrandIdDto causeStrandIdDto,
         @Q boolean fullStack,
         @Q boolean printStack
     );
-    
+
     @GET("feed-entry/{}")
     Optional<FeedEntryDto> feedEntry(
         FeedEntryIdDto faultEventIdDto,
         @Q boolean fullStack,
         @Q boolean printStack
     );
-    
+
     @GET("feed/limit")
     Long globalFeedLimit();
-    
+
     @GET("feed/limit/fault-strand/{}")
     Long faultStrandFeedLimit(FaultStrandIdDto faultId);
-    
+
     @GET("feed/limit/fault/{}")
     Long faultFeedLimit(FaultIdDto faultId);
-    
+
     @GET("feed")
     EventSequenceDto globalFeed(
         @Q long offset,
@@ -93,7 +106,7 @@ public interface UnearthlyApi {
         @Q boolean fullStack,
         @Q boolean printStack
     );
-    
+
     @GET("feed/fault/{}")
     FaultEventSequenceDto faultFeed(
         FaultIdDto faultId,
@@ -102,7 +115,7 @@ public interface UnearthlyApi {
         @Q boolean fullStack,
         @Q boolean printStack
     );
-    
+
     @GET("feed/fault-strand/{}")
     FaultStrandEventSequenceDto faultStrandFeed(
         FaultStrandIdDto faultId,

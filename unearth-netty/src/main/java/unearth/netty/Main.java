@@ -24,8 +24,10 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxConfig;
 import io.micrometer.jmx.JmxMeterRegistry;
@@ -39,11 +41,14 @@ import unearth.api.dto.CauseStrandIdDto;
 import unearth.api.dto.FaultIdDto;
 import unearth.api.dto.FaultStrandIdDto;
 import unearth.api.dto.FeedEntryIdDto;
-import unearth.metrics.ByteBuddyMetricsFactory;
+import unearth.metrics.CodeGenMetricsFactory;
 import unearth.metrics.MetricsFactory;
 import unearth.metrics.MicrometerClock;
+import unearth.norest.IO;
+import unearth.norest.IOHandler;
 import unearth.norest.Transformer;
 import unearth.norest.common.JacksonIOHandler;
+import unearth.norest.common.StringIOHandler;
 import unearth.norest.netty.NettyApi;
 import unearth.norest.netty.NettyRunner;
 import unearth.norest.server.ApiInvoker;
@@ -51,24 +56,14 @@ import unearth.server.DefaultUnearthlyApi;
 import unearth.server.Unearth;
 import unearth.server.UnearthlyRenderer;
 
+import static unearth.norest.IO.ContentType.APPLICATION_JSON;
+import static unearth.norest.IO.ContentType.TEXT_PLAIN;
+
 public final class Main {
 
     public static void main(String[] args) {
-
-        MicrometerClock micrometerClock = new MicrometerClock(Clock.systemDefaultZone());
         CollectorRegistry registry = new CollectorRegistry(true);
-        MetricsFactory metricsFactory =
-            new ByteBuddyMetricsFactory(new CompositeMeterRegistry(
-                micrometerClock,
-                List.of(
-                    new JmxMeterRegistry(
-                        JmxConfig.DEFAULT,
-                        micrometerClock),
-                    new PrometheusMeterRegistry(
-                        PrometheusConfig.DEFAULT,
-                        registry,
-                        micrometerClock))));
-
+        MetricsFactory metricsFactory = getMetricsFactory(registry);
         Supplier<byte[]> metricsOut = () -> {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             try (Writer writer = new OutputStreamWriter(byteArrayOutputStream, StandardCharsets.UTF_8)) {
@@ -79,36 +74,61 @@ public final class Main {
             return byteArrayOutputStream.toByteArray();
         };
 
-        new Unearth().startJavaServer(
-            metricsFactory,
-            (resources, configuration) -> {
+        new Unearth().startJavaServer(metricsFactory, (resources, configuration) -> {
 
-                UnearthlyRenderer renderer = new UnearthlyRenderer(configuration.getPrefix());
-                UnearthlyApi api = new DefaultUnearthlyApi(resources, renderer);
+            NettyApi apiRouter = new NettyApi(
+                configuration.getPrefix(),
+                new ApiInvoker<>(
+                    UnearthlyApi.class,
+                    new DefaultUnearthlyApi(
+                        resources, new
+                        UnearthlyRenderer(configuration.getPrefix())),
+                    handlers(),
+                    transformers()));
 
-                ApiInvoker<UnearthlyApi> invoker =
-                    new ApiInvoker<>(UnearthlyApi.class, api, List.of(
-                        Transformer.from(FaultIdDto.class, FaultIdDto::new),
-                        Transformer.from(FaultStrandIdDto.class, FaultStrandIdDto::new),
-                        Transformer.from(CauseIdDto.class, CauseIdDto::new),
-                        Transformer.from(CauseStrandIdDto.class, CauseStrandIdDto::new),
-                        Transformer.from(FeedEntryIdDto.class, FeedEntryIdDto::new)));
+            NettyRunner nettyServer = new NettyRunner(
+                configuration.getPort(),
+                apiRouter,
+                metricsFactory,
+                metricsOut,
+                Clock.systemDefaultZone());
 
-                NettyApi apiRouter = new NettyApi(
-                    configuration.getPrefix(),
-                    JacksonIOHandler.DEFAULT,
-                    invoker::response);
-                NettyRunner nettyServer = new NettyRunner(
-                    configuration.getPort(),
-                    apiRouter,
-                    metricsFactory,
-                    metricsOut,
-                    Clock.systemDefaultZone());
-
-                return new UnearthlyNettyServer(configuration, nettyServer);
-            });
+            return new UnearthlyNettyServer(
+                configuration,
+                nettyServer);
+        });
     }
 
     private Main() {
+    }
+
+    private static MetricsFactory getMetricsFactory(CollectorRegistry registry) {
+        MicrometerClock micrometerClock =
+            new MicrometerClock(Clock.systemDefaultZone());
+        return new CodeGenMetricsFactory(new CompositeMeterRegistry(
+            micrometerClock,
+            List.of(
+                new JmxMeterRegistry(
+                    JmxConfig.DEFAULT,
+                    micrometerClock),
+                new PrometheusMeterRegistry(
+                    PrometheusConfig.DEFAULT,
+                    registry,
+                    micrometerClock))));
+    }
+
+    private static Map<IO.ContentType, IOHandler> handlers() {
+        return Map.of(
+            APPLICATION_JSON, JacksonIOHandler.withDefaults(new ObjectMapper()),
+            TEXT_PLAIN, new StringIOHandler(StandardCharsets.UTF_8));
+    }
+
+    private static List<Transformer<?>> transformers() {
+        return List.of(
+            Transformer.from(FaultIdDto.class, FaultIdDto::new),
+            Transformer.from(FaultStrandIdDto.class, FaultStrandIdDto::new),
+            Transformer.from(CauseIdDto.class, CauseIdDto::new),
+            Transformer.from(CauseStrandIdDto.class, CauseStrandIdDto::new),
+            Transformer.from(FeedEntryIdDto.class, FeedEntryIdDto::new));
     }
 }

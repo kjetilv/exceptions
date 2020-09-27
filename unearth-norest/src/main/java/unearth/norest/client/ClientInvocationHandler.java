@@ -33,28 +33,28 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import unearth.norest.IOHandler;
+import unearth.norest.IO;
 import unearth.norest.common.RequestMethod;
 
 class ClientInvocationHandler implements InvocationHandler {
-    
+
     private final Class<?> type;
-    
+
     private final URI uri;
-    
-    private final IOHandler ioHandler;
-    
+
+    private final IO io;
+
     private final ClientSideMethods clientSideMethods;
-    
-    ClientInvocationHandler(Class<?> type, URI uri, IOHandler ioHandler, ClientSideMethods clientSideMethods) {
+
+    ClientInvocationHandler(Class<?> type, URI uri, IO io, ClientSideMethods clientSideMethods) {
         this.type = Objects.requireNonNull(type, "type");
         this.uri = Objects.requireNonNull(uri, "uri").toASCIIString().endsWith("/")
             ? uri
             : URI.create(uri.toASCIIString() + "/");
-        this.ioHandler = ioHandler;
+        this.io = io;
         this.clientSideMethods = clientSideMethods;
     }
-    
+
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) {
         if (method.getDeclaringClass() == type) {
@@ -74,7 +74,7 @@ class ClientInvocationHandler implements InvocationHandler {
         throw new IllegalArgumentException(
             "Unwilling to invoke " + method + " on " + proxy + ": " + Arrays.toString(args));
     }
-    
+
     private Object response(ClientSideMethod clientSideMethod, HttpRequest request) {
         if (clientSideMethod.isReturnData()) {
             HttpResponse<InputStream> response = response(request);
@@ -87,55 +87,52 @@ class ClientInvocationHandler implements InvocationHandler {
         response(request);
         return null;
     }
-    
-    private Object parse(ClientSideMethod clientSideMethod, HttpResponse<InputStream> response) {
+
+    private Object parse(ClientSideMethod method, HttpResponse<InputStream> response) {
         try (InputStream body = response.body()) {
-            return ioHandler.readBytes(clientSideMethod.getReturnType(), body);
+            return io.readBytes(
+                method.getContentType(),
+                method.getReturnType(),
+                body);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to read response: " + response, e);
         }
     }
-    
+
     private HttpRequest request(URI root, ClientSideMethod clientSideMethod, Object... args) {
         HttpRequest.Builder builder = base(root, clientSideMethod, args);
         return clientSideMethod.getRequestMethod() == RequestMethod.POST
             ? builder.POST(bodyPublisher(clientSideMethod, args)).build()
             : builder.build();
     }
-    
-    private HttpRequest.BodyPublisher bodyPublisher(ClientSideMethod clientSideMethod, Object[] args) {
-        return clientSideMethod.bodyArgument(args)
+
+    private HttpRequest.BodyPublisher bodyPublisher(ClientSideMethod method, Object[] args) {
+        return method.bodyArgument(args)
             .map(body ->
-                clientSideMethod.isStringBody()
-                    ? bytes(body.toString())
-                    : ioHandler.writeBytes(body))
+                io.writeBytes(method.getContentType(), body))
             .map(bytes ->
                 HttpRequest.BodyPublishers.ofByteArray(bytes, 0, bytes.length))
             .orElseGet(
                 HttpRequest.BodyPublishers::noBody);
     }
-    
+
     private static final String CONTENT_TYPE = "Content-Type";
-    
+
     private static final Duration TIMEOUT = Duration.ofMinutes(1);
-    
+
     private static final int INTERNAL_ERROR = 500;
-    
+
     private static final int REQUEST_ERROR = 400;
-    
+
     private static final int REDIRECT = 300;
-    
-    private static byte[] bytes(Object string) {
-        return string.toString().getBytes(StandardCharsets.UTF_8);
-    }
-    
+
     private static HttpRequest.Builder base(URI root, ClientSideMethod meta, Object... args) {
         URI uri = URI.create(root.toASCIIString() + meta.buildPath(args));
         return HttpRequest.newBuilder()
             .uri(uri)
-            .header(CONTENT_TYPE, meta.getContentType());
+            .header(CONTENT_TYPE, meta.getContentType().withCharset(StandardCharsets.UTF_8));
     }
-    
+
     private static HttpResponse<InputStream> response(HttpRequest request) {
         HttpResponse<InputStream> response = send(request);
         if (response.statusCode() >= INTERNAL_ERROR) {
@@ -152,7 +149,7 @@ class ClientInvocationHandler implements InvocationHandler {
         }
         return response;
     }
-    
+
     private static HttpResponse<InputStream> send(HttpRequest request) {
         try {
             return newClient().send(request, HttpResponse.BodyHandlers.ofInputStream());
@@ -160,15 +157,15 @@ class ClientInvocationHandler implements InvocationHandler {
             throw new IllegalStateException("Failed to send " + request, e);
         }
     }
-    
+
     private static HttpClient newClient() {
         return HttpClient.newBuilder().connectTimeout(TIMEOUT).build();
     }
-    
+
     private static String possibly(String error) {
         return error == null || error.isBlank() ? "" : "\n" + error.trim();
     }
-    
+
     private static String error(HttpResponse<InputStream> response) {
         try (
             BufferedReader reader = new BufferedReader(new InputStreamReader(response.body(), StandardCharsets.UTF_8))

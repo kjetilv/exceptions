@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,9 +45,15 @@ import unearth.api.dto.FeedEntryDto;
 import unearth.api.dto.FeedEntryIdDto;
 import unearth.api.dto.StackTraceElementDto;
 import unearth.api.dto.Submission;
+import unearth.norest.HandlerIO;
 import unearth.norest.Transformer;
+import unearth.norest.Transformers;
 import unearth.norest.client.Proto;
 import unearth.norest.common.JacksonIOHandler;
+import unearth.norest.common.StringIOHandler;
+
+import static unearth.norest.IO.ContentType.APPLICATION_JSON;
+import static unearth.norest.IO.ContentType.TEXT_PLAIN;
 
 public class DefaultUnearthlyClient implements UnearthlyClient {
 
@@ -56,13 +63,16 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
         this.unearthlyService = Proto.type(
             UnearthlyApi.class,
             uri,
-            JacksonIOHandler.withDefaults(new ObjectMapper()),
-            List.of(
-                Transformer.from(FaultIdDto.class, FaultIdDto::new),
-                Transformer.from(FaultStrandIdDto.class, FaultStrandIdDto::new),
-                Transformer.from(CauseIdDto.class, CauseIdDto::new),
-                Transformer.from(CauseStrandIdDto.class, CauseStrandIdDto::new),
-                Transformer.from(FeedEntryIdDto.class, FeedEntryIdDto::new)));
+            new HandlerIO(Map.of(
+                APPLICATION_JSON, JacksonIOHandler.withDefaults(new ObjectMapper()),
+                TEXT_PLAIN, new StringIOHandler(StandardCharsets.UTF_8))),
+            new Transformers(
+                List.of(
+                    Transformer.from(FaultIdDto.class, FaultIdDto::new),
+                    Transformer.from(FaultStrandIdDto.class, FaultStrandIdDto::new),
+                    Transformer.from(CauseIdDto.class, CauseIdDto::new),
+                    Transformer.from(CauseStrandIdDto.class, CauseStrandIdDto::new),
+                    Transformer.from(FeedEntryIdDto.class, FeedEntryIdDto::new))));
     }
 
     @Override

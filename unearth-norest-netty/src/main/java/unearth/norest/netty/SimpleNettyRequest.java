@@ -81,4 +81,11 @@ public final class SimpleNettyRequest extends AbstractRequest {
         return this == o || o instanceof SimpleNettyRequest &&
             Objects.equals(httpRequest, ((SimpleNettyRequest) o).httpRequest);
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" +
+            httpRequest.method() + " " + httpRequest.uri() +
+            "]";
+    }
 }

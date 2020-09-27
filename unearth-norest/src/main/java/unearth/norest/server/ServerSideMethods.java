@@ -18,13 +18,13 @@
 package unearth.norest.server;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import unearth.norest.Transformer;
+import unearth.norest.IO;
 import unearth.norest.Transformers;
 import unearth.norest.common.Request;
 
@@ -32,31 +32,31 @@ final class ServerSideMethods<A> {
 
     private final Transformers transformers;
 
-    private final List<ServerSideMethod> serverSideMethods;
+    private final Collection<ServerSideMethod> serverSideMethods;
 
-    ServerSideMethods(Class<A> api, List<Transformer<?>> transformers) {
-        this(api, new Transformers(transformers));
-    }
+    private final IO io;
 
-    ServerSideMethods(Class<A> api, Transformers transformers) {
+    ServerSideMethods(Class<A> api, IO io, Transformers transformers) {
+        this.io = Objects.requireNonNull(io, "io");
+        this.transformers = Objects.requireNonNull(transformers, "transformers");
         Objects.requireNonNull(api, "api");
-        this.transformers = transformers;
         this.serverSideMethods = Arrays.stream(api.getMethods())
-            .map(this::processed)
+            .map(method ->
+                toServerSideMethod(method, this.transformers))
             .collect(Collectors.toList());
     }
 
-    public Optional<Function<Object, Object>> invocation(Request request) {
+    public Optional<Function<Object, byte[]>> invoker(Request request) {
         return serverSideMethods.stream()
             .map(serverSideMethod ->
-                serverSideMethod.invocation(request))
+                serverSideMethod.invoker(io, request))
             .flatMap(Optional::stream)
             .findFirst();
     }
 
-    private ServerSideMethod processed(java.lang.reflect.Method method) {
+    private static ServerSideMethod toServerSideMethod(java.lang.reflect.Method method, Transformers transformers) {
         try {
-            return new ServerSideMethod(method, this.transformers);
+            return new ReflectiveServerSideMethod(method, transformers);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to process: " + method, e);
         }

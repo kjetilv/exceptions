@@ -15,15 +15,20 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.http4k
+package unearth.norest.annotations;
 
-import unearth.metrics.CodeGenMetricsFactory
-import unearth.server.Unearth
-import unearth.server.UnearthlyRenderer
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-fun main() {
+import unearth.norest.IO;
 
-    Unearth().startServer(CodeGenMetricsFactory.DEFAULT) { resources, config ->
-        Http4kServer(resources, config, UnearthlyRenderer(config.prefix))
-    }
+import static unearth.norest.IO.ContentType.APPLICATION_JSON;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD, ElementType.TYPE})
+public @interface ContentType {
+
+    IO.ContentType value() default APPLICATION_JSON;
 }

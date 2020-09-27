@@ -73,7 +73,7 @@ public final class MetricsTracker {
 
         void finish(Response response) {
             Instant endTime = time.get();
-            String path = request.getPath(false);
+            String path = request.getPath();
             Metrics m = metrics.get();
             m.request(request.getMethod(), path)
                 .increment();

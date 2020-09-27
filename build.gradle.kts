@@ -31,6 +31,7 @@ val slf4jVer = "1.7.30"
 val hikariVer = "3.4.5"
 val postgresJdbcVer = "42.2.6.jre7"
 val junitVer = "4.12"
+val jupiterVer = "5.3.1"
 val swaggerUiVer = "3.31.1"
 val kotlinVer = "1.3.72"
 val testcontainersVer = "1.14.3"
@@ -126,7 +127,8 @@ allprojects {
 
             testImplementation("org.http4k:http4k-client-apache:$http4kVer")
             testImplementation("junit:junit:$junitVer")
-
+            testImplementation("org.junit.jupiter:junit-jupiter-api:$jupiterVer")
+            testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$jupiterVer")
             testImplementation("org.assertj:assertj-core:3.13.2:$assertjVer")
             testImplementation("org.testcontainers:cassandra:$testcontainersVer")
         }

@@ -20,21 +20,15 @@ package unearth.norest.client;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.net.URI;
-import java.util.List;
 
-import unearth.norest.IOHandler;
-import unearth.norest.Transformer;
+import unearth.norest.IO;
 import unearth.norest.Transformers;
 
 public final class Proto {
 
-    public static <T> T type(Class<T> api, URI uri, IOHandler ioHandler, List<Transformer<?>> transformers) {
-        ClientSideMethods methods = new ClientSideMethods(new Transformers(transformers));
-        InvocationHandler invocationHandler = new ClientInvocationHandler(
-            api,
-            uri,
-            ioHandler,
-            methods);
+    public static <T> T type(Class<T> api, URI uri, IO io, Transformers transformers) {
+        ClientSideMethods methods = new ClientSideMethods(transformers);
+        InvocationHandler invocationHandler = new ClientInvocationHandler(api, uri, io, methods);
         return api.cast(Proxy.newProxyInstance(
             Thread.currentThread().getContextClassLoader(),
             new Class<?>[] { api },

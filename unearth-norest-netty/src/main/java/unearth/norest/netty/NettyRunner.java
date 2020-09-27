@@ -17,6 +17,7 @@
 package unearth.norest.netty;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadFactory;
@@ -32,13 +33,17 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import unearth.metrics.MetricsFactory;
+import unearth.norest.traffic.RateLimiter;
 import unearth.util.once.Get;
 
 import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
@@ -78,6 +83,17 @@ public final class NettyRunner {
                 new SimpleNettyRequest(httpRequest, clock.instant());
             MetricsTracker metricsTracker =
                 new MetricsTracker(clock::instant, () -> metricsFactory.instantiate(Metrics.class));
+            Filter filter = new Filter(
+                new RateLimiter<>(
+                    clock::instant,
+                    1000,
+                    1000,
+                    Duration.ofMinutes(1),
+                    60),
+                (ctx, req) ->
+                    new DefaultFullHttpResponse(
+                        HttpVersion.HTTP_1_1,
+                        HttpResponseStatus.TOO_MANY_REQUESTS));
 
             ChannelInitializer<Channel> childHandler = new ChannelInitializer<>() {
 
@@ -90,6 +106,7 @@ public final class NettyRunner {
                         new MetricsServer(METRICS_PATH, metricsOut),
                         new RequestReader(requestFactory),
                         new ResponseWriter(),
+                        filter,
                         metricsTracker.getOutbound(),
                         metricsTracker.getInbound(),
                         api,

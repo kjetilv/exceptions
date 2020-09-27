@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -34,14 +35,20 @@ public abstract class AbstractRequest implements Request {
 
     private final int queryIndex;
 
+    private final String baseUri;
+
     protected AbstractRequest(String prefix, String uri, Instant initTime) {
         this.uri = normalized(prefix, uri);
         this.queryIndex = this.uri.indexOf('?');
         this.initTime = initTime;
+
+        this.baseUri = getQueryIndex() < 0
+            ? this.uri
+            : this.uri.substring(0, getQueryIndex());
     }
 
     @Override
-    public Optional<Request> prefixed(String prefix) {
+    public final Optional<Request> prefixed(String prefix) {
         if (prefix == null) {
             return Optional.of(this);
         }
@@ -52,28 +59,27 @@ public abstract class AbstractRequest implements Request {
     }
 
     @Override
-    public RequestMethod getMethod() {
+    public final RequestMethod getMethod() {
         return getMethod(getMethodName());
     }
 
     @Override
-    public String getPath(boolean withQueryParameters) {
-        return withQueryParameters || !hasQueryParameters() ? uri
-            : uri.substring(0, getQueryIndex());
+    public final String getPath() {
+        return baseUri;
     }
 
     @Override
-    public int getQueryIndex() {
+    public final int getQueryIndex() {
         return queryIndex;
     }
 
     @Override
-    public String getEntity() {
+    public final String getEntity() {
         return getBodyContent().toString();
     }
 
     @Override
-    public Map<String, String> getHeaders() {
+    public final Map<String, String> getHeaders() {
         return retrieveHeaders().entrySet().stream()
             .filter(e ->
                 !e.getValue().isEmpty())
@@ -83,7 +89,7 @@ public abstract class AbstractRequest implements Request {
     }
 
     @Override
-    public Map<String, String> getQueryParameters() {
+    public final Map<String, String> getQueryParameters() {
         int queryIndex = getQueryIndex();
         if (queryIndex < 0) {
             return Collections.emptyMap();
@@ -100,7 +106,7 @@ public abstract class AbstractRequest implements Request {
     }
 
     @Override
-    public Duration timeTaken(Instant completionTime) {
+    public final Duration timeTaken(Instant completionTime) {
         return Duration.between(initTime, completionTime);
     }
 
@@ -112,7 +118,7 @@ public abstract class AbstractRequest implements Request {
 
     protected abstract Map<String, List<String>> retrieveHeaders();
 
-    protected Instant getInitTime() {
+    protected final Instant getInitTime() {
         return initTime;
     }
 
@@ -137,7 +143,7 @@ public abstract class AbstractRequest implements Request {
             unpreslashed(
                 unpostslashed(
                     unmidslashed(
-                        urlPart(prefix, uri)))));
+                        urlPart(prefix, Objects.requireNonNull(uri, "uri"))))));
     }
 
     private static String goodTail(String suffixed) {
