@@ -17,17 +17,13 @@
 package unearth.norest.netty;
 
 import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Function;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import unearth.norest.common.Request;
-import unearth.norest.common.Response;
 import unearth.norest.server.ApiInvoker;
 
-public class NettyApi extends SimpleChannelInboundHandler<Request>
-    implements Function<Request, Optional<Request>> {
+public class NettyApi extends SimpleChannelInboundHandler<Request> {
 
     private final String prefix;
 
@@ -43,11 +39,12 @@ public class NettyApi extends SimpleChannelInboundHandler<Request>
         try {
             request.prefixed(prefix)
                 .flatMap(req ->
-                    invoker.response(req).map(result ->
-                        new SimpleResponse(req, result)))
+                    invoker.response(req)
+                        .map(result ->
+                            new SimpleResponse(req, result)))
+                .findFirst()
                 .ifPresentOrElse(
-                    msg ->
-                        write(ctx, msg),
+                    ctx::writeAndFlush,
                     () ->
                         ctx.fireChannelRead(request));
         } catch (Exception e) {
@@ -58,14 +55,5 @@ public class NettyApi extends SimpleChannelInboundHandler<Request>
     @Override
     public boolean isSharable() {
         return true;
-    }
-
-    @Override
-    public Optional<Request> apply(Request request) {
-        return request.prefixed(prefix);
-    }
-
-    private static void write(ChannelHandlerContext ctx, Response msg) {
-        ctx.writeAndFlush(msg);
     }
 }

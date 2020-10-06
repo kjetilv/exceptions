@@ -36,93 +36,97 @@ import unearth.api.dto.FeedEntryIdDto;
 import unearth.api.dto.Submission;
 
 public interface UnearthlyClient {
-    
+
     static UnearthlyClient connect(URI uri) {
         return new DefaultUnearthlyClient(uri);
     }
-    
+
     enum StackType {
         FULL,
         PRINT,
         NONE
     }
-    
+
+    void quickPing();
+
+    boolean ping();
+
     Submission submit(String string);
-    
+
     Submission submit(Throwable t);
-    
+
     Optional<Throwable> throwable(FaultIdDto faultId);
-    
+
     default Optional<FaultDto> fault(FaultIdDto faultIdDto) {
         return fault(faultIdDto, StackType.NONE);
     }
-    
+
     Optional<FaultDto> fault(FaultIdDto faultIdDto, StackType stackType);
-    
+
     default Optional<FaultStrandDto> faultStrand(FaultStrandIdDto faultIdDto) {
         return faultStrand(faultIdDto, StackType.NONE);
     }
-    
+
     Optional<FaultStrandDto> faultStrand(FaultStrandIdDto faultIdDto, StackType stackType);
-    
+
     default Optional<CauseDto> cause(CauseIdDto id) {
         return cause(id, StackType.NONE);
     }
-    
+
     Optional<CauseDto> cause(CauseIdDto id, StackType stackType);
-    
+
     default Optional<CauseStrandDto> causeStrand(CauseStrandIdDto id) {
         return causeStrand(id, StackType.NONE);
     }
-    
+
     Optional<CauseStrandDto> causeStrand(CauseStrandIdDto id, StackType stackType);
-    
+
     default Optional<FeedEntryDto> feedEntry(FeedEntryIdDto id) {
         return feedEntry(id, StackType.NONE);
     }
-    
+
     Optional<FeedEntryDto> feedEntry(FeedEntryIdDto id, StackType stackType);
-    
+
     long globalFeedMax();
-    
+
     long faultFeedMax(FaultIdDto faultId);
-    
+
     long faultStrandFeedMax(FaultStrandIdDto faultStrandId);
-    
+
     default EventSequenceDto globalFeed() {
         return globalFeed(Page.FIRST, StackType.NONE);
     }
-    
+
     EventSequenceDto globalFeed(Page page, StackType stackType);
-    
+
     default EventSequenceDto globalFeed(Page page) {
         return globalFeed(page, StackType.NONE);
     }
-    
+
     default FaultEventSequenceDto faultFeed(FaultIdDto faultId) {
         return faultFeed(faultId, Page.FIRST, StackType.NONE);
     }
-    
+
     FaultEventSequenceDto faultFeed(FaultIdDto faultId, Page page, StackType stackType);
-    
+
     default FaultEventSequenceDto faultFeed(FaultIdDto faultId, Page page) {
         return faultFeed(faultId, page, StackType.NONE);
     }
-    
+
     default FaultEventSequenceDto faultFeed(FaultIdDto faultId, StackType stackType) {
         return faultFeed(faultId, Page.FIRST, stackType);
     }
-    
+
     default FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultStrandId) {
         return faultStrandFeed(faultStrandId, Page.FIRST, StackType.NONE);
     }
-    
+
     FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultStrandId, Page page, StackType stackType);
-    
+
     default FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultStrandId, StackType stackType) {
         return faultStrandFeed(faultStrandId, Page.FIRST, stackType);
     }
-    
+
     default FaultStrandEventSequenceDto faultStrandFeed(FaultStrandIdDto faultStrandId, Page page) {
         return faultStrandFeed(faultStrandId, page, StackType.NONE);
     }

@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -40,21 +39,15 @@ public abstract class ServerSideMethod extends AbstractProcessedMethod {
         super(method, transformers);
     }
 
-    public Optional<Function<Object, byte[]>> invoker(IO io, Request request) {
-        return Optional.of(request)
-            .filter(matchingMethod())
-            .filter(req ->
-                req.getPath().startsWith(path()))
-            .map(req ->
-                invoker(io, req, matcher(req)));
+    public Function<Object, byte[]> invoker(IO io, Request req) {
+        return invoker(io, req, matcher(req));
+    }
+
+    public boolean handles(Request req) {
+        return req.getMethod() == requestMethod() && req.getPath().startsWith(path());
     }
 
     protected abstract Object call(Object impl, Object[] args);
-
-    private Predicate<Request> matchingMethod() {
-        return req ->
-            req.getMethod() == this.requestMethod();
-    }
 
     private Matcher matcher(Request request) {
         if (request.getPath().startsWith(rootPath())) {
@@ -116,8 +109,10 @@ public abstract class ServerSideMethod extends AbstractProcessedMethod {
                 e ->
                     transformers().from(parameterTypes()[e.getKey()], pathParams.get(e.getKey()))));
         return Arrays.stream(parameterNames())
-            .map(name -> ServerSideMethod.lookup(name, queryArgs, pathArgs))
-            .map(opt -> opt.orElse(null))
+            .map(name ->
+                lookup(name, queryArgs, pathArgs))
+            .map(opt ->
+                opt.orElse(null))
             .toArray(Object[]::new);
     }
 

@@ -23,9 +23,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class AbstractRequest implements Request {
 
@@ -41,21 +41,16 @@ public abstract class AbstractRequest implements Request {
         this.uri = normalized(prefix, uri);
         this.queryIndex = this.uri.indexOf('?');
         this.initTime = initTime;
-
         this.baseUri = getQueryIndex() < 0
             ? this.uri
             : this.uri.substring(0, getQueryIndex());
     }
 
     @Override
-    public final Optional<Request> prefixed(String prefix) {
-        if (prefix == null) {
-            return Optional.of(this);
-        }
-        if (uri.startsWith(prefix)) {
-            return Optional.of(createPrefixed(prefix));
-        }
-        return Optional.empty();
+    public final Stream<Request> prefixed(String prefix) {
+        return prefix == null ? Stream.of(this)
+            : uri.startsWith(prefix) ? Stream.of(createPrefixed(prefix))
+                : Stream.empty();
     }
 
     @Override
@@ -85,7 +80,8 @@ public abstract class AbstractRequest implements Request {
                 !e.getValue().isEmpty())
             .collect(Collectors.toMap(
                 Map.Entry::getKey,
-                e -> single(e.getKey(), e.getValue())));
+                e ->
+                    single(e.getKey(), e.getValue())));
     }
 
     @Override

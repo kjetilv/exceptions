@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 
 public class RateLimiter<T> implements Predicate<T> {
 
@@ -64,28 +63,31 @@ public class RateLimiter<T> implements Predicate<T> {
 
         private final Instant time;
 
-        private final int tokens;
+        private final long tokens;
 
-        private TokenState(Instant time, int tokens) {
-
+        private TokenState(Instant time, long tokens) {
             this.time = time;
             this.tokens = tokens;
         }
 
         public TokenState decremented() {
-            return tokens == 0 ? this : new TokenState(time, tokens - 1);
+            return tokens < 0 ? this : new TokenState(time, tokens - 1);
         }
 
-        public TokenState incrementedAt(Instant time, int amount) {
-            return new TokenState(time, tokens + amount);
+        public TokenState incrementedAt(Instant time, long amount) {
+            return new TokenState(
+                time,
+                Math.min(
+                    maxTokens,
+                    Math.max(tokens, 0) + amount));
         }
 
-        private int periodsSince(Instant now) {
-            return Math.toIntExact(Duration.between(time, now).dividedBy(refillPeriod));
+        private long periodsSince(Instant currentTime) {
+            return Duration.between(time, currentTime).dividedBy(refillPeriod);
         }
 
         private boolean isAllowed() {
-            return tokens > 0;
+            return tokens >= 0;
         }
 
         @Override
@@ -102,19 +104,13 @@ public class RateLimiter<T> implements Predicate<T> {
             new AtomicReference<>(new TokenState(time.get(), startTokens));
 
         public synchronized boolean allowed() {
-            return state.updateAndGet(adjustment()).isAllowed();
-        }
-
-        private UnaryOperator<TokenState> adjustment() {
-            return current -> adjustedAt(time.get(), current);
-        }
-
-        private TokenState adjustedAt(Instant now, TokenState current) {
-            int periods = current.periodsSince(now);
-            if (periods > 0) {
-                return current.incrementedAt(now, 1 + refillsPerPeriod * periods);
-            }
-            return current.decremented();
+            return state.updateAndGet(current -> {
+                Instant now = time.get();
+                long periods = current.periodsSince(now);
+                return (periods > 0
+                    ? current.incrementedAt(now, refillsPerPeriod * periods)
+                    : current).decremented();
+            }).isAllowed();
         }
 
         @Override

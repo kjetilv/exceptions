@@ -76,6 +76,16 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
     }
 
     @Override
+    public void quickPing() {
+        unearthlyService.pingHead();
+    }
+
+    @Override
+    public boolean ping() {
+        return unearthlyService.ping().equalsIgnoreCase("pong");
+    }
+
+    @Override
     public Submission submit(String throwable) {
         return unearthlyService.throwable(throwable);
     }

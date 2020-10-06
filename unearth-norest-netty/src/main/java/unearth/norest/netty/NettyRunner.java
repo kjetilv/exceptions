@@ -78,7 +78,6 @@ public final class NettyRunner {
         this.work = Get.once(() ->
             new NioEventLoopGroup(10, executor));
         this.started = Get.once(() -> {
-
             RequestFactory requestFactory = httpRequest ->
                 new SimpleNettyRequest(httpRequest, clock.instant());
             MetricsTracker metricsTracker =
@@ -133,8 +132,7 @@ public final class NettyRunner {
     }
 
     public void start() {
-        ChannelFuture channelFuture = started.get();
-        log.info(this + " started: " + channelFuture);
+        log.info(this + " started: " + started.get());
     }
 
     public void stop() {

@@ -20,11 +20,11 @@ package unearth.norest.common;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Optional;
+import java.util.stream.Stream;
 
 public interface Request {
 
-    Optional<Request> prefixed(String prefix);
+    Stream<Request> prefixed(String prefix);
 
     RequestMethod getMethod();
 

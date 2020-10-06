@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RateLimiterTest {
 
     @Test
-    void testRate() {
+    void simpleRateLimiting() {
         AtomicLong time = new AtomicLong();
         RateLimiter<String> limiter = new RateLimiter<>(
             new AtomicClock(time)::instant,
@@ -50,6 +50,31 @@ class RateLimiterTest {
         assertThat(limiter).rejects("session1");
         time.addAndGet(1010L); // Another second has passed
         assertThat(limiter).accepts("session1");
+    }
+
+    @Test
+    void respectsMax() {
+        AtomicLong time = new AtomicLong();
+        RateLimiter<String> limiter = new RateLimiter<>(
+            new AtomicClock(time)::instant,
+            10,
+            100,
+            Duration.ofSeconds(1),
+            1);
+        for (int i = 0; i < 10; i++) {
+            assertThat(limiter)
+                .describedAs("Call %d should pass", i)
+                .accepts("session1");
+            time.addAndGet(99L);
+        } // 990ms passed, tokens rejected
+        time.addAndGet(Integer.MAX_VALUE); // Meanwhile, some time later ...
+        for (int i = 0; i < 100; i++) {
+            assertThat(limiter)
+                .describedAs("Call %d should pass", i)
+                .accepts("session1");
+            time.addAndGet(1L);
+        } // 990ms passed, tokens rejected
+        assertThat(limiter).rejects("session1");
     }
 
     private static final class AtomicClock extends Clock {
