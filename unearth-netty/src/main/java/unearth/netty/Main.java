@@ -93,9 +93,7 @@ public final class Main {
                 metricsOut,
                 Clock.systemDefaultZone());
 
-            return new UnearthlyNettyServer(
-                configuration,
-                nettyServer);
+            return new UnearthlyNettyServer(configuration, nettyServer);
         });
     }
 

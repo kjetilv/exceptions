@@ -15,13 +15,15 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+fun cassandra(dep: String) = "com.datastax.oss:java-driver-$dep"
+
 dependencies {
     implementation(project(":unearth-core"))
     implementation(project(":unearth-util"))
     implementation(project(":unearth-hashable"))
     implementation(project(":unearth-munch"))
 
-    implementation("com.datastax.oss:java-driver-core")
-    implementation("com.datastax.oss:java-driver-query-builder")
+    implementation(cassandra("core"))
+    implementation(cassandra("query-builder"))
 }
 

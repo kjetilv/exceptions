@@ -43,8 +43,13 @@ public abstract class ServerSideMethod extends AbstractProcessedMethod {
         return invoker(io, req, matcher(req));
     }
 
-    public boolean handles(Request req) {
-        return req.getMethod() == requestMethod() && req.getPath().startsWith(path());
+    public boolean methodMatch(Request request) {
+        return request.getMethod() == requestMethod();
+    }
+
+    public int pathMatch(Request req) {
+        return req.getPath().startsWith(path()) ? path().length()
+            : Integer.MIN_VALUE;
     }
 
     protected abstract Object call(Object impl, Object[] args);

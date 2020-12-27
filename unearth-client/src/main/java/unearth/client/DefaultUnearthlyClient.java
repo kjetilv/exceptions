@@ -57,10 +57,10 @@ import static unearth.norest.IO.ContentType.TEXT_PLAIN;
 
 public class DefaultUnearthlyClient implements UnearthlyClient {
 
-    private final UnearthlyApi unearthlyService;
+    private final UnearthlyApi api;
 
     DefaultUnearthlyClient(URI uri) {
-        this.unearthlyService = Proto.type(
+        this.api = Proto.type(
             UnearthlyApi.class,
             uri,
             new HandlerIO(Map.of(
@@ -77,33 +77,33 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
 
     @Override
     public void quickPing() {
-        unearthlyService.pingHead();
+        api.pingHead();
     }
 
     @Override
     public boolean ping() {
-        return unearthlyService.ping().equalsIgnoreCase("pong");
+        return api.ping().equalsIgnoreCase("pong");
     }
 
     @Override
     public Submission submit(String throwable) {
-        return unearthlyService.throwable(throwable);
+        return api.throwable(throwable);
     }
 
     @Override
     public Submission submit(Throwable throwable) {
-        return unearthlyService.throwable(toString(throwable));
+        return api.throwable(toString(throwable));
     }
 
     @Override
     public Optional<Throwable> throwable(FaultIdDto faultId) {
-        Optional<FaultDto> fault = unearthlyService.fault(faultId, true, false);
+        Optional<FaultDto> fault = api.fault(faultId, true, false);
         return fault.map(DefaultUnearthlyClient::toChameleon);
     }
 
     @Override
     public Optional<FaultDto> fault(FaultIdDto faultId, StackType stackType) {
-        return unearthlyService.fault(
+        return api.fault(
             faultId,
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
@@ -111,7 +111,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
 
     @Override
     public Optional<FaultStrandDto> faultStrand(FaultStrandIdDto faultStrandId, StackType stackType) {
-        return unearthlyService.faultStrand(
+        return api.faultStrand(
             faultStrandId,
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
@@ -119,7 +119,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
 
     @Override
     public Optional<CauseDto> cause(CauseIdDto causeId, StackType stackType) {
-        return unearthlyService.cause(
+        return api.cause(
             causeId,
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
@@ -127,7 +127,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
 
     @Override
     public Optional<CauseStrandDto> causeStrand(CauseStrandIdDto causeStrandId, StackType stackType) {
-        return unearthlyService.causeStrand(
+        return api.causeStrand(
             causeStrandId,
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
@@ -135,7 +135,7 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
 
     @Override
     public Optional<FeedEntryDto> feedEntry(FeedEntryIdDto faultEventId, StackType stackType) {
-        return unearthlyService.feedEntry(
+        return api.feedEntry(
             faultEventId,
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
@@ -143,23 +143,23 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
 
     @Override
     public long globalFeedMax() {
-        return unearthlyService.globalFeedLimit();
+        return api.globalFeedLimit();
     }
 
     @Override
     public long faultFeedMax(FaultIdDto faultId) {
-        return unearthlyService.faultFeedLimit(faultId);
+        return api.faultFeedLimit(faultId);
     }
 
     @Override
     public long faultStrandFeedMax(FaultStrandIdDto faultStrandId) {
-        return unearthlyService.faultStrandFeedLimit(faultStrandId);
+        return api.faultStrandFeedLimit(faultStrandId);
     }
 
     @Override
     public EventSequenceDto globalFeed(Page page, StackType stackType) {
-        return unearthlyService.globalFeed(
-            page.getPageNo() * page.getPageSize(),
+        return api.globalFeed(
+            (long) page.getPageNo() * page.getPageSize(),
             page.getPageNo(),
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
@@ -167,9 +167,9 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
 
     @Override
     public FaultEventSequenceDto faultFeed(FaultIdDto faultId, Page page, StackType stackType) {
-        return unearthlyService.faultFeed(
+        return api.faultFeed(
             faultId,
-            page.getPageNo() * page.getPageSize(),
+            (long) page.getPageNo() * page.getPageSize(),
             page.getPageNo(),
             stackType == StackType.FULL,
             stackType == StackType.PRINT);
@@ -181,9 +181,9 @@ public class DefaultUnearthlyClient implements UnearthlyClient {
         Page page,
         StackType stackType
     ) {
-        return unearthlyService.faultStrandFeed(
+        return api.faultStrandFeed(
             faultStrandId,
-            page.getPageNo() * page.getPageSize(),
+            (long) page.getPageNo() * page.getPageSize(),
             page.getPageNo(),
             stackType == StackType.FULL,
             stackType == StackType.PRINT);

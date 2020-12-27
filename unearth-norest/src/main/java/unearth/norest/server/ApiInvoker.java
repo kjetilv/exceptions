@@ -19,7 +19,7 @@ package unearth.norest.server;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Stream;
+import java.util.Optional;
 
 import unearth.norest.HandlerIO;
 import unearth.norest.IO;
@@ -47,7 +47,7 @@ public final class ApiInvoker<A> {
             new Transformers(transformers));
     }
 
-    public Stream<byte[]> response(Request request) {
+    public Optional<byte[]> response(Request request) {
         return serverSideMethods.invoker(request)
             .map(invocation -> {
                 try {

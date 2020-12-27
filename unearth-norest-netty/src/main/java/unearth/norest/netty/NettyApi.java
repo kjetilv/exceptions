@@ -42,7 +42,6 @@ public class NettyApi extends SimpleChannelInboundHandler<Request> {
                     invoker.response(req)
                         .map(result ->
                             new SimpleResponse(req, result)))
-                .findFirst()
                 .ifPresentOrElse(
                     ctx::writeAndFlush,
                     () ->

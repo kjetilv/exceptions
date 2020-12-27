@@ -101,7 +101,8 @@ public final class NettyRunner {
                     ch.pipeline().addLast(
                         new HttpServerCodec(),
                         new HttpObjectAggregator(MAX_CONTENT_LENGTH),
-                        new HealthServer("/health/", () -> Health.OK),
+                        new Slasher(),
+                        new HealthServer(HEALTH_PATH, () -> Health.OK),
                         new MetricsServer(METRICS_PATH, metricsOut),
                         new RequestReader(requestFactory),
                         new ResponseWriter(),
@@ -122,6 +123,7 @@ public final class NettyRunner {
                 .bind(port)
                 .addListener(future ->
                     log.info("{}: Bound to port {}", this, port));
+
             try {
                 return bindFuture.await();
             } catch (InterruptedException e) {
@@ -156,7 +158,9 @@ public final class NettyRunner {
 
     private static final int MAX_CONTENT_LENGTH = 16 * 1024 * 1026;
 
-    private static final String METRICS_PATH = "/metrics";
+    private static final String METRICS_PATH = "/metrics/";
+
+    private static final String HEALTH_PATH = "/health/";
 
     private static ThreadFactory countingThreadFactory() {
         LongAdder count = new LongAdder();

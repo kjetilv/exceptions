@@ -79,5 +79,5 @@ class DefaultUnearthlyApi(
         return "${javaClass.simpleName}[controller=$controller, renderer=$renderer)"
     }
 
-    override fun ping() = "pong"
+    override fun ping() = "pong\n"
 }

@@ -81,6 +81,8 @@ class Unearth(private val configuration: UnearthlyConfig = UnearthlyConfig.load(
 
         server.start()
 
+
+
         return object : State {
             override fun url(): URI = configuration.connectUri
             override fun port(): Int = configuration.port

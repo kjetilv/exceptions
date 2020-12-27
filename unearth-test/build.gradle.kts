@@ -33,7 +33,7 @@ dependencies {
     testImplementation(project(":unearth-norest"))
 
     testImplementation(project(":unearth-netty"))
-    testImplementation(project(":unearth-http4k"))
+//    testImplementation(project(":unearth-http4k"))
 
     testImplementation("org.testcontainers:cassandra")
 

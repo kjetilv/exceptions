@@ -15,32 +15,20 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.norest.common;
+package unearth.norest.netty;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Map;
-import java.util.Optional;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.FullHttpRequest;
 
-public interface Request {
+final class Slasher extends SimpleChannelInboundHandler<FullHttpRequest> {
 
-    Optional<Request> prefixed(String prefix);
-
-    RequestMethod getMethod();
-
-    String getPath();
-
-    int getQueryIndex();
-
-    default boolean hasQueryParameters() {
-        return getQueryIndex() > 0;
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) {
+        String uri = msg.uri();
+        if (!uri.endsWith("/")) {
+            msg.setUri(uri + "/");
+        }
+        ctx.fireChannelRead(msg);
     }
-
-    String getEntity();
-
-    Map<String, String> getHeaders();
-
-    Map<String, String> getQueryParameters();
-
-    Duration timeTaken(Instant completionTime);
 }

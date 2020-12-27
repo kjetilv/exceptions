@@ -19,10 +19,11 @@ package unearth.norest.server;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import unearth.norest.IO;
 import unearth.norest.Transformers;
@@ -46,12 +47,14 @@ final class ServerSideMethods<A> {
             .collect(Collectors.toList());
     }
 
-    public Stream<Function<Object, byte[]>> invoker(Request request) {
-        return serverSideMethods.stream()
+    public Optional<Function<Object, byte[]>> invoker(Request request) {
+        Optional<ServerSideMethod> hit = serverSideMethods.stream()
             .filter(method ->
-                method.handles(request))
-            .map(method ->
-                method.invoker(io, request));
+                method.methodMatch(request))
+            .max(Comparator.comparing(method ->
+                method.pathMatch(request)));
+        return hit.map(method ->
+            method.invoker(io, request));
     }
 
     private static ServerSideMethod toServerSideMethod(java.lang.reflect.Method method, Transformers transformers) {

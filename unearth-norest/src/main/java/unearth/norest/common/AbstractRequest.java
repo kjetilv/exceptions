@@ -23,9 +23,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public abstract class AbstractRequest implements Request {
 
@@ -47,10 +47,10 @@ public abstract class AbstractRequest implements Request {
     }
 
     @Override
-    public final Stream<Request> prefixed(String prefix) {
-        return prefix == null ? Stream.of(this)
-            : uri.startsWith(prefix) ? Stream.of(createPrefixed(prefix))
-                : Stream.empty();
+    public final Optional<Request> prefixed(String prefix) {
+        return prefix == null ? Optional.of(this)
+            : uri.startsWith(prefix) ? Optional.of(createPrefixed(prefix))
+                : Optional.empty();
     }
 
     @Override

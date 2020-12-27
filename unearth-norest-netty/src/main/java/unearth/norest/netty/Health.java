@@ -15,32 +15,22 @@
  *     along with Unearth.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package unearth.norest.common;
+package unearth.norest.netty;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Map;
-import java.util.Optional;
+public enum Health {
 
-public interface Request {
+    OK(200),
 
-    Optional<Request> prefixed(String prefix);
+    DOWN(500);
 
-    RequestMethod getMethod();
+    private final int status;
 
-    String getPath();
+    Health(int status) {
 
-    int getQueryIndex();
-
-    default boolean hasQueryParameters() {
-        return getQueryIndex() > 0;
+        this.status = status;
     }
 
-    String getEntity();
-
-    Map<String, String> getHeaders();
-
-    Map<String, String> getQueryParameters();
-
-    Duration timeTaken(Instant completionTime);
+    int getStatus() {
+        return status;
+    }
 }
