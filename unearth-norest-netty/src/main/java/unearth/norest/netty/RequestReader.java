@@ -24,13 +24,13 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
 
 public final class RequestReader extends SimpleChannelInboundHandler<FullHttpRequest> {
-    
+
     private final RequestFactory wrapper;
-    
+
     public RequestReader(RequestFactory wrapper) {
         this.wrapper = Objects.requireNonNull(wrapper, "wrapper");
     }
-    
+
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) {
         ctx.fireChannelRead(wrapper.create(msg));

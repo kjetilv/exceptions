@@ -24,36 +24,36 @@ import java.util.UUID;
 import unearth.hashable.Hashed;
 
 public abstract class Id implements Hashed {
-    
+
     private final UUID hash;
-    
+
     private final String type;
-    
+
     private final int hashCode;
-    
+
     Id(UUID hash) {
         this.hash = Objects.requireNonNull(hash, "hash");
         this.hashCode = this.hash.hashCode();
         this.type = NAMES.computeIfAbsent(getClass(), Id::type);
     }
-    
-    public String getType() {
-        return type;
-    }
-    
+
     @Override
     public UUID getHash() {
         return hash;
     }
-    
+
+    public String getType() {
+        return type;
+    }
+
     public String toHashString() {
         return getHash().toString();
     }
-    
+
     private static final Map<Class<?>, String> NAMES = new HashMap<>();
-    
+
     private static final String TAIL = "Id";
-    
+
     private static String type(Class<?> cl) {
         String simpleName = cl.getSimpleName();
         int tail = simpleName.lastIndexOf(TAIL);
@@ -73,17 +73,17 @@ public abstract class Id implements Hashed {
         }
         return new String(dashed);
     }
-    
+
     @Override
     public int hashCode() {
         return hashCode;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         return this == o || o instanceof Id && Objects.equals(hash, ((Id) o).hash);
     }
-    
+
     @Override
     public String toString() {
         return type + ":" + this.getHash();

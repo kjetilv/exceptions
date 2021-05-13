@@ -27,19 +27,19 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 class ResImpl implements Session.Res {
-    
+
     private final ResultSet resultSet;
-    
+
     private int i;
-    
+
     ResImpl(ResultSet resultSet) {
         this.resultSet = resultSet;
     }
-    
+
     @Override
     public <T> Stream<T> get(Session.Sel<T> sel) {
         return StreamSupport.stream(new Spliterator<>() {
-            
+
             @Override
             public boolean tryAdvance(Consumer<? super T> action) {
                 if (next()) {
@@ -48,24 +48,24 @@ class ResImpl implements Session.Res {
                 }
                 return false;
             }
-            
+
             @Override
             public Spliterator<T> trySplit() {
                 return null;
             }
-            
+
             @Override
             public long estimateSize() {
                 return Long.MAX_VALUE;
             }
-            
+
             @Override
             public int characteristics() {
                 return IMMUTABLE & ORDERED;
             }
         }, false);
     }
-    
+
     @Override
     public String getString() {
         try {
@@ -74,7 +74,7 @@ class ResImpl implements Session.Res {
             throw new IllegalStateException("Failed to get string #" + i + ": " + resultSet, e);
         }
     }
-    
+
     @Override
     public Boolean getBoolean() {
         try {
@@ -83,7 +83,7 @@ class ResImpl implements Session.Res {
             throw new IllegalStateException("Failed to get truth #" + i + ": " + resultSet, e);
         }
     }
-    
+
     @Override
     public Integer getInt() {
         try {
@@ -92,7 +92,7 @@ class ResImpl implements Session.Res {
             throw new IllegalStateException("Failed to get int #" + i + ": " + resultSet, e);
         }
     }
-    
+
     @Override
     public Long getLong() {
         try {
@@ -101,7 +101,7 @@ class ResImpl implements Session.Res {
             throw new IllegalStateException("Failed to get long #" + i + ": " + resultSet, e);
         }
     }
-    
+
     @Override
     public UUID getUUID() {
         try {
@@ -110,7 +110,7 @@ class ResImpl implements Session.Res {
             throw new IllegalStateException("Failed to get UUID #" + i + ": " + resultSet, e);
         }
     }
-    
+
     @Override
     public Instant getInstant() {
         try {
@@ -119,7 +119,7 @@ class ResImpl implements Session.Res {
             throw new IllegalStateException("Failed to get timestamp #" + i + ": " + resultSet, e);
         }
     }
-    
+
     @Override
     public boolean next() {
         try {

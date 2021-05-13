@@ -24,15 +24,15 @@ import java.time.Instant;
 import java.util.UUID;
 
 class StmtImpl implements Stmt {
-    
+
     private final PreparedStatement statement;
-    
+
     private int i;
-    
+
     StmtImpl(PreparedStatement statement) {
         this.statement = statement;
     }
-    
+
     @Override
     public Stmt set(String string) {
         try {
@@ -46,7 +46,7 @@ class StmtImpl implements Stmt {
         }
         return this;
     }
-    
+
     @Override
     public Stmt set(Boolean bool) {
         try {
@@ -60,7 +60,7 @@ class StmtImpl implements Stmt {
         }
         return this;
     }
-    
+
     @Override
     public Stmt set(Integer value) {
         try {
@@ -74,7 +74,7 @@ class StmtImpl implements Stmt {
         }
         return this;
     }
-    
+
     @Override
     public Stmt set(Long value) {
         try {
@@ -88,7 +88,7 @@ class StmtImpl implements Stmt {
         }
         return this;
     }
-    
+
     @Override
     public Stmt set(Instant instant) {
         try {
@@ -102,7 +102,7 @@ class StmtImpl implements Stmt {
         }
         return this;
     }
-    
+
     @Override
     public Stmt set(UUID uuid) {
         try {
@@ -116,12 +116,12 @@ class StmtImpl implements Stmt {
         }
         return this;
     }
-    
+
     @Override
     public void reset() {
         i = 0;
     }
-    
+
     @Override
     public void close() throws Exception {
         statement.close();

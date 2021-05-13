@@ -22,11 +22,11 @@ import java.util.function.Supplier;
 import unearth.util.UncheckedCloseable;
 
 public final class UnearthlyDocker {
-    
+
     public static void main(String[] args) {
         start(DefaultDockerStartup::new);
     }
-    
+
     private static void start(Supplier<UncheckedCloseable> closableSupplier) {
         Runtime.getRuntime().addShutdownHook(new Thread(closableSupplier.get()::close));
     }

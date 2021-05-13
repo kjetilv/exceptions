@@ -39,18 +39,18 @@ import org.slf4j.LoggerFactory;
 import unearth.util.once.Get;
 
 public class AbstractCassandraConnected {
-    
+
     private static final Logger log = LoggerFactory.getLogger(AbstractCassandraConnected.class);
-    
+
     static void exec(CqlSession session, String stmt, Object... args) {
         session.execute(new SimpleStatementBuilder(stmt)
             .setExecutionProfileName(PROFILE)
             .addPositionalValues(args)
             .build());
     }
-    
+
     private final Supplier<CqlSession> cqlSession;
-    
+
     AbstractCassandraConnected(String host, int port, String dc, String keyspace) {
         cqlSession = Get.once(() -> {
             CqlSession cqlSession = builder(host, port, dc, keyspace).build();
@@ -65,11 +65,11 @@ public class AbstractCassandraConnected {
             return cqlSession;
         });
     }
-    
+
     public void close() {
         Get.maybeOnce(cqlSession).get().ifPresent(AsyncAutoCloseable::close);
     }
-    
+
     void inSession(Consumer<CqlSession> action) {
         try {
             action.accept(cqlSession.get());
@@ -77,17 +77,17 @@ public class AbstractCassandraConnected {
             throw new IllegalStateException("Failed to perform action", e);
         }
     }
-    
+
     private static final String RELEASE_VERSION = "release_version";
-    
+
     private static final String VERSION_QUERY = "select " + RELEASE_VERSION + " from system.local";
-    
+
     private static final String PROFILE = "default";
-    
+
     private static Stream<EndPoint> endPoints(CqlSession session) {
         return session.getMetadata().getNodes().values().stream().map(Node::getEndPoint);
     }
-    
+
     private static CqlSessionBuilder builder(String host, int port, String dc, String keyspace) {
         CqlSessionBuilder cqlSessionBuilder = CqlSession.builder()
             .withConfigLoader(

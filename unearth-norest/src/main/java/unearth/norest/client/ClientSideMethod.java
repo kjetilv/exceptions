@@ -32,12 +32,19 @@ public final class ClientSideMethod extends AbstractProcessedMethod {
         super(method, transformers);
     }
 
-    public RequestMethod getRequestMethod() {
-        return requestMethod();
-    }
-
     public IO.ContentType getContentType() {
         return super.getContentType();
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + requestMethod() + " " + path() + (
+            queryParameters().isEmpty() ? "" : "?" + String.join("&", queryParameters().values())
+        ) + "]";
+    }
+
+    public RequestMethod getRequestMethod() {
+        return requestMethod();
     }
 
     public boolean isStringBody() {
@@ -105,11 +112,4 @@ public final class ClientSideMethod extends AbstractProcessedMethod {
     }
 
     private static final String PAR = "{}";
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" + requestMethod() + " " + path() + (
-            queryParameters().isEmpty() ? "" : "?" + String.join("&", queryParameters().values())
-        ) + "]";
-    }
 }

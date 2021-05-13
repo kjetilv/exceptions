@@ -83,7 +83,7 @@ public abstract class ServerSideMethod extends AbstractProcessedMethod {
         if (pathParams.size() != pathParameters().size()) {
             throw new IllegalArgumentException(
                 this + " got bad path arity " + pathParams.size() +
-                    ", required " + pathParameters().size() + ": " + request);
+                ", required " + pathParameters().size() + ": " + request);
         }
         Object[] args = arguments(queryArgs, pathParams);
         setEntityParameter(request, args);

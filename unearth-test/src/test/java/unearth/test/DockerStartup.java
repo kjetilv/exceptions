@@ -21,15 +21,15 @@ import unearth.client.UnearthlyClient;
 import unearth.util.UncheckedCloseable;
 
 public interface DockerStartup extends UncheckedCloseable {
-    
-    UnearthlyClient getClient();
-    
-    void stop();
-    
-    void reset();
-    
+
     @Override
     default void close() {
         stop();
     }
+
+    UnearthlyClient getClient();
+
+    void stop();
+
+    void reset();
 }

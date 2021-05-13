@@ -27,25 +27,25 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 
 class ErrorHandler extends SimpleChannelInboundHandler<Object> {
-    
+
     public static void notFound(ChannelHandlerContext ctx) {
         errorFuture(ctx, HttpResponseStatus.NOT_FOUND);
     }
-    
+
     public static void internalError(ChannelHandlerContext ctx) {
         errorFuture(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR);
     }
-    
+
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         internalError(ctx);
     }
-    
+
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
         notFound(ctx);
     }
-    
+
     private static void errorFuture(ChannelHandlerContext ctx, HttpResponseStatus notFound) {
         ctx.writeAndFlush(new DefaultFullHttpResponse(
             HttpVersion.HTTP_1_1,

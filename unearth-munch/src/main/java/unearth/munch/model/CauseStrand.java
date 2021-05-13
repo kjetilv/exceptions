@@ -34,19 +34,19 @@ import unearth.munch.print.CauseFrame;
  * A cause strand consists of a stacktrace and an exception class name.
  */
 public final class CauseStrand extends AbstractHashableIdentifiable<CauseStrandId> {
-    
+
     public static CauseStrand create(Throwable throwable) {
         return new CauseStrand(className(throwable), causeFrames(throwable.getStackTrace()));
     }
-    
+
     public static CauseStrand create(String className, List<CauseFrame> stackFrames) {
         return new CauseStrand(className, stackFrames);
     }
-    
+
     private final String className;
-    
+
     private final List<CauseFrame> causeFrames;
-    
+
     private CauseStrand(String className, List<CauseFrame> stackFrames) {
         this.className = className;
         this.causeFrames =
@@ -54,33 +54,33 @@ public final class CauseStrand extends AbstractHashableIdentifiable<CauseStrandI
                 ? Collections.emptyList()
                 : List.copyOf(stackFrames);
     }
-    
+
     @Override
     public void hashTo(Consumer<byte[]> h) {
         hash(h, this.className);
         hashables(h, this.causeFrames);
     }
-    
+
     @Override
     protected CauseStrandId id(UUID hash) {
         return new CauseStrandId(hash);
     }
-    
+
     @Override
     protected StringBuilder withStringBody(StringBuilder sb) {
         int dotIndex = className.lastIndexOf(".");
         return sb.append(dotIndex >= 0 ? className.substring(dotIndex + 1) : className)
             .append('/').append(causeFrames.size());
     }
-    
+
     public List<CauseFrame> getCauseFrames() {
         return causeFrames;
     }
-    
+
     public String getClassName() {
         return className;
     }
-    
+
     private static List<CauseFrame> causeFrames(StackTraceElement[] stackTrace) {
         return Arrays.stream(stackTrace).map(ste -> new CauseFrame(
             CauseFrame.classLoader(ste.getClassLoaderName()),
@@ -93,7 +93,7 @@ public final class CauseStrand extends AbstractHashableIdentifiable<CauseStrandI
             ste.isNativeMethod()
         )).collect(Collectors.toUnmodifiableList());
     }
-    
+
     private static String className(Throwable throwable) {
         return throwable instanceof ChameleonException
             ? ((ChameleonException) throwable).getProxiedClassName()

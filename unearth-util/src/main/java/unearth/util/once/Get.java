@@ -23,41 +23,41 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class Get {
-    
+
     /**
      * Returns a supplier which runs the given supplier once.
      *
      * @param supplier Source supplier
-     * @param <T> Type
+     * @param <T>      Type
      *
      * @return Single-run supplier
      */
     public static <T> Supplier<T> once(Supplier<T> supplier) {
         return vet(supplier) instanceof Once<?> ? supplier : new Once<>(supplier);
     }
-    
+
     public static <T> Supplier<T> mostlyOnce(Supplier<T> supplier) {
         return vet(supplier) instanceof MostlyOnce<?> ? supplier : new MostlyOnce<>(supplier);
     }
-    
+
     public static <T> Supplier<Optional<T>> maybeOnce(Supplier<T> supplier) {
         Supplier<T> tSupplier = vet(supplier) instanceof Once<?>
             ? supplier
             : mostlyOnce(supplier);
         return ((AbstractSupplier<T>) tSupplier).maybe();
     }
-    
+
     public static <T> void ifPresent(Supplier<T> supplier, Consumer<T> then) {
         ifExists(supplier).ifPresent(then);
     }
-    
+
     public static <T> Optional<T> ifExists(Supplier<T> supplier) {
         return maybeOnce(supplier).get();
     }
-    
+
     private Get() {
     }
-    
+
     private static <T> T vet(T supplier) {
         return Objects.requireNonNull(supplier, "supplier");
     }

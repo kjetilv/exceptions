@@ -29,8 +29,6 @@ import unearth.norest.IOHandler;
 
 public final class StringIOHandler implements IOHandler {
 
-    private static final byte[] NO_BYTES = new byte[0];
-
     private final Charset charset;
 
     public StringIOHandler(Charset charset) {
@@ -46,9 +44,13 @@ public final class StringIOHandler implements IOHandler {
 
     @Override
     public Object readBytes(Class<?> type, InputStream inputStream) {
-        try (Stream<String> lines = new BufferedReader(
-            new InputStreamReader(inputStream, charset)).lines()) {
+        try (
+            Stream<String> lines = new BufferedReader(
+                new InputStreamReader(inputStream, charset)).lines()
+        ) {
             return lines.collect(Collectors.joining("\n"));
         }
     }
+
+    private static final byte[] NO_BYTES = new byte[0];
 }

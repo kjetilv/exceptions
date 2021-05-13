@@ -36,7 +36,7 @@ import unearth.util.Streams;
  * A cause has a {@link CauseStrand cause strand} and a given {@link #message message}.
  */
 public final class Cause extends AbstractHashableIdentifiable<CauseId> {
-    
+
     public static List<Cause> causes(Throwable throwable) {
         return Streams.reverse(Streams.causes(throwable))
             .map(t ->
@@ -44,24 +44,24 @@ public final class Cause extends AbstractHashableIdentifiable<CauseId> {
                     suppressed(t)))
             .collect(Collectors.toList());
     }
-    
+
     public static Cause create(String message, CauseStrand causeStrand) {
         return new Cause(message, causeStrand);
     }
-    
+
     private final String message;
-    
+
     private final CauseStrand causeStrand;
-    
+
     private final Collection<Fault> suppressedFaults;
-    
+
     private Cause(
         String message,
         CauseStrand causeStrand
     ) {
         this(message, causeStrand, null);
     }
-    
+
     private Cause(
         String message,
         CauseStrand causeStrand,
@@ -74,21 +74,31 @@ public final class Cause extends AbstractHashableIdentifiable<CauseId> {
                 ? Collections.emptyList()
                 : List.copyOf(suppressedFaults);
     }
-    
-    public CauseStrand getCauseStrand() {
-        return causeStrand;
-    }
-    
-    public String getMessage() {
-        return message;
-    }
-    
+
     @Override
     public void hashTo(Consumer<byte[]> h) {
         hash(h, causeStrand);
         hash(h, message);
     }
-    
+
+    @Override
+    protected CauseId id(UUID hash) {
+        return new CauseId(hash);
+    }
+
+    @Override
+    protected StringBuilder withStringBody(StringBuilder sb) {
+        return sb.append("causeStrand:").append(causeStrand).append(" message:").append(message);
+    }
+
+    public CauseStrand getCauseStrand() {
+        return causeStrand;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
     Throwable toChameleon(Throwable cause) {
         Throwable exception =
             new ChameleonException(causeStrand.getClassName(), message, !suppressedFaults.isEmpty(), cause);
@@ -99,17 +109,7 @@ public final class Cause extends AbstractHashableIdentifiable<CauseId> {
             exception.addSuppressed(suppressedFault.toChameleon()));
         return exception;
     }
-    
-    @Override
-    protected CauseId id(UUID hash) {
-        return new CauseId(hash);
-    }
-    
-    @Override
-    protected StringBuilder withStringBody(StringBuilder sb) {
-        return sb.append("causeStrand:").append(causeStrand).append(" message:").append(message);
-    }
-    
+
     private static Collection<Fault> suppressed(Throwable t) {
         Throwable[] suppressed = t.getSuppressed();
         return suppressed == null || suppressed.length == 0

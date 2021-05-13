@@ -18,38 +18,38 @@
 package unearth.analysis;
 
 public class CassandraInit extends AbstractCassandraConnected {
-    
+
     private final String keyspace;
-    
+
     public CassandraInit(String host, int port, String dc, String keyspace) {
         super(host, port, dc, null);
         this.keyspace = keyspace;
     }
-    
+
     public CassandraInit init() {
         inSession(cqlSession -> {
             cqlSession.execute(
                 "CREATE KEYSPACE" +
-                    " IF NOT EXISTS " + keyspace +
-                    " WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor' : 1}");
+                " IF NOT EXISTS " + keyspace +
+                " WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor' : 1}");
             cqlSession.execute("USE " + keyspace);
-            
+
             cqlSession.execute(
                 "CREATE TABLE IF NOT EXISTS fault " +
-                    "(id UUID PRIMARY KEY," +
-                    " faultStrand UUID)");
+                "(id UUID PRIMARY KEY," +
+                " faultStrand UUID)");
             cqlSession.execute(
                 "CREATE TABLE IF NOT EXISTS faultStrand " +
-                    "(id UUID PRIMARY KEY)");
+                "(id UUID PRIMARY KEY)");
             cqlSession.execute(
                 "CREATE TABLE IF NOT EXISTS faultEvent " +
-                    "(id uuid PRIMARY KEY," +
-                    " fault UUID," +
-                    " faultStrand UUID," +
-                    " globalSequenceNo BIGINT," +
-                    " faultStrandSequenceNo BIGINT," +
-                    " faultSequenceNo BIGINT" +
-                    ")");
+                "(id uuid PRIMARY KEY," +
+                " fault UUID," +
+                " faultStrand UUID," +
+                " globalSequenceNo BIGINT," +
+                " faultStrandSequenceNo BIGINT," +
+                " faultSequenceNo BIGINT" +
+                ")");
         });
         return this;
     }

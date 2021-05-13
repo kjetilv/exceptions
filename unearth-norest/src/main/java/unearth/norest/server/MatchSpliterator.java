@@ -24,23 +24,23 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 final class MatchSpliterator extends Spliterators.AbstractSpliterator<String> {
-    
+
     static Stream<String> stream(Matcher matcher) {
         return StreamSupport.stream(new MatchSpliterator(matcher), false);
     }
-    
+
     private final int groupCount;
-    
+
     private final Matcher matcher;
-    
+
     private int group;
-    
+
     MatchSpliterator(Matcher matcher) {
         super(matcher.groupCount(), Spliterator.ORDERED);
         this.groupCount = matcher.groupCount();
         this.matcher = matcher;
     }
-    
+
     @Override
     public boolean tryAdvance(Consumer<? super String> action) {
         action.accept(matcher.group(group + 1));

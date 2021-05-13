@@ -20,7 +20,7 @@ package unearth.munch.id;
 import java.util.UUID;
 
 public class FeedEntryId extends Id {
-    
+
     public FeedEntryId(UUID hash) {
         super(hash);
     }

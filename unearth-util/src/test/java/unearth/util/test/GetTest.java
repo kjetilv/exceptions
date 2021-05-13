@@ -39,7 +39,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class GetTest {
-    
+
     @Test
     public void testSimpleGetOnce() {
         int c = next();
@@ -50,11 +50,11 @@ public class GetTest {
         Data singleData = allData.iterator().next();
         assertEquals(c + 1, singleData.getC());
         assertEquals(c + 2, next());
-        
+
         assertSame(singleData, supplier.get());
         assertSame(singleData, supplier.get());
     }
-    
+
     @Test
     public void testSimpleGetOptional() {
         int c = next();
@@ -65,34 +65,34 @@ public class GetTest {
         assertSame(v, Get.maybeOnce(supplier).get().get());
         assertSame(v, supplier.get());
     }
-    
+
     @Test
     public void testSimpleFailure() {
         int c = next();
         String msg = UUID.randomUUID().toString();
         AtomicInteger counter = new AtomicInteger();
         Supplier<Data> supplier = Get.once(failGet(msg, counter));
-        
+
         Collection<Future<Data>> futures = futures(supplier, 20);
         Collection<Throwable> failures = futures.stream()
             .map(GetTest::awaitFailure)
             .map(GetTest::getRoot)
             .collect(Collectors.toList());
-        
+
         assertEquals(1, counter.get());
         assertEquals(1, new HashSet<>(failures).size());
         assertEquals(msg, failures.iterator().next().getMessage());
         assertEquals(c + 1, next());
-        
+
         try {
             supplier.get();
         } catch (Exception e) {
             assertEquals(msg, getRoot(e).getMessage());
         }
     }
-    
+
     private static final AtomicInteger COUNTER = new AtomicInteger();
-    
+
     private static Throwable getRoot(Exception e) {
         Throwable walker = e;
         while (true) {
@@ -102,7 +102,7 @@ public class GetTest {
             walker = walker.getCause();
         }
     }
-    
+
     private static Exception awaitFailure(Future<Data> future) {
         try {
             await(future);
@@ -111,7 +111,7 @@ public class GetTest {
         }
         throw new IllegalStateException("Foo");
     }
-    
+
     private static Data await(Future<Data> future) {
         try {
             return future.get();
@@ -122,11 +122,11 @@ public class GetTest {
             throw new IllegalStateException(e);
         }
     }
-    
+
     private static int next() {
         return new Data().getC();
     }
-    
+
     private static Collection<Future<Data>> futures(Supplier<Data> supplier, int size) {
         ExecutorService executor = pool(size);
         Collection<Future<Data>> futures = IntStream.range(0, size * 2)
@@ -143,14 +143,14 @@ public class GetTest {
         }));
         return futures;
     }
-    
+
     private static Supplier<Data> slowGet() {
         return () -> {
             sleep100();
             return new Data();
         };
     }
-    
+
     private static Supplier<Data> failGet(String msg, AtomicInteger counter) {
         return () -> {
             sleep100();
@@ -158,7 +158,7 @@ public class GetTest {
             throw new IllegalStateException(msg);
         };
     }
-    
+
     private static ExecutorService pool(int size) {
         return new ThreadPoolExecutor(
             size,
@@ -166,7 +166,7 @@ public class GetTest {
             1, TimeUnit.SECONDS,
             new ArrayBlockingQueue<>(size));
     }
-    
+
     private static void sleep100() {
         try {
             Thread.sleep(100);
@@ -175,29 +175,29 @@ public class GetTest {
             throw new IllegalStateException(e);
         }
     }
-    
+
     public static final class Data {
-        
+
         private final int c;
-        
+
         Data() {
             c = COUNTER.getAndIncrement();
         }
-        
+
         public int getC() {
             return c;
         }
-        
+
         @Override
         public int hashCode() {
             return Objects.hash(c);
         }
-        
+
         @Override
         public boolean equals(Object o) {
             return this == o || o instanceof Data && c == ((Data) o).c;
         }
-        
+
         @Override
         public String toString() {
             return getClass().getSimpleName() + "[" + c + "]";

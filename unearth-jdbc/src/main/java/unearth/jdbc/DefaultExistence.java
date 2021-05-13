@@ -22,43 +22,43 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 class DefaultExistence<T> implements Session.Existence<T> {
-    
+
     private final Session session;
-    
+
     private final String sql;
-    
+
     private final Session.Set set;
-    
+
     private final Session.Sel<T> sel;
-    
+
     private Function<T, Integer> update;
-    
+
     private Supplier<Integer> insert;
-    
+
     DefaultExistence(Session session, String sql, Session.Set set, Session.Sel<T> sel) {
         this.session = session;
         this.sql = sql;
         this.set = set;
         this.sel = sel;
     }
-    
+
     @Override
     public Session.Existence<T> onUpdate(Function<T, Integer> update) {
         this.update = update;
         return this;
     }
-    
+
     @Override
     public Session.Existence<T> onInsert(Supplier<Integer> insert) {
         this.insert = insert;
         return this;
     }
-    
+
     @Override
     public <R> R thenLoad(Function<T, Optional<R>> load, Supplier<R> orElse) {
         return existing().flatMap(load).orElseGet(orElse);
     }
-    
+
     @Override
     public Session.Outcome go() {
         Optional<T> existing = existing();
@@ -77,7 +77,7 @@ class DefaultExistence<T> implements Session.Existence<T> {
         Integer inserted = insert.get();
         return inserted != null && inserted > 0 ? Session.Outcome.INSERTED : Session.Outcome.NOOP;
     }
-    
+
     private Optional<T> existing() {
         return session.select(sql, set, sel).stream().findFirst();
     }

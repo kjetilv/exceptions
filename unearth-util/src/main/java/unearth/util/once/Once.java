@@ -23,19 +23,19 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 final class Once<T> extends AbstractSupplier<T> {
-    
+
     private final AtomicBoolean started = new AtomicBoolean();
-    
+
     private final CompletableFuture<Boolean> ok = new CompletableFuture<>();
-    
+
     private final AtomicReference<T> value = new AtomicReference<>();
-    
+
     private final AtomicReference<RuntimeException> error = new AtomicReference<>();
-    
+
     Once(Supplier<T> supplier) {
         super(supplier);
     }
-    
+
     @Override
     protected T get(Supplier<T> supplier, boolean required) {
         if (required) {

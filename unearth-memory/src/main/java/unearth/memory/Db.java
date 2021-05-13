@@ -24,7 +24,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 public final class Db {
-    
+
     public static DataSource memory() {
         HikariConfig configuration = new HikariConfig();
         configuration.setJdbcUrl("jdbc:hsqldb:mem:unearth-" + UUID.randomUUID() + ";sql.syntax_pgs=true");
@@ -32,7 +32,7 @@ public final class Db {
         configuration.setPassword("");
         return new HikariDataSource(configuration);
     }
-    
+
     private Db() {
     }
 }

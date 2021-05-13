@@ -23,11 +23,11 @@ import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 
 public class JdbcSetup implements Runnable {
-    
+
     private final DataSource dataSource;
-    
+
     private final String schema;
-    
+
     public JdbcSetup(DataSource dataSource, String schema) {
         this.dataSource = Objects.requireNonNull(dataSource, "dataSource");
         this.schema = Objects.requireNonNull(schema, "schema");
@@ -35,7 +35,7 @@ public class JdbcSetup implements Runnable {
             throw new IllegalArgumentException("Empty schema ref: '" + schema + "'");
         }
     }
-    
+
     @Override
     public void run() {
         new Flyway(Flyway.configure(Thread.currentThread().getContextClassLoader())

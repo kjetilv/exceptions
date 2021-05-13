@@ -30,17 +30,17 @@ import unearth.munch.id.FaultStrandId;
 import unearth.munch.id.FeedEntryId;
 
 public final class FaultEvent extends AbstractHashableIdentifiable<FeedEntryId> {
-    
+
     private final Integer throwableHashCode;
-    
+
     private final FaultId faultId;
-    
+
     private final FaultStrandId faultStrandId;
-    
+
     private final LogEntry logEntry;
-    
+
     private final Instant time;
-    
+
     public FaultEvent(
         Integer throwableHashCode,
         Fault fault,
@@ -54,7 +54,7 @@ public final class FaultEvent extends AbstractHashableIdentifiable<FeedEntryId> 
             logEntry,
             time);
     }
-    
+
     public FaultEvent(
         FaultId faultId,
         FaultStrandId faultStrandId,
@@ -62,7 +62,7 @@ public final class FaultEvent extends AbstractHashableIdentifiable<FeedEntryId> 
     ) {
         this(null, faultId, faultStrandId, null, time);
     }
-    
+
     private FaultEvent(
         Integer throwableHashCode,
         FaultId faultId,
@@ -76,13 +76,13 @@ public final class FaultEvent extends AbstractHashableIdentifiable<FeedEntryId> 
         this.logEntry = logEntry;
         this.time = Objects.requireNonNull(time, "time");
     }
-    
+
     @Override
     public void hashTo(Consumer<byte[]> h) {
         hash(h, time.toEpochMilli());
         hash(h, faultId);
     }
-    
+
     @Override
     protected StringBuilder withStringBody(StringBuilder sb) {
         return sb.append("F: ")
@@ -90,28 +90,28 @@ public final class FaultEvent extends AbstractHashableIdentifiable<FeedEntryId> 
             .append("@")
             .append(getTime().atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
     }
-    
+
     @Override
     protected FeedEntryId id(UUID hash) {
         return new FeedEntryId(hash);
     }
-    
+
     public int getThrowableHashCode() {
         return throwableHashCode;
     }
-    
+
     public FaultId getFaultId() {
         return faultId;
     }
-    
+
     public FaultStrandId getFaultStrandId() {
         return faultStrandId;
     }
-    
+
     public Instant getTime() {
         return time;
     }
-    
+
     public LogEntry getLogEntry() {
         return logEntry;
     }

@@ -18,6 +18,6 @@
 package unearth.munch.id;
 
 public interface Identifiable<T extends Id> {
-    
+
     T getId();
 }

@@ -30,9 +30,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import unearth.norest.IOHandler;
 
 public final class JacksonIOHandler implements IOHandler {
-    
+
     public static final IOHandler DEFAULT = withDefaults(new ObjectMapper());
-    
+
     public static IOHandler withDefaults(ObjectMapper objectMapper) {
         return new JacksonIOHandler(objectMapper
             .enable(SerializationFeature.INDENT_OUTPUT)
@@ -44,13 +44,13 @@ public final class JacksonIOHandler implements IOHandler {
             .registerModule(new Jdk8Module())
             .registerModule(new JavaTimeModule()));
     }
-    
+
     private final ObjectMapper objectMapper;
-    
+
     public JacksonIOHandler(ObjectMapper objectMapper) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
     }
-    
+
     @Override
     public byte[] writeBytes(Object value) {
         if (value == null) {
@@ -62,7 +62,7 @@ public final class JacksonIOHandler implements IOHandler {
             throw new IllegalStateException("Failed to write body: " + value, e);
         }
     }
-    
+
     @Override
     public Object readBytes(Class<?> type, InputStream inputStream) {
         try {
@@ -71,9 +71,9 @@ public final class JacksonIOHandler implements IOHandler {
             throw new IllegalStateException("Failed to read response: " + type + " <= " + inputStream, e);
         }
     }
-    
+
     private static final byte[] NO_BYTES = new byte[0];
-    
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[" + objectMapper + "]";

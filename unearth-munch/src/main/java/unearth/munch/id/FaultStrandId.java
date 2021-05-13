@@ -20,7 +20,7 @@ package unearth.munch.id;
 import java.util.UUID;
 
 public class FaultStrandId extends Id {
-    
+
     public FaultStrandId(UUID hash) {
         super(hash);
     }

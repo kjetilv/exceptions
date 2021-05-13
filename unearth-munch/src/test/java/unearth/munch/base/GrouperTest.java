@@ -27,7 +27,7 @@ import org.junit.Test;
 import unearth.munch.print.GroupedList;
 
 public class GrouperTest {
-    
+
     @Test
     public void groupTest() {
         Function<String, Optional<Collection<String>>> stringOptionalFunction =

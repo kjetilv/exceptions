@@ -24,26 +24,26 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public final class Throwables {
-    
+
     public static ByteBuffer byteBuffer(Throwable throwable) {
         return ByteBuffer.wrap(bytes(throwable));
     }
-    
+
     public static String toStringString(Throwable throwable) {
         return Streams.causes(throwable).map(Throwable::toString).collect(Collectors.joining("\n => "));
     }
-    
+
     public static String string(Throwable throwable) {
         return new String(bytes(throwable), StandardCharsets.UTF_8);
     }
-    
+
     public static String join(Throwable e, String sep) {
         return Streams.causes(e).map(Objects::toString).collect(Collectors.joining(sep));
     }
-    
+
     private Throwables() {
     }
-    
+
     private static byte[] bytes(Throwable throwable) {
         Objects.requireNonNull(throwable);
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {

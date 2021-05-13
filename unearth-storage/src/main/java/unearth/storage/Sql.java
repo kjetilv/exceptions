@@ -82,8 +82,8 @@ final class Sql {
     static List<CauseStrandId> loadCauseStrandIds(Session session, FaultStrandId faultStrandId) {
         return session.select(
             "select cause_strand from fault_strand_2_cause_strand " +
-                "where fault_strand = ? " +
-                "order by seq asc",
+            "where fault_strand = ? " +
+            "order by seq asc",
             stmt -> stmt.set(faultStrandId),
             res ->
                 new CauseStrandId(res.getUUID()));
@@ -92,9 +92,9 @@ final class Sql {
     static void saveFeedEntry(Session session, FeedEntry entry) {
         session.effect(
             "insert into feed_entry " +
-                "(id, fault, fault_strand, time, global_seq, fault_seq, fault_strand_seq)" +
-                " values " +
-                "(?, ?, ?, ?, ?, ?, ?)",
+            "(id, fault, fault_strand, time, global_seq, fault_seq, fault_strand_seq)" +
+            " values " +
+            "(?, ?, ?, ?, ?, ?, ?)",
             stmt -> Setter.feedEntry(stmt, entry)
                 .set(entry.getFaultEvent().getFaultId())
                 .set(entry.getFaultEvent().getFaultStrandId())
@@ -122,7 +122,7 @@ final class Sql {
     static List<FeedEntry> loadFeedEntries(Session session, FaultStrandId id, Instant sinceTime) {
         return session.select(
             "select (fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq) from feed_entry" +
-                " where fault_strand = ? and time >= ? order by fault_seq desc limit 1",
+            " where fault_strand = ? and time >= ? order by fault_seq desc limit 1",
             stmt -> stmt.set(id)
                 .set(sinceTime),
             Sql::readFeedEntry
@@ -159,7 +159,7 @@ final class Sql {
     static List<FeedEntry> loadFeedEntries(Session session, FaultId id, Instant sinceTime, Long ceiling) {
         return session.select(
             "select (fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq) from feed_entry" +
-                " where fault = ? and time >= ? and fault_seq <= ? order by fault_seq desc limit 1",
+            " where fault = ? and time >= ? and fault_seq <= ? order by fault_seq desc limit 1",
             stmt -> stmt.set(id)
                 .set(sinceTime)
                 .set(ceiling),
@@ -174,10 +174,10 @@ final class Sql {
     static int insertFrames(Session session, Collection<CauseFrame> newFrames) {
         return session.updateBatchTotal(
             "insert into cause_frame (" +
-                "  id, class_loader, module, module_ver, class_name, method, file, line, native" +
-                ") values (" +
-                "  ?, ?, ?, ?, ?, ?, ?, ?, ?" +
-                ")",
+            "  id, class_loader, module, module_ver, class_name, method, file, line, native" +
+            ") values (" +
+            "  ?, ?, ?, ?, ?, ?, ?, ?, ?" +
+            ")",
             newFrames,
             (stmt, cf) -> Setter.causeFrame(stmt, cf)
                 .set(cf.classLoader())
@@ -194,10 +194,10 @@ final class Sql {
     static void linkFaultToCauses(Session session, Fault fault) {
         session.effectBatch(
             "insert into fault_2_cause (" +
-                "  fault, seq, cause" +
-                ") values (" +
-                "  ?, ?, ?" +
-                ")",
+            "  fault, seq, cause" +
+            ") values (" +
+            "  ?, ?, ?" +
+            ")",
             indexed(fault.getCauses()),
             (stmt, item) ->
                 Setter.list(stmt, fault)
@@ -209,10 +209,10 @@ final class Sql {
     static void linkFaultStrandToCauseStrands(Session session, FaultStrand faultStrand) {
         session.effectBatch(
             "insert into fault_strand_2_cause_strand (" +
-                "  fault_strand, seq, cause_strand" +
-                ") values (" +
-                "  ?, ?, ?" +
-                ")",
+            "  fault_strand, seq, cause_strand" +
+            ") values (" +
+            "  ?, ?, ?" +
+            ")",
             indexed(faultStrand.getCauseStrands()),
             (stmt, item) ->
                 Setter.list(stmt, faultStrand)
@@ -237,13 +237,13 @@ final class Sql {
     private static List<CauseFrame> loadCauseFrames(Session session, CauseStrandId causeStrandId) {
         return session.select(
             "select " +
-                " cf.class_loader, cf.module, cf.module_ver," +
-                " cf.class_name, cf.method, cf.file, cf.line, cf.native" +
-                " from cause_strand_2_cause_frame cs2cf, cause_frame cf" +
-                " where" +
-                "  cf.id = cs2cf.cause_frame and cs2cf.cause_strand = ?" +
-                " order by" +
-                "  cs2cf.seq asc",
+            " cf.class_loader, cf.module, cf.module_ver," +
+            " cf.class_name, cf.method, cf.file, cf.line, cf.native" +
+            " from cause_strand_2_cause_frame cs2cf, cause_frame cf" +
+            " where" +
+            "  cf.id = cs2cf.cause_frame and cs2cf.cause_strand = ?" +
+            " order by" +
+            "  cs2cf.seq asc",
             stmt -> stmt.set(causeStrandId),
             res ->
                 new CauseFrame(

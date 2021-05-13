@@ -24,22 +24,22 @@ import unearth.hashable.Hashed;
 
 @SuppressWarnings("UnusedReturnValue")
 public interface Stmt extends AutoCloseable {
-    
+
     default Stmt set(Hashed hashed) {
         return set(hashed.getHash());
     }
-    
+
     Stmt set(String string);
-    
+
     Stmt set(Boolean bool);
-    
+
     Stmt set(Integer i);
-    
+
     Stmt set(Long l);
-    
+
     Stmt set(Instant instant);
-    
+
     Stmt set(UUID uuid);
-    
+
     void reset();
 }

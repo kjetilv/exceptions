@@ -23,10 +23,6 @@ import java.nio.charset.StandardCharsets;
 
 public interface IO {
 
-    byte[] writeBytes(ContentType contentType, Object value);
-
-    Object readBytes(ContentType contentType, Class<?> type, InputStream inputStream);
-
     enum ContentType {
 
         APPLICATION_JSON,
@@ -46,4 +42,8 @@ public interface IO {
             return name().toLowerCase().replace('_', '/');
         }
     }
+
+    byte[] writeBytes(ContentType contentType, Object value);
+
+    Object readBytes(ContentType contentType, Class<?> type, InputStream inputStream);
 }

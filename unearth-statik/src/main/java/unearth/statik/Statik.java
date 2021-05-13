@@ -23,22 +23,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import unearth.util.IO;
 
 public final class Statik {
-    
+
     private final ClassLoader classLoader;
-    
+
     private final String prefix;
-    
+
     private final Map<String, String> cache = new ConcurrentHashMap<>();
-    
+
     public Statik(ClassLoader classLoader, String prefix) {
         this.classLoader = classLoader;
         this.prefix = prefix;
     }
-    
+
     public Optional<String> read(String path) {
         return Optional.ofNullable(cache.computeIfAbsent(path, this::readPath));
     }
-    
+
     private String readPath(String path) {
         return IO.readPath(this.classLoader, prefix + path);
     }

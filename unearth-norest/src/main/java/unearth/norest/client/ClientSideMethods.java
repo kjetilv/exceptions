@@ -24,22 +24,22 @@ import java.util.Map;
 import unearth.norest.Transformers;
 
 final class ClientSideMethods {
-    
+
     private final Transformers transformers;
-    
+
     private final Map<Method, ClientSideMethod> callableMethods = new HashMap<>();
-    
+
     ClientSideMethods(Transformers transformers) {
         this.transformers = transformers == null ? Transformers.EMPTY : transformers;
     }
-    
+
     ClientSideMethod get(java.lang.reflect.Method method) {
         return callableMethods.computeIfAbsent(
             method,
             __ ->
                 new ClientSideMethod(method, transformers));
     }
-    
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[metas:" + callableMethods.size() + " " + transformers + "]";

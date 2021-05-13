@@ -140,12 +140,12 @@ public abstract class AbstractProcessedMethod {
         this.transformers = transformers == null ? Transformers.EMPTY : transformers;
     }
 
-    protected boolean nullReturn() {
-        return !returnData;
-    }
-
     public IO.ContentType getContentType() {
         return contentType;
+    }
+
+    protected boolean nullReturn() {
+        return !returnData;
     }
 
     protected RequestMethod requestMethod() {

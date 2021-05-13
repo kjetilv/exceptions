@@ -31,16 +31,16 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 
 public class HealthServer extends SimpleChannelInboundHandler<FullHttpRequest> {
-    
+
     private final String path;
-    
+
     private final Supplier<Health> healthSupplier;
-    
+
     public HealthServer(String path, Supplier<Health> healthSupplier) {
         this.path = path;
         this.healthSupplier = healthSupplier;
     }
-    
+
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) {
         if (msg.uri().startsWith(path)) {

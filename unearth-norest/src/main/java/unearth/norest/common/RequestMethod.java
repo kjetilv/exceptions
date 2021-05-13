@@ -18,19 +18,19 @@
 package unearth.norest.common;
 
 public enum RequestMethod {
-    
+
     GET(false), HEAD(false), POST, PUT, PATCH, DELETE(false);
-    
+
     private final boolean entity;
-    
+
     RequestMethod() {
         this(true);
     }
-    
+
     RequestMethod(boolean entity) {
         this.entity = entity;
     }
-    
+
     public boolean isEntity() {
         return this.entity;
     }

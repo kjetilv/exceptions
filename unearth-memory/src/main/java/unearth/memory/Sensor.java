@@ -22,13 +22,13 @@ import org.slf4j.LoggerFactory;
 import unearth.core.FaultSensor;
 
 public final class Sensor {
-    
+
     private static final Logger log = LoggerFactory.getLogger(Sensor.class);
-    
+
     public static FaultSensor memory() {
         return feedEntry -> log.info("Received: {}", feedEntry);
     }
-    
+
     private Sensor() {
     }
 }

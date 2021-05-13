@@ -41,16 +41,16 @@ import unearth.util.once.Get;
 public abstract class AbstractHashableIdentifiable<I extends Id>
     extends AbstractHashable
     implements Identifiable<I> {
-    
+
     /**
      * A supplier which computes {@link Identifiable this identifiable's} {@link Id id} once-only.
      */
     private final Supplier<I> id = Get.mostlyOnce(() -> id(this.getHash()));
-    
+
     @Override
     public final I getId() {
         return id.get();
     }
-    
+
     protected abstract I id(UUID hash);
 }

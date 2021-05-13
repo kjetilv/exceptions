@@ -17,27 +17,10 @@
 
 package unearth.api;
 
-import java.util.Optional;
+import unearth.api.dto.*;
+import unearth.norest.annotations.*;
 
-import unearth.api.dto.CauseDto;
-import unearth.api.dto.CauseIdDto;
-import unearth.api.dto.CauseStrandDto;
-import unearth.api.dto.CauseStrandIdDto;
-import unearth.api.dto.EventSequenceDto;
-import unearth.api.dto.FaultDto;
-import unearth.api.dto.FaultEventSequenceDto;
-import unearth.api.dto.FaultIdDto;
-import unearth.api.dto.FaultStrandDto;
-import unearth.api.dto.FaultStrandEventSequenceDto;
-import unearth.api.dto.FaultStrandIdDto;
-import unearth.api.dto.FeedEntryDto;
-import unearth.api.dto.FeedEntryIdDto;
-import unearth.api.dto.Submission;
-import unearth.norest.annotations.ContentType;
-import unearth.norest.annotations.GET;
-import unearth.norest.annotations.HEAD;
-import unearth.norest.annotations.POST;
-import unearth.norest.annotations.Q;
+import java.util.Optional;
 
 import static unearth.norest.IO.ContentType.TEXT_PLAIN;
 
@@ -57,37 +40,37 @@ public interface UnearthlyApi {
 
     @GET("fault/{}")
     Optional<FaultDto> fault(
-        FaultIdDto faultId,
-        @Q boolean fullStack,
-        @Q boolean printStack
+            FaultIdDto faultId,
+            @Q boolean fullStack,
+            @Q boolean printStack
     );
 
     @GET("fault-strand/{}")
     Optional<FaultStrandDto> faultStrand(
-        FaultStrandIdDto faultId,
-        @Q boolean fullStack,
-        @Q boolean printStack
+            FaultStrandIdDto faultId,
+            @Q boolean fullStack,
+            @Q boolean printStack
     );
 
     @GET("cause/{}")
     Optional<CauseDto> cause(
-        CauseIdDto causeIdDto,
-        @Q boolean fullStack,
-        @Q boolean printStack
+            CauseIdDto causeIdDto,
+            @Q boolean fullStack,
+            @Q boolean printStack
     );
 
     @GET("cause-strand/{}")
     Optional<CauseStrandDto> causeStrand(
-        CauseStrandIdDto causeStrandIdDto,
-        @Q boolean fullStack,
-        @Q boolean printStack
+            CauseStrandIdDto causeStrandIdDto,
+            @Q boolean fullStack,
+            @Q boolean printStack
     );
 
     @GET("feed-entry/{}")
     Optional<FeedEntryDto> feedEntry(
-        FeedEntryIdDto faultEventIdDto,
-        @Q boolean fullStack,
-        @Q boolean printStack
+            FeedEntryIdDto faultEventIdDto,
+            @Q boolean fullStack,
+            @Q boolean printStack
     );
 
     @GET("feed/limit")
@@ -101,27 +84,27 @@ public interface UnearthlyApi {
 
     @GET("feed")
     EventSequenceDto globalFeed(
-        @Q long offset,
-        @Q long count,
-        @Q boolean fullStack,
-        @Q boolean printStack
+            @Q long offset,
+            @Q long count,
+            @Q boolean fullStack,
+            @Q boolean printStack
     );
 
     @GET("feed/fault/{}")
     FaultEventSequenceDto faultFeed(
-        FaultIdDto faultId,
-        @Q long offset,
-        @Q long count,
-        @Q boolean fullStack,
-        @Q boolean printStack
+            FaultIdDto faultId,
+            @Q long offset,
+            @Q long count,
+            @Q boolean fullStack,
+            @Q boolean printStack
     );
 
     @GET("feed/fault-strand/{}")
     FaultStrandEventSequenceDto faultStrandFeed(
-        FaultStrandIdDto faultId,
-        @Q long offset,
-        @Q long count,
-        @Q boolean fullStack,
-        @Q boolean printStack
+            FaultStrandIdDto faultId,
+            @Q long offset,
+            @Q long count,
+            @Q boolean fullStack,
+            @Q boolean printStack
     );
 }

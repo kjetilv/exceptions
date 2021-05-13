@@ -27,7 +27,7 @@ import unearth.norest.IO;
 import static unearth.norest.IO.ContentType.APPLICATION_JSON;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.TYPE})
+@Target({ ElementType.METHOD, ElementType.TYPE })
 public @interface ContentType {
 
     IO.ContentType value() default APPLICATION_JSON;

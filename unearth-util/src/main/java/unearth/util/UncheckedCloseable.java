@@ -18,7 +18,7 @@
 package unearth.util;
 
 public interface UncheckedCloseable extends AutoCloseable {
-    
+
     @Override
     void close();
 }

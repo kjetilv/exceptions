@@ -32,8 +32,8 @@ public abstract class AbstractPair<T1, T2> {
             return true;
         }
         return o != null && getClass() == o.getClass()
-            && Objects.equals(t1, ((AbstractPair<?, ?>) o).t1)
-            && Objects.equals(t2, ((AbstractPair<?, ?>) o).t2);
+               && Objects.equals(t1, ((AbstractPair<?, ?>) o).t1)
+               && Objects.equals(t2, ((AbstractPair<?, ?>) o).t2);
     }
 
     @Override

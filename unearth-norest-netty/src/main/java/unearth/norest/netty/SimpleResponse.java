@@ -54,7 +54,7 @@ public class SimpleResponse implements Response {
     @Override
     public boolean equals(Object o) {
         return this == o || o instanceof SimpleResponse &&
-            Objects.equals(request, ((SimpleResponse) o).request) &&
-            Arrays.equals(bytes, ((SimpleResponse) o).bytes);
+                            Objects.equals(request, ((SimpleResponse) o).request) &&
+                            Arrays.equals(bytes, ((SimpleResponse) o).bytes);
     }
 }

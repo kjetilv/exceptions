@@ -22,25 +22,25 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 abstract class AbstractSupplier<T> implements Supplier<T> {
-    
+
     private final Supplier<T> supplier;
-    
+
     AbstractSupplier(Supplier<T> supplier) {
         this.supplier = Objects.requireNonNull(supplier, "supplier");
     }
-    
+
     @Override
     public final T get() {
         return get(supplier, true);
     }
-    
+
     final Supplier<Optional<T>> maybe() {
         return () ->
             Optional.ofNullable(get(supplier, false));
     }
-    
+
     protected abstract T get(Supplier<T> supplier, boolean required);
-    
+
     @Override
     public final String toString() {
         return getClass().getSimpleName() + "[" + supplier + "]";

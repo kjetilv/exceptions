@@ -119,6 +119,11 @@ public abstract class AbstractMetricsFactory implements MetricsFactory {
 
     private static final String FUNCTION_COUNTER = FunctionCounter.class.getName();
 
+    protected static <T> boolean isMeterMethod(Class<T> metrics, Method method) {
+        return method.getDeclaringClass() == metrics &&
+               Meter.class.isAssignableFrom(method.getReturnType());
+    }
+
     private static <T> Meter newMeter(MeterSpec spec, Class<T> metrics, MeterRegistry meterRegistry) {
         String meterType = spec.getReturnType();
 
@@ -216,11 +221,6 @@ public abstract class AbstractMetricsFactory implements MetricsFactory {
         return String.valueOf(arg);
     }
 
-    protected static <T> boolean isMeterMethod(Class<T> metrics, Method method) {
-        return method.getDeclaringClass() == metrics &&
-            Meter.class.isAssignableFrom(method.getReturnType());
-    }
-
     private static final class MeterSpec {
 
         private final String method;
@@ -262,15 +262,15 @@ public abstract class AbstractMetricsFactory implements MetricsFactory {
         @Override
         public int hashCode() {
             return 37 *
-                (31 * Objects.hash(method, returnType) + Arrays.hashCode(parameters)) +
-                Arrays.hashCode(args);
+                   (31 * Objects.hash(method, returnType) + Arrays.hashCode(parameters)) +
+                   Arrays.hashCode(args);
         }
 
         @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
         @Override
         public boolean equals(Object o) {
             return method.equals(((MeterSpec) o).method) &&
-                Arrays.equals(args, ((MeterSpec) o).args);
+                   Arrays.equals(args, ((MeterSpec) o).args);
         }
     }
 }

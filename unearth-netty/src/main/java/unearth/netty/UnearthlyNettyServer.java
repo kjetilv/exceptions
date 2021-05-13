@@ -22,31 +22,31 @@ import unearth.server.UnearthlyConfig;
 import unearth.server.UnearthlyServer;
 
 final class UnearthlyNettyServer implements UnearthlyServer {
-    
+
     private final NettyRunner nettyServer;
-    
+
     private final UnearthlyConfig config;
-    
+
     UnearthlyNettyServer(UnearthlyConfig config, NettyRunner nettyServer) {
         this.nettyServer = nettyServer;
         this.config = config;
     }
-    
+
     @Override
     public void start() {
         nettyServer.start();
     }
-    
+
     @Override
     public void stop() {
         nettyServer.stop();
     }
-    
+
     @Override
     public void close() {
         stop();
     }
-    
+
     @Override
     public int port() {
         return config.getPort();

@@ -27,9 +27,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class MatchSpliteratorTest {
-    
+
     static final Pattern LETTERS = Pattern.compile(".*\\d(\\w)\\d(\\w)(\\d)(\\w)\\d(\\w).*");
-    
+
     @Test
     public void test_it() {
         Matcher matcher = LETTERS.matcher("xx1a2b3c4xx");

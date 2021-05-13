@@ -31,48 +31,48 @@ import unearth.munch.id.FaultStrandId;
  * A fault strand consists of a list of {@link CauseStrand cause strand}.
  */
 public final class FaultStrand extends AbstractHashableIdentifiable<FaultStrandId> {
-    
+
     public static FaultStrand create(List<Cause> causes) {
         List<CauseStrand> causeStrands =
             causes.stream().map(Cause::getCauseStrand).collect(Collectors.toList());
         return new FaultStrand(causeStrands);
     }
-    
+
     public static FaultStrand create(Collection<CauseStrand> causeStrands) {
         return new FaultStrand(causeStrands);
     }
-    
+
     private final List<CauseStrand> causeStrands;
-    
+
     private FaultStrand(Collection<CauseStrand> causeStrands) {
         if (Objects.requireNonNull(causeStrands).isEmpty()) {
             throw new IllegalArgumentException("Expected one or more causes");
         }
         this.causeStrands = List.copyOf(causeStrands);
     }
-    
-    public List<CauseStrand> getCauseStrands() {
-        return causeStrands;
-    }
-    
+
     @Override
     public void hashTo(Consumer<byte[]> h) {
         hashables(h, causeStrands);
     }
-    
-    int getCauseCount() {
-        return causeStrands.size();
-    }
-    
+
     @Override
     protected StringBuilder withStringBody(StringBuilder sb) {
         return sb.append(causeStrands.size())
             .append(" ")
             .append(causeStrands.stream().map(Objects::toString).collect(Collectors.joining(" <= ")));
     }
-    
+
     @Override
     protected FaultStrandId id(UUID hash) {
         return new FaultStrandId(hash);
+    }
+
+    public List<CauseStrand> getCauseStrands() {
+        return causeStrands;
+    }
+
+    int getCauseCount() {
+        return causeStrands.size();
     }
 }

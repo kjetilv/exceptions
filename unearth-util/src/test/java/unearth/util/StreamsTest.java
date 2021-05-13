@@ -26,11 +26,11 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class StreamsTest {
-    
+
     @Test
     public void slice() {
         Integer[] ints = { 0, 1, 2, 3, 4, 5 };
-        
+
         assertEquals(
             Arrays.asList(2, 3),
             Streams.slice(ints, 2, 4).collect(Collectors.toList()));
@@ -38,7 +38,7 @@ public class StreamsTest {
             Arrays.asList(3, 4, 5),
             Streams.slice(ints, 3, 6).collect(Collectors.toList()));
     }
-    
+
     @Test
     public void tuplify() {
         List<Integer> ints = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7);

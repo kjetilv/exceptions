@@ -21,14 +21,14 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class ChameleonException extends Exception {
-    
+
     private final String proxiedClassName;
-    
+
     ChameleonException(String proxiedClassName, String message, Throwable cause) {
         super(message, cause, true, true);
         this.proxiedClassName = Objects.requireNonNull(proxiedClassName, "proxiedClassName");
     }
-    
+
     @Override
     public String toString() {
         return proxiedClassName + Optional.ofNullable(getMessage()).map(msg -> ": " + msg).orElse("");

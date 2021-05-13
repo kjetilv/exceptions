@@ -30,16 +30,16 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 
 class MetricsServer extends SimpleChannelInboundHandler<FullHttpRequest> {
-    
+
     private final String path;
-    
+
     private final Supplier<byte[]> metricsOut;
-    
+
     MetricsServer(String path, Supplier<byte[]> metricsOut) {
         this.path = path;
         this.metricsOut = metricsOut;
     }
-    
+
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) {
         if (msg.uri().startsWith(path)) {

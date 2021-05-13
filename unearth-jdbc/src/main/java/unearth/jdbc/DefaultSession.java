@@ -26,9 +26,9 @@ import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
 public final class DefaultSession implements Session {
-    
+
     private final Connection connection;
-    
+
     public DefaultSession(DataSource dataSource, String schema) {
         try {
             connection = dataSource.getConnection();
@@ -37,7 +37,16 @@ public final class DefaultSession implements Session {
             throw new IllegalStateException("Failed to init session", e);
         }
     }
-    
+
+    @Override
+    public void close() {
+        try {
+            connection.close();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to close: " + connection, e);
+        }
+    }
+
     @Override
     public <T> List<T> select(String sql, Set set, Sel<T> sel) {
         return withStatement(sql, (ps, stmt) -> {
@@ -47,17 +56,17 @@ public final class DefaultSession implements Session {
             return new ResImpl(ps.executeQuery()).get(sel).collect(Collectors.toList());
         });
     }
-    
+
     @Override
     public <T> Existence<T> exists(String sql, Set set, Sel<T> sel) {
         return new DefaultExistence<>(this, sql, set, sel);
     }
-    
+
     @Override
     public <T> MultiExistence<T> exists(String sql, Collection<T> items, Set set, Sel<T> selector) {
         return new DefaultMultiExistence<>(this, items, sql, set, selector);
     }
-    
+
     @Override
     public int effect(String sql, Set set) {
         return withStatement(sql, (ps, stmt) -> {
@@ -65,22 +74,13 @@ public final class DefaultSession implements Session {
             return ps.executeUpdate();
         });
     }
-    
+
     @Override
     public <T> int[] effectBatch(String sql, Collection<T> items, BatchSet<T> set) {
         return withStatement(sql, (ps, stmt) ->
             statementWithItems(ps, stmt, set, items).executeBatch());
     }
-    
-    @Override
-    public void close() {
-        try {
-            connection.close();
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to close: " + connection, e);
-        }
-    }
-    
+
     @Override
     public <T> T withStatement(String sql, Action<T> action) {
         try (PreparedStatement ps = connection.prepareCall(sql)) {
@@ -89,7 +89,7 @@ public final class DefaultSession implements Session {
             throw new IllegalStateException("Call failed: " + sql, e);
         }
     }
-    
+
     private static <T> PreparedStatement statementWithItems(
         PreparedStatement ps,
         Stmt stmt,
@@ -106,7 +106,7 @@ public final class DefaultSession implements Session {
         });
         return ps;
     }
-    
+
     private static void addBatch(PreparedStatement ps) {
         try {
             ps.addBatch();

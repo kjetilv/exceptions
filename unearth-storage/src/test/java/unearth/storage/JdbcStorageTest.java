@@ -45,6 +45,7 @@ import javax.sql.DataSource;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import unearth.core.FaultFeed;
 import unearth.core.FaultStats;
@@ -60,6 +61,7 @@ import unearth.util.IO;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Ignore
 public class JdbcStorageTest {
 
     private FaultStorage storage;

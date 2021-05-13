@@ -79,13 +79,13 @@ public final class SimpleNettyRequest extends AbstractRequest {
     @Override
     public boolean equals(Object o) {
         return this == o || o instanceof SimpleNettyRequest &&
-            Objects.equals(httpRequest, ((SimpleNettyRequest) o).httpRequest);
+                            Objects.equals(httpRequest, ((SimpleNettyRequest) o).httpRequest);
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[" +
-            httpRequest.method() + " " + httpRequest.uri() +
-            "]";
+               httpRequest.method() + " " + httpRequest.uri() +
+               "]";
     }
 }

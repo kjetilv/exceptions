@@ -24,15 +24,15 @@ import unearth.munch.id.FeedEntryId;
 
 @SuppressWarnings("unused")
 public final class FeedEntry extends AbstractHashableIdentifiable<FeedEntryId> {
-    
+
     private final FaultEvent faultEvent;
-    
+
     private final Long globalSequenceNo;
-    
+
     private final Long faultStrandSequenceNo;
-    
+
     private final Long faultSequenceNo;
-    
+
     public FeedEntry(
         FaultEvent faultEvent,
         long globalSequenceNo,
@@ -44,27 +44,46 @@ public final class FeedEntry extends AbstractHashableIdentifiable<FeedEntryId> {
         this.faultStrandSequenceNo = faultStrandSequenceNo;
         this.faultSequenceNo = faultSequenceNo;
     }
-    
+
+    @Override
+    public void hashTo(Consumer<byte[]> h) {
+        hash(h, faultSequenceNo, faultStrandSequenceNo, globalSequenceNo);
+        hash(h, faultEvent);
+    }
+
+    @Override
+    protected FeedEntryId id(UUID hash) {
+        return new FeedEntryId(hash);
+    }
+
+    @Override
+    protected StringBuilder withStringBody(StringBuilder sb) {
+        return faultEvent.withStringBody(sb)
+            .append(" g#").append(globalSequenceNo)
+            .append(" ft#").append(faultStrandSequenceNo)
+            .append(" f#").append(faultSequenceNo);
+    }
+
     public FaultEvent getFaultEvent() {
         return faultEvent;
     }
-    
+
     public Long getGlobalSequenceNo() {
         return globalSequenceNo;
     }
-    
+
     public Long getFaultStrandSequenceNo() {
         return faultStrandSequenceNo;
     }
-    
+
     public Long getFaultSequenceNo() {
         return faultSequenceNo;
     }
-    
+
     public boolean isSequenced() {
         return globalSequenceNo >= 0;
     }
-    
+
     public FeedEntry sequence(
         long globalSequenceNo,
         long faultStrandSequenceNo,
@@ -77,26 +96,7 @@ public final class FeedEntry extends AbstractHashableIdentifiable<FeedEntryId> {
             valid(faultSequenceNo)
         );
     }
-    
-    @Override
-    public void hashTo(Consumer<byte[]> h) {
-        hash(h, faultSequenceNo, faultStrandSequenceNo, globalSequenceNo);
-        hash(h, faultEvent);
-    }
-    
-    @Override
-    protected FeedEntryId id(UUID hash) {
-        return new FeedEntryId(hash);
-    }
-    
-    @Override
-    protected StringBuilder withStringBody(StringBuilder sb) {
-        return faultEvent.withStringBody(sb)
-            .append(" g#").append(globalSequenceNo)
-            .append(" ft#").append(faultStrandSequenceNo)
-            .append(" f#").append(faultSequenceNo);
-    }
-    
+
     private static Long valid(long seqNo) {
         if (seqNo < 0) {
             throw new IllegalArgumentException("Invalid seqNo: " + seqNo);

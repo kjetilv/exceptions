@@ -20,13 +20,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 final class MostlyOnce<T> extends AbstractSupplier<T> {
-    
+
     private final AtomicReference<T> value = new AtomicReference<>();
-    
+
     MostlyOnce(Supplier<T> supplier) {
         super(supplier);
     }
-    
+
     @Override
     protected T get(Supplier<T> supplier, boolean required) {
         return value.updateAndGet(v -> v == null && required ? supplier.get() : v);

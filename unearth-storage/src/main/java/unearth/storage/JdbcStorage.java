@@ -159,8 +159,8 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         return count <= 0 ? Collections.emptyList()
             : loadFaultEvents(
                 "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
-                    "  from feed_entry " +
-                    "  where global_seq > ? limit ?",
+                "  from feed_entry " +
+                "  where global_seq > ? limit ?",
                 stmt -> stmt
                     .set(offset)
                     .set(count));
@@ -171,8 +171,8 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         return count <= 0 ? Collections.emptyList()
             : loadFaultEvents(
                 "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
-                    "   from feed_entry" +
-                    "   where fault_strand = ? and global_seq > ? limit ?",
+                "   from feed_entry" +
+                "   where fault_strand = ? and global_seq > ? limit ?",
                 stmt -> stmt.set(id)
                     .set(offset)
                     .set(count));
@@ -183,8 +183,8 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
         return count <= 0 ? Collections.emptyList()
             : loadFaultEvents(
                 "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
-                    "  from feed_entry" +
-                    "  where fault = ? and global_seq > ? limit ?",
+                "  from feed_entry" +
+                "  where fault = ? and global_seq > ? limit ?",
                 stmt -> stmt.set(id)
                     .set(offset)
                     .set(count));
@@ -252,11 +252,11 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     private List<FeedEntry> getFaultEntries(Id id, Instant sinceTime, Duration period) {
         return inSession(session -> session.select(
             "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq from feed_entry" +
-                (id == null ? "" : " where " + (id instanceof FaultId ? "fault" : "fault_strand") + " = ?") +
-                (sinceTime == null ? ""
-                    : " and time > ?" + (
-                        period == null ? ""
-                            : " and time <= ? ")),
+            (id == null ? "" : " where " + (id instanceof FaultId ? "fault" : "fault_strand") + " = ?") +
+            (sinceTime == null ? ""
+                : " and time > ?" + (
+                    period == null ? ""
+                        : " and time <= ? ")),
             stmt -> forPeriod(
                 sinceTime(id == null ? stmt : stmt.set(id), sinceTime),
                 sinceTime,
@@ -282,7 +282,9 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     }
 
     private void store(Fault fault, Session session) {
-        metrics.writes(Fault.class);
+        if (metrics != null) {
+            metrics.writes(Fault.class);
+        }
         log.debug("Storing {}", fault);
         Outcome faultStrandOutcome = storeFaultStrand(fault.getFaultStrand(), session);
         if (inserted(faultStrandOutcome)) {
@@ -321,14 +323,18 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     }
 
     private FeedEntry store(Session session, FaultEvent event) {
-        metrics.writes(FaultEvent.class);
+        if (metrics != null) {
+            metrics.writes(FaultEvent.class);
+        }
         FeedEntry entry = new FeedEntry(
             event,
             updateGlobalSeq(session),
             updateFaultStrandSeq(session, event.getFaultStrandId()),
             updateFaultSeq(session, event.getFaultId()));
-        metrics.writeTimer(FaultEvent.class).record(() ->
-            saveFeedEntry(session, entry));
+        if (metrics != null) {
+            metrics.writeTimer(FaultEvent.class).record(() ->
+                saveFeedEntry(session, entry));
+        }
         return entry;
     }
 
@@ -404,8 +410,8 @@ public class JdbcStorage implements FaultStorage, FaultFeed, FaultStats {
     private static List<FeedEntry> loadFeedEntries(FaultId id, Session session) {
         return session.select(
             "select fault, fault_strand, time, global_seq, fault_strand_seq, fault_seq" +
-                " from feed_entry" +
-                " where fault = ? and time > ? order by fault_seq desc limit 1",
+            " from feed_entry" +
+            " where fault = ? and time > ? order by fault_seq desc limit 1",
             stmt -> stmt.set(id),
             Sql::readFeedEntry);
     }

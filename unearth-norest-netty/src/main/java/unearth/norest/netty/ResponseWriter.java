@@ -32,7 +32,7 @@ import io.netty.handler.codec.http.HttpVersion;
 import unearth.norest.common.Response;
 
 public final class ResponseWriter extends ChannelOutboundHandlerAdapter {
-    
+
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if (msg instanceof Response) {
@@ -41,7 +41,7 @@ public final class ResponseWriter extends ChannelOutboundHandlerAdapter {
             super.write(ctx, msg, promise);
         }
     }
-    
+
     private static HttpResponse httpResponse(Response msg) {
         byte[] bytes = msg.getEntity();
         ByteBuf content = Unpooled.wrappedBuffer(bytes);

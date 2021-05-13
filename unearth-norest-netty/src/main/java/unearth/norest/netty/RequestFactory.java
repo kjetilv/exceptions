@@ -21,6 +21,6 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import unearth.norest.common.Request;
 
 public interface RequestFactory {
-    
+
     Request create(FullHttpRequest httpRequest);
 }
