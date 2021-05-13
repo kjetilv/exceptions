@@ -29,7 +29,7 @@ import java.util.function.Supplier;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -81,7 +81,8 @@ public final class NettyRunner {
             RequestFactory requestFactory = httpRequest ->
                 new SimpleNettyRequest(httpRequest, clock.instant());
             MetricsTracker metricsTracker =
-                new MetricsTracker(clock::instant, () -> metricsFactory.instantiate(Metrics.class));
+                new MetricsTracker(clock::instant, () ->
+                    metricsFactory.instantiate(Metrics.class));
             Filter filter = new Filter(
                 new RateLimiter<>(
                     clock::instant,
@@ -94,29 +95,22 @@ public final class NettyRunner {
                         HttpVersion.HTTP_1_1,
                         HttpResponseStatus.TOO_MANY_REQUESTS));
 
-            ChannelInitializer<Channel> childHandler = new ChannelInitializer<>() {
-
-                @Override
-                protected void initChannel(Channel ch) {
-                    ch.pipeline().addLast(
-                        new HttpServerCodec(),
-                        new HttpObjectAggregator(MAX_CONTENT_LENGTH),
-                        new Slasher(),
-                        new HealthServer(HEALTH_PATH, () -> Health.OK),
-                        new MetricsServer(METRICS_PATH, metricsOut),
-                        new RequestReader(requestFactory),
-                        new ResponseWriter(),
-                        filter,
-                        metricsTracker.getOutbound(),
-                        metricsTracker.getInbound(),
-                        api,
-                        new ErrorHandler());
-                }
-            };
+            ChannelHandler[] channelHandlers = { new HttpServerCodec(),
+                new HttpObjectAggregator(MAX_CONTENT_LENGTH),
+                new Slasher(),
+                new HealthServer(HEALTH_PATH, () -> Health.OK),
+                new MetricsServer(METRICS_PATH, metricsOut),
+                new RequestReader(requestFactory),
+                new ResponseWriter(),
+                filter,
+                metricsTracker.getOutbound(),
+                metricsTracker.getInbound(),
+                api,
+                new ErrorHandler() };
 
             ChannelFuture bindFuture = new ServerBootstrap()
                 .group(listen.get(), work.get())
-                .childHandler(childHandler)
+                .childHandler(new Initializer(channelHandlers))
                 .channel(NioServerSocketChannel.class)
                 .option(CONNECT_TIMEOUT_MILLIS, 10_000)
                 .handler(new LoggingHandler(LogLevel.DEBUG))

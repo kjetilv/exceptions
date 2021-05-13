@@ -23,6 +23,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -76,6 +77,8 @@ public final class Main {
 
         new Unearth().startJavaServer(metricsFactory, (resources, configuration) -> {
 
+            Map<IO.ContentType, IOHandler> handlers = handlers();
+            Collection<Transformer<?>> transformers = transformers();
             NettyApi apiRouter = new NettyApi(
                 configuration.getPrefix(),
                 new ApiInvoker<>(
@@ -83,8 +86,8 @@ public final class Main {
                     new DefaultUnearthlyApi(
                         resources, new
                         UnearthlyRenderer(configuration.getPrefix())),
-                    handlers(),
-                    transformers()));
+                    handlers,
+                    transformers));
 
             NettyRunner nettyServer = new NettyRunner(
                 configuration.getPort(),

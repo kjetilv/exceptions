@@ -25,11 +25,10 @@ public final class Apply {
         Map<F, Pair<Long, T>> memo = new ConcurrentHashMap<>();
         return f -> memo.computeIfAbsent(f, __ -> {
             try {
-                return Pair.of(
-                    time == null
-                        ? System.currentTimeMillis()
-                        : time.get(),
-                    fun.apply(f));
+                long t = time == null
+                    ? System.currentTimeMillis()
+                    : time.get();
+                return Pair.of(t, fun.apply(f));
             } finally {
                 clearOld(size, memo);
             }

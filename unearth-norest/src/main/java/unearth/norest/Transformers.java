@@ -16,8 +16,8 @@
  */
 package unearth.norest;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -31,7 +31,7 @@ public final class Transformers {
 
     private final Map<Class<?>, Transformer<?>> transformers;
 
-    public Transformers(List<Transformer<?>> transformers) {
+    public Transformers(Collection<Transformer<?>> transformers) {
         this.transformers = transformers == null || transformers.isEmpty()
             ? Collections.emptyMap()
             : allTransformers(transformers);
@@ -76,7 +76,7 @@ public final class Transformers {
 
     ).collect(Collectors.toMap(Transformer::getType, Function.identity()));
 
-    private static Map<Class<?>, Transformer<?>> allTransformers(List<Transformer<?>> transformers) {
+    private static Map<Class<?>, Transformer<?>> allTransformers(Collection<Transformer<?>> transformers) {
         Map<Class<?>, Transformer<?>> added = transformers == null || transformers.isEmpty()
             ? Collections.emptyMap()
             : transformers.stream()

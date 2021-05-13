@@ -16,7 +16,7 @@
  */
 package unearth.norest.server;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -38,7 +38,7 @@ public final class ApiInvoker<A> {
         Class<A> type,
         A impl,
         Map<IO.ContentType, IOHandler> handlers,
-        List<Transformer<?>> transformers
+        Collection<Transformer<?>> transformers
     ) {
         this.impl = Objects.requireNonNull(impl, "impl");
         this.serverSideMethods = new ServerSideMethods<>(

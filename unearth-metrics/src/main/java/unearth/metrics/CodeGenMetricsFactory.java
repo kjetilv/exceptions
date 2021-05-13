@@ -17,6 +17,7 @@
 
 package unearth.metrics;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
@@ -50,7 +51,8 @@ public class CodeGenMetricsFactory extends AbstractMetricsFactory {
     public CodeGenMetricsFactory(MeterRegistry meterRegistry) {
         super(meterRegistry);
         this.meterRegistry = Objects.requireNonNull(meterRegistry, "meterRegistry");
-        this.instantiator = Apply.memoized(metrics -> inst(metrics, this.meterRegistry));
+        this.instantiator = Apply.memoized(metrics ->
+            inst(metrics, this.meterRegistry));
     }
 
     @Override
@@ -69,31 +71,31 @@ public class CodeGenMetricsFactory extends AbstractMetricsFactory {
     private static Method getMethod(String method) {
         try {
             return AbstractMetricsFactory.class.getDeclaredMethod(
-                method, Class.class, Method.class, Object.class.arrayType()
-            );
+                method, Class.class, Method.class, Object.class.arrayType());
         } catch (Exception e) {
             throw new IllegalStateException("Could not reflect upon own method: " + method, e);
         }
     }
 
-    private static Object inst(Class<?> metrics, MeterRegistry meterRegistry) {
-        Class<?> obj = load(
-            withMethods(
-                metrics,
-                new ByteBuddy()
-                    .subclass(AbstractMetricsFactory.class)
-                    .implement(metrics)));
-        Object object;
+    private static <T> T inst(Class<T> metrics, MeterRegistry meterRegistry) {
+        DynamicType.Builder<AbstractMetricsFactory> implement = new ByteBuddy()
+            .subclass(AbstractMetricsFactory.class)
+            .implement(metrics);
+        DynamicType.Builder<AbstractMetricsFactory> withMethods = withMethods(metrics, implement);
+        Class<?> generatedClass = load(withMethods);
+        return createMetrics(metrics, meterRegistry, generatedClass);
+    }
+
+    private static <T> T createMetrics(Class<T> metrics, MeterRegistry meterRegistry, Class<?> generatedClass) {
         try {
-            object = obj.getConstructor(MeterRegistry.class)
-                .newInstance(meterRegistry);
+            Constructor<?> constructor = generatedClass.getConstructor(MeterRegistry.class);
+            return metrics.cast(constructor.newInstance(meterRegistry));
         } catch (Exception e) {
             throw new IllegalStateException("Failed to buddy up " + metrics, e);
         }
-        return metrics.cast(object);
     }
 
-    private static DynamicType.Builder<?> withMethods(Class<?> metrics, DynamicType.Builder<?> builder) {
+    private static <T> DynamicType.Builder<T> withMethods(Class<?> metrics, DynamicType.Builder<T> builder) {
         return Arrays.stream(metrics.getMethods()).reduce(
             builder,
             (b, m) ->

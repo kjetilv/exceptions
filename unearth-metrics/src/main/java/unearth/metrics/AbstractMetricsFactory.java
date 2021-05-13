@@ -29,14 +29,13 @@ import java.util.stream.IntStream;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
-import io.micrometer.core.instrument.FunctionCounter;
-import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.LongTaskTimer;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 
+@SuppressWarnings("unused")
 public abstract class AbstractMetricsFactory implements MetricsFactory {
 
     private final MeterRegistry meterRegistry;
@@ -84,20 +83,6 @@ public abstract class AbstractMetricsFactory implements MetricsFactory {
                 newDistributionSummary(spec, metrics, meterRegistry));
     }
 
-    protected <T> Gauge getGauge(Class<T> metrics, Method method, Object... args) {
-        return (Gauge) meters.computeIfAbsent(
-            meterSpec(method, args),
-            spec ->
-                newGauge(spec, metrics, meterRegistry));
-    }
-
-    protected <T> FunctionCounter getFunctionCounter(Class<T> metrics, Method method, Object... args) {
-        return (FunctionCounter) meters.computeIfAbsent(
-            meterSpec(method, args),
-            spec ->
-                newFunctionCounter(spec, metrics, meterRegistry));
-    }
-
     private MeterSpec meterSpec(Method method, Object[] args) {
         String name = method.getName();
         String returnType = method.getReturnType().getName();
@@ -114,9 +99,6 @@ public abstract class AbstractMetricsFactory implements MetricsFactory {
     private static final String LONG_TASK_TIMER = LongTaskTimer.class.getName();
 
     private static final String DISTRIBUTION_SUMMARY = DistributionSummary.class.getName();
-
-    private static final String GAUGE = Gauge.class.getName();
-
     private static final String FUNCTION_COUNTER = FunctionCounter.class.getName();
 
     protected static <T> boolean isMeterMethod(Class<T> metrics, Method method) {
@@ -124,6 +106,7 @@ public abstract class AbstractMetricsFactory implements MetricsFactory {
                Meter.class.isAssignableFrom(method.getReturnType());
     }
 
+    @SuppressWarnings("DuplicatedCode")
     private static <T> Meter newMeter(MeterSpec spec, Class<T> metrics, MeterRegistry meterRegistry) {
         String meterType = spec.getReturnType();
 
@@ -139,30 +122,7 @@ public abstract class AbstractMetricsFactory implements MetricsFactory {
         if (meterType.equals(DISTRIBUTION_SUMMARY)) {
             return newDistributionSummary(spec, metrics, meterRegistry);
         }
-        if (meterType.equals(GAUGE)) {
-            return newGauge(spec, metrics, meterRegistry);
-        }
-        if (meterType.equals(FUNCTION_COUNTER)) {
-            return newFunctionCounter(spec, metrics, meterRegistry);
-        }
         throw new IllegalStateException("Unsupported method: " + spec.getMethod());
-    }
-
-    private static <T> FunctionCounter newFunctionCounter(
-        MeterSpec spec,
-        Class<T> metrics,
-        MeterRegistry meterRegistry
-    ) {
-        //noinspection ConstantConditions
-        return FunctionCounter.builder(name(spec, metrics), null, null)
-            .tags(tags(spec))
-            .register(meterRegistry);
-    }
-
-    private static <T> Gauge newGauge(MeterSpec spec, Class<T> metrics, MeterRegistry meterRegistry) {
-        return Gauge.builder(name(spec, metrics), null, null)
-            .tags(tags(spec))
-            .register(meterRegistry);
     }
 
     private static <T> DistributionSummary newDistributionSummary(

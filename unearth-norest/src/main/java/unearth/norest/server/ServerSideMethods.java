@@ -40,8 +40,7 @@ final class ServerSideMethods<A> {
     ServerSideMethods(Class<A> api, IO io, Transformers transformers) {
         this.io = Objects.requireNonNull(io, "io");
         this.transformers = Objects.requireNonNull(transformers, "transformers");
-        Objects.requireNonNull(api, "api");
-        this.serverSideMethods = Arrays.stream(api.getMethods())
+        this.serverSideMethods = Arrays.stream(Objects.requireNonNull(api, "api").getMethods())
             .map(method ->
                 toServerSideMethod(method, this.transformers))
             .collect(Collectors.toList());
