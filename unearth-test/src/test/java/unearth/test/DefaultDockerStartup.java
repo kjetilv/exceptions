@@ -17,22 +17,52 @@
 
 package unearth.test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Duration;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.exporter.common.TextFormat;
 import org.testcontainers.containers.GenericContainer;
 import unearth.analysis.CassandraInit;
+import unearth.api.UnearthlyApi;
+import unearth.api.dto.CauseIdDto;
+import unearth.api.dto.CauseStrandIdDto;
+import unearth.api.dto.FaultIdDto;
+import unearth.api.dto.FaultStrandIdDto;
+import unearth.api.dto.FeedEntryIdDto;
 import unearth.client.UnearthlyClient;
-import unearth.http4k.Http4kServer;
-import unearth.metrics.CodeGenMetricsFactory;
 import unearth.metrics.MetricsFactory;
+import unearth.netty.UnearthlyNettyServer;
+import unearth.norest.IO;
+import unearth.norest.IOHandler;
+import unearth.norest.Transformer;
+import unearth.norest.common.JacksonIOHandler;
+import unearth.norest.common.StringIOHandler;
+import unearth.norest.netty.NettyApi;
+import unearth.norest.netty.NettyRunner;
+import unearth.norest.server.ApiInvoker;
+import unearth.server.DefaultUnearthlyApi;
 import unearth.server.State;
 import unearth.server.Unearth;
 import unearth.server.UnearthlyCassandraConfig;
 import unearth.server.UnearthlyConfig;
 import unearth.server.UnearthlyDbConfig;
 import unearth.server.UnearthlyRenderer;
+
+import static unearth.norest.IO.ContentType.APPLICATION_JSON;
+import static unearth.norest.IO.ContentType.TEXT_PLAIN;
 
 @SuppressWarnings({ "FieldCanBeLocal", "WeakerAccess", "SameParameterValue" })
 public final class DefaultDockerStartup implements DockerStartup {
@@ -47,7 +77,7 @@ public final class DefaultDockerStartup implements DockerStartup {
 
     private final AtomicReference<CassandraInit> cassandraInit = new AtomicReference<>();
 
-    DefaultDockerStartup() {
+    public DefaultDockerStartup() {
         CompletableFuture<UnearthlyCassandraConfig> cassandraFuture = CompletableFuture
             .supplyAsync(DefaultDockerStartup::startCassandra)
             .whenComplete((genericContainer, e) -> cassandraContainer.set(genericContainer))
@@ -82,17 +112,45 @@ public final class DefaultDockerStartup implements DockerStartup {
                     dbConfig))
             .thenApply(Unearth::new);
 
-        MetricsFactory metricsFactory = CodeGenMetricsFactory.DEFAULT;
+        CollectorRegistry registry = new CollectorRegistry(true);
+        MetricsFactory metricsFactory = MetricsFactory.DEFAULT;
+        Supplier<byte[]> metricsOut = () -> {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            try (Writer writer = new OutputStreamWriter(byteArrayOutputStream, StandardCharsets.UTF_8)) {
+                TextFormat.write004(writer, registry.metricFamilySamples());
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+            return byteArrayOutputStream.toByteArray();
+        };
 
         CompletableFuture<UnearthlyClient> client = unearthFuture
             .thenApply(unearth ->
                 unearth.startJavaServer(
                     metricsFactory,
-                    (unearthlyController, unearthlyConfig) ->
-                        new Http4kServer(
-                            unearthlyController,
-                            unearthlyConfig,
-                            new UnearthlyRenderer(unearthlyConfig.getPrefix()))))
+                    (resources, configuration) -> {
+
+                        Map<IO.ContentType, IOHandler> handlers = handlers();
+                        Collection<Transformer<?>> transformers = transformers();
+                        NettyApi apiRouter = new NettyApi(
+                            configuration.getPrefix(),
+                            new ApiInvoker<>(
+                                UnearthlyApi.class,
+                                new DefaultUnearthlyApi(
+                                    resources, new
+                                    UnearthlyRenderer(configuration.getPrefix())),
+                                handlers,
+                                transformers));
+
+                        NettyRunner nettyServer = new NettyRunner(
+                            configuration.getPort(),
+                            apiRouter,
+                            metricsFactory,
+                            metricsOut,
+                            Clock.systemDefaultZone());
+
+                        return new UnearthlyNettyServer(configuration, nettyServer);
+                    }))
             .whenComplete((state, throwable) ->
                 this.state.set(state))
             .thenApply(State::url)
@@ -138,6 +196,21 @@ public final class DefaultDockerStartup implements DockerStartup {
     private static final String POSTGRES_IMAGE = "postgres:12";
 
     private static final String DATACENTER = "datacenter1";
+
+    private static Map<IO.ContentType, IOHandler> handlers() {
+        return Map.of(
+            APPLICATION_JSON, JacksonIOHandler.withDefaults(new ObjectMapper()),
+            TEXT_PLAIN, new StringIOHandler(StandardCharsets.UTF_8));
+    }
+
+    private static List<Transformer<?>> transformers() {
+        return List.of(
+            Transformer.from(FaultIdDto.class, FaultIdDto::new),
+            Transformer.from(FaultStrandIdDto.class, FaultStrandIdDto::new),
+            Transformer.from(CauseIdDto.class, CauseIdDto::new),
+            Transformer.from(CauseStrandIdDto.class, CauseStrandIdDto::new),
+            Transformer.from(FeedEntryIdDto.class, FeedEntryIdDto::new));
+    }
 
     private static GenericContainer<?> startCassandra() {
 

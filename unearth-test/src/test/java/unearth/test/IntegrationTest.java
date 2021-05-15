@@ -54,7 +54,9 @@ public class IntegrationTest {
 
     @AfterClass
     public static void down() {
-        dockerStartup.close();
+        if (dockerStartup != null) {
+            dockerStartup.close();
+        }
     }
 
     private static DockerStartup dockerStartup;

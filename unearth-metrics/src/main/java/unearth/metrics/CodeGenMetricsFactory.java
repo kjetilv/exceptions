@@ -17,107 +17,118 @@
 
 package unearth.metrics;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.LongTaskTimer;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleConfig;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.implementation.MethodCall;
+import net.bytebuddy.matcher.ElementMatcher;
 import unearth.util.once.Apply;
 
+import static net.bytebuddy.matcher.ElementMatchers.isMethod;
 import static net.bytebuddy.matcher.ElementMatchers.isPublic;
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static net.bytebuddy.matcher.ElementMatchers.returns;
 
-public class CodeGenMetricsFactory extends AbstractMetricsFactory {
+class CodeGenMetricsFactory extends AbstractMetricsFactory {
 
-    public static final CodeGenMetricsFactory DEFAULT = new CodeGenMetricsFactory(
-        new SimpleMeterRegistry(SimpleConfig.DEFAULT, Clock.SYSTEM));
-
-    private final MeterRegistry meterRegistry;
-
-    private final Function<Class<?>, Object> instantiator;
+    private final Function<Class<?>, Object> memoizedInstantiator = Apply.memoized(this::newInstance);
 
     public CodeGenMetricsFactory(MeterRegistry meterRegistry) {
-        super(meterRegistry);
-        this.meterRegistry = Objects.requireNonNull(meterRegistry, "meterRegistry");
-        this.instantiator = Apply.memoized(metrics ->
-            inst(metrics, this.meterRegistry));
+        this(meterRegistry, null);
+    }
+
+    private CodeGenMetricsFactory(MeterRegistry meterRegistry, MetricNamer namer) {
+        super(meterRegistry, namer);
+    }
+
+    @Override
+    public CodeGenMetricsFactory withNamer(MetricNamer metricNamer) {
+        return new CodeGenMetricsFactory(
+            getMeterRegistry(),
+            Objects.requireNonNull(metricNamer, "metricNamer"));
     }
 
     @Override
     public <T> T instantiate(Class<T> metrics) {
-        return metrics.cast(instantiator.apply(metrics));
+        return metrics.cast(memoizedInstantiator.apply(metrics));
     }
 
-    private static final Map<String, MethodCall> SUPER_CALLS =
-        Stream.of("Timer", "Counter", "Gauge", "DistributionSummary", "FunctionCounter", "LongTaskTimer")
-            .collect(Collectors.toMap(
-                Function.identity(),
-                name ->
-                    MethodCall.invoke(getMethod("get" + name)).onSuper()
-            ));
-
-    private static Method getMethod(String method) {
+    private Object newInstance(Class<?> metricsInterface) {
+        Class<?> generatedClass = generate(metricsInterface);
         try {
-            return AbstractMetricsFactory.class.getDeclaredMethod(
-                method, Class.class, Method.class, Object.class.arrayType());
+            return generatedClass.getConstructor(MeterRegistry.class, MetricNamer.class)
+                .newInstance(getMeterRegistry(), getMetricNamer());
         } catch (Exception e) {
-            throw new IllegalStateException("Could not reflect upon own method: " + method, e);
+            throw new IllegalStateException(
+                "Failed to implement " + metricsInterface + ": " + generatedClass, e);
         }
     }
 
-    private static <T> T inst(Class<T> metrics, MeterRegistry meterRegistry) {
-        DynamicType.Builder<AbstractMetricsFactory> implement = new ByteBuddy()
-            .subclass(AbstractMetricsFactory.class)
-            .implement(metrics);
-        DynamicType.Builder<AbstractMetricsFactory> withMethods = withMethods(metrics, implement);
-        Class<?> generatedClass = load(withMethods);
-        return createMetrics(metrics, meterRegistry, generatedClass);
-    }
-
-    private static <T> T createMetrics(Class<T> metrics, MeterRegistry meterRegistry, Class<?> generatedClass) {
-        try {
-            Constructor<?> constructor = generatedClass.getConstructor(MeterRegistry.class);
-            return metrics.cast(constructor.newInstance(meterRegistry));
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to buddy up " + metrics, e);
-        }
-    }
-
-    private static <T> DynamicType.Builder<T> withMethods(Class<?> metrics, DynamicType.Builder<T> builder) {
-        return Arrays.stream(metrics.getMethods()).reduce(
-            builder,
-            (b, m) ->
-                b.method(named(m.getName())
-                    .and(returns(m.getReturnType()))
-                    .and(isPublic()))
-                    .intercept(methodCall(m)
-                        .with(metrics, m)
-                        .withArgumentArray()),
-            (b1, b2) -> {
-                throw new IllegalStateException("No combine " + b1 + "/" + b2);
-            });
-    }
-
-    private static Class<?> load(DynamicType.Builder<?> builder) {
-        return builder
-            .make()
+    private Class<?> generate(Class<?> metricsInterface) {
+        return methods(metricsInterface).reduce(
+            new ByteBuddy()
+                .subclass(AbstractMetricsFactory.class)
+                .implement(metricsInterface),
+            this::addMethod,
+            NO_COMBINE
+        ).make()
             .load(Thread.currentThread().getContextClassLoader())
             .getLoaded();
     }
 
+    private DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<AbstractMetricsFactory> addMethod(
+        DynamicType.Builder<AbstractMetricsFactory> bld,
+        Method mth
+    ) {
+        return bld.method(publicMethod(mth)).intercept(methodCall(mth.getDeclaringClass(), mth));
+    }
+
+    private Stream<Method> methods(Class<?> metricsInterface) {
+        return Arrays.stream(metricsInterface.getMethods());
+    }
+
+    private MethodCall methodCall(Class<?> metricsInterface, Method method) {
+        return methodCall(method)
+            .with(metricsInterface, method)
+            .withArgumentArray();
+    }
+
+    private ElementMatcher.Junction<MethodDescription> publicMethod(Method mthd) {
+        return named(mthd.getName())
+            .and(returns(mthd.getReturnType()))
+            .and(isPublic());
+    }
+
+    private static final BinaryOperator<DynamicType.Builder<AbstractMetricsFactory>>
+        NO_COMBINE =
+        (b1, b2) -> {
+            throw new IllegalStateException("No combine " + b1 + "/" + b2);
+        };
+
+    private static final Map<Class<? extends Meter>, MethodCall> SUPER_CALLS =
+        Stream.of(Meter.class, Timer.class, Counter.class, DistributionSummary.class, LongTaskTimer.class)
+            .collect(Collectors.toMap(Function.identity(), CodeGenMetricsFactory::getCall));
+
+    private static MethodCall getCall(Class<? extends Meter> type) {
+        return MethodCall.invoke(named("get" + type.getSimpleName()).and(isMethod())).onSuper();
+    }
+
     private static MethodCall methodCall(Method m) {
-        return SUPER_CALLS.get(m.getReturnType().getSimpleName());
+        return SUPER_CALLS.get(m.getReturnType());
     }
 }

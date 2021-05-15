@@ -31,9 +31,14 @@ dependencies {
     testImplementation(project(":unearth-server"))
     testImplementation(project(":unearth-client"))
     testImplementation(project(":unearth-norest"))
+    testImplementation(project(":unearth-metrics"))
 
     testImplementation(project(":unearth-netty"))
-//    testImplementation(project(":unearth-http4k"))
+    testImplementation(project(":unearth-norest-netty"))
+
+    testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
+    testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    testImplementation("io.micrometer:micrometer-registry-prometheus")
 
     testImplementation("org.testcontainers:cassandra")
 
@@ -41,6 +46,5 @@ dependencies {
     testRuntimeOnly("org.webjars:swagger-ui")
     testRuntimeOnly("io.dropwizard.metrics:metrics-jmx")
     testRuntimeOnly("ch.qos.logback:logback-classic")
-
     testRuntimeOnly(kotlin("stdlib"))
 }

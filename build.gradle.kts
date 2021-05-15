@@ -18,8 +18,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val jacksonVer = "2.12.0"
-val http4kVer = "3.284.0"
-val micrometerVer = "1.6.2"
+val micrometerVer = "1.7.0"
 val konfigVer = "1.6.10.0"
 val nettyVer = "4.1.56.Final"
 val swaggerVer = "2.1.4"
@@ -28,8 +27,8 @@ val cassandraDriverVer = "4.9.0"
 val metricsVer = "4.1.0"
 val flywayVer = "7.3.0"
 val slf4jVer = "1.7.30"
-val hikariVer = "3.4.5"
-val postgresJdbcVer = "42.2.6.jre7"
+val hikariVer = "4.0.3"
+val postgresJdbcVer = "42.2.20"
 val junitVer = "4.12"
 val jupiterVer = "5.3.1"
 val swaggerUiVer = "3.38.0"
@@ -38,7 +37,7 @@ val testcontainersVer = "1.15.1"
 val hsqldbVer = "2.5.1"
 val assertjVer = "3.13.2"
 val shadowVer = "6.1.0"
-val bytebuddyVer = "1.10.19"
+val bytebuddyVer = "1.11.0"
 
 plugins {
     kotlin("jvm") version "1.4.20"
@@ -60,8 +59,8 @@ allprojects {
     }
 
     configure<JavaPluginExtension> {
-        sourceCompatibility = JavaVersion.VERSION_15
-        targetCompatibility = JavaVersion.VERSION_15
+        sourceCompatibility = JavaVersion.VERSION_16
+        targetCompatibility = JavaVersion.VERSION_16
         modularity.inferModulePath.set(true)
         withSourcesJar()
     }
@@ -71,7 +70,6 @@ allprojects {
 
     repositories {
         mavenCentral()
-        jcenter()
         google()
     }
 
@@ -96,17 +94,11 @@ allprojects {
         }
     }
 
-    fun http4k(dep: String) = "org.http4k:http4k-$dep:$http4kVer"
     fun jackson(type: String, value: String) = "com.fasterxml.jackson.$type:jackson-$type-$value:$jacksonVer"
     fun cassandra(dep: String) = "com.datastax.oss:java-driver-$dep:$cassandraDriverVer"
 
     dependencies {
         constraints {
-            implementation(http4k("core"))
-            implementation(http4k("contract"))
-            implementation(http4k("format-jackson"))
-            implementation(http4k("server-netty"))
-
             implementation("io.netty:netty-all:$nettyVer")
             implementation("com.natpryce:konfig:$konfigVer")
 
@@ -142,7 +134,6 @@ allprojects {
 
             runtimeOnly("org.hsqldb:hsqldb:$hsqldbVer")
 
-            testImplementation("org.http4k:http4k-client-apache:$http4kVer")
             testImplementation("junit:junit:$junitVer")
             testImplementation("org.junit.jupiter:junit-jupiter-api:$jupiterVer")
             testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$jupiterVer")

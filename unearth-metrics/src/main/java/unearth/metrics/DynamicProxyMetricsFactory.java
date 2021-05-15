@@ -20,19 +20,26 @@ package unearth.metrics;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Objects;
 
-import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleConfig;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 public class DynamicProxyMetricsFactory extends AbstractMetricsFactory {
 
-    public static final DynamicProxyMetricsFactory DEFAULT = new DynamicProxyMetricsFactory(
-        new SimpleMeterRegistry(SimpleConfig.DEFAULT, Clock.SYSTEM));
-
     public DynamicProxyMetricsFactory(MeterRegistry meterRegistry) {
-        super(meterRegistry);
+        this(meterRegistry, null);
+    }
+
+    private DynamicProxyMetricsFactory(MeterRegistry meterRegistry, MetricNamer namer) {
+        super(meterRegistry, namer);
+    }
+
+    @Override
+    public MetricsFactory withNamer(MetricNamer metricNamer) {
+        return new DynamicProxyMetricsFactory(
+            getMeterRegistry(),
+            Objects.requireNonNull(metricNamer, "metricNamer"));
     }
 
     @Override
@@ -60,6 +67,11 @@ public class DynamicProxyMetricsFactory extends AbstractMetricsFactory {
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to get meter " + method.getName(), e);
             }
+        }
+
+        protected static <T> boolean isMeterMethod(Class<T> metrics, Method method) {
+            return method.getDeclaringClass() == metrics &&
+                   Meter.class.isAssignableFrom(method.getReturnType());
         }
     }
 }

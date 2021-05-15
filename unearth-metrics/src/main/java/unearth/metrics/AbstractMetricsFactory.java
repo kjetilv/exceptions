@@ -29,6 +29,7 @@ import java.util.stream.IntStream;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.FunctionCounter;
 import io.micrometer.core.instrument.LongTaskTimer;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -42,73 +43,77 @@ public abstract class AbstractMetricsFactory implements MetricsFactory {
 
     private final Map<MeterSpec, Meter> meters = new ConcurrentHashMap<>();
 
-    public AbstractMetricsFactory(
-        MeterRegistry meterRegistry
-    ) {
+    private final MetricNamer metricNamer;
+
+    public AbstractMetricsFactory(MeterRegistry meterRegistry, MetricNamer metricNamer) {
         this.meterRegistry = Objects.requireNonNull(meterRegistry, "meterRegistry");
+        this.metricNamer = metricNamer == null ? AbstractMetricsFactory::defaultName : metricNamer;
     }
 
+    @SuppressWarnings("unused")
     protected <T> Meter getMeter(Class<T> metrics, Method method, Object... args) {
         return meters.computeIfAbsent(
             meterSpec(method, args),
             spec ->
-                newMeter(spec, metrics, meterRegistry));
+                newMeter(spec, metrics, getMeterRegistry()));
     }
 
+    @SuppressWarnings("unused")
     protected <T> Counter getCounter(Class<T> metrics, Method method, Object... args) {
         return (Counter) meters.computeIfAbsent(
             meterSpec(method, args),
             spec ->
-                newCounter(spec, metrics, meterRegistry));
+                newCounter(spec, metrics, getMeterRegistry()));
     }
 
+    @SuppressWarnings("unused")
     protected <T> Timer getTimer(Class<T> metrics, Method method, Object... args) {
         return (Timer) meters.computeIfAbsent(
             meterSpec(method, args),
             spec ->
-                newTimer(spec, metrics, meterRegistry));
+                newTimer(spec, metrics, getMeterRegistry()));
     }
 
+    @SuppressWarnings("unused")
     protected <T> LongTaskTimer getLongTaskTimer(Class<T> metrics, Method method, Object... args) {
         return (LongTaskTimer) meters.computeIfAbsent(
             meterSpec(method, args),
             spec ->
-                newLongTaskTimer(spec, metrics, meterRegistry));
+                newLongTaskTimer(spec, metrics, getMeterRegistry()));
     }
 
+    @SuppressWarnings("unused")
     protected <T> DistributionSummary getDistributionSummary(Class<T> metrics, Method method, Object... args) {
         return (DistributionSummary) meters.computeIfAbsent(
             meterSpec(method, args),
             spec ->
-                newDistributionSummary(spec, metrics, meterRegistry));
+                newDistributionSummary(spec, metrics, getMeterRegistry()));
+    }
+
+    protected MetricNamer getMetricNamer() {
+        return metricNamer;
+    }
+
+    protected final MeterRegistry getMeterRegistry() {
+        return meterRegistry;
     }
 
     private MeterSpec meterSpec(Method method, Object[] args) {
-        String name = method.getName();
-        String returnType = method.getReturnType().getName();
-        String[] parameters = Arrays.stream(method.getParameters())
-            .map(Parameter::getName)
-            .toArray(String[]::new);
-        return new MeterSpec(name, returnType, parameters, args);
+        return new MeterSpec(method, args);
     }
 
-    private static final String COUNTER = Counter.class.getName();
+    private static final Class<? extends Meter> COUNTER = Counter.class;
 
-    private static final String TIMER = Timer.class.getName();
+    private static final Class<? extends Meter> TIMER = Timer.class;
 
-    private static final String LONG_TASK_TIMER = LongTaskTimer.class.getName();
+    private static final Class<? extends Meter> LONG_TASK_TIMER = LongTaskTimer.class;
 
-    private static final String DISTRIBUTION_SUMMARY = DistributionSummary.class.getName();
-    private static final String FUNCTION_COUNTER = FunctionCounter.class.getName();
+    private static final Class<? extends Meter> DISTRIBUTION_SUMMARY = DistributionSummary.class;
 
-    protected static <T> boolean isMeterMethod(Class<T> metrics, Method method) {
-        return method.getDeclaringClass() == metrics &&
-               Meter.class.isAssignableFrom(method.getReturnType());
-    }
+    private static final Class<? extends Meter> FUNCTION_COUNTER = FunctionCounter.class;
 
-    @SuppressWarnings("DuplicatedCode")
-    private static <T> Meter newMeter(MeterSpec spec, Class<T> metrics, MeterRegistry meterRegistry) {
-        String meterType = spec.getReturnType();
+    private <T> Meter newMeter(MeterSpec spec, Class<T> metrics, MeterRegistry meterRegistry) {
+        Class<? extends Meter> meterType = spec.returnType();
 
         if (meterType.equals(COUNTER)) {
             return newCounter(spec, metrics, meterRegistry);
@@ -122,115 +127,69 @@ public abstract class AbstractMetricsFactory implements MetricsFactory {
         if (meterType.equals(DISTRIBUTION_SUMMARY)) {
             return newDistributionSummary(spec, metrics, meterRegistry);
         }
-        throw new IllegalStateException("Unsupported method: " + spec.getMethod());
+        throw new IllegalStateException("Unsupported method: " + spec.method());
     }
 
-    private static <T> DistributionSummary newDistributionSummary(
+    private <T> DistributionSummary newDistributionSummary(
         MeterSpec spec,
         Class<T> metrics,
         MeterRegistry meterRegistry
     ) {
-        return DistributionSummary.builder(name(spec, metrics))
-            .tags(tags(spec))
+        return DistributionSummary.builder(metricNamer.name(metrics, spec.method()))
+            .tags(spec.tags())
             .register(meterRegistry);
     }
 
-    private static <T> LongTaskTimer newLongTaskTimer(MeterSpec spec, Class<T> metrics, MeterRegistry meterRegistry) {
-        return LongTaskTimer.builder(name(spec, metrics))
-            .tags(tags(spec))
+    private <T> LongTaskTimer newLongTaskTimer(MeterSpec spec, Class<T> metrics, MeterRegistry meterRegistry) {
+        return LongTaskTimer.builder(metricNamer.name(metrics, spec.method()))
+            .tags(spec.tags())
             .register(meterRegistry);
     }
 
-    private static <T> Timer newTimer(MeterSpec spec, Class<T> metrics, MeterRegistry meterRegistry) {
-        return Timer.builder(name(spec, metrics))
-            .tags(tags(spec))
+    private <T> Timer newTimer(MeterSpec spec, Class<T> metrics, MeterRegistry meterRegistry) {
+        return Timer.builder(metricNamer.name(metrics, spec.method()))
+            .tags(spec.tags())
             .register(meterRegistry);
     }
 
-    private static <T> Counter newCounter(MeterSpec spec, Class<T> metrics, MeterRegistry meterRegistry) {
-        return Counter.builder(name(spec, metrics))
-            .tags(tags(spec))
+    private <T> Counter newCounter(MeterSpec spec, Class<T> metrics, MeterRegistry meterRegistry) {
+        return Counter.builder(metricNamer.name(metrics, spec.method()))
+            .tags(spec.tags())
             .register(meterRegistry);
     }
 
-    private static <T> String name(MeterSpec spec, Class<T> metrics) {
-        return name(metrics, spec.getMethod());
+    private static <T> String defaultName(Class<T> metrics, Method method) {
+        return metrics.getSimpleName() + '.' + method.getName();
     }
 
-    private static Collection<Tag> tags(MeterSpec spec) {
-        String[] parameters = spec.getParameters();
-        return IntStream.range(0, parameters.length)
-            .filter(i ->
-                spec.getArg(i) != null)
-            .mapToObj(i ->
-                Tag.of(parameters[i], string(spec.getArg(i))))
-            .collect(Collectors.toSet());
-    }
+    private record MeterSpec(Method method, Object[] args) {
 
-    private static <T> String name(Class<T> metrics, String name) {
-        return metrics.getName() + '.' + name;
-    }
-
-    private static String string(Object arg) {
-        if (arg instanceof Class<?>) {
-            return ((Class<?>) arg).getName();
-        }
-        if (arg instanceof String) {
-            return (String) arg;
-        }
-        return String.valueOf(arg);
-    }
-
-    private static final class MeterSpec {
-
-        private final String method;
-
-        private final String returnType;
-
-        private final String[] parameters;
-
-        private final Object[] args;
-
-        private MeterSpec(
-            String method,
-            String returnType,
-            String[] parameters,
-            Object[] args
-        ) {
-            this.method = Objects.requireNonNull(method, "method");
-            this.returnType = Objects.requireNonNull(returnType, "returnType");
-            this.parameters = Objects.requireNonNull(parameters, "parameters").clone();
-            this.args = Objects.requireNonNull(args, "args").clone();
+        private Collection<Tag> tags() {
+            String[] parameters = parameters();
+            return IntStream.range(0, parameters.length)
+                .filter(i -> args[i] != null)
+                .mapToObj(i -> Tag.of(parameters[i], string(args[i])))
+                .collect(Collectors.toSet());
         }
 
-        private String[] getParameters() {
-            return parameters;
+        private String[] parameters() {
+            return Arrays.stream(method.getParameters())
+                .map(Parameter::getName)
+                .toArray(String[]::new);
         }
 
-        private String getReturnType() {
-            return returnType;
+        private Class<? extends Meter> returnType() {
+            return method.getReturnType().asSubclass(Meter.class);
         }
 
-        private String getMethod() {
-            return method;
-        }
-
-        private Object getArg(int i) {
-            return args[i];
-        }
-
-        @Override
-        public int hashCode() {
-            return 37 *
-                   (31 * Objects.hash(method, returnType) + Arrays.hashCode(parameters)) +
-                   Arrays.hashCode(args);
-        }
-
-        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
-        @Override
-        public boolean equals(Object o) {
-            return method.equals(((MeterSpec) o).method) &&
-                   Arrays.equals(args, ((MeterSpec) o).args);
+        private static String string(Object arg) {
+            if (arg instanceof Class<?>) {
+                return ((Class<?>) arg).getName();
+            }
+            if (arg instanceof String) {
+                return (String) arg;
+            }
+            return String.valueOf(arg);
         }
     }
 }

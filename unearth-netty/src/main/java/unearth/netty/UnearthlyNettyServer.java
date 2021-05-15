@@ -21,13 +21,13 @@ import unearth.norest.netty.NettyRunner;
 import unearth.server.UnearthlyConfig;
 import unearth.server.UnearthlyServer;
 
-final class UnearthlyNettyServer implements UnearthlyServer {
+public final class UnearthlyNettyServer implements UnearthlyServer {
 
     private final NettyRunner nettyServer;
 
     private final UnearthlyConfig config;
 
-    UnearthlyNettyServer(UnearthlyConfig config, NettyRunner nettyServer) {
+    public UnearthlyNettyServer(UnearthlyConfig config, NettyRunner nettyServer) {
         this.nettyServer = nettyServer;
         this.config = config;
     }

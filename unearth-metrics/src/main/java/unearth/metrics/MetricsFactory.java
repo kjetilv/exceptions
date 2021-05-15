@@ -17,7 +17,23 @@
 
 package unearth.metrics;
 
+import java.lang.reflect.Method;
+
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.simple.SimpleConfig;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
 public interface MetricsFactory {
 
+    MetricsFactory DEFAULT =
+        new CodeGenMetricsFactory(new SimpleMeterRegistry(SimpleConfig.DEFAULT, Clock.SYSTEM));
+
+    MetricsFactory withNamer(MetricNamer metricNamer);
+
     <T> T instantiate(Class<T> metrics);
+
+    interface MetricNamer {
+
+        String name(Class<?> metrics, Method method);
+    }
 }

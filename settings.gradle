@@ -32,6 +32,5 @@ include("unearth-client",
         "unearth-server",
         "unearth-storage",
         "unearth-test",
-        "unearth-netty")//,
-        //"unearth-http4k")
+        "unearth-netty")
 
