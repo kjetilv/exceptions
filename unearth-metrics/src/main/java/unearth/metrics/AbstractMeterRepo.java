@@ -29,6 +29,7 @@ import java.util.function.ToLongFunction;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.FunctionCounter;
 import io.micrometer.core.instrument.FunctionTimer;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.LongTaskTimer;
@@ -83,47 +84,83 @@ public abstract class AbstractMeterRepo {
             .register(registry);
     }
 
+    @SuppressWarnings("unchecked")
     protected Gauge newGauge(
         MeterSpec spec,
         Class<?> metrics,
-        Supplier<Number> gauged
+        Supplier<?> gauged
     ) {
-        return Gauge.builder(meterName(spec, metrics), gauged)
-            .tags(spec.tags())
+        return Gauge.builder(
+            meterName(spec, metrics),
+            (Supplier<Number>) Objects.requireNonNull(gauged, "gauged")
+        ).tags(spec.tags(1))
             .register(registry);
     }
 
+    @SuppressWarnings("unchecked")
     protected <T> Gauge newGauge(
         MeterSpec spec,
         Class<?> metrics,
         T obj,
-        ToDoubleFunction<T> meter
+        ToDoubleFunction<?> meter
     ) {
-        return Gauge.builder(meterName(spec, metrics), obj, meter)
-            .tags(spec.tags())
+        return Gauge.builder(
+            meterName(spec, metrics),
+            Objects.requireNonNull(obj, "obj"),
+            (ToDoubleFunction<T>) Objects.requireNonNull(meter, "meter")
+        ).tags(spec.tags(2))
             .register(registry);
     }
 
+    @SuppressWarnings("unchecked")
     protected <T> FunctionTimer newFunctionTimer(
         MeterSpec spec,
         Class<?> metrics,
         T obj,
-        ToLongFunction<T> countFun,
-        ToDoubleFunction<T> totalTimeFun
+        ToLongFunction<?> countFun,
+        ToDoubleFunction<?> totalTimeFun
     ) {
-        return newFunctionTimer(spec, metrics, obj, countFun, totalTimeFun, TimeUnit.MILLISECONDS);
+        return FunctionTimer.builder(
+            meterName(spec, metrics),
+            Objects.requireNonNull(obj, "obj"),
+            (ToLongFunction<T>) Objects.requireNonNull(countFun, "countFun"),
+            (ToDoubleFunction<T>) Objects.requireNonNull(totalTimeFun, "totalTimeFun"),
+            TimeUnit.MILLISECONDS
+        ).tags(spec.tags(3))
+            .register(registry);
     }
 
+    @SuppressWarnings("unchecked")
     protected <T> FunctionTimer newFunctionTimer(
         MeterSpec spec,
         Class<?> metrics,
         T obj,
-        ToLongFunction<T> countFun,
-        ToDoubleFunction<T> totalTimeFun,
+        ToLongFunction<?> countFun,
+        ToDoubleFunction<?> totalTimeFun,
         TimeUnit timeUnit
     ) {
-        return FunctionTimer.builder(meterName(spec, metrics), obj, countFun, totalTimeFun, timeUnit)
-            .tags(spec.tags())
+        return FunctionTimer.builder(
+            meterName(spec, metrics),
+            Objects.requireNonNull(obj, "obj"),
+            (ToLongFunction<T>) Objects.requireNonNull(countFun, "countFun"),
+            (ToDoubleFunction<T>) Objects.requireNonNull(totalTimeFun, "totalTimeFun"),
+            Objects.requireNonNull(timeUnit, "timeUnit")
+        ).tags(spec.tags(4))
+            .register(registry);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <T> FunctionCounter newFunctionCounter(
+        MeterSpec spec,
+        Class<?> metrics,
+        T obj,
+        ToDoubleFunction<?> fun
+    ) {
+        return FunctionCounter.builder(
+            meterName(spec, metrics),
+            Objects.requireNonNull(obj, "obj"),
+            (ToDoubleFunction<T>) Objects.requireNonNull(fun, "fun")
+        ).tags(spec.tags(2))
             .register(registry);
     }
 

@@ -30,10 +30,16 @@ import io.micrometer.core.instrument.Tag;
 record MeterSpec(Method method, Object[] args) {
 
     Collection<Tag> tags() {
+        return tags(0);
+    }
+
+    Collection<Tag> tags(int offset) {
         String[] parameters = parameters();
-        return IntStream.range(0, parameters.length)
-            .filter(i -> args[i] != null)
-            .mapToObj(i -> Tag.of(parameters[i], string(args[i])))
+        return IntStream.range(offset, parameters.length)
+            .filter(i ->
+                args[i - offset] != null)
+            .mapToObj(i ->
+                Tag.of(parameters[i], string(args[i - offset])))
             .collect(Collectors.toSet());
     }
 

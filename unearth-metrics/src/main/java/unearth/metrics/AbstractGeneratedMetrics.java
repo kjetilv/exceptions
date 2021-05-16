@@ -18,27 +18,27 @@
 package unearth.metrics;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToLongFunction;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.FunctionCounter;
+import io.micrometer.core.instrument.FunctionTimer;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.LongTaskTimer;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import net.bytebuddy.description.method.MethodDescription;
-import net.bytebuddy.matcher.ElementMatcher;
-
-import static net.bytebuddy.matcher.ElementMatchers.isMethod;
-import static net.bytebuddy.matcher.ElementMatchers.named;
 
 public class AbstractGeneratedMetrics extends AbstractMeterRepo {
 
-    static ElementMatcher.Junction<MethodDescription> resolverMethod(Class<? extends Meter> type) {
-        return named("resolve" + type.getSimpleName())
-            .and(isMethod());
+    static String resolverMethodName(Class<? extends Meter> type) {
+        return "resolve" + type.getSimpleName();
     }
 
     private final Class<?> metrics;
@@ -76,20 +76,59 @@ public class AbstractGeneratedMetrics extends AbstractMeterRepo {
             newDistributionSummary(spec, this.metrics));
     }
 
-    @SuppressWarnings("unused") // Generated code helper
-    protected final Gauge resolveGauge(Method method, Object[] args, Supplier<Number> gauged) {
-        return resolveMeter(Gauge.class, method, args, spec ->
-            newGauge(spec, this.metrics, gauged));
+    @SuppressWarnings({ "unused" }) // Generated code helper
+    protected final Gauge resolveGauge(Method method, Object[] args) {
+        if (args.length > 0 && args[0] instanceof Supplier<?>) {
+            return resolveMeter(Gauge.class, method, skip(1, args), spec ->
+                newGauge(spec, this.metrics, (Supplier<?>) args[0]));
+        }
+        if (args.length > 1 && args[1] instanceof ToDoubleFunction<?>) {
+            return resolveMeter(Gauge.class, method, skip(2, args), spec ->
+                newGauge(spec, this.metrics, args[0], (ToDoubleFunction<?>) args[1]));
+        }
+        throw new IllegalStateException(
+            "Invalid " + Gauge.class.getSimpleName() + " specification in " + method +
+            ", must comply with " + Gauge.Builder.class);
     }
 
-//    @SuppressWarnings("unused") // Generated code helper
-//    protected final <T> Gauge resolveGauge(
-//        Method method,
-//        Object[] args,
-//        T obj,
-//        ToDoubleFunction<T> meter
-//    ) {
-//        return resolveMeter(Gauge.class, method, args, spec ->
-//            newGauge(spec, this.metrics, obj, meter));
-//    }
+    @SuppressWarnings({ "unused" }) // Generated code helper
+    protected final FunctionCounter resolveFunctionCounter(Method method, Object[] args) {
+        if (args.length > 1 && args[1] instanceof ToDoubleFunction<?>) {
+            return resolveMeter(FunctionCounter.class, method, skip(2, args), spec ->
+                newFunctionCounter(spec, this.metrics, args[0], (ToDoubleFunction<?>) args[1]));
+        }
+        throw new IllegalStateException(
+            "Invalid " + FunctionCounter.class.getSimpleName() + " specification: " + method +
+            ", must comply with " + FunctionCounter.Builder.class);
+    }
+
+    @SuppressWarnings({ "unused" }) // Generated code helper
+    protected final FunctionTimer resolveFunctionTimer(Method method, Object[] args) {
+        if (args.length > 2) {
+            if (args.length > 3 && args[3] instanceof TimeUnit) {
+                return resolveMeter(FunctionTimer.class, method, skip(4, args), spec ->
+                    newFunctionTimer(
+                        spec,
+                        metrics,
+                        args[0],
+                        (ToLongFunction<?>) args[1],
+                        (ToDoubleFunction<?>) args[2],
+                        (TimeUnit) args[3]));
+            }
+            return resolveMeter(FunctionTimer.class, method, skip(3, args), spec ->
+                newFunctionTimer(
+                    spec,
+                    metrics,
+                    args[0],
+                    (ToLongFunction<?>) args[1],
+                    (ToDoubleFunction<?>) args[2]));
+        }
+        throw new IllegalStateException(
+            "Invalid " + FunctionTimer.class.getSimpleName() + " specification: " + method +
+            ", must comply with " + FunctionTimer.Builder.class);
+    }
+
+    private Object[] skip(int offset, Object[] args) {
+        return Arrays.stream(args).skip(offset).toArray(Object[]::new);
+    }
 }

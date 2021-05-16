@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -31,6 +32,7 @@ import java.util.stream.Stream;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.FunctionCounter;
+import io.micrometer.core.instrument.FunctionTimer;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.LongTaskTimer;
 import io.micrometer.core.instrument.Meter;
@@ -42,6 +44,7 @@ import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.implementation.MethodCall;
 import unearth.util.once.Apply;
 
+import static net.bytebuddy.matcher.ElementMatchers.isMethod;
 import static net.bytebuddy.matcher.ElementMatchers.isPublic;
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static net.bytebuddy.matcher.ElementMatchers.returns;
@@ -72,7 +75,15 @@ public final class CodeGenMetricsFactory implements MetricsFactory {
 
     @Override
     public <T> T instantiate(Class<T> metrics) {
+        validate(metrics);
         return metrics.cast(memoizedInstantiator.apply(metrics));
+    }
+
+    private <T> void validate(Class<T> metrics) {
+        Method[] meters = metrics.getMethods();
+        if (Arrays.stream(meters).map(Method::getName).distinct().count() < meters.length) {
+            throw new IllegalArgumentException("Metrics interface should not have overloaded method names");
+        }
     }
 
     private Object newInstance(Class<?> metricsInterface) {
@@ -124,21 +135,6 @@ public final class CodeGenMetricsFactory implements MetricsFactory {
         DynamicType.Builder<AbstractGeneratedMetrics> builder,
         Method method
     ) {
-//        Optional<Class<?>> supplierArg = Arrays.stream(method.getParameterTypes())
-//            .filter(arg ->
-//                arg.equals(Supplier.class))
-//            .findFirst();
-//        if (supplierArg.isPresent()) {
-//            ElementMatcher.Junction<MethodDescription> and = named(method.getName())
-//                .and(returns(method.getReturnType()))
-//                .and(isPublic())
-//                .and(hasParameters(whereAny(CodeGenMetricsFactory::matches)));
-//            return builder
-//                .method(and)
-//                .intercept(helperMethodCall(method)
-//                    .with(method)
-//                    .withArgumentArray());
-//        }
         return builder
             .method(named(method.getName())
                 .and(returns(method.getReturnType()))
@@ -155,12 +151,14 @@ public final class CodeGenMetricsFactory implements MetricsFactory {
             Counter.class,
             DistributionSummary.class,
             FunctionCounter.class,
+            FunctionTimer.class,
             LongTaskTimer.class,
             Gauge.class
         ).collect(Collectors.toMap(
             Function.identity(),
             type ->
-                MethodCall.invoke(AbstractGeneratedMetrics.resolverMethod(type))));
+                MethodCall.invoke(
+                    named(AbstractGeneratedMetrics.resolverMethodName(type)).and(isMethod()))));
 
     private static <B> BinaryOperator<B> noCombine() {
         return (b1, b2) -> {
@@ -169,7 +167,9 @@ public final class CodeGenMetricsFactory implements MetricsFactory {
     }
 
     private static MethodCall helperMethodCall(Method m) {
-        return HELPERS.get(m.getReturnType());
+        return Optional.ofNullable(HELPERS.get(m.getReturnType()))
+            .orElseThrow(() ->
+                new IllegalStateException("Unmapped return type: " + m.getReturnType()));
     }
 
     private static boolean matches(ParameterDescription target) {
