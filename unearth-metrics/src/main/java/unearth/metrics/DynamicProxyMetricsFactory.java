@@ -17,29 +17,29 @@
 
 package unearth.metrics;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Objects;
 
-import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 
-public class DynamicProxyMetricsFactory extends AbstractMetricsFactory {
+public final class DynamicProxyMetricsFactory implements MetricsFactory {
 
-    public DynamicProxyMetricsFactory(MeterRegistry meterRegistry) {
-        this(meterRegistry, null);
+    private final MeterRegistry registry;
+
+    private final MeterNamer namer;
+
+    public DynamicProxyMetricsFactory(MeterRegistry registry) {
+        this(registry, null);
     }
 
-    private DynamicProxyMetricsFactory(MeterRegistry meterRegistry, MetricNamer namer) {
-        super(meterRegistry, namer);
+    private DynamicProxyMetricsFactory(MeterRegistry registry, MeterNamer namer) {
+        this.registry = Objects.requireNonNull(registry, "registry");
+        this.namer = namer;
     }
 
     @Override
-    public MetricsFactory withNamer(MetricNamer metricNamer) {
-        return new DynamicProxyMetricsFactory(
-            getMeterRegistry(),
-            Objects.requireNonNull(metricNamer, "metricNamer"));
+    public DynamicProxyMetricsFactory withNamer(MeterNamer meterNamer) {
+        return new DynamicProxyMetricsFactory(registry, Objects.requireNonNull(meterNamer, "metricNamer"));
     }
 
     @Override
@@ -47,31 +47,7 @@ public class DynamicProxyMetricsFactory extends AbstractMetricsFactory {
         return metrics.cast(Proxy.newProxyInstance(
             Thread.currentThread().getContextClassLoader(),
             new Class<?>[] { metrics },
-            new MeterResolvingInvocationHandler<>(metrics)));
-    }
-
-    private class MeterResolvingInvocationHandler<T> implements InvocationHandler {
-
-        private final Class<T> metrics;
-
-        protected MeterResolvingInvocationHandler(Class<T> metrics) {
-            this.metrics = metrics;
-        }
-
-        @Override
-        public Object invoke(Object proxy, Method method, Object[] args) {
-            try {
-                return isMeterMethod(metrics, method)
-                    ? DynamicProxyMetricsFactory.this.getMeter(metrics, method, args)
-                    : method.invoke(proxy, args);
-            } catch (Exception e) {
-                throw new IllegalStateException("Failed to get meter " + method.getName(), e);
-            }
-        }
-
-        protected static <T> boolean isMeterMethod(Class<T> metrics, Method method) {
-            return method.getDeclaringClass() == metrics &&
-                   Meter.class.isAssignableFrom(method.getReturnType());
-        }
+            new MeterResolvingInvocationHandler<>(registry, namer, metrics)));
     }
 }
+

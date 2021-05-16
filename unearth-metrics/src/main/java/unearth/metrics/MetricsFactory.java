@@ -28,12 +28,12 @@ public interface MetricsFactory {
     MetricsFactory DEFAULT =
         new CodeGenMetricsFactory(new SimpleMeterRegistry(SimpleConfig.DEFAULT, Clock.SYSTEM));
 
-    MetricsFactory withNamer(MetricNamer metricNamer);
-
-    <T> T instantiate(Class<T> metrics);
-
-    interface MetricNamer {
+    interface MeterNamer {
 
         String name(Class<?> metrics, Method method);
     }
+
+    MetricsFactory withNamer(MeterNamer meterNamer);
+
+    <T> T instantiate(Class<T> metrics);
 }

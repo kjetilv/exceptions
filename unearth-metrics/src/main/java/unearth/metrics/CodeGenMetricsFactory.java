@@ -17,50 +17,57 @@
 
 package unearth.metrics;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.FunctionCounter;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.LongTaskTimer;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.description.method.MethodDescription;
+import net.bytebuddy.description.method.ParameterDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.implementation.MethodCall;
-import net.bytebuddy.matcher.ElementMatcher;
 import unearth.util.once.Apply;
 
-import static net.bytebuddy.matcher.ElementMatchers.isMethod;
 import static net.bytebuddy.matcher.ElementMatchers.isPublic;
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static net.bytebuddy.matcher.ElementMatchers.returns;
 
-class CodeGenMetricsFactory extends AbstractMetricsFactory {
+public final class CodeGenMetricsFactory implements MetricsFactory {
 
     private final Function<Class<?>, Object> memoizedInstantiator = Apply.memoized(this::newInstance);
 
-    public CodeGenMetricsFactory(MeterRegistry meterRegistry) {
-        this(meterRegistry, null);
+    private final MeterRegistry registry;
+
+    private final MeterNamer namer;
+
+    public CodeGenMetricsFactory(MeterRegistry registry) {
+        this(registry, null);
     }
 
-    private CodeGenMetricsFactory(MeterRegistry meterRegistry, MetricNamer namer) {
-        super(meterRegistry, namer);
+    protected CodeGenMetricsFactory(MeterRegistry registry, MeterNamer namer) {
+        this.registry = registry;
+        this.namer = namer;
     }
 
     @Override
-    public CodeGenMetricsFactory withNamer(MetricNamer metricNamer) {
+    public CodeGenMetricsFactory withNamer(MeterNamer meterNamer) {
         return new CodeGenMetricsFactory(
-            getMeterRegistry(),
-            Objects.requireNonNull(metricNamer, "metricNamer"));
+            registry,
+            Objects.requireNonNull(meterNamer, "metricNamer"));
     }
 
     @Override
@@ -69,66 +76,104 @@ class CodeGenMetricsFactory extends AbstractMetricsFactory {
     }
 
     private Object newInstance(Class<?> metricsInterface) {
-        Class<?> generatedClass = generate(metricsInterface);
         try {
-            return generatedClass.getConstructor(MeterRegistry.class, MetricNamer.class)
-                .newInstance(getMeterRegistry(), getMetricNamer());
+            Class<?> generatedClass = generate(metricsInterface);
+            Constructor<?> constructor =
+                getConstructor(generatedClass, MeterRegistry.class, MeterNamer.class, Class.class);
+            return construct(metricsInterface, generatedClass, constructor);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to implement " + metricsInterface, e);
+        }
+    }
+
+    private Constructor<?> getConstructor(Class<?> generatedClass, Class<?>... parameters) {
+        try {
+            return generatedClass.getConstructor(parameters);
         } catch (Exception e) {
             throw new IllegalStateException(
-                "Failed to implement " + metricsInterface + ": " + generatedClass, e);
+                "Failed to retrieve constructor of " + generatedClass + ": " + Arrays.toString(parameters), e);
+        }
+    }
+
+    private Object construct(Class<?> metricsInterface, Class<?> generatedClass, Constructor<?> constructor) {
+        try {
+            return constructor.newInstance(registry, namer, metricsInterface);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to instaniate " + generatedClass, e);
         }
     }
 
     private Class<?> generate(Class<?> metricsInterface) {
-        return methods(metricsInterface).reduce(
-            new ByteBuddy()
-                .subclass(AbstractMetricsFactory.class)
-                .implement(metricsInterface),
-            this::addMethod,
-            NO_COMBINE
-        ).make()
-            .load(Thread.currentThread().getContextClassLoader())
-            .getLoaded();
+        try {
+            DynamicType.Builder<AbstractGeneratedMetrics> baseBuilder =
+                new ByteBuddy()
+                    .subclass(AbstractGeneratedMetrics.class)
+                    .implement(metricsInterface);
+            DynamicType.Builder<AbstractGeneratedMetrics> methodEnrichedBuilder =
+                Arrays.stream(metricsInterface.getMethods())
+                    .reduce(baseBuilder, this::withMethod, noCombine());
+            return methodEnrichedBuilder.make()
+                .load(Thread.currentThread().getContextClassLoader())
+                .getLoaded();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to generate class for " + metricsInterface, e);
+        }
     }
 
-    private DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<AbstractMetricsFactory> addMethod(
-        DynamicType.Builder<AbstractMetricsFactory> bld,
-        Method mth
+    private DynamicType.Builder<AbstractGeneratedMetrics> withMethod(
+        DynamicType.Builder<AbstractGeneratedMetrics> builder,
+        Method method
     ) {
-        return bld.method(publicMethod(mth)).intercept(methodCall(mth.getDeclaringClass(), mth));
+//        Optional<Class<?>> supplierArg = Arrays.stream(method.getParameterTypes())
+//            .filter(arg ->
+//                arg.equals(Supplier.class))
+//            .findFirst();
+//        if (supplierArg.isPresent()) {
+//            ElementMatcher.Junction<MethodDescription> and = named(method.getName())
+//                .and(returns(method.getReturnType()))
+//                .and(isPublic())
+//                .and(hasParameters(whereAny(CodeGenMetricsFactory::matches)));
+//            return builder
+//                .method(and)
+//                .intercept(helperMethodCall(method)
+//                    .with(method)
+//                    .withArgumentArray());
+//        }
+        return builder
+            .method(named(method.getName())
+                .and(returns(method.getReturnType()))
+                .and(isPublic()))
+            .intercept(helperMethodCall(method)
+                .with(method)
+                .withArgumentArray());
     }
 
-    private Stream<Method> methods(Class<?> metricsInterface) {
-        return Arrays.stream(metricsInterface.getMethods());
-    }
+    private static final Map<Class<? extends Meter>, MethodCall> HELPERS =
+        Stream.of(
+            Meter.class,
+            Timer.class,
+            Counter.class,
+            DistributionSummary.class,
+            FunctionCounter.class,
+            LongTaskTimer.class,
+            Gauge.class
+        ).collect(Collectors.toMap(
+            Function.identity(),
+            type ->
+                MethodCall.invoke(AbstractGeneratedMetrics.resolverMethod(type))));
 
-    private MethodCall methodCall(Class<?> metricsInterface, Method method) {
-        return methodCall(method)
-            .with(metricsInterface, method)
-            .withArgumentArray();
-    }
-
-    private ElementMatcher.Junction<MethodDescription> publicMethod(Method mthd) {
-        return named(mthd.getName())
-            .and(returns(mthd.getReturnType()))
-            .and(isPublic());
-    }
-
-    private static final BinaryOperator<DynamicType.Builder<AbstractMetricsFactory>>
-        NO_COMBINE =
-        (b1, b2) -> {
+    private static <B> BinaryOperator<B> noCombine() {
+        return (b1, b2) -> {
             throw new IllegalStateException("No combine " + b1 + "/" + b2);
         };
-
-    private static final Map<Class<? extends Meter>, MethodCall> SUPER_CALLS =
-        Stream.of(Meter.class, Timer.class, Counter.class, DistributionSummary.class, LongTaskTimer.class)
-            .collect(Collectors.toMap(Function.identity(), CodeGenMetricsFactory::getCall));
-
-    private static MethodCall getCall(Class<? extends Meter> type) {
-        return MethodCall.invoke(named("get" + type.getSimpleName()).and(isMethod())).onSuper();
     }
 
-    private static MethodCall methodCall(Method m) {
-        return SUPER_CALLS.get(m.getReturnType());
+    private static MethodCall helperMethodCall(Method m) {
+        return HELPERS.get(m.getReturnType());
+    }
+
+    private static boolean matches(ParameterDescription target) {
+        return target.getType().getTypeName().equals(
+            Supplier.class.getName() + "<" + Number.class.getName() + ">");
     }
 }
